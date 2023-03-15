@@ -1,0 +1,33 @@
+[package]
+name = "rlst-dense"
+version = "0.0.1"
+authors = ["The linalg-rs contributors"]
+edition = "2021"
+description = "A Rust native dense linear algebra library."
+license = "MIT + Apache 2.0"
+homepage = "https://github.com/linalg-rs"
+repository = "https://github.com/linalg-rs/rlst"
+readme = "README.md"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+
+[lib]
+name = "rlst_dense"
+
+[dependencies]
+num = "0.4"
+cauchy = "0.4"
+ndarray = "0.15"
+rand = "0.8"
+itertools = "0.10"
+rand_distr = "0.4"
+thiserror = "1.0"
+matrixmultiply = "0.3"
+approx = { version = "0.5", features=["num-complex"] }
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
+
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]
