@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 rlst-operator = {path = "../operator"}
+rlst-common = {path = "../common"}
 mpi = "0.6.*"
 num = "0.4"
 

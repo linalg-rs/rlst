@@ -1,12 +1,6 @@
 use super::LinearSpace;
-use crate::types::IndexType;
-use crate::IndexLayout;
+use rlst_common::types::IndexType;
 
 pub trait IndexableSpace: LinearSpace {
-    type Ind: IndexLayout;
-    fn dimension(&self) -> IndexType {
-        self.index_layout().number_of_global_indices()
-    }
-
-    fn index_layout(&self) -> &Self::Ind;
+    fn dimension(&self) -> IndexType;
 }

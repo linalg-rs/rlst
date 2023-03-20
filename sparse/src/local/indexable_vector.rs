@@ -1,9 +1,9 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::*;
 use num::{Float, Zero};
-use rlst_operator::linalg::*;
-use rlst_operator::types::{SparseLinAlgError, SparseLinAlgResult};
-use rlst_operator::Scalar;
-use rlst_operator::{IndexLayout, IndexType};
+use rlst_common::types::Scalar;
+use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
 
 use super::index_layout::LocalIndexLayout;
 
@@ -161,7 +161,7 @@ impl<T: Scalar> NormInfty for LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> Swap for LocalIndexableVector<T> {
-    fn swap(&mut self, other: &mut Self) -> rlst_operator::types::SparseLinAlgResult<()> {
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
@@ -180,7 +180,7 @@ impl<T: Scalar> Swap for LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> Fill for LocalIndexableVector<T> {
-    fn fill(&mut self, other: &Self) -> rlst_operator::types::SparseLinAlgResult<()> {
+    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
@@ -211,7 +211,7 @@ impl<T: Scalar> MultSumInto for LocalIndexableVector<T> {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_operator::types::SparseLinAlgResult<()> {
+    ) -> rlst_common::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {

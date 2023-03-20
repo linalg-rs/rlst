@@ -1,11 +1,10 @@
 //! Example file for creating vectors.
 
-use rlst_operator::linalg::Norm2;
-use rlst_operator::linalg::*;
 use rlst_operator::Element;
 use rlst_operator::LinearSpace;
 use rlst_operator::NormedSpace;
 use rlst_sparse::local::indexable_space::LocalIndexableVectorSpace;
+use rlst_sparse::traits::indexable_vector::*;
 
 fn main() {
     let space = LocalIndexableVectorSpace::<f64>::new(10);

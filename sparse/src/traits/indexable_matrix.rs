@@ -1,8 +1,8 @@
 //! Basic trait for matrices
 
-use crate::linalg::IndexableVector;
-use crate::types::{IndexType, Scalar};
-use crate::IndexLayout;
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::IndexableVector;
+use rlst_common::types::{IndexType, Scalar};
 
 pub enum DenseMatrixLayout {
     RowMajor((IndexType, IndexType)),
@@ -119,12 +119,12 @@ pub trait Imag: IndexableMatrix {
 
 /// Swap entries with another matrix.
 pub trait Swap: IndexableMatrix {
-    fn swap(&mut self, other: &mut Self) -> crate::types::SparseLinAlgResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()>;
 }
 
 /// Fill matrix by copying from another matrix.
 pub trait Fill: IndexableMatrix {
-    fn fill(&mut self, other: &Self) -> crate::types::SparseLinAlgResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -138,7 +138,7 @@ pub trait MultSumInto: IndexableMatrix {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> crate::types::SparseLinAlgResult<()>;
+    ) -> rlst_common::types::SparseLinAlgResult<()>;
 }
 
 /// Compute y-> alpha A x + y

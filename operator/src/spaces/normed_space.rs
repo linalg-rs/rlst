@@ -1,6 +1,6 @@
 use super::ElementView;
 use super::LinearSpace;
-use crate::types::Scalar;
+use rlst_common::types::Scalar;
 
 pub trait NormedSpace: LinearSpace {
     /// Norm of a vector.

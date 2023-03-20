@@ -4,9 +4,10 @@ use std::marker::PhantomData;
 
 use super::index_layout::LocalIndexLayout;
 use super::indexable_vector::LocalIndexableVector;
-use rlst_operator::linalg::{Inner, Norm2};
-use rlst_operator::types::{IndexType, Scalar};
-use rlst_operator::{Element, IndexLayout, IndexableSpace, InnerProductSpace, NormedSpace};
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::{Inner, Norm2};
+use rlst_common::types::{IndexType, Scalar};
+use rlst_operator::{Element, IndexableSpace, InnerProductSpace, NormedSpace};
 
 pub struct LocalIndexableVectorSpace<T: Scalar> {
     index_layout: LocalIndexLayout,
@@ -52,19 +53,14 @@ impl<T: Scalar> rlst_operator::LinearSpace for LocalIndexableVectorSpace<T> {
     fn create_element<'a>(&'a self) -> Self::E<'a> {
         LocalIndexableVectorSpaceElement {
             space: &self,
-            data: LocalIndexableVector::new(self.index_layout().number_of_global_indices()),
+            data: LocalIndexableVector::new(self.index_layout.number_of_global_indices()),
         }
     }
 }
 
 impl<T: Scalar> IndexableSpace for LocalIndexableVectorSpace<T> {
-    type Ind = LocalIndexLayout;
     fn dimension(&self) -> IndexType {
-        self.index_layout().number_of_global_indices()
-    }
-
-    fn index_layout(&self) -> &Self::Ind {
-        &self.index_layout
+        self.index_layout.number_of_global_indices()
     }
 }
 
@@ -73,7 +69,7 @@ impl<T: Scalar> InnerProductSpace for LocalIndexableVectorSpace<T> {
         &self,
         x: &rlst_operator::ElementView<'a, Self>,
         other: &rlst_operator::ElementView<'a, Self>,
-    ) -> rlst_operator::SparseLinAlgResult<Self::F>
+    ) -> rlst_common::types::SparseLinAlgResult<Self::F>
     where
         Self: 'a,
     {

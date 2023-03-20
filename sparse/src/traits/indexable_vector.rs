@@ -1,7 +1,7 @@
 //! An indexable vector is the standard type for n-dimensional containers
 
-use crate::types::{IndexType, Scalar};
-use crate::IndexLayout;
+use crate::traits::index_layout::IndexLayout;
+use rlst_common::types::{IndexType, Scalar};
 
 pub trait IndexableVector {
     type Item: Scalar;
@@ -53,7 +53,7 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
 /// Inner product with another object.
 pub trait Inner: IndexableVector {
-    fn inner(&self, other: &Self) -> crate::types::SparseLinAlgResult<Self::Item>;
+    fn inner(&self, other: &Self) -> rlst_common::types::SparseLinAlgResult<Self::Item>;
 }
 
 /// Take the sum of the squares of the absolute values of the entries.
@@ -78,12 +78,12 @@ pub trait NormInfty: IndexableVector {
 
 /// Swap entries with another vector.
 pub trait Swap: IndexableVector {
-    fn swap(&mut self, other: &mut Self) -> crate::types::SparseLinAlgResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()>;
 }
 
 /// Fill vector by copying from another vector.
 pub trait Fill: IndexableVector {
-    fn fill(&mut self, other: &Self) -> crate::types::SparseLinAlgResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -97,5 +97,5 @@ pub trait MultSumInto: IndexableVector {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> crate::types::SparseLinAlgResult<()>;
+    ) -> rlst_common::types::SparseLinAlgResult<()>;
 }

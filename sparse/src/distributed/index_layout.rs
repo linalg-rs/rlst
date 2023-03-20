@@ -1,5 +1,6 @@
+use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_operator::{IndexLayout, IndexType, SparseLinAlgResult};
+use rlst_common::types::{IndexType, SparseLinAlgResult};
 
 pub struct DistributedIndexLayout<'a, C: Communicator> {
     size: IndexType,
@@ -81,7 +82,9 @@ impl<'a, C: Communicator> IndexLayout for DistributedIndexLayout<'a, C> {
         if rank < self.comm.size() as IndexType {
             Ok((self.counts[rank], self.counts[1 + rank]))
         } else {
-            Err(rlst_operator::SparseLinAlgError::MpiRankError(rank as i32))
+            Err(rlst_common::types::SparseLinAlgError::MpiRankError(
+                rank as i32,
+            ))
         }
     }
 

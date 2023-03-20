@@ -5,9 +5,10 @@ use std::marker::PhantomData;
 
 use super::index_layout::DistributedIndexLayout;
 use super::indexable_vector::DistributedIndexableVector;
-use rlst_operator::linalg::Inner;
-use rlst_operator::types::{IndexType, Scalar};
-use rlst_operator::{Element, IndexLayout, IndexableSpace, InnerProductSpace};
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::Inner;
+use rlst_common::types::{IndexType, Scalar};
+use rlst_operator::{Element, IndexableSpace, InnerProductSpace};
 
 pub struct DistributedIndexableVectorSpace<'comm, T: Scalar + Equivalence, C: Communicator> {
     index_layout: &'comm DistributedIndexLayout<'comm, C>,
@@ -76,13 +77,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableSpace
 where
     T::Real: Equivalence,
 {
-    type Ind = DistributedIndexLayout<'a, C>;
     fn dimension(&self) -> IndexType {
-        self.index_layout().number_of_global_indices()
-    }
-
-    fn index_layout(&self) -> &Self::Ind {
-        &self.index_layout
+        self.index_layout.number_of_global_indices()
     }
 }
 
@@ -95,7 +91,7 @@ where
         &self,
         x: &rlst_operator::ElementView<'b, Self>,
         other: &rlst_operator::ElementView<'b, Self>,
-    ) -> rlst_operator::SparseLinAlgResult<Self::F>
+    ) -> rlst_common::types::SparseLinAlgResult<Self::F>
     where
         Self: 'b,
     {

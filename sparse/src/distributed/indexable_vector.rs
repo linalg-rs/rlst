@@ -2,13 +2,15 @@
 use crate::local::indexable_vector::{
     LocalIndexableVector, LocalIndexableVectorView, LocalIndexableVectorViewMut,
 };
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::{AbsSquareSum, Inner, Norm1, Norm2, NormInfty};
+use crate::traits::indexable_vector::{
+    IndexableVector, IndexableVectorView, IndexableVectorViewMut,
+};
 use mpi::datatype::Partition;
 use mpi::traits::*;
 use num::{Float, Zero};
-use rlst_operator::linalg::*;
-use rlst_operator::linalg::{Inner, Norm1, Norm2, NormInfty};
-use rlst_operator::types::SparseLinAlgResult;
-use rlst_operator::{linalg::IndexableVectorView, IndexLayout, Scalar};
+use rlst_common::types::{Scalar, SparseLinAlgResult};
 
 use super::index_layout::DistributedIndexLayout;
 

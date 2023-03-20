@@ -1,6 +1,7 @@
 //! General linear operator.
 
 use crate::LinearSpace;
+use rlst_common::types::*;
 use std::fmt::Debug;
 
 use crate::*;
@@ -26,11 +27,19 @@ pub trait OperatorBase: Debug {
 
 /// Apply an operator.
 pub trait AsApply: OperatorBase {
-    fn apply(&self, x: ElementView<Self::Domain>, y: ElementViewMut<Self::Range>) -> SparseLinAlgResult<()>;
+    fn apply(
+        &self,
+        x: ElementView<Self::Domain>,
+        y: ElementViewMut<Self::Range>,
+    ) -> SparseLinAlgResult<()>;
 }
 
 impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In, Range = Out> {
-    fn apply(&self, x: ElementView<Self::Domain>, y: ElementViewMut<Self::Range>) -> SparseLinAlgResult<()> {
+    fn apply(
+        &self,
+        x: ElementView<Self::Domain>,
+        y: ElementViewMut<Self::Range>,
+    ) -> SparseLinAlgResult<()> {
         if let Some(op) = self.as_apply() {
             op.apply(x, y)
         } else {

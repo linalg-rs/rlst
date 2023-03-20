@@ -4,4 +4,5 @@ members = [
     "dense",
     "operator",
     "sparse",
+    "common",
 ]

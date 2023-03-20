@@ -1,7 +1,7 @@
 //! Linear spaces and their elements.
 
 use super::Element;
-use crate::Scalar;
+use rlst_common::types::Scalar;
 
 /// Definition of a linear space
 ///
