@@ -10,18 +10,18 @@ use rand_distr::StandardNormal;
 use super::GenericBaseMatrixMut;
 
 macro_rules! rand_impl {
-    ($HScalar:ty) => {
+    ($Scalar:ty) => {
         impl<
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-                Data: DataContainerMut<Item = $HScalar>,
-            > GenericBaseMatrixMut<$HScalar, L, Data, RS, CS>
+                Data: DataContainerMut<Item = $Scalar>,
+            > GenericBaseMatrixMut<$Scalar, L, Data, RS, CS>
         {
             /// Fill a matrix with normally distributed random numbers.
             pub fn fill_from_rand_standard_normal<R: Rng>(&mut self, rng: &mut R) {
                 let dist = StandardNormal;
-                self.for_each(|val| *val = <$HScalar>::random_scalar(rng, &dist));
+                self.for_each(|val| *val = <$Scalar>::random_scalar(rng, &dist));
             }
         }
     };

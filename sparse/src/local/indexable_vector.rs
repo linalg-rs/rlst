@@ -1,10 +1,9 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use num::{Float, Zero};
-use rlst_traits::linalg::vector_traits::*;
-use rlst_traits::linalg::*;
-use rlst_traits::types::{SparseLinAlgError, SparseLinAlgResult};
-use rlst_traits::Scalar;
-use rlst_traits::{IndexLayout, IndexType};
+use rlst_operator::linalg::*;
+use rlst_operator::types::{SparseLinAlgError, SparseLinAlgResult};
+use rlst_operator::Scalar;
+use rlst_operator::{IndexLayout, IndexType};
 
 use super::index_layout::LocalIndexLayout;
 
@@ -31,7 +30,7 @@ impl<T: Scalar> LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> IndexableVector for LocalIndexableVector<T> {
-    type T = T;
+    type Item = T;
     type Ind = LocalIndexLayout;
     type View<'a> = LocalIndexableVectorView<'a, T> where Self: 'a;
     type ViewMut<'a> = LocalIndexableVectorViewMut<'a, T> where Self: 'a;
@@ -104,7 +103,7 @@ impl<T: Scalar> IndexableVectorViewMut for LocalIndexableVectorViewMut<'_, T> {
 }
 
 impl<T: Scalar> Inner for LocalIndexableVector<T> {
-    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::T> {
+    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
         let my_view = self.view().unwrap();
         let other_view = other.view().unwrap();
         if self.index_layout().number_of_global_indices()
@@ -117,7 +116,7 @@ impl<T: Scalar> Inner for LocalIndexableVector<T> {
         let result = my_view
             .iter()
             .zip(other_view.iter())
-            .fold(<Self::T as Zero>::zero(), |acc, (&first, &second)| {
+            .fold(<Self::Item as Zero>::zero(), |acc, (&first, &second)| {
                 acc + first * second.conj()
             });
         Ok(result)
@@ -125,44 +124,44 @@ impl<T: Scalar> Inner for LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> AbsSquareSum for LocalIndexableVector<T> {
-    fn abs_square_sum(&self) -> <Self::T as Scalar>::Real {
+    fn abs_square_sum(&self) -> <Self::Item as Scalar>::Real {
         self.view()
             .unwrap()
             .iter()
-            .fold(<<Self::T as Scalar>::Real>::zero(), |acc, &elem| {
+            .fold(<<Self::Item as Scalar>::Real>::zero(), |acc, &elem| {
                 acc + elem.square()
             })
     }
 }
 
 impl<T: Scalar> Norm1 for LocalIndexableVector<T> {
-    fn norm_1(&self) -> <Self::T as Scalar>::Real {
+    fn norm_1(&self) -> <Self::Item as Scalar>::Real {
         self.view()
             .unwrap()
             .iter()
-            .fold(<<Self::T as Scalar>::Real>::zero(), |acc, &elem| {
+            .fold(<<Self::Item as Scalar>::Real>::zero(), |acc, &elem| {
                 acc + elem.abs()
             })
     }
 }
 
 impl<T: Scalar> Norm2 for LocalIndexableVector<T> {
-    fn norm_2(&self) -> <Self::T as Scalar>::Real {
-        <<Self::T as Scalar>::Real as Float>::sqrt(self.abs_square_sum())
+    fn norm_2(&self) -> <Self::Item as Scalar>::Real {
+        <<Self::Item as Scalar>::Real as Float>::sqrt(self.abs_square_sum())
     }
 }
 
 impl<T: Scalar> NormInfty for LocalIndexableVector<T> {
-    fn norm_infty(&self) -> <Self::T as Scalar>::Real {
+    fn norm_infty(&self) -> <Self::Item as Scalar>::Real {
         self.view().unwrap().iter().fold(
-            <<Self::T as Scalar>::Real as Float>::neg_infinity(),
-            |acc, &elem| <<Self::T as Scalar>::Real as Float>::max(acc, elem.abs()),
+            <<Self::Item as Scalar>::Real as Float>::neg_infinity(),
+            |acc, &elem| <<Self::Item as Scalar>::Real as Float>::max(acc, elem.abs()),
         )
     }
 }
 
 impl<T: Scalar> Swap for LocalIndexableVector<T> {
-    fn swap(&mut self, other: &mut Self) -> rlst_traits::types::SparseLinAlgResult<()> {
+    fn swap(&mut self, other: &mut Self) -> rlst_operator::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
@@ -181,7 +180,7 @@ impl<T: Scalar> Swap for LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> Fill for LocalIndexableVector<T> {
-    fn fill(&mut self, other: &Self) -> rlst_traits::types::SparseLinAlgResult<()> {
+    fn fill(&mut self, other: &Self) -> rlst_operator::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
@@ -200,7 +199,7 @@ impl<T: Scalar> Fill for LocalIndexableVector<T> {
 }
 
 impl<T: Scalar> ScalarMult for LocalIndexableVector<T> {
-    fn scalar_mult(&mut self, scalar: Self::T) {
+    fn scalar_mult(&mut self, scalar: Self::Item) {
         for elem in self.view_mut().unwrap().iter_mut() {
             *elem *= scalar;
         }
@@ -211,8 +210,8 @@ impl<T: Scalar> MultSumInto for LocalIndexableVector<T> {
     fn mult_sum_into(
         &mut self,
         other: &Self,
-        scalar: Self::T,
-    ) -> rlst_traits::types::SparseLinAlgResult<()> {
+        scalar: Self::Item,
+    ) -> rlst_operator::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {

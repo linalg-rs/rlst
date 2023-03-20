@@ -5,9 +5,9 @@ use std::marker::PhantomData;
 
 use super::index_layout::DistributedIndexLayout;
 use super::indexable_vector::DistributedIndexableVector;
-use rlst_traits::linalg::Inner;
-use rlst_traits::types::{IndexType, Scalar};
-use rlst_traits::{Element, IndexLayout, IndexableSpace, InnerProductSpace};
+use rlst_operator::linalg::Inner;
+use rlst_operator::types::{IndexType, Scalar};
+use rlst_operator::{Element, IndexLayout, IndexableSpace, InnerProductSpace};
 
 pub struct DistributedIndexableVectorSpace<'comm, T: Scalar + Equivalence, C: Communicator> {
     index_layout: &'comm DistributedIndexLayout<'comm, C>,
@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<'comm, T: Scalar + Equivalence, C: Communicator> rlst_traits::LinearSpace
+impl<'comm, T: Scalar + Equivalence, C: Communicator> rlst_operator::LinearSpace
     for DistributedIndexableVectorSpace<'comm, T, C>
 where
     T::Real: Equivalence,
@@ -93,9 +93,9 @@ where
 {
     fn inner<'b>(
         &self,
-        x: &rlst_traits::ElementView<'b, Self>,
-        other: &rlst_traits::ElementView<'b, Self>,
-    ) -> rlst_traits::SparseLinAlgResult<Self::F>
+        x: &rlst_operator::ElementView<'b, Self>,
+        other: &rlst_operator::ElementView<'b, Self>,
+    ) -> rlst_operator::SparseLinAlgResult<Self::F>
     where
         Self: 'b,
     {

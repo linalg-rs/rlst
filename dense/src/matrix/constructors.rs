@@ -5,13 +5,13 @@ use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, V
 use crate::layouts::*;
 use crate::matrix::{ColumnVectorD, Matrix, RowVectorD, SliceMatrix, SliceMatrixMut};
 use crate::traits::*;
-use crate::types::{HScalar, IndexType};
+use crate::types::{IndexType, Scalar};
 
 // Construct mutable zero matrices
 
 macro_rules! from_zeros_fixed {
     ($RS:ident, $CS:ident, $L:ident) => {
-        impl<Item: HScalar>
+        impl<Item: Scalar>
             Matrix<
                 Item,
                 BaseMatrix<Item, ArrayContainer<Item, { $RS::N * $CS::N }>, $L, $RS, $CS>,
@@ -33,7 +33,7 @@ macro_rules! from_zeros_fixed {
 
 macro_rules! from_zeros_fixed_vector {
     ($RS:ident, $CS:ident, $L:ident, $N:expr) => {
-        impl<Item: HScalar>
+        impl<Item: Scalar>
             Matrix<Item, BaseMatrix<Item, ArrayContainer<Item, $N>, $L, $RS, $CS>, $L, $RS, $CS>
         {
             /// Create a new fixed length vector.
@@ -67,7 +67,7 @@ from_zeros_fixed_vector!(Fixed3, Fixed1, ColumnVector, 3);
 from_zeros_fixed_vector!(Fixed1, Fixed2, RowVector, 2);
 from_zeros_fixed_vector!(Fixed1, Fixed3, RowVector, 3);
 
-impl<Item: HScalar, L: BaseLayoutType>
+impl<Item: Scalar, L: BaseLayoutType>
     Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, L, Dynamic, Dynamic>, L, Dynamic, Dynamic>
 {
     /// Create a new zero matrix with given number of rows and columns.
@@ -80,7 +80,7 @@ impl<Item: HScalar, L: BaseLayoutType>
     }
 }
 
-impl<Item: HScalar> RowVectorD<Item> {
+impl<Item: Scalar> RowVectorD<Item> {
     /// Create a new zero row vector with given number of elements.
     pub fn zeros_from_length(nelems: IndexType) -> Self {
         Self::from_data(
@@ -104,7 +104,7 @@ impl<Item: HScalar> RowVectorD<Item> {
     }
 }
 
-impl<Item: HScalar> ColumnVectorD<Item> {
+impl<Item: Scalar> ColumnVectorD<Item> {
     /// Create a new zero column vector with given number of elements.
     pub fn zeros_from_length(nelems: IndexType) -> Self {
         Self::from_data(
@@ -130,7 +130,7 @@ impl<Item: HScalar> ColumnVectorD<Item> {
 
 macro_rules! from_pointer_strided {
     ($RS:ident, $CS:ident, $L:ident) => {
-        impl<'a, Item: HScalar> SliceMatrixMut<'a, Item, $L, $RS, $CS> {
+        impl<'a, Item: Scalar> SliceMatrixMut<'a, Item, $L, $RS, $CS> {
             /// Create a new mutable matrix by specifying a pointer, dimension and stride tuple.
             pub unsafe fn from_pointer(
                 ptr: *mut Item,
@@ -146,7 +146,7 @@ macro_rules! from_pointer_strided {
             }
         }
 
-        impl<'a, Item: HScalar> SliceMatrix<'a, Item, $L, $RS, $CS> {
+        impl<'a, Item: Scalar> SliceMatrix<'a, Item, $L, $RS, $CS> {
             /// Create a new matrix by specifying a pointer, dimension and stride tuple.
             pub unsafe fn from_pointer(
                 ptr: *const Item,
@@ -166,7 +166,7 @@ macro_rules! from_pointer_strided {
 
 macro_rules! from_pointer {
     ($RS:ident, $CS:ident, $L:ident) => {
-        impl<'a, Item: HScalar> SliceMatrixMut<'a, Item, $L, $RS, $CS> {
+        impl<'a, Item: Scalar> SliceMatrixMut<'a, Item, $L, $RS, $CS> {
             /// Create a new mutable matrix from a given pointer and dimension.
             pub unsafe fn from_pointer(ptr: *mut Item, dim: (IndexType, IndexType)) -> Self {
                 let new_layout = $L::new(dim);
@@ -178,7 +178,7 @@ macro_rules! from_pointer {
             }
         }
 
-        impl<'a, Item: HScalar> SliceMatrix<'a, Item, $L, $RS, $CS> {
+        impl<'a, Item: Scalar> SliceMatrix<'a, Item, $L, $RS, $CS> {
             /// Create a new matrix from a given pointer and dimension.
             pub unsafe fn from_pointer(ptr: *const Item, dim: (IndexType, IndexType)) -> Self {
                 let new_layout = $L::new(dim);

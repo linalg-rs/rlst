@@ -21,12 +21,12 @@
 //! the memory layout defined in that trait.
 
 use crate::traits::{Layout, LayoutType};
-use crate::types::{HScalar, IndexType};
+use crate::types::{IndexType, Scalar};
 
 /// This trait provides unsafe access to the underlying data. See
 /// [Random Access](crate::traits::random_access) for a description.
 pub trait UnsafeRandomAccess {
-    type Item: HScalar;
+    type Item: Scalar;
 
     /// Return the element at position (`row`, `col`).
     unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item;
@@ -38,7 +38,7 @@ pub trait UnsafeRandomAccess {
 /// This trait provides unsafe mutable access to the underlying data. See
 /// [Random Access](crate::traits::random_access) for a description.
 pub trait UnsafeRandomAccessMut {
-    type Item: HScalar;
+    type Item: Scalar;
 
     /// Return a mutable reference to the element at position (`row`, `col`).
     unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item;
@@ -97,7 +97,7 @@ fn assert_dimension1d(elem: IndexType, nelems: IndexType) {
     );
 }
 
-impl<Item: HScalar, Mat: UnsafeRandomAccess<Item = Item> + Layout> RandomAccess for Mat {
+impl<Item: Scalar, Mat: UnsafeRandomAccess<Item = Item> + Layout> RandomAccess for Mat {
     fn get(&self, row: IndexType, col: IndexType) -> Self::Item {
         assert_dimension(row, col, self.layout().dim());
         unsafe { self.get_unchecked(row, col) }
@@ -109,7 +109,7 @@ impl<Item: HScalar, Mat: UnsafeRandomAccess<Item = Item> + Layout> RandomAccess 
     }
 }
 
-impl<Item: HScalar, Mat: UnsafeRandomAccessMut<Item = Item> + Layout> RandomAccessMut for Mat {
+impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Layout> RandomAccessMut for Mat {
     fn get_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item {
         assert_dimension(row, col, self.layout().dim());
         unsafe { self.get_unchecked_mut(row, col) }

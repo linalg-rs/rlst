@@ -2,10 +2,10 @@
 
 use crate::matrix::{Matrix, MatrixD};
 use crate::traits::*;
-use crate::types::{HScalar, IndexType};
+use crate::types::{IndexType, Scalar};
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -19,7 +19,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -31,7 +31,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -52,7 +52,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTraitMut<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -72,7 +72,7 @@ impl<
     }
 }
 
-impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynamic>>
+impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynamic>>
     Matrix<Item, MatImpl, L, Dynamic, Dynamic>
 {
     /// Evaluate into a new matrix.
@@ -90,7 +90,7 @@ impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynami
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         L: LayoutType,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         RS: SizeIdentifier,
@@ -103,7 +103,7 @@ impl<
     }
 }
 
-impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Fixed1, Dynamic>>
+impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Fixed1, Dynamic>>
     Matrix<Item, MatImpl, L, Fixed1, Dynamic>
 {
     /// Return length of a vector.
@@ -112,7 +112,7 @@ impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Fixed1, Dynamic
     }
 }
 
-impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Fixed1>>
+impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Fixed1>>
     Matrix<Item, MatImpl, L, Dynamic, Fixed1>
 {
     /// Return length of a vector.
@@ -123,7 +123,7 @@ impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Fixed1
 
 // macro_rules! eval_dynamic_matrix {
 //     ($L:ident) => {
-//         impl<Item: HScalar, MatImpl: MatrixTrait<Item, $L, Dynamic, Dynamic>>
+//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, Dynamic, Dynamic>>
 //             Matrix<Item, MatImpl, $L, Dynamic, Dynamic>
 //         {
 //             pub fn eval(&self) -> MatrixD<Item, $L> {
@@ -140,7 +140,7 @@ impl<Item: HScalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Fixed1
 
 // macro_rules! eval_fixed_matrix {
 //     ($L:ident, $RS:ty, $CS:ty) => {
-//         impl<Item: HScalar, MatImpl: MatrixTrait<Item, $L, $RS, $CS>>
+//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, $RS, $CS>>
 //             Matrix<Item, MatImpl, $L, $RS, $CS>
 //         {
 //             pub fn eval(

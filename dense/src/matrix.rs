@@ -7,7 +7,7 @@
 //! types of implementations. The only condition is that the implementation itself
 //! implements [MatrixTrait] or [MatrixTraitMut].
 //! A matrix is generic over the following parameters:
-//! - `Item`. Implements the [HScalar] trait and represents the underlying scalar type
+//! - `Item`. Implements the [Scalar] trait and represents the underlying scalar type
 //!           of the matrix.
 //! - `MatImpl`. The actual implementation of the matrix. It must itself implement the
 //!              trait [MatrixTrait] or [MatrixTraitMut] depending on whether mutable access
@@ -32,7 +32,7 @@ use crate::data_container::{
 use crate::layouts::*;
 use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
-use crate::types::HScalar;
+use crate::types::Scalar;
 use std::marker::PhantomData;
 
 /// A [RefMat] is a matrix whose implementation is a reference to another matrix.
@@ -108,14 +108,14 @@ pub struct Matrix<Item, MatImpl, L, RS, CS>(
     PhantomData<CS>,
 )
 where
-    Item: HScalar,
+    Item: Scalar,
     L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
     MatImpl: MatrixTrait<Item, L, RS, CS>;
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
@@ -134,7 +134,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,

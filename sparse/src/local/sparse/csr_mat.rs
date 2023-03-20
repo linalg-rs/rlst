@@ -1,9 +1,9 @@
 //! Definition of CSR matrices.
 
 use crate::local::sparse::SparseMatType;
-use rlst_traits::types::SparseLinAlgResult;
+use rlst_operator::types::SparseLinAlgResult;
 
-use rlst_traits::types::{IndexType, Scalar};
+use rlst_operator::types::{IndexType, Scalar};
 
 pub struct CsrMatrix<T: Scalar> {
     mat_type: SparseMatType,

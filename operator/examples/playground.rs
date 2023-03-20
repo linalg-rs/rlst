@@ -1,4 +1,4 @@
-pub use rlst_traits::*;
+pub use rlst_operator::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 

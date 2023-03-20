@@ -1,14 +1,17 @@
 [package]
-name = "rlst-traits"
+name = "rlst-algorithms"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rlst-traits = {path = "../traits"}
 num = "0.4"
+
+[dev-dependencies]
 cauchy = "0.4"
-thiserror = "1"
+float_eq = { version = "1", features = ["num"] }
 
 [lib]
-name = "rlst_traits"
+name = "rlst_algorithms"
