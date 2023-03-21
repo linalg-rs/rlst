@@ -11,11 +11,11 @@
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::layouts::*;
 use crate::traits::*;
-use crate::types::{HScalar, IndexType};
+use crate::types::{IndexType, Scalar};
 use std::marker::PhantomData;
 
 pub struct BaseMatrix<
-    Item: HScalar,
+    Item: Scalar,
     Data: DataContainer<Item = Item>,
     L: LayoutType,
     RS: SizeIdentifier,
@@ -28,7 +28,7 @@ pub struct BaseMatrix<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -52,7 +52,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -71,7 +71,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainerMut<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -90,7 +90,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -106,7 +106,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -118,7 +118,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -142,7 +142,7 @@ impl<
 macro_rules! vector_length {
     ($Layout:ty) => {
         impl<
-                Item: HScalar,
+                Item: Scalar,
                 Data: DataContainer<Item = Item>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
@@ -158,7 +158,7 @@ macro_rules! vector_length {
 vector_length!(RowVector);
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainerMut<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,

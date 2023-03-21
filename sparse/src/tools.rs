@@ -1,7 +1,7 @@
 //! Various tools
 
 use mpi::traits::*;
-use rlst_traits::types::IndexType;
+use rlst_common::types::IndexType;
 
 /// Check if an Option has a ```Some``` value on exactly one process (typically root).
 ///

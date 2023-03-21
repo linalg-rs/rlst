@@ -1,6 +1,6 @@
 //! Definition of Index Sets
 
-use crate::{IndexType, SparseLinAlgResult};
+use rlst_common::types::{IndexType, SparseLinAlgResult};
 
 pub trait IndexLayout {
     /// The local index range.

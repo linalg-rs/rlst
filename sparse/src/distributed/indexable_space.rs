@@ -5,9 +5,10 @@ use std::marker::PhantomData;
 
 use super::index_layout::DistributedIndexLayout;
 use super::indexable_vector::DistributedIndexableVector;
-use rlst_traits::linalg::Inner;
-use rlst_traits::types::{IndexType, Scalar};
-use rlst_traits::{Element, IndexLayout, IndexableSpace, InnerProductSpace};
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::Inner;
+use rlst_common::types::{IndexType, Scalar};
+use rlst_operator::{Element, IndexableSpace, InnerProductSpace};
 
 pub struct DistributedIndexableVectorSpace<'comm, T: Scalar + Equivalence, C: Communicator> {
     index_layout: &'comm DistributedIndexLayout<'comm, C>,
@@ -55,7 +56,7 @@ where
     }
 }
 
-impl<'comm, T: Scalar + Equivalence, C: Communicator> rlst_traits::LinearSpace
+impl<'comm, T: Scalar + Equivalence, C: Communicator> rlst_operator::LinearSpace
     for DistributedIndexableVectorSpace<'comm, T, C>
 where
     T::Real: Equivalence,
@@ -76,13 +77,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableSpace
 where
     T::Real: Equivalence,
 {
-    type Ind = DistributedIndexLayout<'a, C>;
     fn dimension(&self) -> IndexType {
-        self.index_layout().number_of_global_indices()
-    }
-
-    fn index_layout(&self) -> &Self::Ind {
-        &self.index_layout
+        self.index_layout.number_of_global_indices()
     }
 }
 
@@ -93,9 +89,9 @@ where
 {
     fn inner<'b>(
         &self,
-        x: &rlst_traits::ElementView<'b, Self>,
-        other: &rlst_traits::ElementView<'b, Self>,
-    ) -> rlst_traits::SparseLinAlgResult<Self::F>
+        x: &rlst_operator::ElementView<'b, Self>,
+        other: &rlst_operator::ElementView<'b, Self>,
+    ) -> rlst_common::types::SparseLinAlgResult<Self::F>
     where
         Self: 'b,
     {

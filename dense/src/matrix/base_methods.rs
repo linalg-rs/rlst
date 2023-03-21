@@ -9,7 +9,7 @@ use crate::types::*;
 use super::{GenericBaseMatrix, GenericBaseMatrixMut};
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
@@ -28,7 +28,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainer<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -56,7 +56,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         Data: DataContainerMut<Item = Item>,
         L: LayoutType,
         RS: SizeIdentifier,

@@ -33,7 +33,7 @@ pub trait Dot<Rhs> {
 
 /// This trait is an interface for the `dgemm` operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
 pub trait MatMul<
-    Item: HScalar,
+    Item: Scalar,
     L1: StridedLayoutType,
     L2: StridedLayoutType,
     L3: StridedLayoutType,
@@ -59,30 +59,30 @@ pub trait MatMul<
 }
 
 macro_rules! dot_impl {
-    ($HScalar:ty) => {
+    ($Scalar:ty) => {
         // Matrix x Matrix = Matrix
         impl<
                 L1: StridedLayoutType,
                 L2: StridedLayoutType,
-                Data1: DataContainer<Item = $HScalar>,
-                Data2: DataContainer<Item = $HScalar>,
-            > Dot<GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Dynamic>>
-            for GenericBaseMatrix<$HScalar, L1, Data1, Dynamic, Dynamic>
+                Data1: DataContainer<Item = $Scalar>,
+                Data2: DataContainer<Item = $Scalar>,
+            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>>
+            for GenericBaseMatrix<$Scalar, L1, Data1, Dynamic, Dynamic>
         {
             type Output =
-                GenericBaseMatrix<$HScalar, RowMajor, VectorContainer<$HScalar>, Dynamic, Dynamic>;
+                GenericBaseMatrix<$Scalar, RowMajor, VectorContainer<$Scalar>, Dynamic, Dynamic>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Dynamic>,
+                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res =
                     Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
-                <$HScalar>::matmul(
-                    num::cast::<f64, $HScalar>(1.0).unwrap(),
+                <$Scalar>::matmul(
+                    num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
-                    num::cast::<f64, $HScalar>(0.0).unwrap(),
+                    num::cast::<f64, $Scalar>(0.0).unwrap(),
                     &mut res,
                 );
                 res
@@ -93,25 +93,25 @@ macro_rules! dot_impl {
         impl<
                 L1: StridedLayoutType,
                 L2: StridedLayoutType,
-                Data1: DataContainer<Item = $HScalar>,
-                Data2: DataContainer<Item = $HScalar>,
-            > Dot<GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Dynamic>>
-            for GenericBaseMatrix<$HScalar, L1, Data1, Fixed1, Dynamic>
+                Data1: DataContainer<Item = $Scalar>,
+                Data2: DataContainer<Item = $Scalar>,
+            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>>
+            for GenericBaseMatrix<$Scalar, L1, Data1, Fixed1, Dynamic>
         {
             type Output =
-                GenericBaseMatrix<$HScalar, RowVector, VectorContainer<$HScalar>, Fixed1, Dynamic>;
+                GenericBaseMatrix<$Scalar, RowVector, VectorContainer<$Scalar>, Fixed1, Dynamic>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Dynamic>,
+                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res =
                     Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
-                <$HScalar>::matmul(
-                    num::cast::<f64, $HScalar>(1.0).unwrap(),
+                <$Scalar>::matmul(
+                    num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
-                    num::cast::<f64, $HScalar>(0.0).unwrap(),
+                    num::cast::<f64, $Scalar>(0.0).unwrap(),
                     &mut res,
                 );
                 res
@@ -122,30 +122,25 @@ macro_rules! dot_impl {
         impl<
                 L1: StridedLayoutType,
                 L2: StridedLayoutType,
-                Data1: DataContainer<Item = $HScalar>,
-                Data2: DataContainer<Item = $HScalar>,
-            > Dot<GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Fixed1>>
-            for GenericBaseMatrix<$HScalar, L1, Data1, Dynamic, Dynamic>
+                Data1: DataContainer<Item = $Scalar>,
+                Data2: DataContainer<Item = $Scalar>,
+            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Fixed1>>
+            for GenericBaseMatrix<$Scalar, L1, Data1, Dynamic, Dynamic>
         {
-            type Output = GenericBaseMatrix<
-                $HScalar,
-                ColumnVector,
-                VectorContainer<$HScalar>,
-                Dynamic,
-                Fixed1,
-            >;
+            type Output =
+                GenericBaseMatrix<$Scalar, ColumnVector, VectorContainer<$Scalar>, Dynamic, Fixed1>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$HScalar, L2, Data2, Dynamic, Fixed1>,
+                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Fixed1>,
             ) -> Self::Output {
                 let mut res =
                     Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
-                <$HScalar>::matmul(
-                    num::cast::<f64, $HScalar>(1.0).unwrap(),
+                <$Scalar>::matmul(
+                    num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
-                    num::cast::<f64, $HScalar>(0.0).unwrap(),
+                    num::cast::<f64, $Scalar>(0.0).unwrap(),
                     &mut res,
                 );
                 res
@@ -156,20 +151,20 @@ macro_rules! dot_impl {
 
 macro_rules! matmul_impl {
 
-    ($HScalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, real) => {
+    ($Scalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, real) => {
 
         impl<
         L1: StridedLayoutType,
         L2: StridedLayoutType,
         L3: StridedLayoutType,
-        Data1: DataContainer<Item = $HScalar>,
-        Data2: DataContainer<Item = $HScalar>,
-        Data3: DataContainerMut<Item = $HScalar>
+        Data1: DataContainer<Item = $Scalar>,
+        Data2: DataContainer<Item = $Scalar>,
+        Data3: DataContainerMut<Item = $Scalar>
 >
 
 
         MatMul<
-            $HScalar,
+            $Scalar,
             L1,
             L2,
             L3,
@@ -184,14 +179,14 @@ macro_rules! matmul_impl {
             $CS3>
 
 
-        for $HScalar {
+        for $Scalar {
 
             fn matmul(
-                alpha: $HScalar,
-                mat_a: &GenericBaseMatrix<$HScalar, L1, Data1, $RS1, $CS1>,
-                mat_b: &GenericBaseMatrix<$HScalar, L2, Data2, $RS2, $CS2>,
-                beta: $HScalar,
-                mat_c: &mut GenericBaseMatrixMut<$HScalar, L3, Data3, $RS3, $CS3>
+                alpha: $Scalar,
+                mat_a: &GenericBaseMatrix<$Scalar, L1, Data1, $RS1, $CS1>,
+                mat_b: &GenericBaseMatrix<$Scalar, L2, Data2, $RS2, $CS2>,
+                beta: $Scalar,
+                mat_c: &mut GenericBaseMatrixMut<$Scalar, L3, Data3, $RS3, $CS3>
             ) {
                 let dim1 = mat_a.layout().dim();
                 let dim2 = mat_b.layout().dim();
@@ -239,20 +234,20 @@ macro_rules! matmul_impl {
 
         };
 
-        ($HScalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, complex) => {
+        ($Scalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, complex) => {
 
             impl<
             L1: StridedLayoutType,
             L2: StridedLayoutType,
             L3: StridedLayoutType,
-            Data1: DataContainer<Item = $HScalar>,
-            Data2: DataContainer<Item = $HScalar>,
-            Data3: DataContainerMut<Item = $HScalar>
+            Data1: DataContainer<Item = $Scalar>,
+            Data2: DataContainer<Item = $Scalar>,
+            Data3: DataContainerMut<Item = $Scalar>
     >
 
 
             MatMul<
-                $HScalar,
+                $Scalar,
                 L1,
                 L2,
                 L3,
@@ -267,14 +262,14 @@ macro_rules! matmul_impl {
                 $CS3>
 
 
-            for $HScalar {
+            for $Scalar {
 
                 fn matmul(
-                    alpha: $HScalar,
-                    mat_a: &GenericBaseMatrix<$HScalar, L1, Data1, $RS1, $CS1>,
-                    mat_b: &GenericBaseMatrix<$HScalar, L2, Data2, $RS2, $CS2>,
-                    beta: $HScalar,
-                    mat_c: &mut GenericBaseMatrixMut<$HScalar, L3, Data3, $RS3, $CS3>
+                    alpha: $Scalar,
+                    mat_a: &GenericBaseMatrix<$Scalar, L1, Data1, $RS1, $CS1>,
+                    mat_b: &GenericBaseMatrix<$Scalar, L2, Data2, $RS2, $CS2>,
+                    beta: $Scalar,
+                    mat_c: &mut GenericBaseMatrixMut<$Scalar, L3, Data3, $RS3, $CS3>
                 ) {
                     let dim1 = mat_a.layout().dim();
                     let dim2 = mat_b.layout().dim();
@@ -309,14 +304,14 @@ macro_rules! matmul_impl {
                             k,
                             n,
                             alpha,
-                            mat_a.get_pointer() as *const [<$HScalar as HScalar>::Real; 2],
+                            mat_a.get_pointer() as *const [<$Scalar as Scalar>::Real; 2],
                             rsa,
                             csa,
-                            mat_b.get_pointer() as *const [<$HScalar as HScalar>::Real; 2],
+                            mat_b.get_pointer() as *const [<$Scalar as Scalar>::Real; 2],
                             rsb,
                             csb,
                             beta,
-                            mat_c.get_pointer_mut() as *mut [<$HScalar as HScalar>::Real; 2],
+                            mat_c.get_pointer_mut() as *mut [<$Scalar as Scalar>::Real; 2],
                             rsc,
                             csc,
                         );
@@ -362,7 +357,7 @@ mod test {
     use rand::prelude::*;
 
     fn matmul_expect<
-        Item: HScalar,
+        Item: Scalar,
         L1: LayoutType,
         L2: LayoutType,
         L3: LayoutType,
@@ -398,13 +393,13 @@ mod test {
     }
 
     macro_rules! matmul_test {
-        ($HScalar:ty, $fname:ident) => {
+        ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(4, 6);
-                let mut mat_b = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(6, 5);
-                let mut mat_c_actual = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(4, 5);
-                let mut mat_c_expect = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(4, 5);
+                let mut mat_a = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
+                let mut mat_b = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(6, 5);
+                let mut mat_c_actual = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 5);
+                let mut mat_c_expect = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 5);
 
                 let dist = StandardNormal;
 
@@ -418,11 +413,11 @@ mod test {
                     *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
                 }
 
-                let alpha = <$HScalar>::random_scalar(&mut rng, &dist);
-                let beta = <$HScalar>::random_scalar(&mut rng, &dist);
+                let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
+                let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$HScalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d(index);
@@ -434,13 +429,13 @@ mod test {
     }
 
     macro_rules! col_matvec_test {
-        ($HScalar:ty, $fname:ident) => {
+        ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(4, 6);
-                let mut mat_b = ColumnVectorD::<$HScalar>::zeros_from_length(6);
-                let mut mat_c_actual = ColumnVectorD::<$HScalar>::zeros_from_length(4);
-                let mut mat_c_expect = ColumnVectorD::<$HScalar>::zeros_from_length(4);
+                let mut mat_a = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
+                let mut mat_b = ColumnVectorD::<$Scalar>::zeros_from_length(6);
+                let mut mat_c_actual = ColumnVectorD::<$Scalar>::zeros_from_length(4);
+                let mut mat_c_expect = ColumnVectorD::<$Scalar>::zeros_from_length(4);
 
                 let dist = StandardNormal;
 
@@ -454,11 +449,11 @@ mod test {
                     *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
                 }
 
-                let alpha = <$HScalar>::random_scalar(&mut rng, &dist);
-                let beta = <$HScalar>::random_scalar(&mut rng, &dist);
+                let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
+                let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$HScalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d(index);
@@ -470,13 +465,13 @@ mod test {
     }
 
     macro_rules! row_matvec_test {
-        ($HScalar:ty, $fname:ident) => {
+        ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = RowVectorD::<$HScalar>::zeros_from_length(4);
-                let mut mat_b = MatrixD::<$HScalar, RowMajor>::zeros_from_dim(4, 6);
-                let mut mat_c_actual = RowVectorD::<$HScalar>::zeros_from_length(6);
-                let mut mat_c_expect = RowVectorD::<$HScalar>::zeros_from_length(6);
+                let mut mat_a = RowVectorD::<$Scalar>::zeros_from_length(4);
+                let mut mat_b = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
+                let mut mat_c_actual = RowVectorD::<$Scalar>::zeros_from_length(6);
+                let mut mat_c_expect = RowVectorD::<$Scalar>::zeros_from_length(6);
 
                 let dist = StandardNormal;
 
@@ -490,11 +485,11 @@ mod test {
                     *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
                 }
 
-                let alpha = <$HScalar>::random_scalar(&mut rng, &dist);
-                let beta = <$HScalar>::random_scalar(&mut rng, &dist);
+                let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
+                let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$HScalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d(index);

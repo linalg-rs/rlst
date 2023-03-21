@@ -1,4 +1,5 @@
-pub use rlst_traits::*;
+pub use rlst_common::types::*;
+pub use rlst_operator::*;
 use std::fmt::Debug;
 
 pub struct PolynomialSpace;

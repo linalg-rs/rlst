@@ -1,4 +1,5 @@
-use rlst_traits::{IndexLayout, IndexType, SparseLinAlgError, SparseLinAlgResult};
+use crate::traits::index_layout::IndexLayout;
+use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
 
 pub struct LocalIndexLayout {
     size: IndexType,

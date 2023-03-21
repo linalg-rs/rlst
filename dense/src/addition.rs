@@ -27,7 +27,7 @@ pub struct Addition<Item, MatImpl1, MatImpl2, B, L1, L2, RS, CS>(
     PhantomData<CS>,
 )
 where
-    Item: HScalar,
+    Item: Scalar,
     B: BaseLayoutType,
     L1: LayoutType<IndexLayout = B>,
     L2: LayoutType<IndexLayout = B>,
@@ -37,7 +37,7 @@ where
     MatImpl2: MatrixTrait<Item, L2, RS, CS>;
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -75,7 +75,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -93,7 +93,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -108,7 +108,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -136,7 +136,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -155,7 +155,7 @@ impl<
 
 impl<
         'a,
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -175,7 +175,7 @@ impl<
 
 impl<
         'a,
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,
@@ -195,7 +195,7 @@ impl<
 
 impl<
         'a,
-        Item: HScalar,
+        Item: Scalar,
         B: BaseLayoutType,
         MatImpl1: MatrixTrait<Item, L1, RS, CS>,
         MatImpl2: MatrixTrait<Item, L2, RS, CS>,

@@ -7,11 +7,11 @@
 //!
 //!
 
-use crate::types::HScalar;
 use crate::types::IndexType;
+use crate::types::Scalar;
 
 pub trait DataContainer {
-    type Item: HScalar;
+    type Item: Scalar;
 
     /// Access the container unchecked.
     unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item;
@@ -77,25 +77,25 @@ pub trait DataContainerMut: DataContainer {
 }
 
 /// A container that uses dynamic vectors.
-pub struct VectorContainer<Item: HScalar> {
+pub struct VectorContainer<Item: Scalar> {
     data: Vec<Item>,
 }
 
-pub struct ArrayContainer<Item: HScalar, const N: usize> {
+pub struct ArrayContainer<Item: Scalar, const N: usize> {
     data: [Item; N],
 }
 
 /// A container that takes a reference to a slice.
-pub struct SliceContainer<'a, Item: HScalar> {
+pub struct SliceContainer<'a, Item: Scalar> {
     data: &'a [Item],
 }
 
 /// A container that takes a mutable reference to a slice.
-pub struct SliceContainerMut<'a, Item: HScalar> {
+pub struct SliceContainerMut<'a, Item: Scalar> {
     data: &'a mut [Item],
 }
 
-impl<Item: HScalar> VectorContainer<Item> {
+impl<Item: Scalar> VectorContainer<Item> {
     /// New vector container by specifying the number of elements.
     ///
     /// The container is initialized with zeros by default.
@@ -106,7 +106,7 @@ impl<Item: HScalar> VectorContainer<Item> {
     }
 }
 
-impl<Item: HScalar, const N: usize> ArrayContainer<Item, N> {
+impl<Item: Scalar, const N: usize> ArrayContainer<Item, N> {
     pub fn new() -> ArrayContainer<Item, N> {
         ArrayContainer::<Item, N> {
             data: [num::cast::<f64, Item>(0.0).unwrap(); N],
@@ -114,27 +114,27 @@ impl<Item: HScalar, const N: usize> ArrayContainer<Item, N> {
     }
 }
 
-impl<Item: HScalar, const N: usize> Default for ArrayContainer<Item, N> {
+impl<Item: Scalar, const N: usize> Default for ArrayContainer<Item, N> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, Item: HScalar> SliceContainer<'a, Item> {
+impl<'a, Item: Scalar> SliceContainer<'a, Item> {
     /// New slice container from a reference.
     pub fn new(slice: &'a [Item]) -> SliceContainer<Item> {
         SliceContainer::<Item> { data: slice }
     }
 }
 
-impl<'a, Item: HScalar> SliceContainerMut<'a, Item> {
+impl<'a, Item: Scalar> SliceContainerMut<'a, Item> {
     /// New mutable slice container from mutable reference.
     pub fn new(slice: &'a mut [Item]) -> SliceContainerMut<Item> {
         SliceContainerMut::<Item> { data: slice }
     }
 }
 
-impl<Item: HScalar> DataContainer for VectorContainer<Item> {
+impl<Item: Scalar> DataContainer for VectorContainer<Item> {
     type Item = Item;
 
     unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
@@ -150,7 +150,7 @@ impl<Item: HScalar> DataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item: HScalar> DataContainerMut for VectorContainer<Item> {
+impl<Item: Scalar> DataContainerMut for VectorContainer<Item> {
     unsafe fn get_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
         self.data.get_unchecked_mut(index)
     }
@@ -160,7 +160,7 @@ impl<Item: HScalar> DataContainerMut for VectorContainer<Item> {
     }
 }
 
-impl<Item: HScalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
+impl<Item: Scalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
     type Item = Item;
 
     unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
@@ -176,7 +176,7 @@ impl<Item: HScalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
     }
 }
 
-impl<Item: HScalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> {
+impl<Item: Scalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> {
     unsafe fn get_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
         self.data.get_unchecked_mut(index)
     }
@@ -186,7 +186,7 @@ impl<Item: HScalar, const N: usize> DataContainerMut for ArrayContainer<Item, N>
     }
 }
 
-impl<'a, Item: HScalar> DataContainer for SliceContainer<'a, Item> {
+impl<'a, Item: Scalar> DataContainer for SliceContainer<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
@@ -202,7 +202,7 @@ impl<'a, Item: HScalar> DataContainer for SliceContainer<'a, Item> {
     }
 }
 
-impl<'a, Item: HScalar> DataContainer for SliceContainerMut<'a, Item> {
+impl<'a, Item: Scalar> DataContainer for SliceContainerMut<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
@@ -218,7 +218,7 @@ impl<'a, Item: HScalar> DataContainer for SliceContainerMut<'a, Item> {
     }
 }
 
-impl<'a, Item: HScalar> DataContainerMut for SliceContainerMut<'a, Item> {
+impl<'a, Item: Scalar> DataContainerMut for SliceContainerMut<'a, Item> {
     unsafe fn get_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
         self.data.get_unchecked_mut(index)
     }

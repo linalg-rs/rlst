@@ -24,6 +24,8 @@ rand_distr = "0.4"
 thiserror = "1.0"
 matrixmultiply = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
+rlst-operator = {path = "../operator"}
+rlst-common = {path = "../common"}
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

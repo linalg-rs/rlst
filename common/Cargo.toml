@@ -1,5 +1,5 @@
 [package]
-name = "rlst-traits"
+name = "rlst-common"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,4 +11,4 @@ cauchy = "0.4"
 thiserror = "1"
 
 [lib]
-name = "rlst_traits"
+name = "rlst_common"

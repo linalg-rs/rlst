@@ -2,6 +2,7 @@
 
 members = [
     "dense",
-    "traits",
+    "operator",
     "sparse",
+    "common",
 ]

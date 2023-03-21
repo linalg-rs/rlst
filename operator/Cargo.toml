@@ -1,19 +1,15 @@
 [package]
-name = "rlst-sparse"
+name = "rlst-operator"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
-mpi = "0.6.*"
 num = "0.4"
-
-[dev-dependencies]
 cauchy = "0.4"
-float_eq = { version = "1", features = ["num"] }
+thiserror = "1"
 
 [lib]
-name = "rlst_sparse"
+name = "rlst_operator"

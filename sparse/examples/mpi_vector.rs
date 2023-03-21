@@ -1,12 +1,12 @@
 //! Example file for creating vectors.
 
 use mpi::traits::*;
+use rlst_operator::Element;
+use rlst_operator::LinearSpace;
 use rlst_sparse::distributed::index_layout::DistributedIndexLayout;
 use rlst_sparse::distributed::indexable_space::DistributedIndexableVectorSpace;
 use rlst_sparse::local::indexable_vector::LocalIndexableVector;
-use rlst_traits::linalg::*;
-use rlst_traits::Element;
-use rlst_traits::LinearSpace;
+use rlst_sparse::traits::indexable_vector::*;
 
 fn main() {
     let universe = mpi::initialize().unwrap();

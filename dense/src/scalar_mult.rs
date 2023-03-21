@@ -8,7 +8,7 @@
 use crate::matrix::*;
 use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
-use crate::types::{c32, c64, HScalar, IndexType};
+use crate::types::{c32, c64, IndexType, Scalar};
 use std::marker::PhantomData;
 
 /// This type represents the multiplication of a matrix with a scalar.
@@ -28,14 +28,14 @@ pub struct ScalarMult<Item, MatImpl, L, RS, CS>(
     PhantomData<CS>,
 )
 where
-    Item: HScalar,
+    Item: Scalar,
     L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
     MatImpl: MatrixTrait<Item, L, RS, CS>;
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -55,7 +55,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -67,7 +67,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -83,7 +83,7 @@ impl<
 }
 
 impl<
-        Item: HScalar,
+        Item: Scalar,
         MatImpl: MatrixTrait<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,
@@ -104,63 +104,63 @@ impl<
 }
 
 macro_rules! scalar_mult_impl {
-    ($HScalar:ty) => {
+    ($Scalar:ty) => {
         impl<
-                MatImpl: MatrixTrait<$HScalar, L, RS, CS>,
+                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > std::ops::Mul<Matrix<$HScalar, MatImpl, L, RS, CS>> for $HScalar
+            > std::ops::Mul<Matrix<$Scalar, MatImpl, L, RS, CS>> for $Scalar
         {
-            type Output = ScalarProdMat<$HScalar, MatImpl, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatImpl, L, RS, CS>;
 
-            fn mul(self, rhs: Matrix<$HScalar, MatImpl, L, RS, CS>) -> Self::Output {
+            fn mul(self, rhs: Matrix<$Scalar, MatImpl, L, RS, CS>) -> Self::Output {
                 Matrix::new(ScalarMult::new(rhs, self))
             }
         }
 
         impl<
                 'a,
-                MatImpl: MatrixTrait<$HScalar, L, RS, CS>,
+                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > std::ops::Mul<&'a Matrix<$HScalar, MatImpl, L, RS, CS>> for $HScalar
+            > std::ops::Mul<&'a Matrix<$Scalar, MatImpl, L, RS, CS>> for $Scalar
         {
             type Output =
-                ScalarProdMat<$HScalar, MatrixRef<'a, $HScalar, MatImpl, L, RS, CS>, L, RS, CS>;
+                ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, L, RS, CS>, L, RS, CS>;
 
-            fn mul(self, rhs: &'a Matrix<$HScalar, MatImpl, L, RS, CS>) -> Self::Output {
+            fn mul(self, rhs: &'a Matrix<$Scalar, MatImpl, L, RS, CS>) -> Self::Output {
                 ScalarProdMat::new(ScalarMult::new(Matrix::from_ref(rhs), self))
             }
         }
 
         impl<
-                MatImpl: MatrixTrait<$HScalar, L, RS, CS>,
+                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > std::ops::Mul<$HScalar> for Matrix<$HScalar, MatImpl, L, RS, CS>
+            > std::ops::Mul<$Scalar> for Matrix<$Scalar, MatImpl, L, RS, CS>
         {
-            type Output = ScalarProdMat<$HScalar, MatImpl, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatImpl, L, RS, CS>;
 
-            fn mul(self, rhs: $HScalar) -> Self::Output {
+            fn mul(self, rhs: $Scalar) -> Self::Output {
                 Matrix::new(ScalarMult::new(self, rhs))
             }
         }
 
         impl<
                 'a,
-                MatImpl: MatrixTrait<$HScalar, L, RS, CS>,
+                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > std::ops::Mul<$HScalar> for &'a Matrix<$HScalar, MatImpl, L, RS, CS>
+            > std::ops::Mul<$Scalar> for &'a Matrix<$Scalar, MatImpl, L, RS, CS>
         {
             type Output =
-                ScalarProdMat<$HScalar, MatrixRef<'a, $HScalar, MatImpl, L, RS, CS>, L, RS, CS>;
+                ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, L, RS, CS>, L, RS, CS>;
 
-            fn mul(self, rhs: $HScalar) -> Self::Output {
+            fn mul(self, rhs: $Scalar) -> Self::Output {
                 ScalarProdMat::new(ScalarMult::new(Matrix::from_ref(self), rhs))
             }
         }

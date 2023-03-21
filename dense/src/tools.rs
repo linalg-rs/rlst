@@ -8,10 +8,10 @@ use rand_distr::Distribution;
 /// from a given random number generator and distribution. For complex types the
 /// generator and distribution are separately applied to obtain the real and imaginary
 /// part of the random number.
-pub trait RandScalar: HScalar {
+pub trait RandScalar: Scalar {
     /// Returns a random number from a given random number generator `rng` and associated
     /// distribution `dist`.
-    fn random_scalar<R: Rng, D: Distribution<<Self as HScalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self;
@@ -30,7 +30,7 @@ impl RandScalar for f64 {
 }
 
 impl RandScalar for c32 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as HScalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {
@@ -39,7 +39,7 @@ impl RandScalar for c32 {
 }
 
 impl RandScalar for c64 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as HScalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {

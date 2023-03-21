@@ -5,11 +5,11 @@ use crate::base_matrix::BaseMatrix;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::layouts::*;
 use crate::traits::*;
-use crate::types::{HScalar, IndexType};
+use crate::types::{IndexType, Scalar};
 
 macro_rules! block_matrix {
     ($Layout:ident, $StrideLayout:ident, $RS:ident, $CS:ident) => {
-        impl<Item: HScalar, Data: DataContainer<Item = Item>>
+        impl<Item: Scalar, Data: DataContainer<Item = Item>>
             Matrix<Item, BaseMatrix<Item, Data, $Layout, $RS, $CS>, $Layout, $RS, $CS>
         {
             /// Return a new matrix that is a subblock of another matrix.
@@ -38,7 +38,7 @@ macro_rules! block_matrix {
                 }
             }
         }
-        impl<Item: HScalar, Data: DataContainerMut<Item = Item>>
+        impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
             Matrix<Item, BaseMatrix<Item, Data, $Layout, $RS, $CS>, $Layout, $RS, $CS>
         {
             /// Return a new matrix that is a mutable subblock of another matrix.
@@ -73,7 +73,7 @@ macro_rules! block_matrix {
 
 macro_rules! subdivide_matrix {
     ($Layout:ident, $StrideLayout:ident) => {
-        impl<Item: HScalar, Data: DataContainerMut<Item = Item>>
+        impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
             GenericBaseMatrixMut<Item, $Layout, Data, Dynamic, Dynamic>
         {
             /// Split a mutable matrix into four mutable subblocks.

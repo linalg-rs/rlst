@@ -2,13 +2,15 @@
 use crate::local::indexable_vector::{
     LocalIndexableVector, LocalIndexableVectorView, LocalIndexableVectorViewMut,
 };
+use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::{AbsSquareSum, Inner, Norm1, Norm2, NormInfty};
+use crate::traits::indexable_vector::{
+    IndexableVector, IndexableVectorView, IndexableVectorViewMut,
+};
 use mpi::datatype::Partition;
 use mpi::traits::*;
 use num::{Float, Zero};
-use rlst_traits::linalg::*;
-use rlst_traits::linalg::{Inner, Norm1, Norm2, NormInfty};
-use rlst_traits::types::SparseLinAlgResult;
-use rlst_traits::{linalg::IndexableVectorView, IndexLayout, Scalar};
+use rlst_common::types::{Scalar, SparseLinAlgResult};
 
 use super::index_layout::DistributedIndexLayout;
 
@@ -83,7 +85,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedIndexableVector<'a
 impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector
     for DistributedIndexableVector<'a, T, C>
 {
-    type T = T;
+    type Item = T;
     type View<'b> = LocalIndexableVectorView<'b, T> where Self: 'b;
     type ViewMut<'b> = LocalIndexableVectorViewMut<'b, T> where Self: 'b;
     type Ind = DistributedIndexLayout<'a, C>;
@@ -102,7 +104,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector
 }
 
 impl<T: Scalar + Equivalence, C: Communicator> Inner for DistributedIndexableVector<'_, T, C> {
-    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::T> {
+    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
         let result;
 
         if let Ok(local_result) = self.local.inner(&other.local()) {
@@ -130,12 +132,12 @@ impl<T: Scalar + Equivalence, C: Communicator> AbsSquareSum for DistributedIndex
 where
     T::Real: Equivalence,
 {
-    fn abs_square_sum(&self) -> <Self::T as Scalar>::Real {
+    fn abs_square_sum(&self) -> <Self::Item as Scalar>::Real {
         let comm = self.index_layout.comm();
 
         let local_result = self.local.abs_square_sum();
 
-        let mut global_result = <<Self::T as Scalar>::Real>::zero();
+        let mut global_result = <<Self::Item as Scalar>::Real>::zero();
         comm.all_reduce_into(
             &local_result,
             &mut global_result,
@@ -149,12 +151,12 @@ impl<T: Scalar + Equivalence, C: Communicator> Norm1 for DistributedIndexableVec
 where
     T::Real: Equivalence,
 {
-    fn norm_1(&self) -> <Self::T as Scalar>::Real {
+    fn norm_1(&self) -> <Self::Item as Scalar>::Real {
         let comm = self.index_layout.comm();
 
         let local_result = self.local.norm_1();
 
-        let mut global_result = <<Self::T as Scalar>::Real as Zero>::zero();
+        let mut global_result = <<Self::Item as Scalar>::Real as Zero>::zero();
         comm.all_reduce_into(
             &local_result,
             &mut global_result,
@@ -168,7 +170,7 @@ impl<T: Scalar + Equivalence, C: Communicator> Norm2 for DistributedIndexableVec
 where
     T::Real: Equivalence,
 {
-    fn norm_2(&self) -> <Self::T as Scalar>::Real {
+    fn norm_2(&self) -> <Self::Item as Scalar>::Real {
         Float::sqrt(self.abs_square_sum())
     }
 }
@@ -177,12 +179,12 @@ impl<T: Scalar + Equivalence, C: Communicator> NormInfty for DistributedIndexabl
 where
     T::Real: Equivalence,
 {
-    fn norm_infty(&self) -> <Self::T as Scalar>::Real {
+    fn norm_infty(&self) -> <Self::Item as Scalar>::Real {
         let comm = self.index_layout.comm();
 
         let local_result = self.local.norm_infty();
 
-        let mut global_result = <<Self::T as Scalar>::Real as Zero>::zero();
+        let mut global_result = <<Self::Item as Scalar>::Real as Zero>::zero();
         comm.all_reduce_into(
             &local_result,
             &mut global_result,
