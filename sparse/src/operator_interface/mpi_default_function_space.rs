@@ -3,20 +3,20 @@
 use mpi::traits::*;
 use std::marker::PhantomData;
 
-use super::index_layout::DistributedIndexLayout;
-use super::indexable_vector::DistributedIndexableVector;
+use crate::index_layout::DefaultMpiIndexLayout;
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::Inner;
+use crate::vector::DefaultMpiVector;
 use rlst_common::types::{IndexType, Scalar};
 use rlst_operator::{Element, IndexableSpace, InnerProductSpace};
 
 pub struct DistributedIndexableVectorSpace<'comm, T: Scalar + Equivalence, C: Communicator> {
-    index_layout: &'comm DistributedIndexLayout<'comm, C>,
+    index_layout: &'comm DefaultMpiIndexLayout<'comm, C>,
     _phantom: PhantomData<T>,
 }
 
 impl<'comm, T: Scalar + Equivalence, C: Communicator> DistributedIndexableVectorSpace<'comm, T, C> {
-    pub fn new(index_layout: &'comm DistributedIndexLayout<'comm, C>) -> Self {
+    pub fn new(index_layout: &'comm DefaultMpiIndexLayout<'comm, C>) -> Self {
         DistributedIndexableVectorSpace {
             index_layout,
             _phantom: PhantomData,
@@ -31,7 +31,7 @@ pub struct DistributedIndexableVectorSpaceElement<
     C: Communicator,
 > {
     space: &'space DistributedIndexableVectorSpace<'comm, T, C>,
-    data: super::indexable_vector::DistributedIndexableVector<'comm, T, C>,
+    data: crate::vector::DefaultMpiVector<'comm, T, C>,
 }
 
 impl<'space, 'comm, T: Scalar + Equivalence, C: Communicator> Element
@@ -40,8 +40,8 @@ where
     T::Real: Equivalence,
 {
     type Space = DistributedIndexableVectorSpace<'comm, T, C>;
-    type View<'b> = &'b super::indexable_vector::DistributedIndexableVector<'comm, T, C> where Self: 'b;
-    type ViewMut<'b> = &'b mut super::indexable_vector::DistributedIndexableVector<'comm, T, C> where Self: 'b;
+    type View<'b> = &'b crate::vector::DefaultMpiVector<'comm, T, C> where Self: 'b;
+    type ViewMut<'b> = &'b mut crate::vector::DefaultMpiVector<'comm, T, C> where Self: 'b;
 
     fn space(&self) -> &Self::Space {
         self.space
@@ -67,7 +67,7 @@ where
     fn create_element<'space>(&'space self) -> Self::E<'space> {
         DistributedIndexableVectorSpaceElement {
             space: &self,
-            data: DistributedIndexableVector::<'comm, T, C>::new(&self.index_layout),
+            data: DefaultMpiVector::<'comm, T, C>::new(&self.index_layout),
         }
     }
 }

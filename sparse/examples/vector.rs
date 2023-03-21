@@ -3,7 +3,7 @@
 use rlst_operator::Element;
 use rlst_operator::LinearSpace;
 use rlst_operator::NormedSpace;
-use rlst_sparse::local::indexable_space::LocalIndexableVectorSpace;
+use rlst_sparse::operator_interface::serial_default_function_space::LocalIndexableVectorSpace;
 use rlst_sparse::traits::indexable_vector::*;
 
 fn main() {

@@ -1,17 +1,17 @@
 use crate::traits::index_layout::IndexLayout;
 use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
 
-pub struct LocalIndexLayout {
+pub struct DefaultSerialIndexLayout {
     size: IndexType,
 }
 
-impl LocalIndexLayout {
+impl DefaultSerialIndexLayout {
     pub fn new(size: IndexType) -> Self {
         Self { size }
     }
 }
 
-impl IndexLayout for LocalIndexLayout {
+impl IndexLayout for DefaultSerialIndexLayout {
     fn number_of_local_indices(&self) -> IndexType {
         self.number_of_global_indices()
     }
@@ -48,7 +48,7 @@ mod test {
 
     #[test]
     fn test_local_index_layout() {
-        let index_layout = LocalIndexLayout::new(14);
+        let index_layout = DefaultSerialIndexLayout::new(14);
 
         // Test that the range is correct on rank 0
         assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));

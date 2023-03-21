@@ -1,7 +1,8 @@
-pub mod distributed;
-pub mod local;
+pub mod index_layout;
+pub mod operator_interface;
 pub mod tools;
 pub mod traits;
+pub mod vector;
 
 #[cfg(test)]
 mod tests {}

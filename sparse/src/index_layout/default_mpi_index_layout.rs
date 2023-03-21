@@ -2,14 +2,14 @@ use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
 use rlst_common::types::{IndexType, SparseLinAlgResult};
 
-pub struct DistributedIndexLayout<'a, C: Communicator> {
+pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
     size: IndexType,
     my_rank: IndexType,
     counts: Vec<IndexType>,
     comm: &'a C,
 }
 
-impl<'a, C: Communicator> DistributedIndexLayout<'a, C> {
+impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     pub fn new(size: IndexType, comm: &'a C) -> Self {
         let comm_size = comm.size() as IndexType;
         let my_rank = comm.rank() as IndexType;
@@ -77,7 +77,7 @@ impl<'a, C: Communicator> DistributedIndexLayout<'a, C> {
     }
 }
 
-impl<'a, C: Communicator> IndexLayout for DistributedIndexLayout<'a, C> {
+impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
     fn index_range(&self, rank: IndexType) -> SparseLinAlgResult<(IndexType, IndexType)> {
         if rank < self.comm.size() as IndexType {
             Ok((self.counts[rank], self.counts[1 + rank]))
@@ -120,7 +120,7 @@ mod test {
         let universe = mpi::initialize().unwrap();
         let world = universe.world();
 
-        let index_layout = DistributedIndexLayout::new(14, &world);
+        let index_layout = DefaultMpiIndexLayout::new(14, &world);
 
         // Test that the range is correct on rank 0
         assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));

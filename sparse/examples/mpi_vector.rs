@@ -3,10 +3,10 @@
 use mpi::traits::*;
 use rlst_operator::Element;
 use rlst_operator::LinearSpace;
-use rlst_sparse::distributed::index_layout::DistributedIndexLayout;
-use rlst_sparse::distributed::indexable_space::DistributedIndexableVectorSpace;
-use rlst_sparse::local::indexable_vector::LocalIndexableVector;
+use rlst_sparse::index_layout::DefaultMpiIndexLayout;
+use rlst_sparse::operator_interface::mpi_default_function_space::DistributedIndexableVectorSpace;
 use rlst_sparse::traits::indexable_vector::*;
+use rlst_sparse::vector::DefaultSerialVector;
 
 fn main() {
     let universe = mpi::initialize().unwrap();
@@ -16,16 +16,16 @@ fn main() {
     let n = 100;
 
     // We first create an index layout.
-    let index_layout = DistributedIndexLayout::new(n, &world);
+    let index_layout = DefaultMpiIndexLayout::new(n, &world);
     let space = DistributedIndexableVectorSpace::<'_, f64, _>::new(&index_layout);
     let mut vec = space.create_element();
 
     let vec_impl = vec.view_mut();
 
-    let mut local_vec: LocalIndexableVector<f64>;
+    let mut local_vec: DefaultSerialVector<f64>;
 
     if rank == 0 {
-        local_vec = LocalIndexableVector::<f64>::new(n);
+        local_vec = DefaultSerialVector::<f64>::new(n);
         let mut view = local_vec.view_mut().unwrap();
 
         for index in 0..n {
