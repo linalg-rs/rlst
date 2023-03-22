@@ -170,37 +170,37 @@ mod test {
     #[test]
     fn test_simple_slice() {
         let mut mat = MatrixD::<f64, RowMajor>::zeros_from_dim(3, 4);
-        *mat.get_mut(1, 2) = 1.0;
+        *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice = mat.block((0, 1), (2, 2));
 
-        assert_eq!(slice.get(1, 1), 1.0);
-        assert_eq!(slice.get1d(3), 1.0);
+        assert_eq!(slice.get_value(1, 1), 1.0);
+        assert_eq!(slice.get1d_value(3), 1.0);
     }
 
     #[test]
     fn test_double_slice() {
         let mut mat = MatrixD::<f64, RowMajor>::zeros_from_dim(3, 4);
-        *mat.get_mut(1, 2) = 1.0;
+        *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice1 = mat.block((0, 1), (3, 3));
         let slice2 = slice1.block((1, 0), (2, 2));
 
-        assert_eq!(slice1.get(1, 1), 1.0);
-        assert_eq!(slice2.get(0, 1), 1.0);
+        assert_eq!(slice1.get_value(1, 1), 1.0);
+        assert_eq!(slice2.get_value(0, 1), 1.0);
     }
 
     #[test]
     fn test_disjoint_slices() {
         let mut mat = rand_mat![f64, (10, 10)];
         let (mut m1, mut m2, mut m3, mut m4) = mat.split_in_four_mut((5, 5));
-        *m1.get_mut(1, 0) = 2.0;
-        *m2.get_mut(3, 4) = 3.0;
-        *m3.get_mut(2, 1) = 4.0;
-        *m4.get_mut(4, 2) = 5.0;
-        assert_eq!(mat.get(1, 0), 2.0);
-        assert_eq!(mat.get(3, 9), 3.0);
-        assert_eq!(mat.get(7, 1), 4.0);
-        assert_eq!(mat.get(9, 7), 5.0);
+        *m1.get_mut(1, 0).unwrap() = 2.0;
+        *m2.get_mut(3, 4).unwrap() = 3.0;
+        *m3.get_mut(2, 1).unwrap() = 4.0;
+        *m4.get_mut(4, 2).unwrap() = 5.0;
+        assert_eq!(mat.get_value(1, 0), 2.0);
+        assert_eq!(mat.get_value(3, 9), 3.0);
+        assert_eq!(mat.get_value(7, 1), 4.0);
+        assert_eq!(mat.get_value(9, 7), 5.0);
     }
 }

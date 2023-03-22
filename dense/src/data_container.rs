@@ -14,7 +14,10 @@ pub trait DataContainer {
     type Item: Scalar;
 
     /// Access the container unchecked.
-    unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item;
+    unsafe fn get_unchecked_value(&self, index: IndexType) -> Self::Item;
+
+    /// Access the container by reference
+    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::Item;
 
     /// Get pointer to data.
     fn get_pointer(&self) -> *const Self::Item;
@@ -137,8 +140,12 @@ impl<'a, Item: Scalar> SliceContainerMut<'a, Item> {
 impl<Item: Scalar> DataContainer for VectorContainer<Item> {
     type Item = Item;
 
-    unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get_unchecked_value(&self, index: IndexType) -> Self::Item {
         *self.data.get_unchecked(index)
+    }
+
+    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.data.get_unchecked(index)
     }
 
     fn get_pointer(&self) -> *const Self::Item {
@@ -163,8 +170,12 @@ impl<Item: Scalar> DataContainerMut for VectorContainer<Item> {
 impl<Item: Scalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
     type Item = Item;
 
-    unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get_unchecked_value(&self, index: IndexType) -> Self::Item {
         *self.data.get_unchecked(index)
+    }
+
+    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.data.get_unchecked(index)
     }
 
     fn get_pointer(&self) -> *const Self::Item {
@@ -189,8 +200,12 @@ impl<Item: Scalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> 
 impl<'a, Item: Scalar> DataContainer for SliceContainer<'a, Item> {
     type Item = Item;
 
-    unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get_unchecked_value(&self, index: IndexType) -> Self::Item {
         *self.data.get_unchecked(index)
+    }
+
+    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.data.get_unchecked(index)
     }
 
     fn get_pointer(&self) -> *const Self::Item {
@@ -205,8 +220,12 @@ impl<'a, Item: Scalar> DataContainer for SliceContainer<'a, Item> {
 impl<'a, Item: Scalar> DataContainer for SliceContainerMut<'a, Item> {
     type Item = Item;
 
-    unsafe fn get_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get_unchecked_value(&self, index: IndexType) -> Self::Item {
         *self.data.get_unchecked(index)
+    }
+
+    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.data.get_unchecked(index)
     }
 
     fn get_pointer(&self) -> *const Self::Item {

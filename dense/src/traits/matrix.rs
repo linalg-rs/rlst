@@ -3,20 +3,37 @@
 //! [MatrixTrait] and its mutable counterpart [MatrixTraitMut] are
 //! traits that define a matrix. [MatrixTrait] is automatically implemented
 //! if the following traits are available.
-//! - [RandomAccess]. Provides an interface to access matrix elements.
+//! - [RandomAccessByValue]. Provides an interface to access matrix elements.
 //! - [Layout]. Provides an interface to obtain layout information for the matrix.
 //! - [SizeType]. Specifies whether the row/column dimension is known at compile time
 //!               or specified at runtime.
 //!
 //! [MatrixTraitMut] additionally depends on the trait [RandomAccessMut] to provide
 //! mutable access to matrix elements.
-use crate::traits::{Layout, LayoutType, RandomAccess, RandomAccessMut, SizeIdentifier, SizeType};
+//!
+//! In order to support standard index notation for Matrix elements a matrix
+//! needs to additionally define the trait [RandomAccessByRef]. This then
+//! auto-implements the trait [MatrixTraitAccessByRef].
+use crate::traits::{
+    Layout, LayoutType, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, SizeIdentifier,
+    SizeType,
+};
 use crate::types::Scalar;
 
 /// Combined trait for basic matrix properties. See [crate::traits::matrix]
 /// for details.
 pub trait MatrixTrait<Item: Scalar, L: LayoutType, RS: SizeIdentifier, CS: SizeIdentifier>:
-    RandomAccess<Item = Item> + Layout<Impl = L> + SizeType<R = RS, C = CS>
+    RandomAccessByValue<Item = Item> + Layout<Impl = L> + SizeType<R = RS, C = CS>
+{
+}
+
+/// Extended Matrix trait if access by reference is possible.
+pub trait MatrixTraitAccessByRef<
+    Item: Scalar,
+    L: LayoutType,
+    RS: SizeIdentifier,
+    CS: SizeIdentifier,
+>: RandomAccessByRef<Item = Item> + MatrixTrait<Item, L, RS, CS>
 {
 }
 
@@ -31,8 +48,18 @@ impl<
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Mat: RandomAccess<Item = Item> + Layout<Impl = L> + SizeType<R = RS, C = CS>,
+        Mat: RandomAccessByValue<Item = Item> + Layout<Impl = L> + SizeType<R = RS, C = CS>,
     > MatrixTrait<Item, L, RS, CS> for Mat
+{
+}
+
+impl<
+        Item: Scalar,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        Mat: RandomAccessByRef<Item = Item> + MatrixTrait<Item, L, RS, CS>,
+    > MatrixTraitAccessByRef<Item, L, RS, CS> for Mat
 {
 }
 

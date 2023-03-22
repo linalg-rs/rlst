@@ -36,18 +36,18 @@ impl<
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccess for Matrix<Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessByValue for Matrix<Item, MatImpl, L, RS, CS>
 {
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
-        self.0.get_unchecked(row, col)
+    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+        self.0.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> Self::Item {
-        self.0.get1d_unchecked(index)
+    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+        self.0.get1d_value_unchecked(index)
     }
 }
 
@@ -72,6 +72,55 @@ impl<
     }
 }
 
+impl<
+        Item: Scalar,
+        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, L, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+        self.0.get_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.0.get1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > std::ops::Index<[IndexType; 2]> for Matrix<Item, MatImpl, L, RS, CS>
+{
+    type Output = Item;
+
+    fn index(&self, index: [IndexType; 2]) -> &Self::Output {
+        self.get(index[0], index[1]).unwrap()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixTraitMut<Item, L, RS, CS> + MatrixTraitAccessByRef<Item, L, RS, CS>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > std::ops::IndexMut<[IndexType; 2]> for Matrix<Item, MatImpl, L, RS, CS>
+{
+    fn index_mut(&mut self, index: [IndexType; 2]) -> &mut Self::Output {
+        self.get_mut(index[0], index[1]).unwrap()
+    }
+}
+
 impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynamic>>
     Matrix<Item, MatImpl, L, Dynamic, Dynamic>
 {
@@ -82,7 +131,7 @@ impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynamic
             MatrixD::<Item, <L as LayoutType>::IndexLayout>::zeros_from_dim(dim.0, dim.1);
         unsafe {
             for index in 0..self.layout().number_of_elements() {
-                *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index);
+                *result.get1d_unchecked_mut(index) = self.get1d_value_unchecked(index);
             }
         }
         result

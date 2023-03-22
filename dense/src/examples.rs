@@ -47,23 +47,23 @@
 //! ```
 //! # use rlst_dense::*;
 //! let mut mat = mat![f64, (3, 5)];
-//! *mat.get_mut(2, 3) = 4.0;
-//! assert_eq!(mat.get(2, 3), 4.0);
+//! mat[[2, 3]] = 4.0;
+//! assert_eq!(mat[[2, 3]], 4.0);
 //! ```
-//! The methods `get` and `get_mut` perform an assertion
+//! The index notation performs a
 //! check if the provided row and column are inside bounds.
-//! If not the assertion fails. The following two codes will produce
+//! If not a panic is produced. The following two codes will produce
 //! an exception.
 //! ```should_panic
 //! # use rlst_dense::*;
 //! let mut mat = mat![f64, (3, 5)];
-//! *mat.get_mut(3, 5) = 4.0;
+//! mat[[3, 5]] = 4.0;
 //! ```
 //!
 //! ```should_panic
 //! # use rlst_dense::*;
 //! let mut mat = mat![f64, (3, 5)];
-//! println!("Print out of bounds entry: {}",mat.get(3, 5));
+//! println!("Print out of bounds entry: {}",mat[[3, 5]]);
 //! ```
 //! Bounds checks are not always desired. We therefore also provide
 //! unsafe access routines.
@@ -72,7 +72,7 @@
 //! let mut mat = mat![f64, (3, 5)];
 //! unsafe {
 //!     *mat.get_unchecked_mut(2, 3) = 4.0;
-//!     assert_eq!(mat.get_unchecked(2, 3), 4.0);
+//!     assert_eq!(*mat.get_unchecked(2, 3), 4.0);
 //! }
 //! ```
 //! # Operations on matrices and vectors.
@@ -83,7 +83,7 @@
 //! let mat1 = rand_mat![f64, (3, 5)];
 //! let mat2 = rand_mat![f64, (3, 5)];
 //! let sum = (3.0 * &mat1 + &mat2).eval();
-//! assert_eq!(sum.get(2, 4), 3.0 * mat1.get(2, 4) + mat2.get(2, 4));
+//! assert_eq!(sum[[2, 4]], 3.0 * mat1[[2, 4]] + mat2[[2, 4]]);
 //! ```
 //! Note the `eval` statement at the end. If we were
 //! only to write `3.0 * &mat1 + &mat2` the result would
@@ -110,7 +110,7 @@
 //! # use rlst_dense::*;
 //! let mat = rand_mat![f64, (10, 10)];
 //! let block = mat.block((2, 2), (3, 5));
-//! assert_eq!(block.get(2, 4), mat.get(4, 6))
+//! assert_eq!(block[[2, 4]], mat[[4, 6]])
 //! ```
 //! The variable `block` is now a read-only view onto the submatrix
 //! of `mat` starting at position `(2, 2)` with dimensions `(3, 5)`.
@@ -123,14 +123,14 @@
 //! # use rlst_dense::*;
 //! let mut mat = rand_mat![f64, (10, 10)];
 //! let (mut m1, mut m2, mut m3, mut m4) = mat.split_in_four_mut((5, 5));
-//! *m1.get_mut(1, 0) = 2.0;
-//! *m2.get_mut(3, 4) = 3.0;
-//! *m3.get_mut(2, 1) = 4.0;
-//! *m4.get_mut(4, 2) = 5.0;
-//! assert_eq!(mat.get(1, 0), 2.0);
-//! assert_eq!(mat.get(3, 9), 3.0);
-//! assert_eq!(mat.get(7, 1), 4.0);
-//! assert_eq!(mat.get(9, 7), 5.0);
+//! m1[[1, 0]] = 2.0;
+//! m2[[3, 4]] = 3.0;
+//! m3[[2, 1]] = 4.0;
+//! m4[[4, 2]] = 5.0;
+//! assert_eq!(mat[[1, 0]], 2.0);
+//! assert_eq!(mat[[3, 9]], 3.0);
+//! assert_eq!(mat[[7, 1]], 4.0);
+//! assert_eq!(mat[[9, 7]], 5.0);
 //! ```
 //! The matrix is split up into 4 submatrices with the first one starting at
 //! (0, 0) and the last one starting at (5, 5). The second block is correspondingly
