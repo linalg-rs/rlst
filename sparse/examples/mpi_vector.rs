@@ -1,14 +1,18 @@
 //! Example file for creating vectors.
 
-use mpi::traits::*;
-use rlst_operator::Element;
-use rlst_operator::LinearSpace;
-use rlst_sparse::index_layout::DefaultMpiIndexLayout;
-use rlst_sparse::operator_interface::mpi_default_function_space::DistributedIndexableVectorSpace;
-use rlst_sparse::traits::indexable_vector::*;
-use rlst_sparse::vector::DefaultSerialVector;
+#[cfg(not(feature = "mpi"))]
+fn main() {}
 
+#[cfg(feature = "mpi")]
 fn main() {
+    use mpi::traits::*;
+    use rlst_operator::Element;
+    use rlst_operator::LinearSpace;
+    use rlst_sparse::index_layout::DefaultMpiIndexLayout;
+    use rlst_sparse::operator_interface::mpi_default_function_space::DistributedIndexableVectorSpace;
+    use rlst_sparse::traits::indexable_vector::*;
+    use rlst_sparse::vector::DefaultSerialVector;
+
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
     let rank = world.rank();

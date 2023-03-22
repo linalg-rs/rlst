@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
-mpi = "0.6.*"
+mpi = { version = "0.6.*", optional=true }
 num = "0.4"
 
 [dev-dependencies]
@@ -17,3 +17,7 @@ float_eq = { version = "1", features = ["num"] }
 
 [lib]
 name = "rlst_sparse"
+
+[features]
+default = ["mpi"]
+mpi = ["dep:mpi"]
