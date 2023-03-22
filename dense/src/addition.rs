@@ -116,22 +116,22 @@ impl<
         L2: LayoutType<IndexLayout = B>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccess for Addition<Item, MatImpl1, MatImpl2, B, L1, L2, RS, CS>
+    > UnsafeRandomAccessByValue for Addition<Item, MatImpl1, MatImpl2, B, L1, L2, RS, CS>
 {
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(
+    unsafe fn get_value_unchecked(
         &self,
         row: crate::types::IndexType,
         col: crate::types::IndexType,
     ) -> Self::Item {
-        self.0.get_unchecked(row, col) + self.1.get_unchecked(row, col)
+        self.0.get_value_unchecked(row, col) + self.1.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: crate::types::IndexType) -> Self::Item {
-        self.0.get1d_unchecked(index) + self.1.get1d_unchecked(index)
+    unsafe fn get1d_value_unchecked(&self, index: crate::types::IndexType) -> Self::Item {
+        self.0.get1d_value_unchecked(index) + self.1.get1d_value_unchecked(index)
     }
 }
 
@@ -235,12 +235,12 @@ mod test {
         let mut mat1 = MatrixD::<f64, RowMajor>::zeros_from_dim(2, 3);
         let mut mat2 = MatrixD::<f64, RowMajor>::zeros_from_dim(2, 3);
 
-        *mat1.get_mut(1, 2) = 5.0;
-        *mat2.get_mut(1, 2) = 6.0;
+        mat1[[1, 2]] = 5.0;
+        mat2[[1, 2]] = 6.0;
 
         let res = 2.0 * mat1 + mat2;
         let res = res.eval();
 
-        assert_eq!(res.get(1, 2), 16.0);
+        assert_eq!(res[[1, 2]], 16.0);
     }
 }

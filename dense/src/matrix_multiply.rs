@@ -383,10 +383,11 @@ mod test {
 
         for m_index in 0..m {
             for n_index in 0..n {
-                *mat_c.get_mut(m_index, n_index) *= beta;
+                *mat_c.get_mut(m_index, n_index).unwrap() *= beta;
                 for k_index in 0..k {
-                    *mat_c.get_mut(m_index, n_index) +=
-                        alpha * mat_a.get(m_index, k_index) * mat_b.get(k_index, n_index);
+                    *mat_c.get_mut(m_index, n_index).unwrap() += alpha
+                        * mat_a.get_value(m_index, k_index)
+                        * mat_b.get_value(k_index, n_index);
                 }
             }
         }
@@ -410,7 +411,7 @@ mod test {
                 mat_c_actual.fill_from_rand_standard_normal(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
@@ -420,8 +421,8 @@ mod test {
                 <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d(index);
-                    let val2 = mat_c_expect.get1d(index);
+                    let val1 = mat_c_actual.get1d_value(index);
+                    let val2 = mat_c_expect.get1d_value(index);
                     assert_ulps_eq!(&val1, &val2, max_ulps = 100);
                 }
             }
@@ -446,7 +447,7 @@ mod test {
                 mat_c_actual.fill_from_rand_standard_normal(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
@@ -456,8 +457,8 @@ mod test {
                 <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d(index);
-                    let val2 = mat_c_expect.get1d(index);
+                    let val1 = mat_c_actual.get1d_value(index);
+                    let val2 = mat_c_expect.get1d_value(index);
                     assert_ulps_eq!(&val1, &val2, max_ulps = 100);
                 }
             }
@@ -482,7 +483,7 @@ mod test {
                 mat_c_actual.fill_from_rand_standard_normal(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index) = mat_c_actual.get1d(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
@@ -492,8 +493,8 @@ mod test {
                 <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d(index);
-                    let val2 = mat_c_expect.get1d(index);
+                    let val1 = mat_c_actual.get1d_value(index);
+                    let val2 = mat_c_expect.get1d_value(index);
                     assert_ulps_eq!(&val1, &val2, max_ulps = 100);
                 }
             }
