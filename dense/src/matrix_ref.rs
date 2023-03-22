@@ -116,18 +116,18 @@ macro_rules! matrix_ref_traits {
                 L: LayoutType,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > UnsafeRandomAccess for $MatrixRefType<'a, Item, MatImpl, L, RS, CS>
+            > UnsafeRandomAccessByValue for $MatrixRefType<'a, Item, MatImpl, L, RS, CS>
         {
             type Item = Item;
 
             #[inline]
-            unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
-                self.0.get_unchecked(row, col)
+            unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+                self.0.get_value_unchecked(row, col)
             }
 
             #[inline]
-            unsafe fn get1d_unchecked(&self, index: IndexType) -> Self::Item {
-                self.0.get1d_unchecked(index)
+            unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+                self.0.get1d_value_unchecked(index)
             }
         }
     };
@@ -135,6 +135,28 @@ macro_rules! matrix_ref_traits {
 
 matrix_ref_traits!(MatrixRef);
 matrix_ref_traits!(MatrixRefMut);
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, L, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+        self.0.get_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.0.get1d_unchecked(index)
+    }
+}
 
 impl<
         'a,

@@ -123,19 +123,20 @@ impl<
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccess for BaseMatrix<Item, Data, L, RS, CS>
+    > UnsafeRandomAccessByValue for BaseMatrix<Item, Data, L, RS, CS>
 {
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
         self.data
-            .get_unchecked(self.layout.convert_2d_raw(row, col))
+            .get_unchecked_value(self.layout.convert_2d_raw(row, col))
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> Self::Item {
-        self.data.get_unchecked(self.layout.convert_1d_raw(index))
+    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+        self.data
+            .get_unchecked_value(self.layout.convert_1d_raw(index))
     }
 }
 
@@ -156,6 +157,28 @@ macro_rules! vector_length {
 }
 
 vector_length!(RowVector);
+
+impl<
+        Item: Scalar,
+        Data: DataContainer<Item = Item>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByRef for BaseMatrix<Item, Data, L, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+        self.data
+            .get_unchecked(self.layout.convert_2d_raw(row, col))
+    }
+
+    #[inline]
+    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.data.get_unchecked(self.layout.convert_1d_raw(index))
+    }
+}
 
 impl<
         Item: Scalar,

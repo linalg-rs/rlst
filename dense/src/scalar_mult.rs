@@ -88,18 +88,18 @@ impl<
         L: LayoutType,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccess for ScalarMult<Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessByValue for ScalarMult<Item, MatImpl, L, RS, CS>
 {
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
-        self.1 * self.0.get_unchecked(row, col)
+    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+        self.1 * self.0.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> Self::Item {
-        self.1 * self.0.get1d_unchecked(index)
+    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+        self.1 * self.0.get1d_value_unchecked(index)
     }
 }
 
@@ -184,11 +184,11 @@ mod test {
     fn scalar_mult() {
         let mut mat = MatrixD::<f64, RowMajor>::zeros_from_dim(2, 3);
 
-        *mat.get_mut(1, 2) = 5.0;
+        *mat.get_mut(1, 2).unwrap() = 5.0;
 
         let res = 2.0 * mat;
         let res = res.eval();
 
-        assert_eq!(res.get(1, 2), 10.0);
+        assert_eq!(res.get_value(1, 2), 10.0);
     }
 }
