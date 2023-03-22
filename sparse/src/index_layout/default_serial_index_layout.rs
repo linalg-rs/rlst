@@ -39,6 +39,22 @@ impl IndexLayout for DefaultSerialIndexLayout {
             None
         }
     }
+
+    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType> {
+        if rank == 0 && index < self.number_of_global_indices() {
+            Some(index)
+        } else {
+            None
+        }
+    }
+
+    fn rank_from_index(&self, index: IndexType) -> Option<IndexType> {
+        if index < self.number_of_global_indices() {
+            Some(0)
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]

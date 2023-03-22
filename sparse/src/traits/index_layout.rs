@@ -20,4 +20,11 @@ pub trait IndexLayout {
     /// will map (0,10) -> (30, 40).
     /// It returns ```None``` if ```index``` is out of bounds.
     fn local2global(&self, index: IndexType) -> Option<IndexType>;
+
+    /// Convert global index to local index on a given rank.
+    /// Returns ```None``` if index does not exist on rank.
+    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType>;
+
+    /// Get the rank of a given index.
+    fn rank_from_index(&self, index: IndexType) -> Option<IndexType>;
 }

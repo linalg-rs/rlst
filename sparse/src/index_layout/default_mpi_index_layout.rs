@@ -12,6 +12,11 @@ pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
 impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     pub fn new(size: IndexType, comm: &'a C) -> Self {
         let comm_size = comm.size() as IndexType;
+
+        assert!(
+            comm_size > 0,
+            "Group size is zero. At least one process needs to be in the group."
+        );
         let my_rank = comm.rank() as IndexType;
         let mut counts = vec![0 as IndexType; 1 + comm_size as usize];
 
@@ -107,6 +112,27 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
             None
         }
     }
+
+    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType> {
+        if let Ok(index_range) = self.index_range(rank) {
+            if index >= index_range.1 {
+                return None;
+            }
+
+            Some(index - index_range.0)
+        } else {
+            None
+        }
+    }
+
+    fn rank_from_index(&self, index: IndexType) -> Option<IndexType> {
+        for (count_index, &count) in self.counts[1..].iter().enumerate() {
+            if index < count {
+                return Some(count_index as IndexType);
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]
@@ -131,5 +157,9 @@ mod test {
         // Test that map works
 
         assert_eq!(index_layout.local2global(2).unwrap(), 2);
+
+        // Return the correct process for an index
+
+        assert_eq!(index_layout.rank_from_index(5).unwrap(), 0);
     }
 }
