@@ -1,6 +1,6 @@
 //! Definition of CSR matrices.
 
-use crate::local::sparse::SparseMatType;
+use crate::sparse::SparseMatType;
 use rlst_common::types::SparseLinAlgResult;
 
 use rlst_common::types::{IndexType, Scalar};

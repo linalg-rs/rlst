@@ -2,22 +2,22 @@
 
 use std::marker::PhantomData;
 
-use super::index_layout::LocalIndexLayout;
-use super::indexable_vector::LocalIndexableVector;
+use crate::index_layout::DefaultSerialIndexLayout;
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::{Inner, Norm2};
+use crate::vector::DefaultSerialVector;
 use rlst_common::types::{IndexType, Scalar};
 use rlst_operator::{Element, IndexableSpace, InnerProductSpace, NormedSpace};
 
 pub struct LocalIndexableVectorSpace<T: Scalar> {
-    index_layout: LocalIndexLayout,
+    index_layout: DefaultSerialIndexLayout,
     _phantom: PhantomData<T>,
 }
 
 impl<T: Scalar> LocalIndexableVectorSpace<T> {
     pub fn new(n: IndexType) -> Self {
         LocalIndexableVectorSpace {
-            index_layout: LocalIndexLayout::new(n),
+            index_layout: DefaultSerialIndexLayout::new(n),
             _phantom: PhantomData,
         }
     }
@@ -25,13 +25,13 @@ impl<T: Scalar> LocalIndexableVectorSpace<T> {
 
 pub struct LocalIndexableVectorSpaceElement<'a, T: Scalar> {
     space: &'a LocalIndexableVectorSpace<T>,
-    data: super::indexable_vector::LocalIndexableVector<T>,
+    data: crate::vector::DefaultSerialVector<T>,
 }
 
 impl<'a, T: Scalar> Element for LocalIndexableVectorSpaceElement<'a, T> {
     type Space = LocalIndexableVectorSpace<T>;
-    type View<'b> = &'b super::indexable_vector::LocalIndexableVector<T> where Self: 'b;
-    type ViewMut<'b> = &'b mut super::indexable_vector::LocalIndexableVector<T> where Self: 'b;
+    type View<'b> = &'b crate::vector::DefaultSerialVector<T> where Self: 'b;
+    type ViewMut<'b> = &'b mut crate::vector::DefaultSerialVector<T> where Self: 'b;
 
     fn space(&self) -> &Self::Space {
         self.space
@@ -53,7 +53,7 @@ impl<T: Scalar> rlst_operator::LinearSpace for LocalIndexableVectorSpace<T> {
     fn create_element<'a>(&'a self) -> Self::E<'a> {
         LocalIndexableVectorSpaceElement {
             space: &self,
-            data: LocalIndexableVector::new(self.index_layout.number_of_global_indices()),
+            data: DefaultSerialVector::new(self.index_layout.number_of_global_indices()),
         }
     }
 }

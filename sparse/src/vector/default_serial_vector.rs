@@ -5,11 +5,11 @@ use num::{Float, Zero};
 use rlst_common::types::Scalar;
 use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
 
-use super::index_layout::LocalIndexLayout;
+use crate::index_layout::DefaultSerialIndexLayout;
 
-pub struct LocalIndexableVector<T: Scalar> {
+pub struct DefaultSerialVector<T: Scalar> {
     data: Vec<T>,
-    index_layout: LocalIndexLayout,
+    index_layout: DefaultSerialIndexLayout,
 }
 
 pub struct LocalIndexableVectorView<'a, T: Scalar> {
@@ -20,18 +20,18 @@ pub struct LocalIndexableVectorViewMut<'a, T: Scalar> {
     data: &'a mut Vec<T>,
 }
 
-impl<T: Scalar> LocalIndexableVector<T> {
-    pub fn new(size: IndexType) -> LocalIndexableVector<T> {
-        LocalIndexableVector {
+impl<T: Scalar> DefaultSerialVector<T> {
+    pub fn new(size: IndexType) -> DefaultSerialVector<T> {
+        DefaultSerialVector {
             data: vec![T::zero(); size],
-            index_layout: LocalIndexLayout::new(size),
+            index_layout: DefaultSerialIndexLayout::new(size),
         }
     }
 }
 
-impl<T: Scalar> IndexableVector for LocalIndexableVector<T> {
+impl<T: Scalar> IndexableVector for DefaultSerialVector<T> {
     type Item = T;
-    type Ind = LocalIndexLayout;
+    type Ind = DefaultSerialIndexLayout;
     type View<'a> = LocalIndexableVectorView<'a, T> where Self: 'a;
     type ViewMut<'a> = LocalIndexableVectorViewMut<'a, T> where Self: 'a;
 
@@ -102,7 +102,7 @@ impl<T: Scalar> IndexableVectorViewMut for LocalIndexableVectorViewMut<'_, T> {
     }
 }
 
-impl<T: Scalar> Inner for LocalIndexableVector<T> {
+impl<T: Scalar> Inner for DefaultSerialVector<T> {
     fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
         let my_view = self.view().unwrap();
         let other_view = other.view().unwrap();
@@ -123,7 +123,7 @@ impl<T: Scalar> Inner for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> AbsSquareSum for LocalIndexableVector<T> {
+impl<T: Scalar> AbsSquareSum for DefaultSerialVector<T> {
     fn abs_square_sum(&self) -> <Self::Item as Scalar>::Real {
         self.view()
             .unwrap()
@@ -134,7 +134,7 @@ impl<T: Scalar> AbsSquareSum for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> Norm1 for LocalIndexableVector<T> {
+impl<T: Scalar> Norm1 for DefaultSerialVector<T> {
     fn norm_1(&self) -> <Self::Item as Scalar>::Real {
         self.view()
             .unwrap()
@@ -145,13 +145,13 @@ impl<T: Scalar> Norm1 for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> Norm2 for LocalIndexableVector<T> {
+impl<T: Scalar> Norm2 for DefaultSerialVector<T> {
     fn norm_2(&self) -> <Self::Item as Scalar>::Real {
         <<Self::Item as Scalar>::Real as Float>::sqrt(self.abs_square_sum())
     }
 }
 
-impl<T: Scalar> NormInfty for LocalIndexableVector<T> {
+impl<T: Scalar> NormInfty for DefaultSerialVector<T> {
     fn norm_infty(&self) -> <Self::Item as Scalar>::Real {
         self.view().unwrap().iter().fold(
             <<Self::Item as Scalar>::Real as Float>::neg_infinity(),
@@ -160,7 +160,7 @@ impl<T: Scalar> NormInfty for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> Swap for LocalIndexableVector<T> {
+impl<T: Scalar> Swap for DefaultSerialVector<T> {
     fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
@@ -179,7 +179,7 @@ impl<T: Scalar> Swap for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> Fill for LocalIndexableVector<T> {
+impl<T: Scalar> Fill for DefaultSerialVector<T> {
     fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
@@ -198,7 +198,7 @@ impl<T: Scalar> Fill for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> ScalarMult for LocalIndexableVector<T> {
+impl<T: Scalar> ScalarMult for DefaultSerialVector<T> {
     fn scalar_mult(&mut self, scalar: Self::Item) {
         for elem in self.view_mut().unwrap().iter_mut() {
             *elem *= scalar;
@@ -206,7 +206,7 @@ impl<T: Scalar> ScalarMult for LocalIndexableVector<T> {
     }
 }
 
-impl<T: Scalar> MultSumInto for LocalIndexableVector<T> {
+impl<T: Scalar> MultSumInto for DefaultSerialVector<T> {
     fn mult_sum_into(
         &mut self,
         other: &Self,
@@ -246,8 +246,8 @@ mod tests {
 
     const VEC_SIZE: IndexType = 2;
 
-    fn new_vec<T: Scalar>(size: IndexType) -> LocalIndexableVector<T> {
-        LocalIndexableVector::<T>::new(size)
+    fn new_vec<T: Scalar>(size: IndexType) -> DefaultSerialVector<T> {
+        DefaultSerialVector::<T>::new(size)
     }
 
     #[test]

@@ -2,16 +2,21 @@ use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
 use rlst_common::types::{IndexType, SparseLinAlgResult};
 
-pub struct DistributedIndexLayout<'a, C: Communicator> {
+pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
     size: IndexType,
     my_rank: IndexType,
     counts: Vec<IndexType>,
     comm: &'a C,
 }
 
-impl<'a, C: Communicator> DistributedIndexLayout<'a, C> {
+impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     pub fn new(size: IndexType, comm: &'a C) -> Self {
         let comm_size = comm.size() as IndexType;
+
+        assert!(
+            comm_size > 0,
+            "Group size is zero. At least one process needs to be in the group."
+        );
         let my_rank = comm.rank() as IndexType;
         let mut counts = vec![0 as IndexType; 1 + comm_size as usize];
 
@@ -77,7 +82,7 @@ impl<'a, C: Communicator> DistributedIndexLayout<'a, C> {
     }
 }
 
-impl<'a, C: Communicator> IndexLayout for DistributedIndexLayout<'a, C> {
+impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
     fn index_range(&self, rank: IndexType) -> SparseLinAlgResult<(IndexType, IndexType)> {
         if rank < self.comm.size() as IndexType {
             Ok((self.counts[rank], self.counts[1 + rank]))
@@ -107,6 +112,27 @@ impl<'a, C: Communicator> IndexLayout for DistributedIndexLayout<'a, C> {
             None
         }
     }
+
+    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType> {
+        if let Ok(index_range) = self.index_range(rank) {
+            if index >= index_range.1 {
+                return None;
+            }
+
+            Some(index - index_range.0)
+        } else {
+            None
+        }
+    }
+
+    fn rank_from_index(&self, index: IndexType) -> Option<IndexType> {
+        for (count_index, &count) in self.counts[1..].iter().enumerate() {
+            if index < count {
+                return Some(count_index as IndexType);
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]
@@ -120,7 +146,7 @@ mod test {
         let universe = mpi::initialize().unwrap();
         let world = universe.world();
 
-        let index_layout = DistributedIndexLayout::new(14, &world);
+        let index_layout = DefaultMpiIndexLayout::new(14, &world);
 
         // Test that the range is correct on rank 0
         assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));
@@ -131,5 +157,9 @@ mod test {
         // Test that map works
 
         assert_eq!(index_layout.local2global(2).unwrap(), 2);
+
+        // Return the correct process for an index
+
+        assert_eq!(index_layout.rank_from_index(5).unwrap(), 0);
     }
 }

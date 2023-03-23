@@ -1,38 +1,36 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
-use crate::local::indexable_vector::{
-    LocalIndexableVector, LocalIndexableVectorView, LocalIndexableVectorViewMut,
-};
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::{AbsSquareSum, Inner, Norm1, Norm2, NormInfty};
 use crate::traits::indexable_vector::{
     IndexableVector, IndexableVectorView, IndexableVectorViewMut,
 };
+use crate::vector::{DefaultSerialVector, LocalIndexableVectorView, LocalIndexableVectorViewMut};
 use mpi::datatype::Partition;
 use mpi::traits::*;
 use num::{Float, Zero};
 use rlst_common::types::{Scalar, SparseLinAlgResult};
 
-use super::index_layout::DistributedIndexLayout;
+use crate::index_layout::DefaultMpiIndexLayout;
 
-pub struct DistributedIndexableVector<'a, T: Scalar + Equivalence, C: Communicator> {
-    index_layout: &'a DistributedIndexLayout<'a, C>,
-    local: LocalIndexableVector<T>,
+pub struct DefaultMpiVector<'a, T: Scalar + Equivalence, C: Communicator> {
+    index_layout: &'a DefaultMpiIndexLayout<'a, C>,
+    local: DefaultSerialVector<T>,
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedIndexableVector<'a, T, C> {
-    pub fn new(index_layout: &'a DistributedIndexLayout<'a, C>) -> Self {
-        DistributedIndexableVector {
+impl<'a, T: Scalar + Equivalence, C: Communicator> DefaultMpiVector<'a, T, C> {
+    pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
+        DefaultMpiVector {
             index_layout,
-            local: LocalIndexableVector::new(index_layout.number_of_local_indices()),
+            local: DefaultSerialVector::new(index_layout.number_of_local_indices()),
         }
     }
-    fn local(&self) -> &LocalIndexableVector<T> {
+    fn local(&self) -> &DefaultSerialVector<T> {
         &self.local
     }
 
     pub fn fill_from_root(
         &mut self,
-        other: &Option<LocalIndexableVector<T>>,
+        other: &Option<DefaultSerialVector<T>>,
     ) -> SparseLinAlgResult<()> {
         let comm = self.index_layout().comm().duplicate();
         let counts: Vec<i32> = (0..comm.size())
@@ -82,13 +80,11 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedIndexableVector<'a
     }
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector
-    for DistributedIndexableVector<'a, T, C>
-{
+impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector for DefaultMpiVector<'a, T, C> {
     type Item = T;
     type View<'b> = LocalIndexableVectorView<'b, T> where Self: 'b;
     type ViewMut<'b> = LocalIndexableVectorViewMut<'b, T> where Self: 'b;
-    type Ind = DistributedIndexLayout<'a, C>;
+    type Ind = DefaultMpiIndexLayout<'a, C>;
 
     fn index_layout(&self) -> &Self::Ind {
         &self.index_layout
@@ -103,7 +99,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector
     }
 }
 
-impl<T: Scalar + Equivalence, C: Communicator> Inner for DistributedIndexableVector<'_, T, C> {
+impl<T: Scalar + Equivalence, C: Communicator> Inner for DefaultMpiVector<'_, T, C> {
     fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
         let result;
 
@@ -128,7 +124,7 @@ impl<T: Scalar + Equivalence, C: Communicator> Inner for DistributedIndexableVec
     }
 }
 
-impl<T: Scalar + Equivalence, C: Communicator> AbsSquareSum for DistributedIndexableVector<'_, T, C>
+impl<T: Scalar + Equivalence, C: Communicator> AbsSquareSum for DefaultMpiVector<'_, T, C>
 where
     T::Real: Equivalence,
 {
@@ -147,7 +143,7 @@ where
     }
 }
 
-impl<T: Scalar + Equivalence, C: Communicator> Norm1 for DistributedIndexableVector<'_, T, C>
+impl<T: Scalar + Equivalence, C: Communicator> Norm1 for DefaultMpiVector<'_, T, C>
 where
     T::Real: Equivalence,
 {
@@ -166,7 +162,7 @@ where
     }
 }
 
-impl<T: Scalar + Equivalence, C: Communicator> Norm2 for DistributedIndexableVector<'_, T, C>
+impl<T: Scalar + Equivalence, C: Communicator> Norm2 for DefaultMpiVector<'_, T, C>
 where
     T::Real: Equivalence,
 {
@@ -175,7 +171,7 @@ where
     }
 }
 
-impl<T: Scalar + Equivalence, C: Communicator> NormInfty for DistributedIndexableVector<'_, T, C>
+impl<T: Scalar + Equivalence, C: Communicator> NormInfty for DefaultMpiVector<'_, T, C>
 where
     T::Real: Equivalence,
 {
