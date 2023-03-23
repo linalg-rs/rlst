@@ -1,28 +1,46 @@
-pub use crate::dense_matrix_traits::{DenseMatrixAccess, DenseMatrixAccessMut};
+//! Dense Matrix Interface
 pub use rlst_common::types::{IndexType, Scalar};
 
-pub struct DenseMatrix<'a, MatImpl: DenseMatrixAccess> {
+pub trait DenseMatrixInterface {
+    type T: Scalar;
+
+    fn dim(&self) -> (IndexType, IndexType);
+    fn stride(&self) -> (IndexType, IndexType);
+
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::T;
+    fn get(&self, row: IndexType, col: IndexType) -> Option<&Self::T>;
+
+    fn data(&self) -> &[Self::T];
+}
+
+pub trait DenseMatrixInterfaceMut: DenseMatrixInterface {
+    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::T;
+    fn get_mut(&mut self, row: IndexType, col: IndexType) -> Option<&mut Self::T>;
+    fn data_mut(&mut self) -> &mut [Self::T];
+}
+
+pub struct DenseMatrix<'a, MatImpl: DenseMatrixInterface> {
     mat: &'a MatImpl,
 }
 
-pub struct DenseMatrixMut<'a, MatImpl: DenseMatrixAccessMut> {
+pub struct DenseMatrixMut<'a, MatImpl: DenseMatrixInterfaceMut> {
     mat: &'a mut MatImpl,
 }
 
-pub struct AsLapack<'a, MatImpl: DenseMatrixAccess> {
+pub struct AsLapack<'a, MatImpl: DenseMatrixInterface> {
     mat: &'a MatImpl,
 }
 
-pub struct AsLapackMut<'a, MatImpl: DenseMatrixAccessMut> {
+pub struct AsLapackMut<'a, MatImpl: DenseMatrixInterfaceMut> {
     mat: &'a mut MatImpl,
 }
 
-impl<'a, MatImpl: DenseMatrixAccess> DenseMatrix<'a, MatImpl> {
-    pub fn as_lapack<'b>(&'b self) -> AsLapack<'b, MatImpl> {
+impl<'a, MatImpl: DenseMatrixInterface> DenseMatrix<'a, MatImpl> {
+    pub fn lapack<'b>(&'b self) -> AsLapack<'b, MatImpl> {
         AsLapack { mat: self.mat }
     }
 
-    pub fn as_rlst<'b>(
+    pub fn to_rlst<'b>(
         &'b self,
     ) -> rlst_dense::matrix::SliceMatrix<
         'b,
@@ -37,12 +55,12 @@ impl<'a, MatImpl: DenseMatrixAccess> DenseMatrix<'a, MatImpl> {
     }
 }
 
-impl<'a, MatImpl: DenseMatrixAccessMut> DenseMatrixMut<'a, MatImpl> {
-    pub fn as_lapack_mut<'b>(&'b mut self) -> AsLapackMut<'b, MatImpl> {
+impl<'a, MatImpl: DenseMatrixInterfaceMut> DenseMatrixMut<'a, MatImpl> {
+    pub fn lapack_mut<'b>(&'b mut self) -> AsLapackMut<'b, MatImpl> {
         AsLapackMut { mat: self.mat }
     }
 
-    pub fn as_rlst_mut<'b>(
+    pub fn to_rlst<'b>(
         &'b mut self,
     ) -> rlst_dense::matrix::SliceMatrixMut<
         'b,
@@ -59,7 +77,7 @@ impl<'a, MatImpl: DenseMatrixAccessMut> DenseMatrixMut<'a, MatImpl> {
 
 macro_rules! implement_dense_matrix {
     ($mat:ident) => {
-        impl<'a, MatImpl: DenseMatrixAccess> $mat<'a, MatImpl> {
+        impl<'a, MatImpl: DenseMatrixInterface> $mat<'a, MatImpl> {
             #[inline]
             pub fn dim(&self) -> (IndexType, IndexType) {
                 self.mat.dim()
@@ -90,7 +108,7 @@ macro_rules! implement_dense_matrix {
 
 macro_rules! implement_dense_matrix_mut {
     ($mat:ident) => {
-        impl<'a, MatImpl: DenseMatrixAccessMut> $mat<'a, MatImpl> {
+        impl<'a, MatImpl: DenseMatrixInterfaceMut> $mat<'a, MatImpl> {
             pub fn dim(&self) -> (IndexType, IndexType) {
                 self.mat.dim()
             }

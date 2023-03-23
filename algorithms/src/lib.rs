@@ -1,2 +1,2 @@
-pub mod dense_matrix_traits;
-pub mod types;
+pub mod interface;
+pub mod traits;
