@@ -9,6 +9,7 @@ edition = "2021"
 rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
 num = "0.4"
+rand = "0.8"
 
 [dev-dependencies]
 cauchy = "0.4"

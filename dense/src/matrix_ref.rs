@@ -161,6 +161,28 @@ impl<
 impl<
         'a,
         Item: Scalar,
+        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
+        L: LayoutType,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByRef for MatrixRef<'a, Item, MatImpl, L, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+        self.0.get_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.0.get1d_unchecked(index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
         MatImpl: MatrixTraitMut<Item, L, RS, CS>,
         L: LayoutType,
         RS: SizeIdentifier,

@@ -53,6 +53,12 @@ impl<
     pub fn get_slice(&self, first: IndexType, last: IndexType) -> &[Item] {
         self.0.get_slice(first, last)
     }
+
+    /// Get a slice of the whole data.
+    #[inline]
+    pub fn data(&self) -> &[Item] {
+        self.0.get_slice(0, self.layout().number_of_elements())
+    }
 }
 
 impl<
@@ -80,5 +86,11 @@ impl<
     #[inline]
     pub fn get_slice_mut(&mut self, first: IndexType, last: IndexType) -> &mut [Item] {
         self.0.get_slice_mut(first, last)
+    }
+
+    /// Get a mutable slice of the whole data.
+    #[inline]
+    pub fn data_mut(&mut self) -> &mut [Item] {
+        self.0.get_slice_mut(0, self.layout().number_of_elements())
     }
 }
