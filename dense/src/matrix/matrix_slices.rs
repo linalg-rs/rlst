@@ -165,7 +165,7 @@ mod test {
 
     use super::*;
     use crate::matrix::*;
-    use crate::rand_mat;
+    use crate::rlst_rand_mat;
 
     #[test]
     fn test_simple_slice() {
@@ -192,7 +192,7 @@ mod test {
 
     #[test]
     fn test_disjoint_slices() {
-        let mut mat = rand_mat![f64, (10, 10)];
+        let mut mat = rlst_rand_mat![f64, (10, 10)];
         let (mut m1, mut m2, mut m3, mut m4) = mat.split_in_four_mut((5, 5));
         *m1.get_mut(1, 0).unwrap() = 2.0;
         *m2.get_mut(3, 4).unwrap() = 3.0;

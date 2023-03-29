@@ -2,8 +2,8 @@
 use super::adapter_traits::{AlgorithmsAdapter, AlgorithmsAdapterMut};
 use rlst_common::types::Scalar;
 use rlst_dense::{
-    DataContainer, DataContainerMut, GenericBaseMatrix, GenericBaseMatrixMut, Layout, LayoutType,
-    RandomAccessByRef, RandomAccessMut, SizeIdentifier, UnsafeRandomAccessByRef,
+    DataContainer, DataContainerMut, Fixed1, GenericBaseMatrix, GenericBaseMatrixMut, Layout,
+    LayoutType, RandomAccessByRef, RandomAccessMut, SizeIdentifier, UnsafeRandomAccessByRef,
     UnsafeRandomAccessMut,
 };
 
@@ -48,6 +48,18 @@ where
 
     fn dim(&self) -> (rlst_common::types::IndexType, rlst_common::types::IndexType) {
         self.mat.dim()
+    }
+
+    fn number_of_elements(&self) -> rlst_common::types::IndexType {
+        self.mat.layout().number_of_elements()
+    }
+
+    unsafe fn get1d_unchecked(&self, elem: rlst_common::types::IndexType) -> &Self::T {
+        self.mat.get1d_unchecked(elem)
+    }
+
+    fn get1d(&self, elem: rlst_common::types::IndexType) -> Option<&Self::T> {
+        self.mat.get1d(elem)
     }
 
     fn get(
@@ -122,12 +134,24 @@ where
         self.mat.dim()
     }
 
+    fn number_of_elements(&self) -> rlst_common::types::IndexType {
+        self.mat.layout().number_of_elements()
+    }
+
+    unsafe fn get1d_unchecked(&self, elem: rlst_common::types::IndexType) -> &Self::T {
+        self.mat.get1d_unchecked(elem)
+    }
+
     fn get(
         &self,
         row: rlst_common::types::IndexType,
         col: rlst_common::types::IndexType,
     ) -> Option<&Self::T> {
         self.mat.get(row, col)
+    }
+
+    fn get1d(&self, elem: rlst_common::types::IndexType) -> Option<&Self::T> {
+        self.mat.get1d(elem)
     }
 
     unsafe fn get_unchecked(
@@ -171,18 +195,25 @@ where
     ) -> Option<&mut Self::T> {
         self.mat.get_mut(row, col)
     }
+
+    fn get1d_mut(&mut self, elem: rlst_common::types::IndexType) -> Option<&mut Self::T> {
+        self.mat.get1d_mut(elem)
+    }
+
+    unsafe fn get1d_unchecked(&mut self, elem: rlst_common::types::IndexType) -> &mut Self::T {
+        self.mat.get1d_unchecked_mut(elem)
+    }
 }
 
 #[cfg(test)]
 pub mod test {
 
     use super::*;
-    use rand;
     use rlst_dense::*;
 
     #[test]
     fn test_conversion() {
-        let mut rlst_mat = rand_mat![f64, (5, 5)];
+        let mut rlst_mat = rlst_rand_mat![f64, (5, 5)];
 
         rlst_mat[[2, 2]] = 1.0;
 

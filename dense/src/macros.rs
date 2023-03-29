@@ -2,9 +2,9 @@
 
 /// Generate a new matrix with C Layout
 #[macro_export]
-macro_rules! mat {
+macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {
-        mat![$ScalarType, $dim, RowMajor]
+        rlst_mat![$ScalarType, $dim, RowMajor]
     };
     ($ScalarType:ty, $dim:expr, RowMajor) => {
         $crate::GenericBaseMatrixMut::<
@@ -27,13 +27,13 @@ macro_rules! mat {
 }
 
 #[macro_export]
-macro_rules! rand_mat {
+macro_rules! rlst_rand_mat {
     ($ScalarType:ty, $dim:expr) => {
-        rand_mat![$ScalarType, $dim, RowMajor]
+        rlst_rand_mat![$ScalarType, $dim, RowMajor]
     };
     ($ScalarType:ty, $dim:expr, $layout:tt) => {{
         let mut rng = rand::thread_rng();
-        let mut mat = $crate::mat![$ScalarType, $dim, $layout];
+        let mut mat = $crate::rlst_mat![$ScalarType, $dim, $layout];
         mat.fill_from_rand_standard_normal(&mut rng);
         mat
     }};
@@ -71,7 +71,7 @@ mod test {
     #[test]
     fn create_row_major_matrix() {
         let dim = (2, 3);
-        let mat = mat![f64, dim];
+        let mat = rlst_mat![f64, dim];
 
         assert_eq!(mat.dim(), (2, 3));
     }
@@ -79,7 +79,7 @@ mod test {
     #[test]
     fn create_random_matrix() {
         let dim = (2, 3);
-        let mat = rand_mat![f64, dim];
+        let mat = rlst_rand_mat![f64, dim];
 
         assert_eq!(mat.dim(), (2, 3));
     }
