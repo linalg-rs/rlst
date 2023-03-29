@@ -2,12 +2,12 @@
 use super::adapter_traits::{AlgorithmsAdapter, AlgorithmsAdapterMut};
 use rlst_common::types::Scalar;
 use rlst_dense::{
-    DataContainer, DataContainerMut, Fixed1, GenericBaseMatrix, GenericBaseMatrixMut, Layout,
-    LayoutType, RandomAccessByRef, RandomAccessMut, SizeIdentifier, UnsafeRandomAccessByRef,
+    DataContainer, DataContainerMut, GenericBaseMatrix, GenericBaseMatrixMut, Layout, LayoutType,
+    RandomAccessByRef, RandomAccessMut, SizeIdentifier, UnsafeRandomAccessByRef,
     UnsafeRandomAccessMut,
 };
 
-use crate::adapter::dense_matrix::DenseMatrix;
+use crate::adapter::dense_matrix::DenseContainer;
 
 pub struct RlstMatrixAdapter<'a, Item, Data, L, RS, CS>
 where
@@ -31,7 +31,7 @@ where
     mat: &'a mut GenericBaseMatrixMut<Item, L, Data, RS, CS>,
 }
 
-impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseMatrixInterface
+impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseContainerInterface
     for RlstMatrixAdapter<'a, Item, Data, L, RS, CS>
 where
     Item: Scalar,
@@ -94,8 +94,8 @@ where
     type T = Item;
     type OutputAdapter<'a> = RlstMatrixAdapter<'a, Item, Data, L, RS, CS> where Self: 'a;
 
-    fn algorithms<'a>(&'a self) -> DenseMatrix<Self::OutputAdapter<'a>> {
-        DenseMatrix::new(RlstMatrixAdapter { mat: self })
+    fn algorithms<'a>(&'a self) -> DenseContainer<Self::OutputAdapter<'a>> {
+        DenseContainer::new(RlstMatrixAdapter { mat: self })
     }
 }
 
@@ -110,12 +110,12 @@ where
     type T = Item;
     type OutputAdapter<'a> = RlstMatrixAdapterMut<'a, Item, Data, L, RS, CS> where Self: 'a;
 
-    fn algorithms_mut<'a>(&'a mut self) -> DenseMatrix<Self::OutputAdapter<'a>> {
-        DenseMatrix::new(RlstMatrixAdapterMut { mat: self })
+    fn algorithms_mut<'a>(&'a mut self) -> DenseContainer<Self::OutputAdapter<'a>> {
+        DenseContainer::new(RlstMatrixAdapterMut { mat: self })
     }
 }
 
-impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseMatrixInterface
+impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseContainerInterface
     for RlstMatrixAdapterMut<'a, Item, Data, L, RS, CS>
 where
     Item: Scalar,
@@ -167,7 +167,7 @@ where
     }
 }
 
-impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseMatrixInterfaceMut
+impl<'a, Item, Data, L, RS, CS> super::dense_matrix::DenseContainerInterfaceMut
     for RlstMatrixAdapterMut<'a, Item, Data, L, RS, CS>
 where
     Item: Scalar,

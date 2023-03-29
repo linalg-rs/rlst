@@ -1,5 +1,4 @@
 //! Dense Matrix Interface
-use std::ops::Index;
 
 pub use rlst_common::types::{IndexType, Scalar};
 use rlst_dense::{
@@ -12,11 +11,11 @@ pub enum OrderType {
     ColumnMajor,
 }
 
-/// A generic interface trait for dense matrices.
-pub trait DenseMatrixInterface {
+/// A generic interface trait for dense matrices and vectors.
+pub trait DenseContainerInterface {
     type T: Scalar;
 
-    /// Return the dimension of the matrix.
+    /// Return the dimension of the matrix/vector.
     fn dim(&self) -> (IndexType, IndexType);
 
     /// Return the number of elements.
@@ -41,8 +40,8 @@ pub trait DenseMatrixInterface {
     fn data(&self) -> &[Self::T];
 }
 
-/// A mutable dense matrix interface.
-pub trait DenseMatrixInterfaceMut: DenseMatrixInterface {
+/// A mutable dense container interface.
+pub trait DenseContainerInterfaceMut: DenseContainerInterface {
     /// Get a mutable reference to an element without bounds check.
     unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::T;
 
@@ -59,13 +58,13 @@ pub trait DenseMatrixInterfaceMut: DenseMatrixInterface {
     fn data_mut(&mut self) -> &mut [Self::T];
 }
 
-/// A simple dense matrix interface type.
-pub struct DenseMatrix<MatImpl: DenseMatrixInterface> {
-    mat: MatImpl,
+/// A simple dense container interface type.
+pub struct DenseContainer<ContainerImpl: DenseContainerInterface> {
+    data: ContainerImpl,
 }
 
 /// Create a new matrix.
-pub fn new_matrix<T: Scalar>(
+pub fn new_container<T: Scalar>(
     rows: IndexType,
     cols: IndexType,
     order: OrderType,
@@ -82,21 +81,21 @@ pub fn new_matrix<T: Scalar>(
 }
 
 /// Blas/Lapack routines will be attached to this type.
-pub struct AsLapack<'a, MatImpl: DenseMatrixInterface> {
+pub struct AsLapack<'a, MatImpl: DenseContainerInterface> {
     mat: &'a MatImpl,
 }
 
 /// Blas/Lapack routines will be attached to this type.
-pub struct AsLapackMut<'a, MatImpl: DenseMatrixInterfaceMut> {
+pub struct AsLapackMut<'a, MatImpl: DenseContainerInterfaceMut> {
     mat: &'a mut MatImpl,
 }
 
-impl<MatImpl: DenseMatrixInterface> DenseMatrix<MatImpl> {
+impl<MatImpl: DenseContainerInterface> DenseContainer<MatImpl> {
     pub fn lapack<'a>(&'a self) -> AsLapack<'a, MatImpl> {
-        AsLapack { mat: &self.mat }
+        AsLapack { mat: &self.data }
     }
 
-    /// Convert a dense matrix to an RLST matrix type.
+    /// Convert a dense container to an RLST matrix type.
     pub fn to_rlst<'b>(
         &'b self,
     ) -> rlst_dense::matrix::SliceMatrix<
@@ -112,9 +111,11 @@ impl<MatImpl: DenseMatrixInterface> DenseMatrix<MatImpl> {
     }
 }
 
-impl<MatImpl: DenseMatrixInterfaceMut> DenseMatrix<MatImpl> {
+impl<MatImpl: DenseContainerInterfaceMut> DenseContainer<MatImpl> {
     pub fn lapack_mut<'a>(&'a mut self) -> AsLapackMut<'a, MatImpl> {
-        AsLapackMut { mat: &mut self.mat }
+        AsLapackMut {
+            mat: &mut self.data,
+        }
     }
 
     /// Convert a dense matrix to an RLST matrix type.
@@ -154,57 +155,61 @@ impl<MatImpl: DenseMatrixInterfaceMut> DenseMatrix<MatImpl> {
 //     }
 // }
 
-impl<'a, MatImpl: DenseMatrixInterface> DenseMatrix<MatImpl> {
-    pub fn new(mat: MatImpl) -> Self {
-        Self { mat }
+impl<'a, CotainerImpl: DenseContainerInterface> DenseContainer<CotainerImpl> {
+    pub fn new(data: CotainerImpl) -> Self {
+        Self { data }
     }
 
     #[inline]
     pub fn dim(&self) -> (IndexType, IndexType) {
-        self.mat.dim()
+        self.data.dim()
     }
 
     #[inline]
     pub fn stride(&self) -> (IndexType, IndexType) {
-        self.mat.stride()
+        self.data.stride()
     }
 
     #[inline]
-    pub unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &MatImpl::T {
-        self.mat.get_unchecked(row, col)
+    pub unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &CotainerImpl::T {
+        self.data.get_unchecked(row, col)
     }
 
     #[inline]
-    pub fn get(&self, row: IndexType, col: IndexType) -> Option<&MatImpl::T> {
-        self.mat.get(row, col)
+    pub fn get(&self, row: IndexType, col: IndexType) -> Option<&CotainerImpl::T> {
+        self.data.get(row, col)
     }
 
     #[inline]
-    pub fn data(&self) -> &[MatImpl::T] {
-        self.mat.data()
+    pub fn data(&self) -> &[CotainerImpl::T] {
+        self.data.data()
     }
 }
 
-impl<'a, MatImpl: DenseMatrixInterfaceMut> DenseMatrix<MatImpl> {
+impl<'a, ContainerImpl: DenseContainerInterfaceMut> DenseContainer<ContainerImpl> {
     #[inline]
-    pub unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut MatImpl::T {
-        self.mat.get_unchecked_mut(row, col)
+    pub unsafe fn get_unchecked_mut(
+        &mut self,
+        row: IndexType,
+        col: IndexType,
+    ) -> &mut ContainerImpl::T {
+        self.data.get_unchecked_mut(row, col)
     }
 
     #[inline]
-    pub fn get_mut(&mut self, row: IndexType, col: IndexType) -> Option<&mut MatImpl::T> {
-        self.mat.get_mut(row, col)
+    pub fn get_mut(&mut self, row: IndexType, col: IndexType) -> Option<&mut ContainerImpl::T> {
+        self.data.get_mut(row, col)
     }
 
     #[inline]
-    pub fn data_mut(&mut self) -> &mut [MatImpl::T] {
-        self.mat.data_mut()
+    pub fn data_mut(&mut self) -> &mut [ContainerImpl::T] {
+        self.data.data_mut()
     }
 }
 
-macro_rules! implement_dense_matrix_with_lifetime {
+macro_rules! implement_dense_container_with_lifetime {
     ($mat:ident) => {
-        impl<'a, MatImpl: DenseMatrixInterface> $mat<'a, MatImpl> {
+        impl<'a, MatImpl: DenseContainerInterface> $mat<'a, MatImpl> {
             #[inline]
             pub fn dim(&self) -> (IndexType, IndexType) {
                 self.mat.dim()
@@ -233,9 +238,9 @@ macro_rules! implement_dense_matrix_with_lifetime {
     };
 }
 
-macro_rules! implement_dense_matrix_with_lifetime_mut {
+macro_rules! implement_dense_container_with_lifetime_mut {
     ($mat:ident) => {
-        impl<'a, MatImpl: DenseMatrixInterfaceMut> $mat<'a, MatImpl> {
+        impl<'a, MatImpl: DenseContainerInterfaceMut> $mat<'a, MatImpl> {
             pub fn dim(&self) -> (IndexType, IndexType) {
                 self.mat.dim()
             }
@@ -273,5 +278,5 @@ macro_rules! implement_dense_matrix_with_lifetime_mut {
     };
 }
 
-implement_dense_matrix_with_lifetime!(AsLapack);
-implement_dense_matrix_with_lifetime_mut!(AsLapackMut);
+implement_dense_container_with_lifetime!(AsLapack);
+implement_dense_container_with_lifetime_mut!(AsLapackMut);

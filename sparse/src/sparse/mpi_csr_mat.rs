@@ -4,7 +4,6 @@ use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::SparseMatType;
 use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_common::types::SparseLinAlgResult;
 
 use rlst_common::types::{IndexType, Scalar};
 

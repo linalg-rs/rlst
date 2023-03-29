@@ -1,4 +1,5 @@
 //! Trait for LU Decomposition
+use crate::adapter::dense_matrix::{DenseContainer, DenseContainerInterfaceMut};
 pub use rlst_common::types::{IndexType, Scalar};
 
 pub trait LUDecomp {
@@ -10,5 +11,8 @@ pub trait LUDecomp {
 
     fn dim(&self) -> (IndexType, IndexType);
 
-    fn solve(&self, vec: &mut [Self::T]);
+    fn solve<ContainerImpl: DenseContainerInterfaceMut>(
+        &self,
+        rhs: &mut DenseContainer<ContainerImpl>,
+    );
 }
