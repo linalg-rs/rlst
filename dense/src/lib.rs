@@ -47,5 +47,6 @@ pub mod global;
 pub mod matrix_multiply;
 pub mod matrix_ref;
 pub mod scalar_mult;
+pub mod subtraction;
 
 pub use global::*;

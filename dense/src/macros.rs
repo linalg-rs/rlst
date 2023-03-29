@@ -40,9 +40,9 @@ macro_rules! rlst_rand_mat {
 }
 
 #[macro_export]
-macro_rules! vector {
+macro_rules! rlst_vec {
     ($ScalarType:ty, $len:expr) => {
-        vector![$ScalarType, $len, ColumnVector]
+        rlst_vec![$ScalarType, $len, ColumnVector]
     };
     ($ScalarType:ty, $len:expr, ColumnVector) => {
         $crate::ColumnVectorD::<$ScalarType>::zeros_from_length($len)
@@ -53,13 +53,13 @@ macro_rules! vector {
 }
 
 #[macro_export]
-macro_rules! rand_vector {
+macro_rules! rlst_rand_vec {
     ($ScalarType:ty, $dim:expr) => {
-        rand_vector![$ScalarType, $dim, ColumnVector]
+        rlst_rand_vec![$ScalarType, $dim, ColumnVector]
     };
     ($ScalarType:ty, $dim:expr, $orientation:tt) => {{
         let mut rng = rand::thread_rng();
-        let mut vec = $crate::vector![$ScalarType, $dim, $orientation];
+        let mut vec = $crate::rlst_vec![$ScalarType, $dim, $orientation];
         vec.fill_from_rand_standard_normal(&mut rng);
         vec
     }};
@@ -87,7 +87,7 @@ mod test {
     #[test]
     fn create_column_vector() {
         let length = 5;
-        let vec = vector![f64, length];
+        let vec = rlst_vec![f64, length];
 
         assert_eq!(vec.dim(), (5, 1));
     }
@@ -95,7 +95,7 @@ mod test {
     #[test]
     fn create_row_vector() {
         let length = 5;
-        let vec = vector![f64, length, RowVector];
+        let vec = rlst_vec![f64, length, RowVector];
 
         assert_eq!(vec.dim(), (1, 5));
     }
@@ -103,7 +103,7 @@ mod test {
     #[test]
     fn create_random_vector() {
         let length = 5;
-        let vec = rand_vector![f64, length];
+        let vec = rlst_rand_vec![f64, length];
 
         assert_eq!(vec.dim(), (5, 1));
     }

@@ -2,10 +2,15 @@ use crate::adapter::dense_matrix::{AsLapack, DenseContainer, DenseContainerInter
 use crate::lapack::get_lapack_layout;
 use crate::traits::lu_decomp::LUDecomp;
 use lapacke;
-use rlst_common::types::{RlstError, RlstResult};
+use rlst_common::types::{IndexType, RlstError, RlstResult};
+
+use super::TransposeMode;
 
 pub struct LUDecompLapack<ContainerImpl: DenseContainerInterfaceMut> {
     data: AsLapack<ContainerImpl>,
+    layout: lapacke::Layout,
+    lda: i32,
+    dim: (IndexType, IndexType),
     ipiv: Vec<i32>,
 }
 
@@ -25,10 +30,15 @@ impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<Cont
 
         let mut ipiv: Vec<i32> = vec![0; std::cmp::min(dim.0, dim.1)];
         if let Ok((layout, lda)) = get_lapack_layout(stride) {
-            let lda = lda as i32;
             let info = unsafe { lapacke::dgetrf(layout, m, n, data.data_mut(), lda, &mut ipiv) };
             if info == 0 {
-                return Ok(Self { data, ipiv });
+                return Ok(Self {
+                    data,
+                    layout,
+                    lda,
+                    dim,
+                    ipiv,
+                });
             } else {
                 return Err(RlstError::LapackError(info));
             }
@@ -49,11 +59,55 @@ impl<ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecomp
     }
 
     fn dim(&self) -> (rlst_common::types::IndexType, rlst_common::types::IndexType) {
-        self.data.dim()
+        self.dim
     }
 
-    fn solve(&self, rhs: &mut DenseContainer<Self::ContainerImpl>) {
-        std::unimplemented!();
+    fn solve<VecImpl: DenseContainerInterfaceMut<T = Self::T>>(
+        &self,
+        rhs: &mut DenseContainer<VecImpl>,
+        trans: TransposeMode,
+    ) -> RlstResult<()> {
+        let rhs_stride = rhs.stride();
+
+        if let Ok((rhs_layout, ldb)) = get_lapack_layout(rhs_stride) {
+            println!("lda: {}", self.lda);
+            println!("ldb: {}", ldb);
+            println!("rhs layout {:?}", rhs_layout);
+            println!("n: {}", self.dim.1);
+            println!("nrhs: {}", rhs.dim().1);
+            println!("ipiv: {}, {}", self.ipiv[0], self.ipiv[1]);
+            println!("a: {}, {}", self.data()[0], self.data()[1]);
+            println!("a: {}, {}", self.data()[2], self.data()[3]);
+            println!("rhs: {}, {}", rhs.data()[0], rhs.data()[1]);
+            let t = trans as u8;
+            let t = t as char;
+
+            println!("trans {:?}", trans);
+
+            let info = unsafe {
+                lapacke::dgetrs(
+                    lapacke::Layout::RowMajor,
+                    trans as u8,
+                    self.dim.1 as i32,
+                    rhs.dim().1 as i32,
+                    self.data(),
+                    self.lda,
+                    &self.ipiv,
+                    rhs.data_mut(),
+                    1,
+                )
+            };
+
+            println!("x: {}, {}", rhs.data()[0], rhs.data()[1]);
+
+            if info == 0 {
+                return Ok(());
+            } else {
+                return Err(RlstError::LapackError(info));
+            }
+        } else {
+            Err(RlstError::IncompatibleStride)
+        }
     }
 }
 
@@ -61,17 +115,36 @@ impl<ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecomp
 use super::*;
 use crate::adapter::adapter_traits::*;
 use crate::adapter::rlst_dense_adapter::*;
-use rlst_dense::{self, rlst_rand_mat};
+use rlst_dense::matrix::*;
+use rlst_dense::{rlst_mat, rlst_rand_mat, rlst_rand_vec, rlst_vec, Dot};
 
 #[test]
 fn test_lu_decomp_f64() {
-    let mut rlst_mat = rlst_rand_mat![f64, (5, 5)];
+    let mut rlst_mat = rlst_mat![f64, (2, 2)];
+    let mut rlst_vec = rlst_vec![f64, 2];
 
-    let lu_decomp = rlst_mat.algorithms_mut().lapack().lu();
+    rlst_mat[[0, 0]] = 1.0;
+    rlst_mat[[0, 1]] = 1.0;
+    rlst_mat[[1, 0]] = 0.0;
+    rlst_mat[[1, 1]] = 1.0;
 
-    let mut as_algorithm = rlst_mat.algorithms_mut();
+    rlst_vec[[0, 0]] = 1.0;
+    rlst_vec[[1, 0]] = 1.0;
 
-    let mut as_lapack = as_algorithm.lapack();
+    let mut rhs = rlst_mat.dot(&rlst_vec);
 
-    let lu_decomp = LUDecompLapack::new(as_lapack);
+    let info = rlst_mat
+        .algorithms_mut()
+        .lapack()
+        .lu()
+        .unwrap()
+        .solve(&mut rhs.algorithms_mut(), TransposeMode::NoTrans);
+
+    let x = rhs;
+
+    let diff = (x - rlst_vec).eval();
+
+    //println!("Error: {}", diff[[0, 0]]);
+
+    //let lu_decomp = rlst_mat.algorithms().lapack().lu();
 }

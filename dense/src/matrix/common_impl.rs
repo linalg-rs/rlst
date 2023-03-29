@@ -1,6 +1,6 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::matrix::{Matrix, MatrixD};
+use crate::matrix::{ColumnVectorD, Matrix, MatrixD, RowVectorD};
 use crate::traits::*;
 use crate::types::{IndexType, Scalar};
 
@@ -121,22 +121,30 @@ impl<
     }
 }
 
-impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Dynamic>>
-    Matrix<Item, MatImpl, L, Dynamic, Dynamic>
-{
-    /// Evaluate into a new matrix.
-    pub fn eval(&self) -> MatrixD<Item, <L as LayoutType>::IndexLayout> {
-        let dim = self.layout().dim();
-        let mut result =
-            MatrixD::<Item, <L as LayoutType>::IndexLayout>::zeros_from_dim(dim.0, dim.1);
-        unsafe {
-            for index in 0..self.layout().number_of_elements() {
-                *result.get1d_unchecked_mut(index) = self.get1d_value_unchecked(index);
+macro_rules! eval_implementation_dynamic {
+    ($layout1:ident, $layout2:ident) => {
+        impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, $layout1, $layout2>>
+            Matrix<Item, MatImpl, L, $layout1, $layout2>
+        {
+            /// Evaluate into a new matrix.
+            pub fn eval(&self) -> MatrixD<Item, <L as LayoutType>::IndexLayout> {
+                let dim = self.layout().dim();
+                let mut result =
+                    MatrixD::<Item, <L as LayoutType>::IndexLayout>::zeros_from_dim(dim.0, dim.1);
+                unsafe {
+                    for index in 0..self.layout().number_of_elements() {
+                        *result.get1d_unchecked_mut(index) = self.get1d_value_unchecked(index);
+                    }
+                }
+                result
             }
         }
-        result
-    }
+    };
 }
+
+eval_implementation_dynamic!(Dynamic, Dynamic);
+eval_implementation_dynamic!(Dynamic, Fixed1);
+eval_implementation_dynamic!(Fixed1, Dynamic);
 
 impl<
         Item: Scalar,

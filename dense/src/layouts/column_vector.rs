@@ -47,7 +47,7 @@ impl LayoutType for ColumnVector {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (1, 1)
+        (1, self.dim)
     }
 
     #[inline]
@@ -64,7 +64,7 @@ impl LayoutType for ColumnVector {
 impl BaseLayoutType for ColumnVector {
     fn from_dimension(dim: (IndexType, IndexType)) -> Self {
         assert_eq!(
-            dim.0, 1,
+            dim.1, 1,
             "Number of columns is {} but must be one for ColumnVector.",
             dim.1
         );

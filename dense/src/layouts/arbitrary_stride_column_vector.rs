@@ -52,7 +52,7 @@ impl LayoutType for ArbitraryStrideColumnVector {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (self.stride, 1)
+        (self.stride, self.stride * self.dim)
     }
 
     #[inline]
