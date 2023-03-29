@@ -67,7 +67,7 @@ impl AsApply for OpWithMatVec {
         &self,
         _x: ElementView<Self::Domain>,
         _y: ElementViewMut<Self::Range>,
-    ) -> SparseLinAlgResult<()> {
+    ) -> RlstResult<()> {
         println!("I am doing a matvec");
         Ok(())
     }

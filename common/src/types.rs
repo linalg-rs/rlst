@@ -10,7 +10,7 @@ use thiserror::Error;
 pub type IndexType = usize;
 
 #[derive(Error, Debug)]
-pub enum SparseLinAlgError {
+pub enum RlstError {
     #[error("Method {0} is not implemented.")]
     NotImplemented(String),
     #[error("Operation {0} failed.")]
@@ -24,6 +24,10 @@ pub enum SparseLinAlgError {
     IndexLayoutError(String),
     #[error("MPI Rank does not exist. {0}")]
     MpiRankError(i32),
+    #[error("Incompatible stride for Lapack.")]
+    IncompatibleStride,
+    #[error("Lapack error: {0}")]
+    LapackError(i32),
 }
 
-pub type SparseLinAlgResult<T> = std::result::Result<T, SparseLinAlgError>;
+pub type RlstResult<T> = std::result::Result<T, RlstError>;

@@ -69,7 +69,7 @@ impl<T: Scalar> InnerProductSpace for LocalIndexableVectorSpace<T> {
         &self,
         x: &rlst_operator::ElementView<'a, Self>,
         other: &rlst_operator::ElementView<'a, Self>,
-    ) -> rlst_common::types::SparseLinAlgResult<Self::F>
+    ) -> rlst_common::types::RlstResult<Self::F>
     where
         Self: 'a,
     {

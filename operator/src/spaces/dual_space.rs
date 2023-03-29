@@ -1,5 +1,5 @@
 use super::{ElementView, LinearSpace};
-use rlst_common::types::SparseLinAlgResult;
+use rlst_common::types::RlstResult;
 
 pub trait DualSpace: LinearSpace {
     type Space: LinearSpace<F = Self::F>;
@@ -8,5 +8,5 @@ pub trait DualSpace: LinearSpace {
         &self,
         x: ElementView<Self>,
         other: ElementView<Self::Space>,
-    ) -> SparseLinAlgResult<Self::F>;
+    ) -> RlstResult<Self::F>;
 }

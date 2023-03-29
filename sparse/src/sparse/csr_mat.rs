@@ -1,7 +1,7 @@
 //! Definition of CSR matrices.
 
 use crate::sparse::SparseMatType;
-use rlst_common::types::SparseLinAlgResult;
+use rlst_common::types::RlstResult;
 
 use rlst_common::types::{IndexType, Scalar};
 
@@ -73,7 +73,7 @@ impl<T: Scalar> CsrMatrix<T> {
         rows: &[IndexType],
         cols: &[IndexType],
         data: &[T],
-    ) -> SparseLinAlgResult<Self> {
+    ) -> RlstResult<Self> {
         let mut sorted: Vec<IndexType> = (0..rows.len()).collect();
         sorted.sort_by_key(|&idx| rows[idx]);
 

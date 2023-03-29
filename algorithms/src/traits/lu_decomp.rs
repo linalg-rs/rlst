@@ -4,15 +4,11 @@ pub use rlst_common::types::{IndexType, Scalar};
 
 pub trait LUDecomp {
     type T: Scalar;
-
-    fn into(self) -> Self;
+    type ContainerImpl: DenseContainerInterfaceMut;
 
     fn data(&self) -> &[Self::T];
 
     fn dim(&self) -> (IndexType, IndexType);
 
-    fn solve<ContainerImpl: DenseContainerInterfaceMut>(
-        &self,
-        rhs: &mut DenseContainer<ContainerImpl>,
-    );
+    fn solve(&self, rhs: &mut DenseContainer<Self::ContainerImpl>);
 }

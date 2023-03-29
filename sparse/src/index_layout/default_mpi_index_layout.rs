@@ -1,6 +1,6 @@
 use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_common::types::{IndexType, SparseLinAlgResult};
+use rlst_common::types::{IndexType, RlstResult};
 
 pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
     size: IndexType,
@@ -83,13 +83,11 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
 }
 
 impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
-    fn index_range(&self, rank: IndexType) -> SparseLinAlgResult<(IndexType, IndexType)> {
+    fn index_range(&self, rank: IndexType) -> RlstResult<(IndexType, IndexType)> {
         if rank < self.comm.size() as IndexType {
             Ok((self.counts[rank], self.counts[1 + rank]))
         } else {
-            Err(rlst_common::types::SparseLinAlgError::MpiRankError(
-                rank as i32,
-            ))
+            Err(rlst_common::types::RlstError::MpiRankError(rank as i32))
         }
     }
 

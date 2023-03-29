@@ -53,7 +53,7 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
 /// Inner product with another object.
 pub trait Inner: IndexableVector {
-    fn inner(&self, other: &Self) -> rlst_common::types::SparseLinAlgResult<Self::Item>;
+    fn inner(&self, other: &Self) -> rlst_common::types::RlstResult<Self::Item>;
 }
 
 /// Take the sum of the squares of the absolute values of the entries.
@@ -78,12 +78,12 @@ pub trait NormInfty: IndexableVector {
 
 /// Swap entries with another vector.
 pub trait Swap: IndexableVector {
-    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::RlstResult<()>;
 }
 
 /// Fill vector by copying from another vector.
 pub trait Fill: IndexableVector {
-    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_common::types::RlstResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -97,5 +97,5 @@ pub trait MultSumInto: IndexableVector {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_common::types::SparseLinAlgResult<()>;
+    ) -> rlst_common::types::RlstResult<()>;
 }

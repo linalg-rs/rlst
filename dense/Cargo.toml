@@ -27,9 +27,13 @@ approx = { version = "0.5", features=["num-complex"] }
 rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
 
+
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+
+
+

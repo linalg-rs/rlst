@@ -27,11 +27,8 @@ pub trait OperatorBase: Debug {
 
 /// Apply an operator.
 pub trait AsApply: OperatorBase {
-    fn apply(
-        &self,
-        x: ElementView<Self::Domain>,
-        y: ElementViewMut<Self::Range>,
-    ) -> SparseLinAlgResult<()>;
+    fn apply(&self, x: ElementView<Self::Domain>, y: ElementViewMut<Self::Range>)
+        -> RlstResult<()>;
 }
 
 impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In, Range = Out> {
@@ -39,11 +36,11 @@ impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In
         &self,
         x: ElementView<Self::Domain>,
         y: ElementViewMut<Self::Range>,
-    ) -> SparseLinAlgResult<()> {
+    ) -> RlstResult<()> {
         if let Some(op) = self.as_apply() {
             op.apply(x, y)
         } else {
-            Err(SparseLinAlgError::NotImplemented("Apply".to_string()))
+            Err(RlstError::NotImplemented("Apply".to_string()))
         }
     }
 }
@@ -112,7 +109,7 @@ mod tests {
             &self,
             _x: ElementView<Self::Domain>,
             _y: ElementViewMut<Self::Range>,
-        ) -> SparseLinAlgResult<()> {
+        ) -> RlstResult<()> {
             println!("{self:?} matvec");
             Ok(())
         }
@@ -138,7 +135,7 @@ mod tests {
             &self,
             _x: ElementView<Self::Domain>,
             _y: ElementViewMut<Self::Range>,
-        ) -> SparseLinAlgResult<()> {
+        ) -> RlstResult<()> {
             println!("{self:?} matvec");
             Ok(())
         }
@@ -159,13 +156,13 @@ mod tests {
             &self,
             _x: ElementView<Self::Domain>,
             _y: ElementViewMut<Self::Range>,
-        ) -> SparseLinAlgResult<()> {
+        ) -> RlstResult<()> {
             println!("{self:?} matvec");
-            Err(SparseLinAlgError::OperationFailed("Apply".to_string()))
+            Err(RlstError::OperationFailed("Apply".to_string()))
         }
     }
     #[test]
-    fn test_mult_dyn() -> SparseLinAlgResult<()> {
+    fn test_mult_dyn() -> RlstResult<()> {
         let x = SimpleVector {};
         let mut y = SimpleVector {};
         let ops: Vec<Box<dyn OperatorBase<Domain = SimpleSpace, Range = SimpleSpace>>> =
@@ -177,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mult() -> SparseLinAlgResult<()> {
+    fn test_mult() -> RlstResult<()> {
         let x = SimpleVector {};
         let mut y = SimpleVector {};
         let a = SparseMatrix;

@@ -10,6 +10,8 @@ rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
 num = "0.4"
 rand = "0.8"
+lapack-sys = { version = "0.14"}
+lapack-src = { version = "0.8", features = ["accelerate"]}
 
 [dev-dependencies]
 cauchy = "0.4"
@@ -17,3 +19,5 @@ float_eq = { version = "1", features = ["num"] }
 
 [lib]
 name = "rlst_algorithms"
+
+[features]

@@ -64,7 +64,7 @@ impl DualSpace for PointwiseEvaluatorSpace {
         &self,
         x: ElementView<Self>,
         p: ElementView<Self::Space>,
-    ) -> SparseLinAlgResult<Self::F> {
+    ) -> RlstResult<Self::F> {
         Ok(x.scale * p.eval(x.x))
     }
 }
@@ -101,7 +101,7 @@ impl OperatorBase for Derivative {
     }
 }
 impl AsApply for Derivative {
-    fn apply(&self, p: PolynomialView, dp: PolynomialViewMut) -> SparseLinAlgResult<()> {
+    fn apply(&self, p: PolynomialView, dp: PolynomialViewMut) -> RlstResult<()> {
         for (i, c) in p.monomial_coeffs[1..].iter().enumerate() {
             dp.monomial_coeffs[i] = (1. + i as f64) * c;
         }
