@@ -1,18 +1,22 @@
-use crate::adapter::dense_matrix::{AsLapackMut, DenseContainer, DenseContainerInterfaceMut};
+use crate::adapter::dense_matrix::{AsLapack, DenseContainer, DenseContainerInterfaceMut};
 use crate::lapack::get_lapack_layout;
 use crate::traits::lu_decomp::LUDecomp;
+use lapacke;
 use rlst_common::types::{RlstError, RlstResult};
 
-use lapack_src;
-use lapack_sys;
-
-pub struct LUDecompLapack<'a, ContainerImpl: DenseContainerInterfaceMut> {
-    data: AsLapackMut<'a, ContainerImpl>,
+pub struct LUDecompLapack<ContainerImpl: DenseContainerInterfaceMut> {
+    data: AsLapack<ContainerImpl>,
     ipiv: Vec<i32>,
 }
 
-impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<'a, ContainerImpl> {
-    pub fn new(mut data: AsLapackMut<'a, ContainerImpl>) -> RlstResult<Self> {
+impl<ContainerImpl: DenseContainerInterfaceMut<T = f64>> AsLapack<ContainerImpl> {
+    pub fn lu(self) -> RlstResult<LUDecompLapack<ContainerImpl>> {
+        LUDecompLapack::new(self)
+    }
+}
+
+impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<ContainerImpl> {
+    pub fn new(mut data: AsLapack<ContainerImpl>) -> RlstResult<Self> {
         let dim = data.dim();
         let stride = data.stride();
 
@@ -21,18 +25,8 @@ impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<'a, 
 
         let mut ipiv: Vec<i32> = vec![0; std::cmp::min(dim.0, dim.1)];
         if let Ok((layout, lda)) = get_lapack_layout(stride) {
-            let mut info: i32 = 0;
             let lda = lda as i32;
-            unsafe {
-                lapack_sys::dgetrf_(
-                    &m,
-                    &n,
-                    data.data_mut().as_mut_ptr(),
-                    &lda,
-                    ipiv.as_mut_slice().as_mut_ptr(),
-                    &mut info,
-                );
-            };
+            let info = unsafe { lapacke::dgetrf(layout, m, n, data.data_mut(), lda, &mut ipiv) };
             if info == 0 {
                 return Ok(Self { data, ipiv });
             } else {
@@ -44,8 +38,8 @@ impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<'a, 
     }
 }
 
-impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecomp
-    for LUDecompLapack<'a, ContainerImpl>
+impl<ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecomp
+    for LUDecompLapack<ContainerImpl>
 {
     type T = ContainerImpl::T;
     type ContainerImpl = ContainerImpl;
@@ -73,9 +67,11 @@ use rlst_dense::{self, rlst_rand_mat};
 fn test_lu_decomp_f64() {
     let mut rlst_mat = rlst_rand_mat![f64, (5, 5)];
 
+    let lu_decomp = rlst_mat.algorithms_mut().lapack().lu();
+
     let mut as_algorithm = rlst_mat.algorithms_mut();
 
-    let mut as_lapack = as_algorithm.lapack_mut();
+    let mut as_lapack = as_algorithm.lapack();
 
     let lu_decomp = LUDecompLapack::new(as_lapack);
 }
