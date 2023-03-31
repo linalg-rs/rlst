@@ -9,40 +9,33 @@
 //! [BaseMatrix] implementation.
 //!
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::layouts::*;
-use crate::traits::*;
 use crate::types::{IndexType, Scalar};
+use crate::{traits::*, DefaultLayout};
 use std::marker::PhantomData;
 
 pub struct BaseMatrix<
     Item: Scalar,
     Data: DataContainer<Item = Item>,
-    L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
 > {
     data: Data,
-    layout: L,
+    layout: DefaultLayout,
     phantom_r: PhantomData<RS>,
     phantom_c: PhantomData<CS>,
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    BaseMatrix<Item, Data, RS, CS>
 {
-    pub fn new(data: Data, layout: L) -> Self {
+    pub fn new(data: Data, layout: DefaultLayout) -> Self {
         assert!(
             layout.number_of_elements() <= data.number_of_elements(),
             "Number of elements in data: {}. But layout number of elements is {})",
             data.number_of_elements(),
             layout.number_of_elements(),
         );
-        BaseMatrix::<Item, Data, L, RS, CS> {
+        BaseMatrix::<Item, Data, RS, CS> {
             data,
             layout,
             phantom_r: PhantomData,
@@ -51,13 +44,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    BaseMatrix<Item, Data, RS, CS>
 {
     #[inline]
     pub fn get_pointer(&self) -> *const Item {
@@ -70,13 +58,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    BaseMatrix<Item, Data, RS, CS>
 {
     #[inline]
     pub fn get_pointer_mut(&mut self) -> *mut Item {
@@ -89,15 +72,10 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier> Layout
+    for BaseMatrix<Item, Data, RS, CS>
 {
-    type Impl = L;
+    type Impl = DefaultLayout;
 
     #[inline]
     fn layout(&self) -> &Self::Impl {
@@ -105,25 +83,15 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    SizeType for BaseMatrix<Item, Data, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    UnsafeRandomAccessByValue for BaseMatrix<Item, Data, RS, CS>
 {
     type Item = Item;
 
@@ -140,31 +108,8 @@ impl<
     }
 }
 
-macro_rules! vector_length {
-    ($Layout:ty) => {
-        impl<
-                Item: Scalar,
-                Data: DataContainer<Item = Item>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > BaseMatrix<Item, Data, $Layout, RS, CS>
-        {
-            pub fn length(&self) -> IndexType {
-                self.data.number_of_elements()
-            }
-        }
-    };
-}
-
-vector_length!(RowVector);
-
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    UnsafeRandomAccessByRef for BaseMatrix<Item, Data, RS, CS>
 {
     type Item = Item;
 
@@ -180,13 +125,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for BaseMatrix<Item, Data, L, RS, CS>
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    UnsafeRandomAccessMut for BaseMatrix<Item, Data, RS, CS>
 {
     type Item = Item;
 

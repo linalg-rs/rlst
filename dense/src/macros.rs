@@ -4,21 +4,8 @@
 #[macro_export]
 macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {
-        rlst_mat![$ScalarType, $dim, RowMajor]
-    };
-    ($ScalarType:ty, $dim:expr, RowMajor) => {
         $crate::GenericBaseMatrixMut::<
             $ScalarType,
-            $crate::RowMajor,
-            $crate::VectorContainer<$ScalarType>,
-            $crate::Dynamic,
-            $crate::Dynamic,
-        >::zeros_from_dim($dim.0, $dim.1)
-    };
-    ($ScalarType:ty, $dim:expr, ColumnMajor) => {
-        $crate::GenericBaseMatrixMut::<
-            $ScalarType,
-            $crate::ColumnMajor,
             $crate::VectorContainer<$ScalarType>,
             $crate::Dynamic,
             $crate::Dynamic,
@@ -28,12 +15,9 @@ macro_rules! rlst_mat {
 
 #[macro_export]
 macro_rules! rlst_rand_mat {
-    ($ScalarType:ty, $dim:expr) => {
-        rlst_rand_mat![$ScalarType, $dim, RowMajor]
-    };
-    ($ScalarType:ty, $dim:expr, $layout:tt) => {{
+    ($ScalarType:ty, $dim:expr) => {{
         let mut rng = rand::thread_rng();
-        let mut mat = $crate::rlst_mat![$ScalarType, $dim, $layout];
+        let mut mat = $crate::rlst_mat![$ScalarType, $dim];
         mat.fill_from_rand_standard_normal(&mut rng);
         mat
     }};
@@ -42,7 +26,7 @@ macro_rules! rlst_rand_mat {
 #[macro_export]
 macro_rules! rlst_vec {
     ($ScalarType:ty, $len:expr) => {
-        rlst_vec![$ScalarType, $len, ColumnVector]
+        $crate::ColumnVectorD::<$ScalarType>::zeros_from_length($len)
     };
     ($ScalarType:ty, $len:expr, ColumnVector) => {
         $crate::ColumnVectorD::<$ScalarType>::zeros_from_length($len)
@@ -69,7 +53,7 @@ macro_rules! rlst_rand_vec {
 mod test {
 
     #[test]
-    fn create_row_major_matrix() {
+    fn create_matrix() {
         let dim = (2, 3);
         let mat = rlst_mat![f64, dim];
 

@@ -1,42 +1,27 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::matrix::{ColumnVectorD, Matrix, MatrixD, RowVectorD};
-use crate::traits::*;
+use crate::matrix::{Matrix, MatrixD};
 use crate::types::{IndexType, Scalar};
+use crate::{traits::*, DefaultLayout};
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for Matrix<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    Layout for Matrix<Item, MatImpl, RS, CS>
 {
-    type Impl = L;
+    type Impl = DefaultLayout;
     fn layout(&self) -> &Self::Impl {
         self.0.layout()
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for Matrix<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    SizeType for Matrix<Item, MatImpl, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for Matrix<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -53,11 +38,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for Matrix<Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessMut for Matrix<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -74,11 +58,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -95,11 +78,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::Index<[IndexType; 2]> for Matrix<Item, MatImpl, L, RS, CS>
+    > std::ops::Index<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
     type Output = Item;
 
@@ -110,49 +92,40 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, L, RS, CS> + MatrixTraitAccessByRef<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitMut<Item, RS, CS> + MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::IndexMut<[IndexType; 2]> for Matrix<Item, MatImpl, L, RS, CS>
+    > std::ops::IndexMut<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
     fn index_mut(&mut self, index: [IndexType; 2]) -> &mut Self::Output {
         self.get_mut(index[0], index[1]).unwrap()
     }
 }
 
-macro_rules! eval_implementation_dynamic {
-    ($layout1:ident, $layout2:ident) => {
-        impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, $layout1, $layout2>>
-            Matrix<Item, MatImpl, L, $layout1, $layout2>
-        {
-            /// Evaluate into a new matrix.
-            pub fn eval(&self) -> MatrixD<Item, <L as LayoutType>::IndexLayout> {
-                let dim = self.layout().dim();
-                let mut result =
-                    MatrixD::<Item, <L as LayoutType>::IndexLayout>::zeros_from_dim(dim.0, dim.1);
-                unsafe {
-                    for index in 0..self.layout().number_of_elements() {
-                        *result.get1d_unchecked_mut(index) = self.get1d_value_unchecked(index);
-                    }
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    Matrix<Item, MatImpl, RS, CS>
+{
+    /// Evaluate into a new matrix.
+    pub fn eval(self) -> MatrixD<Item> {
+        let dim = self.layout().dim();
+        let mut result = MatrixD::<Item>::zeros_from_dim(dim.0, dim.1);
+        unsafe {
+            for row in 0..dim.0 {
+                for col in 0..dim.1 {
+                    *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
                 }
-                result
             }
         }
-    };
+        result
+    }
 }
 
-eval_implementation_dynamic!(Dynamic, Dynamic);
-eval_implementation_dynamic!(Dynamic, Fixed1);
-eval_implementation_dynamic!(Fixed1, Dynamic);
+// eval_implementation_dynamic!(Dynamic, Dynamic);
+// eval_implementation_dynamic!(Dynamic, Fixed1);
+// eval_implementation_dynamic!(Fixed1, Dynamic);
 
-impl<
-        Item: Scalar,
-        L: LayoutType,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    Matrix<Item, MatImpl, RS, CS>
 {
     /// Return dimension of the matrix.
     pub fn dim(&self) -> (IndexType, IndexType) {
@@ -160,8 +133,8 @@ impl<
     }
 }
 
-impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Fixed1, Dynamic>>
-    Matrix<Item, MatImpl, L, Fixed1, Dynamic>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, Fixed1, Dynamic>>
+    Matrix<Item, MatImpl, Fixed1, Dynamic>
 {
     /// Return length of a vector.
     pub fn length(&self) -> IndexType {
@@ -169,8 +142,8 @@ impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Fixed1, Dynamic>
     }
 }
 
-impl<Item: Scalar, L: LayoutType, MatImpl: MatrixTrait<Item, L, Dynamic, Fixed1>>
-    Matrix<Item, MatImpl, L, Dynamic, Fixed1>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, Dynamic, Fixed1>>
+    Matrix<Item, MatImpl, Dynamic, Fixed1>
 {
     /// Return length of a vector.
     pub fn length(&self) -> IndexType {

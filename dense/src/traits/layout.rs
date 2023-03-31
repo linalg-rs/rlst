@@ -78,35 +78,9 @@
 
 use crate::types::IndexType;
 
-/// This trait defines base layout traits. These are layouts
-/// that can be instantiated purely from information about the
-/// matrix dimension.
-pub trait BaseLayoutType: LayoutType {
-    /// Create a new layout from providing the matrix dimension as `(rows, cols)` tuple.
-    fn from_dimension(dim: (IndexType, IndexType)) -> Self;
-}
-
-/// This trait defines a base layout for vectors. These are
-/// layouts which can be instantiated by only providing the
-/// length of the vector (e.g. a simple row or column vector).
-pub trait VectorBaseLayoutType: BaseLayoutType {
-    /// Create a new layout from providing the length of the vector.
-    fn from_length(length: IndexType) -> Self;
-}
-
-/// Marker trait to identify base traits for matrices.
-pub trait MatrixBaseLayoutType: BaseLayoutType {}
-
-/// Marker trait to identify layouts with non-standard strides.
-pub trait StridedLayoutType: LayoutType {}
-
 /// The main trait defining a layout. For detailed information see the
 /// [module description](crate::traits::layout).
 pub trait LayoutType {
-    /// The associated logical layout for indexing
-    /// matrix elements.
-    type IndexLayout: BaseLayoutType;
-
     /// Return the stride as tuple `(r, c)` with `r` the row strice and `c` the column stride.
     fn stride(&self) -> (IndexType, IndexType);
 
@@ -128,9 +102,8 @@ pub trait LayoutType {
     /// Convert a 2d logical `(row, col)` index to a raw memory index.
     fn convert_2d_raw(&self, row: IndexType, col: IndexType) -> IndexType;
 
-    /// Create a new index layout that is identical to the index layout of
-    /// this layout.
-    fn index_layout(&self) -> Self::IndexLayout;
+    /// Create a new layout from providing the matrix dimension as `(rows, cols)` tuple.
+    fn from_dimension(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self;
 }
 
 /// This layout provides a method to return layout information.

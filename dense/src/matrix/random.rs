@@ -11,12 +11,8 @@ use super::GenericBaseMatrixMut;
 
 macro_rules! rand_impl {
     ($Scalar:ty) => {
-        impl<
-                L: LayoutType,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                Data: DataContainerMut<Item = $Scalar>,
-            > GenericBaseMatrixMut<$Scalar, L, Data, RS, CS>
+        impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = $Scalar>>
+            GenericBaseMatrixMut<$Scalar, Data, RS, CS>
         {
             /// Fill a matrix with normally distributed random numbers.
             pub fn fill_from_rand_standard_normal<R: Rng>(&mut self, rng: &mut R) {

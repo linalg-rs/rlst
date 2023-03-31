@@ -1,14 +1,17 @@
-use crate::adapter::dense_matrix::{AsLapack, DenseContainer, DenseContainerInterfaceMut};
-use crate::lapack::get_lapack_layout;
 use crate::traits::lu_decomp::LUDecomp;
 use lapacke;
 use rlst_common::types::{IndexType, RlstError, RlstResult};
 
 use super::TransposeMode;
 
-pub struct LUDecompLapack<ContainerImpl: DenseContainerInterfaceMut> {
-    data: AsLapack<ContainerImpl>,
-    layout: lapacke::Layout,
+pub struct LapackData<Item: Scalar, Data: DataContainerMut, RS: SizeIdentifier, CS: SizeIdentifier>
+{
+    mat: GenericBaseMatrixMut<Item, Data, RS, CS>,
+    lda: i32,
+}
+
+pub struct LUDecompLapack<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier> {
+    data: LapackData,
     lda: i32,
     dim: (IndexType, IndexType),
     ipiv: Vec<i32>,
@@ -34,7 +37,6 @@ impl<'a, ContainerImpl: DenseContainerInterfaceMut<T = f64>> LUDecompLapack<Cont
             if info == 0 {
                 return Ok(Self {
                     data,
-                    layout,
                     lda,
                     dim,
                     ipiv,
