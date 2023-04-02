@@ -10,9 +10,9 @@ pub trait LUDecomp {
 
     fn dim(&self) -> (IndexType, IndexType);
 
-    fn solve<Data: DataContainerMut<Item = Self::T>, RS: SizeIdentifier, CS: SizeIdentifier>(
+    fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
         &self,
-        rhs: &mut GenericBaseMatrixMut<Self::T, Data, RS, CS>,
+        rhs: &mut GenericBaseMatrixMut<Self::T, Data, RhsR, RhsC>,
         trans: TransposeMode,
     ) -> RlstResult<()>;
 }

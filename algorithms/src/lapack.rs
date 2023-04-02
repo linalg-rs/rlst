@@ -3,10 +3,8 @@ pub mod lu_decomp;
 pub use lapacke::Layout;
 pub use rlst_common::types::{IndexType, RlstError, RlstResult};
 use rlst_dense::types::Scalar;
-use rlst_dense::Layout as _;
 use rlst_dense::{
-    DataContainerMut, DefaultLayout, GenericBaseMatrixMut, LayoutType, MatrixD, MatrixTrait,
-    MatrixTraitMut, SizeIdentifier, UnsafeRandomAccessMut, VectorContainer,
+    DataContainerMut, GenericBaseMatrixMut, LayoutType, MatrixTraitMut, SizeIdentifier,
 };
 use std::marker::PhantomData;
 

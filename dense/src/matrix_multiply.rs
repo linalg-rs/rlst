@@ -311,6 +311,9 @@ matmul_over_size_types!(Dynamic, Dynamic, Dynamic, Fixed1, Dynamic, Fixed1);
 matmul_over_size_types!(Fixed1, Dynamic, Dynamic, Dynamic, Fixed1, Dynamic);
 
 dot_impl!(f64);
+dot_impl!(f32);
+dot_impl!(c32);
+dot_impl!(c64);
 
 #[cfg(test)]
 mod test {

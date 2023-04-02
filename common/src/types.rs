@@ -1,7 +1,7 @@
 //! Basic types
 
 // The scalar type used in the library.
-pub use cauchy::Scalar;
+pub use cauchy::{c32, c64, Scalar};
 use thiserror::Error;
 
 // The `IndexType` is used whenever we use an integer counting type.
