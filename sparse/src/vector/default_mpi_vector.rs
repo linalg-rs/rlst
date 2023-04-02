@@ -8,7 +8,7 @@ use crate::vector::{DefaultSerialVector, LocalIndexableVectorView, LocalIndexabl
 use mpi::datatype::Partition;
 use mpi::traits::*;
 use num::{Float, Zero};
-use rlst_common::types::{Scalar, SparseLinAlgResult};
+use rlst_common::types::{RlstResult, Scalar};
 
 use crate::index_layout::DefaultMpiIndexLayout;
 
@@ -28,10 +28,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DefaultMpiVector<'a, T, C> {
         &self.local
     }
 
-    pub fn fill_from_root(
-        &mut self,
-        other: &Option<DefaultSerialVector<T>>,
-    ) -> SparseLinAlgResult<()> {
+    pub fn fill_from_root(&mut self, other: &Option<DefaultSerialVector<T>>) -> RlstResult<()> {
         let comm = self.index_layout().comm().duplicate();
         let counts: Vec<i32> = (0..comm.size())
             .map(|index| {
@@ -100,7 +97,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector for DefaultMp
 }
 
 impl<T: Scalar + Equivalence, C: Communicator> Inner for DefaultMpiVector<'_, T, C> {
-    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
+    fn inner(&self, other: &Self) -> RlstResult<Self::Item> {
         let result;
 
         if let Ok(local_result) = self.local.inner(&other.local()) {

@@ -119,12 +119,12 @@ pub trait Imag: IndexableMatrix {
 
 /// Swap entries with another matrix.
 pub trait Swap: IndexableMatrix {
-    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::RlstResult<()>;
 }
 
 /// Fill matrix by copying from another matrix.
 pub trait Fill: IndexableMatrix {
-    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_common::types::RlstResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -138,7 +138,7 @@ pub trait MultSumInto: IndexableMatrix {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_common::types::SparseLinAlgResult<()>;
+    ) -> rlst_common::types::RlstResult<()>;
 }
 
 /// Compute y-> alpha A x + y

@@ -91,7 +91,7 @@ where
         &self,
         x: &rlst_operator::ElementView<'b, Self>,
         other: &rlst_operator::ElementView<'b, Self>,
-    ) -> rlst_common::types::SparseLinAlgResult<Self::F>
+    ) -> rlst_common::types::RlstResult<Self::F>
     where
         Self: 'b,
     {

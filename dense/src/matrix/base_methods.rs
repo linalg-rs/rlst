@@ -8,13 +8,8 @@ use crate::types::*;
 
 use super::{GenericBaseMatrix, GenericBaseMatrixMut};
 
-impl<
-        Item: Scalar,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
-    > GenericBaseMatrixMut<Item, L, Data, RS, CS>
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    GenericBaseMatrixMut<Item, Data, RS, CS>
 {
     /// Apply a callable to each element of a matrix.
     ///
@@ -27,13 +22,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainer<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > GenericBaseMatrix<Item, L, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    GenericBaseMatrix<Item, Data, RS, CS>
 {
     /// Return a pointer to the start of the underlying memory region.
     #[inline]
@@ -53,15 +43,16 @@ impl<
     pub fn get_slice(&self, first: IndexType, last: IndexType) -> &[Item] {
         self.0.get_slice(first, last)
     }
+
+    /// Get a slice of the whole data.
+    #[inline]
+    pub fn data(&self) -> &[Item] {
+        self.0.get_slice(0, self.layout().number_of_elements())
+    }
 }
 
-impl<
-        Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > GenericBaseMatrixMut<Item, L, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    GenericBaseMatrixMut<Item, Data, RS, CS>
 {
     /// Return a pointer to the start of the underlying memory region.
     #[inline]
@@ -80,5 +71,11 @@ impl<
     #[inline]
     pub fn get_slice_mut(&mut self, first: IndexType, last: IndexType) -> &mut [Item] {
         self.0.get_slice_mut(first, last)
+    }
+
+    /// Get a mutable slice of the whole data.
+    #[inline]
+    pub fn data_mut(&mut self) -> &mut [Item] {
+        self.0.get_slice_mut(0, self.layout().number_of_elements())
     }
 }

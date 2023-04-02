@@ -1,5 +1,5 @@
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
+use rlst_common::types::{IndexType, RlstError, RlstResult};
 
 pub struct DefaultSerialIndexLayout {
     size: IndexType,
@@ -24,11 +24,11 @@ impl IndexLayout for DefaultSerialIndexLayout {
         self.size
     }
 
-    fn index_range(&self, rank: IndexType) -> SparseLinAlgResult<(IndexType, IndexType)> {
+    fn index_range(&self, rank: IndexType) -> RlstResult<(IndexType, IndexType)> {
         if rank == 0 {
             Ok((0, self.size))
         } else {
-            Err(SparseLinAlgError::MpiRankError(rank as i32))
+            Err(RlstError::MpiRankError(rank as i32))
         }
     }
 

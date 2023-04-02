@@ -2,23 +2,10 @@
 
 /// Generate a new matrix with C Layout
 #[macro_export]
-macro_rules! mat {
+macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {
-        mat![$ScalarType, $dim, RowMajor]
-    };
-    ($ScalarType:ty, $dim:expr, RowMajor) => {
         $crate::GenericBaseMatrixMut::<
             $ScalarType,
-            $crate::RowMajor,
-            $crate::VectorContainer<$ScalarType>,
-            $crate::Dynamic,
-            $crate::Dynamic,
-        >::zeros_from_dim($dim.0, $dim.1)
-    };
-    ($ScalarType:ty, $dim:expr, ColumnMajor) => {
-        $crate::GenericBaseMatrixMut::<
-            $ScalarType,
-            $crate::ColumnMajor,
             $crate::VectorContainer<$ScalarType>,
             $crate::Dynamic,
             $crate::Dynamic,
@@ -27,22 +14,19 @@ macro_rules! mat {
 }
 
 #[macro_export]
-macro_rules! rand_mat {
-    ($ScalarType:ty, $dim:expr) => {
-        rand_mat![$ScalarType, $dim, RowMajor]
-    };
-    ($ScalarType:ty, $dim:expr, $layout:tt) => {{
+macro_rules! rlst_rand_mat {
+    ($ScalarType:ty, $dim:expr) => {{
         let mut rng = rand::thread_rng();
-        let mut mat = $crate::mat![$ScalarType, $dim, $layout];
+        let mut mat = $crate::rlst_mat![$ScalarType, $dim];
         mat.fill_from_rand_standard_normal(&mut rng);
         mat
     }};
 }
 
 #[macro_export]
-macro_rules! vector {
+macro_rules! rlst_vec {
     ($ScalarType:ty, $len:expr) => {
-        vector![$ScalarType, $len, ColumnVector]
+        $crate::ColumnVectorD::<$ScalarType>::zeros_from_length($len)
     };
     ($ScalarType:ty, $len:expr, ColumnVector) => {
         $crate::ColumnVectorD::<$ScalarType>::zeros_from_length($len)
@@ -53,13 +37,13 @@ macro_rules! vector {
 }
 
 #[macro_export]
-macro_rules! rand_vector {
+macro_rules! rlst_rand_vec {
     ($ScalarType:ty, $dim:expr) => {
-        rand_vector![$ScalarType, $dim, ColumnVector]
+        rlst_rand_vec![$ScalarType, $dim, ColumnVector]
     };
     ($ScalarType:ty, $dim:expr, $orientation:tt) => {{
         let mut rng = rand::thread_rng();
-        let mut vec = $crate::vector![$ScalarType, $dim, $orientation];
+        let mut vec = $crate::rlst_vec![$ScalarType, $dim, $orientation];
         vec.fill_from_rand_standard_normal(&mut rng);
         vec
     }};
@@ -69,9 +53,9 @@ macro_rules! rand_vector {
 mod test {
 
     #[test]
-    fn create_row_major_matrix() {
+    fn create_matrix() {
         let dim = (2, 3);
-        let mat = mat![f64, dim];
+        let mat = rlst_mat![f64, dim];
 
         assert_eq!(mat.dim(), (2, 3));
     }
@@ -79,7 +63,7 @@ mod test {
     #[test]
     fn create_random_matrix() {
         let dim = (2, 3);
-        let mat = rand_mat![f64, dim];
+        let mat = rlst_rand_mat![f64, dim];
 
         assert_eq!(mat.dim(), (2, 3));
     }
@@ -87,7 +71,7 @@ mod test {
     #[test]
     fn create_column_vector() {
         let length = 5;
-        let vec = vector![f64, length];
+        let vec = rlst_vec![f64, length];
 
         assert_eq!(vec.dim(), (5, 1));
     }
@@ -95,7 +79,7 @@ mod test {
     #[test]
     fn create_row_vector() {
         let length = 5;
-        let vec = vector![f64, length, RowVector];
+        let vec = rlst_vec![f64, length, RowVector];
 
         assert_eq!(vec.dim(), (1, 5));
     }
@@ -103,7 +87,7 @@ mod test {
     #[test]
     fn create_random_vector() {
         let length = 5;
-        let vec = rand_vector![f64, length];
+        let vec = rlst_rand_vec![f64, length];
 
         assert_eq!(vec.dim(), (5, 1));
     }

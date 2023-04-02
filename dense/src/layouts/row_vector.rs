@@ -47,7 +47,7 @@ impl LayoutType for RowVector {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (1, 1)
+        (self.dim, 1)
     }
 
     #[inline]

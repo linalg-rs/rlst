@@ -5,76 +5,52 @@
 //! is a struct that holds the original operator and the scalar. On element access the
 //! multiplication is performed.
 
-use crate::matrix::*;
 use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
 use crate::types::{c32, c64, IndexType, Scalar};
+use crate::{matrix::*, DefaultLayout};
 use std::marker::PhantomData;
 
 /// This type represents the multiplication of a matrix with a scalar.
-pub type ScalarProdMat<Item, MatImpl, L, RS, CS> =
-    Matrix<Item, ScalarMult<Item, MatImpl, L, RS, CS>, L, RS, CS>;
+pub type ScalarProdMat<Item, MatImpl, RS, CS> =
+    Matrix<Item, ScalarMult<Item, MatImpl, RS, CS>, RS, CS>;
 
 /// A structure holding a reference to the matrix and the scalar to be multiplied
 /// with it. This struct implements [MatrixTrait] and acts like a matrix.
 /// However, random access returns the corresponding matrix entry multiplied with
 /// the scalar.
-pub struct ScalarMult<Item, MatImpl, L, RS, CS>(
-    Matrix<Item, MatImpl, L, RS, CS>,
+pub struct ScalarMult<Item, MatImpl, RS, CS>(
+    Matrix<Item, MatImpl, RS, CS>,
     Item,
     PhantomData<Item>,
-    PhantomData<L>,
     PhantomData<RS>,
     PhantomData<CS>,
 )
 where
     Item: Scalar,
-    L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, L, RS, CS>;
+    MatImpl: MatrixTrait<Item, RS, CS>;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > ScalarMult<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    ScalarMult<Item, MatImpl, RS, CS>
 {
-    pub fn new(mat: Matrix<Item, MatImpl, L, RS, CS>, scalar: Item) -> Self {
-        Self(
-            mat,
-            scalar,
-            PhantomData,
-            PhantomData,
-            PhantomData,
-            PhantomData,
-        )
+    pub fn new(mat: Matrix<Item, MatImpl, RS, CS>, scalar: Item) -> Self {
+        Self(mat, scalar, PhantomData, PhantomData, PhantomData)
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for ScalarMult<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    SizeType for ScalarMult<Item, MatImpl, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for ScalarMult<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    Layout for ScalarMult<Item, MatImpl, RS, CS>
 {
-    type Impl = L;
+    type Impl = DefaultLayout;
 
     #[inline]
     fn layout(&self) -> &Self::Impl {
@@ -82,13 +58,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for ScalarMult<Item, MatImpl, L, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+    UnsafeRandomAccessByValue for ScalarMult<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -105,60 +76,40 @@ impl<
 
 macro_rules! scalar_mult_impl {
     ($Scalar:ty) => {
-        impl<
-                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
-                L: LayoutType,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > std::ops::Mul<Matrix<$Scalar, MatImpl, L, RS, CS>> for $Scalar
+        impl<MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+            std::ops::Mul<Matrix<$Scalar, MatImpl, RS, CS>> for $Scalar
         {
-            type Output = ScalarProdMat<$Scalar, MatImpl, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatImpl, RS, CS>;
 
-            fn mul(self, rhs: Matrix<$Scalar, MatImpl, L, RS, CS>) -> Self::Output {
+            fn mul(self, rhs: Matrix<$Scalar, MatImpl, RS, CS>) -> Self::Output {
                 Matrix::new(ScalarMult::new(rhs, self))
             }
         }
 
-        impl<
-                'a,
-                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
-                L: LayoutType,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > std::ops::Mul<&'a Matrix<$Scalar, MatImpl, L, RS, CS>> for $Scalar
+        impl<'a, MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+            std::ops::Mul<&'a Matrix<$Scalar, MatImpl, RS, CS>> for $Scalar
         {
-            type Output =
-                ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, L, RS, CS>, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, RS, CS>, RS, CS>;
 
-            fn mul(self, rhs: &'a Matrix<$Scalar, MatImpl, L, RS, CS>) -> Self::Output {
+            fn mul(self, rhs: &'a Matrix<$Scalar, MatImpl, RS, CS>) -> Self::Output {
                 ScalarProdMat::new(ScalarMult::new(Matrix::from_ref(rhs), self))
             }
         }
 
-        impl<
-                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
-                L: LayoutType,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > std::ops::Mul<$Scalar> for Matrix<$Scalar, MatImpl, L, RS, CS>
+        impl<MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+            std::ops::Mul<$Scalar> for Matrix<$Scalar, MatImpl, RS, CS>
         {
-            type Output = ScalarProdMat<$Scalar, MatImpl, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatImpl, RS, CS>;
 
             fn mul(self, rhs: $Scalar) -> Self::Output {
                 Matrix::new(ScalarMult::new(self, rhs))
             }
         }
 
-        impl<
-                'a,
-                MatImpl: MatrixTrait<$Scalar, L, RS, CS>,
-                L: LayoutType,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > std::ops::Mul<$Scalar> for &'a Matrix<$Scalar, MatImpl, L, RS, CS>
+        impl<'a, MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+            std::ops::Mul<$Scalar> for &'a Matrix<$Scalar, MatImpl, RS, CS>
         {
-            type Output =
-                ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, L, RS, CS>, L, RS, CS>;
+            type Output = ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, RS, CS>, RS, CS>;
 
             fn mul(self, rhs: $Scalar) -> Self::Output {
                 ScalarProdMat::new(ScalarMult::new(Matrix::from_ref(self), rhs))
@@ -176,13 +127,11 @@ scalar_mult_impl!(c64);
 
 mod test {
 
-    use crate::layouts::RowMajor;
-
     use super::*;
 
     #[test]
     fn scalar_mult() {
-        let mut mat = MatrixD::<f64, RowMajor>::zeros_from_dim(2, 3);
+        let mut mat = MatrixD::<f64>::zeros_from_dim(2, 3);
 
         *mat.get_mut(1, 2).unwrap() = 5.0;
 

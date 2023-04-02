@@ -7,22 +7,18 @@
 use crate::traits::*;
 use crate::types::IndexType;
 
-use super::*;
-
-pub struct ArbitraryStrideRowMajor {
+pub struct DefaultLayout {
     dim: (IndexType, IndexType),
     stride: (IndexType, IndexType),
 }
 
-impl ArbitraryStrideRowMajor {
+impl DefaultLayout {
     pub fn new(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self {
         Self { dim, stride }
     }
 }
 
-impl LayoutType for ArbitraryStrideRowMajor {
-    type IndexLayout = RowMajor;
-
+impl LayoutType for DefaultLayout {
     #[inline]
     fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
         (index / self.dim.1, index % self.dim.1)
@@ -51,7 +47,7 @@ impl LayoutType for ArbitraryStrideRowMajor {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (self.dim.1, 1)
+        self.stride
     }
 
     #[inline]
@@ -59,10 +55,7 @@ impl LayoutType for ArbitraryStrideRowMajor {
         self.dim.0 * self.dim.1
     }
 
-    #[inline]
-    fn index_layout(&self) -> Self::IndexLayout {
-        Self::IndexLayout::new(self.dim())
+    fn from_dimension(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self {
+        Self { dim, stride }
     }
 }
-
-impl StridedLayoutType for ArbitraryStrideRowMajor {}

@@ -1,6 +1,6 @@
 //! Definition of Index Sets
 
-use rlst_common::types::{IndexType, SparseLinAlgResult};
+use rlst_common::types::{IndexType, RlstResult};
 
 pub trait IndexLayout {
     /// The local index range.
@@ -12,7 +12,7 @@ pub trait IndexLayout {
     fn number_of_local_indices(&self) -> IndexType;
 
     /// Index range on a given process.
-    fn index_range(&self, rank: IndexType) -> SparseLinAlgResult<(IndexType, IndexType)>;
+    fn index_range(&self, rank: IndexType) -> RlstResult<(IndexType, IndexType)>;
 
     /// Convert continuous (0, n) indices to actual indices.
     ///

@@ -17,63 +17,58 @@
 use crate::matrix::Matrix;
 use crate::traits::*;
 use crate::types::{IndexType, Scalar};
+use crate::DefaultLayout;
 use std::marker::PhantomData;
 
 // A struct that implements [MatrixTrait] by holding a reference
 // to a matrix and forwarding all matrix operations to the held reference.
-pub struct MatrixRef<'a, Item, MatImpl, L, RS, CS>(
-    &'a Matrix<Item, MatImpl, L, RS, CS>,
+pub struct MatrixRef<'a, Item, MatImpl, RS, CS>(
+    &'a Matrix<Item, MatImpl, RS, CS>,
     PhantomData<Item>,
-    PhantomData<L>,
     PhantomData<RS>,
     PhantomData<CS>,
 )
 where
     Item: Scalar,
-    L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, L, RS, CS>;
+    MatImpl: MatrixTrait<Item, RS, CS>;
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > MatrixRef<'a, Item, MatImpl, L, RS, CS>
+    > MatrixRef<'a, Item, MatImpl, RS, CS>
 {
-    pub fn new(mat: &'a Matrix<Item, MatImpl, L, RS, CS>) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData, PhantomData)
+    pub fn new(mat: &'a Matrix<Item, MatImpl, RS, CS>) -> Self {
+        Self(mat, PhantomData, PhantomData, PhantomData)
     }
 }
 
-pub struct MatrixRefMut<'a, Item, MatImpl, L, RS, CS>(
-    &'a mut Matrix<Item, MatImpl, L, RS, CS>,
+pub struct MatrixRefMut<'a, Item, MatImpl, RS, CS>(
+    &'a mut Matrix<Item, MatImpl, RS, CS>,
     PhantomData<Item>,
-    PhantomData<L>,
     PhantomData<RS>,
     PhantomData<CS>,
 )
 where
     Item: Scalar,
-    L: LayoutType,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, L, RS, CS>;
+    MatImpl: MatrixTrait<Item, RS, CS>;
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTrait<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > MatrixRefMut<'a, Item, MatImpl, L, RS, CS>
+    > MatrixRefMut<'a, Item, MatImpl, RS, CS>
 {
-    pub fn new(mat: &'a mut Matrix<Item, MatImpl, L, RS, CS>) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData, PhantomData)
+    pub fn new(mat: &'a mut Matrix<Item, MatImpl, RS, CS>) -> Self {
+        Self(mat, PhantomData, PhantomData, PhantomData)
     }
 }
 
@@ -82,13 +77,12 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, L, RS, CS>,
-                L: LayoutType,
+                MatImpl: MatrixTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > Layout for $MatrixRefType<'a, Item, MatImpl, L, RS, CS>
+            > Layout for $MatrixRefType<'a, Item, MatImpl, RS, CS>
         {
-            type Impl = L;
+            type Impl = DefaultLayout;
 
             #[inline]
             fn layout(&self) -> &Self::Impl {
@@ -99,11 +93,10 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, L, RS, CS>,
-                L: LayoutType,
+                MatImpl: MatrixTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > SizeType for $MatrixRefType<'a, Item, MatImpl, L, RS, CS>
+            > SizeType for $MatrixRefType<'a, Item, MatImpl, RS, CS>
         {
             type R = RS;
             type C = CS;
@@ -112,11 +105,10 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, L, RS, CS>,
-                L: LayoutType,
+                MatImpl: MatrixTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
-            > UnsafeRandomAccessByValue for $MatrixRefType<'a, Item, MatImpl, L, RS, CS>
+            > UnsafeRandomAccessByValue for $MatrixRefType<'a, Item, MatImpl, RS, CS>
         {
             type Item = Item;
 
@@ -139,11 +131,10 @@ matrix_ref_traits!(MatrixRefMut);
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -161,11 +152,31 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, L, RS, CS>,
-        L: LayoutType,
+        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for MatrixRefMut<'a, Item, MatImpl, L, RS, CS>
+    > UnsafeRandomAccessByRef for MatrixRef<'a, Item, MatImpl, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+        self.0.get_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+        self.0.get1d_unchecked(index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessMut for MatrixRefMut<'a, Item, MatImpl, RS, CS>
 {
     type Item = Item;
 

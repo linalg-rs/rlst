@@ -3,7 +3,7 @@ use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::*;
 use num::{Float, Zero};
 use rlst_common::types::Scalar;
-use rlst_common::types::{IndexType, SparseLinAlgError, SparseLinAlgResult};
+use rlst_common::types::{IndexType, RlstError, RlstResult};
 
 use crate::index_layout::DefaultSerialIndexLayout;
 
@@ -103,13 +103,13 @@ impl<T: Scalar> IndexableVectorViewMut for LocalIndexableVectorViewMut<'_, T> {
 }
 
 impl<T: Scalar> Inner for DefaultSerialVector<T> {
-    fn inner(&self, other: &Self) -> SparseLinAlgResult<Self::Item> {
+    fn inner(&self, other: &Self) -> RlstResult<Self::Item> {
         let my_view = self.view().unwrap();
         let other_view = other.view().unwrap();
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
-            return Err(SparseLinAlgError::IndexLayoutError(
+            return Err(RlstError::IndexLayoutError(
                 "Vectors in `inner` must reference the same index layout".to_string(),
             ));
         }
@@ -161,11 +161,11 @@ impl<T: Scalar> NormInfty for DefaultSerialVector<T> {
 }
 
 impl<T: Scalar> Swap for DefaultSerialVector<T> {
-    fn swap(&mut self, other: &mut Self) -> rlst_common::types::SparseLinAlgResult<()> {
+    fn swap(&mut self, other: &mut Self) -> rlst_common::types::RlstResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
-            return Err(SparseLinAlgError::IndexLayoutError(
+            return Err(RlstError::IndexLayoutError(
                 "Vectors in `swap` must reference the same index layout".to_string(),
             ));
         } else {
@@ -180,11 +180,11 @@ impl<T: Scalar> Swap for DefaultSerialVector<T> {
 }
 
 impl<T: Scalar> Fill for DefaultSerialVector<T> {
-    fn fill(&mut self, other: &Self) -> rlst_common::types::SparseLinAlgResult<()> {
+    fn fill(&mut self, other: &Self) -> rlst_common::types::RlstResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
-            return Err(SparseLinAlgError::IndexLayoutError(
+            return Err(RlstError::IndexLayoutError(
                 "Vectors in `fill` must reference the same index layout".to_string(),
             ));
         } else {
@@ -211,11 +211,11 @@ impl<T: Scalar> MultSumInto for DefaultSerialVector<T> {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_common::types::SparseLinAlgResult<()> {
+    ) -> rlst_common::types::RlstResult<()> {
         if self.index_layout().number_of_global_indices()
             != other.index_layout().number_of_global_indices()
         {
-            return Err(SparseLinAlgError::IndexLayoutError(
+            return Err(RlstError::IndexLayoutError(
                 "Vectors in `mult_sum_into` must reference the same index layout".to_string(),
             ));
         }

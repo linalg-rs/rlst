@@ -14,7 +14,6 @@
 //! with a dynamic matrix.
 
 use crate::data_container::{DataContainer, DataContainerMut, VectorContainer};
-use crate::layouts::*;
 use crate::matrix::{GenericBaseMatrix, GenericBaseMatrixMut};
 use crate::traits::*;
 use crate::types::*;
@@ -34,9 +33,6 @@ pub trait Dot<Rhs> {
 /// This trait is an interface for the `dgemm` operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
 pub trait MatMul<
     Item: Scalar,
-    L1: StridedLayoutType,
-    L2: StridedLayoutType,
-    L3: StridedLayoutType,
     Data1: DataContainer<Item = Item>,
     Data2: DataContainer<Item = Item>,
     Data3: DataContainerMut<Item = Item>,
@@ -51,30 +47,25 @@ pub trait MatMul<
     /// Perform the operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
     fn matmul(
         alpha: Item,
-        mat_a: &GenericBaseMatrix<Item, L1, Data1, RS1, CS1>,
-        mat_b: &GenericBaseMatrix<Item, L2, Data2, RS2, CS2>,
+        mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
+        mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrixMut<Item, L3, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrixMut<Item, Data3, RS3, CS3>,
     );
 }
 
 macro_rules! dot_impl {
     ($Scalar:ty) => {
         // Matrix x Matrix = Matrix
-        impl<
-                L1: StridedLayoutType,
-                L2: StridedLayoutType,
-                Data1: DataContainer<Item = $Scalar>,
-                Data2: DataContainer<Item = $Scalar>,
-            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>>
-            for GenericBaseMatrix<$Scalar, L1, Data1, Dynamic, Dynamic>
+        impl<Data1: DataContainer<Item = $Scalar>, Data2: DataContainer<Item = $Scalar>>
+            Dot<GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>>
+            for GenericBaseMatrix<$Scalar, Data1, Dynamic, Dynamic>
         {
-            type Output =
-                GenericBaseMatrix<$Scalar, RowMajor, VectorContainer<$Scalar>, Dynamic, Dynamic>;
+            type Output = GenericBaseMatrix<$Scalar, VectorContainer<$Scalar>, Dynamic, Dynamic>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>,
+                rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res =
                     Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
@@ -90,23 +81,17 @@ macro_rules! dot_impl {
         }
 
         // RowVector x Matrix = RowVector
-        impl<
-                L1: StridedLayoutType,
-                L2: StridedLayoutType,
-                Data1: DataContainer<Item = $Scalar>,
-                Data2: DataContainer<Item = $Scalar>,
-            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>>
-            for GenericBaseMatrix<$Scalar, L1, Data1, Fixed1, Dynamic>
+        impl<Data1: DataContainer<Item = $Scalar>, Data2: DataContainer<Item = $Scalar>>
+            Dot<GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>>
+            for GenericBaseMatrix<$Scalar, Data1, Fixed1, Dynamic>
         {
-            type Output =
-                GenericBaseMatrix<$Scalar, RowVector, VectorContainer<$Scalar>, Fixed1, Dynamic>;
+            type Output = GenericBaseMatrix<$Scalar, VectorContainer<$Scalar>, Fixed1, Dynamic>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Dynamic>,
+                rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
-                let mut res =
-                    Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
+                let mut res = Self::Output::zeros_from_length(rhs.layout().dim().1);
                 <$Scalar>::matmul(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
@@ -119,23 +104,17 @@ macro_rules! dot_impl {
         }
 
         // Matrix x ColumnVector = ColumnVector
-        impl<
-                L1: StridedLayoutType,
-                L2: StridedLayoutType,
-                Data1: DataContainer<Item = $Scalar>,
-                Data2: DataContainer<Item = $Scalar>,
-            > Dot<GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Fixed1>>
-            for GenericBaseMatrix<$Scalar, L1, Data1, Dynamic, Dynamic>
+        impl<Data1: DataContainer<Item = $Scalar>, Data2: DataContainer<Item = $Scalar>>
+            Dot<GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>>
+            for GenericBaseMatrix<$Scalar, Data1, Dynamic, Dynamic>
         {
-            type Output =
-                GenericBaseMatrix<$Scalar, ColumnVector, VectorContainer<$Scalar>, Dynamic, Fixed1>;
+            type Output = GenericBaseMatrix<$Scalar, VectorContainer<$Scalar>, Dynamic, Fixed1>;
 
             fn dot(
                 &self,
-                rhs: &GenericBaseMatrix<$Scalar, L2, Data2, Dynamic, Fixed1>,
+                rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>,
             ) -> Self::Output {
-                let mut res =
-                    Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
+                let mut res = Self::Output::zeros_from_length(self.layout().dim().0);
                 <$Scalar>::matmul(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
@@ -154,9 +133,6 @@ macro_rules! matmul_impl {
     ($Scalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, real) => {
 
         impl<
-        L1: StridedLayoutType,
-        L2: StridedLayoutType,
-        L3: StridedLayoutType,
         Data1: DataContainer<Item = $Scalar>,
         Data2: DataContainer<Item = $Scalar>,
         Data3: DataContainerMut<Item = $Scalar>
@@ -165,9 +141,6 @@ macro_rules! matmul_impl {
 
         MatMul<
             $Scalar,
-            L1,
-            L2,
-            L3,
             Data1,
             Data2,
             Data3,
@@ -183,10 +156,10 @@ macro_rules! matmul_impl {
 
             fn matmul(
                 alpha: $Scalar,
-                mat_a: &GenericBaseMatrix<$Scalar, L1, Data1, $RS1, $CS1>,
-                mat_b: &GenericBaseMatrix<$Scalar, L2, Data2, $RS2, $CS2>,
+                mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
+                mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                 beta: $Scalar,
-                mat_c: &mut GenericBaseMatrixMut<$Scalar, L3, Data3, $RS3, $CS3>
+                mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
             ) {
                 let dim1 = mat_a.layout().dim();
                 let dim2 = mat_b.layout().dim();
@@ -237,9 +210,6 @@ macro_rules! matmul_impl {
         ($Scalar:ty, $Blas:ident, $RS1:ty, $CS1:ty, $RS2:ty, $CS2:ty, $RS3:ty, $CS3:ty, complex) => {
 
             impl<
-            L1: StridedLayoutType,
-            L2: StridedLayoutType,
-            L3: StridedLayoutType,
             Data1: DataContainer<Item = $Scalar>,
             Data2: DataContainer<Item = $Scalar>,
             Data3: DataContainerMut<Item = $Scalar>
@@ -248,9 +218,6 @@ macro_rules! matmul_impl {
 
             MatMul<
                 $Scalar,
-                L1,
-                L2,
-                L3,
                 Data1,
                 Data2,
                 Data3,
@@ -266,10 +233,10 @@ macro_rules! matmul_impl {
 
                 fn matmul(
                     alpha: $Scalar,
-                    mat_a: &GenericBaseMatrix<$Scalar, L1, Data1, $RS1, $CS1>,
-                    mat_b: &GenericBaseMatrix<$Scalar, L2, Data2, $RS2, $CS2>,
+                    mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
+                    mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                     beta: $Scalar,
-                    mat_c: &mut GenericBaseMatrixMut<$Scalar, L3, Data3, $RS3, $CS3>
+                    mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
                 ) {
                     let dim1 = mat_a.layout().dim();
                     let dim2 = mat_b.layout().dim();
@@ -344,6 +311,9 @@ matmul_over_size_types!(Dynamic, Dynamic, Dynamic, Fixed1, Dynamic, Fixed1);
 matmul_over_size_types!(Fixed1, Dynamic, Dynamic, Dynamic, Fixed1, Dynamic);
 
 dot_impl!(f64);
+dot_impl!(f32);
+dot_impl!(c32);
+dot_impl!(c64);
 
 #[cfg(test)]
 mod test {
@@ -358,9 +328,6 @@ mod test {
 
     fn matmul_expect<
         Item: Scalar,
-        L1: LayoutType,
-        L2: LayoutType,
-        L3: LayoutType,
         Data1: DataContainer<Item = Item>,
         Data2: DataContainer<Item = Item>,
         Data3: DataContainerMut<Item = Item>,
@@ -372,10 +339,10 @@ mod test {
         CS3: SizeIdentifier,
     >(
         alpha: Item,
-        mat_a: &GenericBaseMatrix<Item, L1, Data1, RS1, CS1>,
-        mat_b: &GenericBaseMatrix<Item, L2, Data2, RS2, CS2>,
+        mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
+        mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrix<Item, L3, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrix<Item, Data3, RS3, CS3>,
     ) {
         let m = mat_a.layout().dim().0;
         let k = mat_a.layout().dim().1;
@@ -397,10 +364,10 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
-                let mut mat_b = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(6, 5);
-                let mut mat_c_actual = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 5);
-                let mut mat_c_expect = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 5);
+                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
+                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(6, 5);
+                let mut mat_c_actual = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
+                let mut mat_c_expect = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
 
                 let dist = StandardNormal;
 
@@ -433,7 +400,7 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
+                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
                 let mut mat_b = ColumnVectorD::<$Scalar>::zeros_from_length(6);
                 let mut mat_c_actual = ColumnVectorD::<$Scalar>::zeros_from_length(4);
                 let mut mat_c_expect = ColumnVectorD::<$Scalar>::zeros_from_length(4);
@@ -470,7 +437,7 @@ mod test {
             #[test]
             fn $fname() {
                 let mut mat_a = RowVectorD::<$Scalar>::zeros_from_length(4);
-                let mut mat_b = MatrixD::<$Scalar, RowMajor>::zeros_from_dim(4, 6);
+                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
                 let mut mat_c_actual = RowVectorD::<$Scalar>::zeros_from_length(6);
                 let mut mat_c_expect = RowVectorD::<$Scalar>::zeros_from_length(6);
 

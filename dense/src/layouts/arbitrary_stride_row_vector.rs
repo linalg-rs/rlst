@@ -52,7 +52,7 @@ impl LayoutType for ArbitraryStrideRowVector {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (1, self.stride)
+        (self.stride * self.dim, self.stride)
     }
 
     #[inline]
