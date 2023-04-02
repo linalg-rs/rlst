@@ -47,7 +47,7 @@ impl LayoutType for DefaultLayout {
 
     #[inline]
     fn stride(&self) -> (IndexType, IndexType) {
-        (self.dim.1, 1)
+        self.stride
     }
 
     #[inline]

@@ -6,8 +6,9 @@ use rlst_dense::types::Scalar;
 use rlst_dense::Layout as _;
 use rlst_dense::{
     DataContainerMut, DefaultLayout, GenericBaseMatrixMut, LayoutType, MatrixD, MatrixTrait,
-    SizeIdentifier, UnsafeRandomAccessMut, VectorContainer,
+    MatrixTraitMut, SizeIdentifier, UnsafeRandomAccessMut, VectorContainer,
 };
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
@@ -17,62 +18,47 @@ pub enum TransposeMode {
     ConjugateTrans = b'C',
 }
 
-pub struct LapackData<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier> {
-    mat: GenericBaseMatrixMut<Item, VectorContainer<Item>, RS, CS>,
-    lda: i32,
+pub struct LapackData<
+    Item: Scalar,
+    RS: SizeIdentifier,
+    CS: SizeIdentifier,
+    Mat: MatrixTraitMut<Item, RS, CS> + Sized,
+> {
+    pub mat: Mat,
+    pub lda: i32,
+    phantom_item: PhantomData<Item>,
+    phantom_rs: PhantomData<RS>,
+    phantom_cs: PhantomData<CS>,
 }
 
-pub trait AsLapack<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier>:
-    MatrixTrait<Item, RS, CS> + rlst_dense::Layout<Impl = DefaultLayout>
-{
-    fn lapack(self) -> LapackData<Item, VectorContainer<Item>, RS, CS> {
-        let dim = self.layout().dim();
-        let mut result = MatrixD::<Item>::zeros_from_dim(dim.0, dim.1);
-        unsafe {
-            for row in 0..dim.0 {
-                for col in 0..dim.1 {
-                    *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
-                }
-            }
-        }
-        LapackData {
-            mat: result,
-            lda: dim.0 as i32,
-        }
-    }
+pub fn check_lapack_stride(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> bool {
+    stride.0 == 1 && stride.1 >= std::cmp::max(1, dim.0)
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier> AsLapack<Item, RS, CS>
-    for GenericBaseMatrixMut<Item, VectorContainer<Item>, RS, CS>
+pub trait AsLapack<
+    Item: Scalar,
+    Data: DataContainerMut<Item = Item>,
+    RS: SizeIdentifier,
+    CS: SizeIdentifier,
+>: MatrixTraitMut<Item, RS, CS> + Sized
 {
-    fn lapack(self) -> LapackData<Item, VectorContainer<Item>, RS, CS> {
-        let mat_t;
-
-        let stride = self.layout().stride();
+    fn lapack(self) -> RlstResult<LapackData<Item, RS, CS, Self>> {
         let dim = self.layout().dim();
-
-        if stride == (1, dim.0) {
-            mat_t = self;
+        if check_lapack_stride(self.layout().dim(), self.layout().stride()) {
+            Ok(LapackData {
+                mat: self,
+                lda: dim.0 as i32,
+                phantom_item: PhantomData,
+                phantom_rs: PhantomData,
+                phantom_cs: PhantomData,
+            })
         } else {
-            mat_t = self.eval();
-        }
-
-        LapackData {
-            mat: mat_t,
-            lda: dim.0 as i32,
+            Err(RlstError::IncompatibleStride)
         }
     }
 }
 
-// Given a tuple (row_stride, column_stride) return the layout and the Lapack LDA index.
-// pub fn to_lapack_layout<(stride: (IndexType, IndexType)) -> RlstResult<(Layout, i32)> {
-//     if stride.0 == 1 {
-//         // Column Major
-//         Ok((Layout::ColumnMajor, stride.1 as i32))
-//     } else if stride.1 == 1 {
-//         // Row Major
-//         Ok((Layout::RowMajor, stride.0 as i32))
-//     } else {
-//         Err(RlstError::IncompatibleStride)
-//     }
-// }
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    AsLapack<Item, Data, RS, CS> for GenericBaseMatrixMut<Item, Data, RS, CS>
+{
+}
