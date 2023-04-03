@@ -1,5 +1,6 @@
 //! Interface to Lapack routines
 pub mod lu_decomp;
+pub mod qr_decomp;
 pub use lapacke::Layout;
 pub use rlst_common::types::{IndexType, RlstError, RlstResult};
 use rlst_dense::types::Scalar;
