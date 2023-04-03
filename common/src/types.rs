@@ -28,6 +28,8 @@ pub enum RlstError {
     IncompatibleStride,
     #[error("Lapack error: {0}")]
     LapackError(i32),
+    #[error("{0}")]
+    GeneralError(String),
 }
 
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
