@@ -3,7 +3,7 @@ use crate::lapack::TransposeMode;
 pub use rlst_common::types::{IndexType, RlstError, RlstResult, Scalar};
 use rlst_dense::{DataContainerMut, GenericBaseMatrixMut, SizeIdentifier};
 
-pub trait QRDecomp {
+pub trait QRDecompTrait {
     type T: Scalar;
 
     fn data(&self) -> &[Self::T];

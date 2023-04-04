@@ -1,14 +1,14 @@
 use std::cmp;
 
-use crate::traits::qr_decomp::QRDecomp;
+use crate::traits::qr_decomp_trait::QRDecompTrait;
 use crate::{lapack::LapackData, traits::lu_decomp::LUDecomp};
 use lapacke;
 use rlst_common::types::{c32, c64, IndexType, RlstError, RlstResult, Scalar};
 use rlst_dense::{
-    DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixTraitMut, SizeIdentifier,
+    DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixTraitMut, SizeIdentifier, GenericBaseMatrix,
 };
 
-use super::{check_lapack_stride, TransposeMode, SideMode, TriangularType, TriangularDiagonal};
+use super::{check_lapack_stride, TransposeMode, SideMode, TriangularType, TriangularDiagonal, AsLapack};
 
 pub struct QRDecompLapack<
     Item: Scalar,
@@ -52,7 +52,7 @@ impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
         }
     }
 
-    fn solve<
+    fn solve_qr<
         RhsData: DataContainerMut<Item = f64>,
         RhsR: SizeIdentifier,
         RhsC: SizeIdentifier,
@@ -98,7 +98,7 @@ impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
 
 }
 
-impl<Data: DataContainerMut<Item = f64>, RS: SizeIdentifier, CS: SizeIdentifier> QRDecomp
+impl<Data: DataContainerMut<Item = f64>, RS: SizeIdentifier, CS: SizeIdentifier> QRDecompTrait
     for QRDecompLapack<f64, RS, CS, GenericBaseMatrixMut<f64, Data, RS, CS>>
 {
     type T = f64;
@@ -175,5 +175,96 @@ impl<Data: DataContainerMut<Item = f64>, RS: SizeIdentifier, CS: SizeIdentifier>
                 Ok(())
             }
         }
+    }
+}
+
+
+#[test]
+fn test_qr_solve_f64()
+{
+    let mut rlst_mat = rlst_dense::rlst_mat![f64,(4,3)];
+    let mut rlst_vec = rlst_dense::rlst_vec![f64,4];
+
+    rlst_mat[[0, 0]]  =  1.0; rlst_mat[[0, 1]]  =  2.0; rlst_mat[[0, 2]]  =  3.0;
+    rlst_mat[[1, 0]]  = -3.0; rlst_mat[[1, 1]]  =  2.0; rlst_mat[[1, 2]]  =  1.0;
+    rlst_mat[[2, 0]]  =  2.0; rlst_mat[[2, 1]]  =  0.0; rlst_mat[[2, 2]]  = -1.0;
+    rlst_mat[[3, 0]]  =  3.0; rlst_mat[[3, 1]]  = -1.0; rlst_mat[[3, 2]]  =  2.0;
+
+    rlst_vec[[0,0]] = 2.;
+    rlst_vec[[1,0]] = 4.;
+    rlst_vec[[2,0]] = 6.;
+    rlst_vec[[3,0]] = 8.;
+
+    let _ = rlst_mat
+        .lapack()
+        .unwrap()
+        .solve_qr(&mut rlst_vec, TransposeMode::NoTrans);
+
+    print_matrix(rlst_vec)
+}
+
+#[test]
+fn test_qr_decomp()
+{
+    let mut rlst_mat = rlst_dense::rlst_mat![f64,(4,3)];
+    let mut rlst_vec = rlst_dense::rlst_vec![f64,4];
+
+    rlst_mat[[0, 0]]  =  1.0; rlst_mat[[0, 1]]  =  2.0; rlst_mat[[0, 2]]  =  3.0;
+    rlst_mat[[1, 0]]  = -3.0; rlst_mat[[1, 1]]  =  2.0; rlst_mat[[1, 2]]  =  1.0;
+    rlst_mat[[2, 0]]  =  2.0; rlst_mat[[2, 1]]  =  0.0; rlst_mat[[2, 2]]  = -1.0;
+    rlst_mat[[3, 0]]  =  3.0; rlst_mat[[3, 1]]  = -1.0; rlst_mat[[3, 2]]  =  2.0;
+
+    let _ = rlst_mat
+        .lapack()
+        .unwrap()
+        .qr()
+        .unwrap();
+    //Q
+    /*
+⌈	0.209	0.879	0.156	⌉
+|	-0.626	0.415	0.146	｜
+|	0.417	0.232	-0.767	｜
+⌊	0.626	-0.0332	0.605	⌋ */
+    //R
+    /*
+    4.8	-1.46	0.834	⌉
+|	0	2.62	2.75	｜
+⌊	0	0	2.59	⌋
+    */
+
+
+}
+
+#[test]
+fn test_qr_decomp_and_solve()
+{
+    let mut rlst_mat = rlst_dense::rlst_mat![f64,(4,3)];
+    let mut rlst_vec = rlst_dense::rlst_vec![f64,4];
+
+    rlst_mat[[0, 0]]  =  1.0; rlst_mat[[0, 1]]  =  2.0; rlst_mat[[0, 2]]  =  3.0;
+    rlst_mat[[1, 0]]  = -3.0; rlst_mat[[1, 1]]  =  2.0; rlst_mat[[1, 2]]  =  1.0;
+    rlst_mat[[2, 0]]  =  2.0; rlst_mat[[2, 1]]  =  0.0; rlst_mat[[2, 2]]  = -1.0;
+    rlst_mat[[3, 0]]  =  3.0; rlst_mat[[3, 1]]  = -1.0; rlst_mat[[3, 2]]  =  2.0;
+
+    rlst_vec[[0,0]] = 2.;
+    rlst_vec[[1,0]] = 4.;
+    rlst_vec[[2,0]] = 6.;
+    rlst_vec[[3,0]] = 8.;
+
+    let _ = rlst_mat
+        .lapack()
+        .unwrap()
+        .qr()
+        .unwrap()
+        .solve(&mut rlst_vec, TransposeMode::NoTrans);
+
+}
+
+fn print_matrix<T:Scalar,Data: DataContainerMut<Item = T>, RS: SizeIdentifier, CS: SizeIdentifier>(matrix: GenericBaseMatrix<T,Data,RS,CS>) {
+    for row in 0..matrix.dim().0 {
+        for col in 0..matrix.dim().1 {
+            print!("{:.3}",matrix[[row,col]]);
+        }
+        println!();
     }
 }
