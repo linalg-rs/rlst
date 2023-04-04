@@ -17,6 +17,27 @@ pub enum TransposeMode {
     ConjugateTrans = b'C',
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum SideMode {
+    Left = b'L',
+    Right = b'R',
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum TriangularType {
+    Upper = b'U',
+    Lower = b'L',
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum TriangularDiagonal {
+    Unit = b'U',
+    NonUnit = b'N',
+}
+
 pub struct LapackData<
     Item: Scalar,
     RS: SizeIdentifier,
