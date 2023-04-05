@@ -3,39 +3,10 @@
 use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::SparseMatType;
 use crate::traits::index_layout::IndexLayout;
-use mpi::traits::Communicator;
+use mpi::datatype::{Partition, PartitionMut};
+use mpi::traits::{Communicator, CommunicatorCollectives};
 
 use rlst_common::types::{IndexType, Scalar};
-
-pub struct Ghosts<'a, C: Communicator> {
-    ghost_indices: Vec<IndexType>,
-    processes: Vec<IndexType>,
-    indxptr: Vec<IndexType>,
-    comm: &'a C,
-}
-
-// impl<'a, C: Communicator> Ghosts<'a, C> {
-//     pub fn new<Layout: IndexLayout>(indices: &Vec<IndexType>, index_layout: &Layout, comm: &C) -> Self {
-
-//         // Get the ghost indices and associated processes
-
-//         let my_rank = comm.rank();
-
-//         let mut ghost_indices = Vec<IndexType>::new();
-//         let mut processes = Vec<IndexType>::new();
-//         let mut local_indices = Vec<IndexType>::new();
-
-//         for index in indices {
-//             let rank = index_layout.rank_from_index(index).unwrap();
-//             if rank != my_rank as IndexType {
-//                 ghost_indices.push(index);
-//                 processes.push(rank);
-//                 local_indices.push(index_layout.global2local(rank, index));
-//             }
-//         }
-
-//     }
-// }
 
 pub struct MpiCsrMatrix<'a, T: Scalar, DomainLayout: IndexLayout, RangeLayout: IndexLayout> {
     mat_type: SparseMatType,

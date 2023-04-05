@@ -30,12 +30,13 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
             // Then fill the rest with None.
 
             for index in 0..size {
-                counts[1 + index] = index;
+                counts[index] = index;
             }
 
             for index in size..comm_size {
-                counts[1 + index] = size;
+                counts[index] = size;
             }
+            counts[comm_size] = size;
         } else {
             // We want to equally distribute the range
             // among the ranks. Assume that we have 12
