@@ -1,111 +1,114 @@
 //! Definition of CSR matrices.
 
+use crate::ghost_communicator::GhostCommunicator;
+use crate::index_layout::DefaultMpiIndexLayout;
 use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::SparseMatType;
 use crate::traits::index_layout::IndexLayout;
 use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{Communicator, CommunicatorCollectives};
+use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence};
 
 use rlst_common::types::{IndexType, Scalar};
 
-pub struct MpiCsrMatrix<'a, T: Scalar, DomainLayout: IndexLayout, RangeLayout: IndexLayout> {
+pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
     shape: (IndexType, IndexType),
     local_matrix: CsrMatrix<T>,
-    domain_layout: &'a DomainLayout,
-    range_layout: &'a RangeLayout,
-    domain_ghosts: Vec<IndexType>,
-    range_ghosts: Vec<IndexType>,
+    domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
+    range_layout: &'a DefaultMpiIndexLayout<'a, C>,
+    domain_ghosts: crate::ghost_communicator::GhostCommunicator,
+    //range_ghost: crate::ghost_communicator::GhostCommunicator,
 }
 
-// impl<T: Scalar> CsrMatrix<T> {
-//     pub fn new(
-//         shape: (IndexType, IndexType),
-//         indices: Vec<IndexType>,
-//         indptr: Vec<IndexType>,
-//         data: Vec<T>,
-//     ) -> Self {
-//         Self {
-//             mat_type: SparseMatType::Csr,
-//             shape,
-//             indices,
-//             indptr,
-//             data,
-//         }
-//     }
+impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
+    pub fn new(
+        shape: (IndexType, IndexType),
+        indices: Vec<IndexType>,
+        indptr: Vec<IndexType>,
+        data: Vec<T>,
+        domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
+        range_layout: &'a DefaultMpiIndexLayout<'a, C>,
+        comm: &'a C,
+    ) -> Self {
+        let my_rank = comm.rank() as usize;
 
-//     pub fn mat_type(&self) -> &SparseMatType {
-//         &self.mat_type
-//     }
+        let domain_ghost_dofs: Vec<usize> = indices
+            .iter()
+            .copied()
+            .filter(|&dof| domain_layout.rank_from_index(dof).unwrap() != my_rank)
+            .collect();
 
-//     pub fn shape(&self) -> (IndexType, IndexType) {
-//         self.shape
-//     }
+        let domain_ghosts = GhostCommunicator::new(&domain_ghost_dofs, domain_layout, comm);
 
-//     pub fn indices(&self) -> &[IndexType] {
-//         &self.indices
-//     }
+        Self {
+            mat_type: SparseMatType::Csr,
+            shape,
+            local_matrix: CsrMatrix::new((indptr.len() - 1, shape.1), indices, indptr, data),
+            domain_layout,
+            range_layout,
+            domain_ghosts,
+        }
+    }
 
-//     pub fn indptr(&self) -> &[IndexType] {
-//         &self.indptr
-//     }
+    pub fn mat_type(&self) -> &SparseMatType {
+        &self.mat_type
+    }
 
-//     pub fn data(&self) -> &[T] {
-//         &self.data
-//     }
+    pub fn shape(&self) -> (IndexType, IndexType) {
+        self.shape
+    }
 
-//     pub fn matmul(&self, alpha: T, x: &[T], beta: T, y: &mut [T]) {
-//         for (row, out) in y.iter_mut().enumerate() {
-//             *out = beta * *out
-//                 + alpha * {
-//                     let c1 = self.indptr()[row];
-//                     let c2 = self.indptr()[1 + row];
-//                     let mut acc = T::zero();
+    pub fn local_shape(&self) -> (IndexType, IndexType) {
+        self.local_matrix.shape()
+    }
 
-//                     for index in c1..c2 {
-//                         unsafe {
-//                             let col = *self.indices().get_unchecked(index);
-//                             acc += *self.data().get_unchecked(index) * *x.get_unchecked(col);
-//                         }
-//                     }
-//                     acc
-//                 }
-//         }
-//     }
+    pub fn indices(&self) -> &[IndexType] {
+        &self.local_matrix.indices()
+    }
 
-//     pub fn from_aij(
-//         shape: (IndexType, IndexType),
-//         rows: &[IndexType],
-//         cols: &[IndexType],
-//         data: &[T],
-//     ) -> SparseLinAlgResult<Self> {
-//         let mut sorted: Vec<IndexType> = (0..rows.len()).collect();
-//         sorted.sort_by_key(|&idx| rows[idx]);
+    pub fn indptr(&self) -> &[IndexType] {
+        &self.local_matrix.indptr()
+    }
 
-//         let nelems = data.len();
+    pub fn data(&self) -> &[T] {
+        &self.local_matrix.data()
+    }
 
-//         let mut indptr = Vec::<IndexType>::with_capacity(1 + shape.0);
-//         let mut indices = Vec::<IndexType>::with_capacity(nelems);
-//         let mut new_data = Vec::<T>::with_capacity(nelems);
+    pub fn matmul(&self, alpha: T, x: &[T], beta: T, y: &mut [T]) {}
 
-//         let mut count: IndexType = 0;
+    // pub fn from_aij(
+    //     shape: (IndexType, IndexType),
+    //     rows: &[IndexType],
+    //     cols: &[IndexType],
+    //     data: &[T],
+    // ) -> SparseLinAlgResult<Self> {
+    //     let mut sorted: Vec<IndexType> = (0..rows.len()).collect();
+    //     sorted.sort_by_key(|&idx| rows[idx]);
 
-//         for row in 0..(shape.0) {
-//             indptr.push(count);
-//             while count < nelems && row == rows[sorted[count]] {
-//                 count += 1;
-//             }
-//         }
-//         indptr.push(count);
+    //     let nelems = data.len();
 
-//         for index in 0..nelems {
-//             indices.push(cols[sorted[index]]);
-//             new_data.push(data[sorted[index]]);
-//         }
+    //     let mut indptr = Vec::<IndexType>::with_capacity(1 + shape.0);
+    //     let mut indices = Vec::<IndexType>::with_capacity(nelems);
+    //     let mut new_data = Vec::<T>::with_capacity(nelems);
 
-//         Ok(Self::new(shape, indices, indptr, new_data))
-//     }
-// }
+    //     let mut count: IndexType = 0;
+
+    //     for row in 0..(shape.0) {
+    //         indptr.push(count);
+    //         while count < nelems && row == rows[sorted[count]] {
+    //             count += 1;
+    //         }
+    //     }
+    //     indptr.push(count);
+
+    //     for index in 0..nelems {
+    //         indices.push(cols[sorted[index]]);
+    //         new_data.push(data[sorted[index]]);
+    //     }
+
+    //     Ok(Self::new(shape, indices, indptr, new_data))
+    // }
+}
 
 // #[cfg(test)]
 // mod test {
