@@ -5,6 +5,8 @@ use rlst_common::types::RlstResult;
 
 use rlst_common::types::{IndexType, Scalar};
 
+use super::mpi_csr_mat::MpiCsrMatrix;
+
 pub struct CsrMatrix<T: Scalar> {
     mat_type: SparseMatType,
     shape: (IndexType, IndexType),
