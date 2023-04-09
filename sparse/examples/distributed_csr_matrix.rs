@@ -10,16 +10,16 @@ fn main() {
     let world = universe.world();
     let rank = world.rank();
 
-    let n_domain = 5;
+    let n_domain = 6;
     let n_range = 2;
 
-    let values = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-    let indices = vec![0, 1, 2, 0, 1, 2];
-    let indptr = vec![0, 3, 6];
+    let values = vec![1.0, 2.0, 3.0, 9.0, 4.0, 5.0, 6.0];
+    let indices = vec![0, 1, 2, 5, 0, 1, 2];
+    let indptr = vec![0, 4, 7];
 
     let csr_mat: Option<CsrMatrix<f64>>;
     if rank == 0 {
-        csr_mat = Some(CsrMatrix::new((2, 3), indices, indptr, values));
+        csr_mat = Some(CsrMatrix::new((2, 6), indices, indptr, values));
     } else {
         csr_mat = None;
     }
