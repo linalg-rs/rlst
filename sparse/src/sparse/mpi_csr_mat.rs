@@ -79,7 +79,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
         range_layout: &'a DefaultMpiIndexLayout<'a, C>,
         comm: &'a C,
-    ) {
+    ) -> Self {
         let my_rank = comm.rank();
         let size = comm.size() as usize;
         let root_process = comm.process_at_rank(0);
@@ -88,10 +88,6 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         println!("{:#?}", my_index_range);
         let my_number_of_rows = my_index_range.1 - my_index_range.0;
 
-        if my_rank == 1 {
-            println!("Rank 1 index range. {:#?}", my_index_range);
-        }
-
         if csr_mat.is_some() && my_rank != 0 {
             comm.abort(13); // Unknown error
         }
@@ -99,6 +95,11 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         if csr_mat.is_none() && my_rank == 0 {
             comm.abort(13);
         }
+
+        let mut csr_data;
+        let mut csr_indices;
+        let mut csr_indptr;
+        let mut shape;
 
         // Need to compute how much data to send to each process.
 
@@ -116,7 +117,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
             println!("csr_mat.indptr {:#?}", csr_mat.indptr());
 
-            // Scatter the data to the processes.
+            // Send around how much data is received by everyone.
 
             root_process.scatter_into_root(&counts, &mut my_data_count);
 
@@ -130,33 +131,12 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
                 count += n;
             }
 
-            let mut csr_data = vec![T::zero(); my_data_count];
-            let mut csr_indices = vec![0 as usize; my_data_count];
-            let mut csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
-            let shape = vec![0 as usize; 2];
+            csr_data = vec![T::zero(); my_data_count];
+            csr_indices = vec![0 as usize; my_data_count];
+            csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
+            shape = vec![csr_mat.shape().0, csr_mat.shape().1];
 
-            // We now scatter the csr matrix data to the processes.
-
-            let partition = mpi::datatype::Partition::new(
-                csr_mat.data(),
-                counts.as_slice(),
-                displacements.as_slice(),
-            );
-
-            root_process.scatter_varcount_into_root(&partition, csr_data.as_mut_slice());
-
-            // The following scatters the indices to the processes.
-
-            let partition = mpi::datatype::Partition::new(
-                csr_mat.indices(),
-                counts.as_slice(),
-                displacements.as_slice(),
-            );
-
-            root_process.scatter_varcount_into_root(&partition, csr_indices.as_mut_slice());
-
-            // We now need to send around the index pointers. For that we need the index pointer counts
-            // and index pointer displacements.
+            // The following code computes the counts and displacements for the indexptr vector.
 
             let mut idxptrcount = vec![0 as i32; size];
             let mut idxptrdisplacements = vec![0 as i32; size];
@@ -167,37 +147,49 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
                 idxptrdisplacements[rank] = local_index_range.0 as i32;
             }
 
-            let partition = mpi::datatype::Partition::new(
+            // We now scatter the csr matrix data to the processes.
+
+            let data_partition = mpi::datatype::Partition::new(
+                csr_mat.data(),
+                counts.as_slice(),
+                displacements.as_slice(),
+            );
+
+            let indices_partition = mpi::datatype::Partition::new(
+                csr_mat.indices(),
+                counts.as_slice(),
+                displacements.as_slice(),
+            );
+
+            let idx_partition = mpi::datatype::Partition::new(
                 csr_mat.indptr(),
                 idxptrcount.as_slice(),
                 idxptrdisplacements.as_slice(),
             );
 
-            root_process.scatter_varcount_into_root(&partition, csr_indptr.as_mut_slice());
-
-            // Finally, we send around the shape of the matrix.
-
-            let mut shape = vec![csr_mat.shape().0, csr_mat.shape().1];
-
+            // Send everything around
+            root_process.scatter_varcount_into_root(&data_partition, csr_data.as_mut_slice());
+            root_process.scatter_varcount_into_root(&indices_partition, csr_indices.as_mut_slice());
+            root_process.scatter_varcount_into_root(&idx_partition, csr_indptr.as_mut_slice());
             root_process.broadcast_into(shape.as_mut_slice());
         } else {
+            // Allocate the shape
+            shape = vec![0 as usize; 2];
+
             // Receive the number of data entries.
             root_process.scatter_into(&mut my_data_count);
 
             // Now make space for the matrix data.
 
-            let mut csr_data = vec![T::zero(); my_data_count];
-            let mut csr_indices = vec![0 as usize; my_data_count];
-            let mut csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
+            csr_data = vec![T::zero(); my_data_count];
+            csr_indices = vec![0 as usize; my_data_count];
+            csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
 
-            // Get the matrix entries
+            // Get the matrix data
             root_process.scatter_varcount_into(csr_data.as_mut_slice());
-
-            // Get the matrix indices
             root_process.scatter_varcount_into(csr_indices.as_mut_slice());
-
-            // Get the matrix index pointer
             root_process.scatter_varcount_into(csr_indptr.as_mut_slice());
+            root_process.broadcast_into(shape.as_mut_slice());
 
             // We need to fix the index pointer as locally it needs to start at 0. But
             // the communicated data is offset by where the index pointer was on the
@@ -206,11 +198,19 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             csr_indptr
                 .iter_mut()
                 .for_each(|elem| *elem = *elem - first_elem);
-
-            // Finally, receive the shape.
-            let mut shape = vec![0 as usize; 2];
-            root_process.broadcast_into(shape.as_mut_slice());
         }
+
+        // Once everything is received we can finally create the matrix object.
+
+        Self::new(
+            (shape[0], shape[1]),
+            csr_indices,
+            csr_indptr,
+            csr_data,
+            domain_layout,
+            range_layout,
+            comm,
+        )
     }
 
     pub fn matmul(&self, alpha: T, x: &[T], beta: T, y: &mut [T]) {}
