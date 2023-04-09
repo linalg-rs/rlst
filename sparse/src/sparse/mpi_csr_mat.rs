@@ -167,10 +167,6 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
                 idxptrdisplacements[rank] = local_index_range.0 as i32;
             }
 
-            println!("data {:#?}", csr_mat.indptr());
-            println!("idxcount {:#?}", idxptrcount.as_slice());
-            println!("idxdisplacements {:#?}", idxptrdisplacements.as_slice());
-
             let partition = mpi::datatype::Partition::new(
                 csr_mat.indptr(),
                 idxptrcount.as_slice(),
@@ -179,30 +175,41 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
             root_process.scatter_varcount_into_root(&partition, csr_indptr.as_mut_slice());
 
-            // We also need to scatter the index pointers.
+            // Finally, we send around the shape of the matrix.
+
+            let mut shape = vec![csr_mat.shape().0, csr_mat.shape().1];
+
+            root_process.broadcast_into(shape.as_mut_slice());
         } else {
+            // Receive the number of data entries.
             root_process.scatter_into(&mut my_data_count);
+
+            // Now make space for the matrix data.
 
             let mut csr_data = vec![T::zero(); my_data_count];
             let mut csr_indices = vec![0 as usize; my_data_count];
             let mut csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
-            let shape = vec![0 as usize; 2];
 
+            // Get the matrix entries
             root_process.scatter_varcount_into(csr_data.as_mut_slice());
 
+            // Get the matrix indices
             root_process.scatter_varcount_into(csr_indices.as_mut_slice());
+
+            // Get the matrix index pointer
             root_process.scatter_varcount_into(csr_indptr.as_mut_slice());
 
+            // We need to fix the index pointer as locally it needs to start at 0. But
+            // the communicated data is offset by where the index pointer was on the
+            // root process.
             let first_elem = csr_indptr[0];
             csr_indptr
                 .iter_mut()
                 .for_each(|elem| *elem = *elem - first_elem);
 
-            if my_rank == 1 {
-                println!("Rank 2 data {:#?}", csr_data);
-                println!("Rank 2 indices {:#?}", csr_indices);
-                println!("Rank 2 ponter {:#?}", csr_indptr);
-            }
+            // Finally, receive the shape.
+            let mut shape = vec![0 as usize; 2];
+            root_process.broadcast_into(shape.as_mut_slice());
         }
     }
 
