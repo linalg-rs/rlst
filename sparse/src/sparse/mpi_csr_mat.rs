@@ -85,7 +85,6 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         let root_process = comm.process_at_rank(0);
 
         let my_index_range = range_layout.local_range();
-        println!("{:#?}", my_index_range);
         let my_number_of_rows = my_index_range.1 - my_index_range.0;
 
         if csr_mat.is_some() && my_rank != 0 {
@@ -114,8 +113,6 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
                 counts[rank] = (csr_mat.indptr()[local_index_range.1]
                     - csr_mat.indptr()[local_index_range.0]) as i32;
             }
-
-            println!("csr_mat.indptr {:#?}", csr_mat.indptr());
 
             // Send around how much data is received by everyone.
 

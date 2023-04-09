@@ -28,4 +28,12 @@ fn main() {
     let range_layout = DefaultMpiIndexLayout::new(n_range, &world);
 
     let dist_mat = MpiCsrMatrix::from_csr(csr_mat, &domain_layout, &range_layout, &world);
+
+    if rank == 1 {
+        println!("Indices: {:#?}", dist_mat.indices());
+        println!("Data: {:#?}", dist_mat.data());
+        println!("Indptr: {:#?}", dist_mat.indptr());
+        println!("Shape: {:#?}", dist_mat.shape());
+        println!("Local Shape {:#?}", dist_mat.local_shape());
+    }
 }
