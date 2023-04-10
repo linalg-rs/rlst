@@ -1,4 +1,4 @@
-use rlst_common::basic_traits::{Apply, Inner};
+use rlst_common::basic_traits::Apply;
 /// Arnoldi implemented for operators
 use rlst_common::types::{IndexType, RlstResult, Scalar};
 use rlst_dense::MatrixD;

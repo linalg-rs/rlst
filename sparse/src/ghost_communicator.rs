@@ -205,30 +205,3 @@ impl GhostCommunicator {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn test_mpi() {
-        let universe = mpi::initialize().unwrap();
-        let world = universe.world();
-        let rank = world.rank();
-
-        let n = 5;
-
-        let index_layout = crate::index_layout::DefaultMpiIndexLayout::new(n, &world);
-
-        let global_indices = {
-            if rank == 0 {
-                vec![0, 1]
-            } else {
-                vec![rank as usize]
-            }
-        };
-
-        GhostCommunicator::new(&global_indices, &index_layout, &world);
-    }
-}

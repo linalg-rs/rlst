@@ -3,6 +3,7 @@ use rlst_common::basic_traits::*;
 use rlst_common::types::{IndexType, Scalar};
 use rlst_dense::MatrixD;
 
+#[allow(dead_code)]
 pub struct GramSchmidtArnoldi<
     T: Scalar,
     Element: Inner<T = T> + Scale<T = T> + MultSomeInto<T = T> + NewFromZero,
@@ -26,6 +27,7 @@ impl<T: Scalar, Element: Inner<T = T> + Scale<T = T> + MultSomeInto<T = T> + New
         Self { q, h, max_steps }
     }
 
+    #[allow(unused_variables)]
     fn arnoldi_step<Op: Apply<Self::Element, T = Self::T, Range = Self::Element>>(
         &self,
         operator: &Op,
@@ -35,9 +37,10 @@ impl<T: Scalar, Element: Inner<T = T> + Scale<T = T> + MultSomeInto<T = T> + New
     }
 
     fn hessenberg_matrix(&self) -> &MatrixD<Self::T> {
-        std::unimplemented!()
+        &self.h
     }
 
+    #[allow(unused_variables)]
     fn basis_element(&self, index: IndexType) -> Option<&Self::Element> {
         std::unimplemented!()
     }

@@ -24,7 +24,6 @@ pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
     range_layout: &'a DefaultMpiIndexLayout<'a, C>,
     domain_ghosts: crate::ghost_communicator::GhostCommunicator,
-    //range_ghost: crate::ghost_communicator::GhostCommunicator,
 }
 
 impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
@@ -282,56 +281,3 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         );
     }
 }
-
-// #[cfg(test)]
-// mod test {
-
-//     use super::*;
-
-//     #[test]
-//     fn test_csr_from_aij() {
-//         // Test the matrix [[1, 2], [3, 4]]
-//         let rows = vec![0, 0, 1, 1];
-//         let cols = vec![0, 1, 0, 1];
-//         let data = vec![1.0, 2.0, 3.0, 4.0];
-
-//         let csr = CsrMatrix::from_aij((2, 2), &rows, &cols, &data).unwrap();
-
-//         assert_eq!(csr.data().len(), 4);
-//         assert_eq!(csr.indices().len(), 4);
-//         assert_eq!(csr.indptr().len(), 3);
-
-//         //Test the matrix [[0, 0, 0], [2.0, 0, 0], [0, 0, 0]]
-//         let rows = vec![1];
-//         let cols = vec![0];
-//         let data = vec![2.0];
-
-//         let csr = CsrMatrix::from_aij((3, 3), &rows, &cols, &data).unwrap();
-
-//         assert_eq!(csr.indptr()[0], 0);
-//         assert_eq!(csr.indptr()[1], 0);
-//         assert_eq!(csr.indptr()[2], 1);
-//         assert_eq!(csr.indptr()[3], 1);
-//     }
-
-//     #[test]
-//     fn test_csr_matmul() {
-//         // Test the matrix [[1, 2], [3, 4]]
-//         let rows = vec![0, 0, 1, 1];
-//         let cols = vec![0, 1, 0, 1];
-//         let data = vec![1.0, 2.0, 3.0, 4.0];
-
-//         let csr = CsrMatrix::from_aij((2, 2), &rows, &cols, &data).unwrap();
-
-//         // Execute 2 * [1, 2] + 3 * A*x with x = [3, 4];
-//         // Expected result is [35, 79].
-
-//         let x = vec![3.0, 4.0];
-//         let mut res = vec![1.0, 2.0];
-
-//         csr.matmul(3.0, &x, 2.0, &mut res);
-
-//         assert_eq!(res[0], 35.0);
-//         assert_eq!(res[1], 79.0);
-//     }
-// }
