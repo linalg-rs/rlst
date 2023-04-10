@@ -12,12 +12,12 @@ use rlst_common::types::{IndexType, Scalar};
 use crate::traits::index_layout::IndexLayout;
 
 pub struct GhostCommunicator {
-    global_receive_indices: Vec<usize>,
-    local_send_indices: Vec<usize>,
-    neighborhood_send_counts: Vec<i32>,
-    neighborhood_receive_counts: Vec<i32>,
-    neighborhood_send_displacements: Vec<i32>,
-    neighborhood_receive_displacements: Vec<i32>,
+    pub global_receive_indices: Vec<usize>,
+    pub local_send_indices: Vec<usize>,
+    pub neighborhood_send_counts: Vec<i32>,
+    pub neighborhood_receive_counts: Vec<i32>,
+    pub neighborhood_send_displacements: Vec<i32>,
+    pub neighborhood_receive_displacements: Vec<i32>,
     pub total_send_count: usize,
     pub total_receive_count: usize,
     neighbor_comm: UserCommunicator,

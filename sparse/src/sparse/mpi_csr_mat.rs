@@ -1,10 +1,16 @@
 //! Definition of CSR matrices.
 
+use std::collections::HashMap;
+
 use crate::ghost_communicator::GhostCommunicator;
 use crate::index_layout::DefaultMpiIndexLayout;
 use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::SparseMatType;
 use crate::traits::index_layout::IndexLayout;
+use crate::traits::indexable_vector::{
+    IndexableVector, IndexableVectorView, IndexableVectorViewMut,
+};
+use crate::vector::DefaultMpiVector;
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 
@@ -14,6 +20,8 @@ pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
     shape: (IndexType, IndexType),
     local_matrix: CsrMatrix<T>,
+    global_indices: Vec<usize>,
+    local_dof_count: usize,
     domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
     range_layout: &'a DefaultMpiIndexLayout<'a, C>,
     domain_ghosts: crate::ghost_communicator::GhostCommunicator,
@@ -39,11 +47,40 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             .collect();
 
         let domain_ghosts = GhostCommunicator::new(&domain_ghost_dofs, domain_layout, comm);
+        let local_dof_count =
+            domain_layout.number_of_local_indices() + domain_ghosts.total_receive_count;
+        let mut index_mapper = HashMap::new();
+
+        // We need to transform the indices vector of the CSR matrix from global indexing to
+        // local indexing. For this we assume that the input vector has the format
+        // [local_indices..., ghost_indices]. So we map global indices to fit this format.
+        // To do this we create a hash map that takes the global indices and maps to the new
+        // local indexing.
+
+        let mut count: usize = 0;
+        for index in domain_layout.local_range().0..domain_layout.local_range().1 {
+            index_mapper.insert(index, count);
+            count += 1;
+        }
+        for index in &domain_ghosts.global_receive_indices {
+            index_mapper.insert(*index, count);
+            count += 1;
+        }
+
+        // The hash map is created. We now iterate through the indices vector of the sparse matrix
+        // to change the indexing.
+
+        let mapped_indices = indices
+            .iter()
+            .map(|elem| *index_mapper.get(elem).unwrap())
+            .collect::<Vec<_>>();
 
         Self {
             mat_type: SparseMatType::Csr,
             shape,
-            local_matrix: CsrMatrix::new((indptr.len() - 1, shape.1), indices, indptr, data),
+            local_matrix: CsrMatrix::new((indptr.len() - 1, shape.1), mapped_indices, indptr, data),
+            global_indices: indices,
+            local_dof_count,
             domain_layout,
             range_layout,
             domain_ghosts,
@@ -63,7 +100,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     }
 
     pub fn indices(&self) -> &[IndexType] {
-        &self.local_matrix.indices()
+        &self.global_indices
     }
 
     pub fn indptr(&self) -> &[IndexType] {
@@ -210,40 +247,33 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         )
     }
 
-    pub fn matmul(&self, alpha: T, x: &[T], beta: T, y: &mut [T]) {}
+    pub fn matmul<'b>(
+        &self,
+        alpha: T,
+        x: &DefaultMpiVector<'b, T, C>,
+        beta: T,
+        y: &mut DefaultMpiVector<'b, T, C>,
+    ) {
+        // Create a vector that combines local dofs and ghosts
 
-    // pub fn from_aij(
-    //     shape: (IndexType, IndexType),
-    //     rows: &[IndexType],
-    //     cols: &[IndexType],
-    //     data: &[T],
-    // ) -> SparseLinAlgResult<Self> {
-    //     let mut sorted: Vec<IndexType> = (0..rows.len()).collect();
-    //     sorted.sort_by_key(|&idx| rows[idx]);
+        let mut local_vec = Vec::<T>::with_capacity(self.local_dof_count);
+        let x_view = x.view().unwrap();
+        let x_data = x_view.data();
+        let mut ghost_data = vec![T::zero(); self.domain_ghosts.total_receive_count];
 
-    //     let nelems = data.len();
+        local_vec.extend(x_data.iter().copied());
+        self.domain_ghosts
+            .forward_send_ghosts(x_data, &mut ghost_data);
+        local_vec.extend(ghost_data.iter());
 
-    //     let mut indptr = Vec::<IndexType>::with_capacity(1 + shape.0);
-    //     let mut indices = Vec::<IndexType>::with_capacity(nelems);
-    //     let mut new_data = Vec::<T>::with_capacity(nelems);
-
-    //     let mut count: IndexType = 0;
-
-    //     for row in 0..(shape.0) {
-    //         indptr.push(count);
-    //         while count < nelems && row == rows[sorted[count]] {
-    //             count += 1;
-    //         }
-    //     }
-    //     indptr.push(count);
-
-    //     for index in 0..nelems {
-    //         indices.push(cols[sorted[index]]);
-    //         new_data.push(data[sorted[index]]);
-    //     }
-
-    //     Ok(Self::new(shape, indices, indptr, new_data))
-    // }
+        // Compute result
+        self.local_matrix.matmul(
+            alpha,
+            local_vec.as_slice(),
+            beta,
+            y.view_mut().unwrap().data_mut(),
+        );
+    }
 }
 
 // #[cfg(test)]

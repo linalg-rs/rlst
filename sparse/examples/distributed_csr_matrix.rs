@@ -1,3 +1,11 @@
+use rlst_sparse::{
+    traits::{
+        index_layout::IndexLayout,
+        indexable_vector::{IndexableVector, IndexableVectorView, IndexableVectorViewMut},
+    },
+    vector::DefaultMpiVector,
+};
+
 fn main() {
     pub use mpi::traits::*;
     pub use rlst_sparse::ghost_communicator::GhostCommunicator;
@@ -28,12 +36,19 @@ fn main() {
     let range_layout = DefaultMpiIndexLayout::new(n_range, &world);
 
     let dist_mat = MpiCsrMatrix::from_csr(csr_mat, &domain_layout, &range_layout, &world);
+    let mut distributed_vec = DefaultMpiVector::<f64, _>::new(&domain_layout);
+    let mut result_vec = DefaultMpiVector::<f64, _>::new(&range_layout);
+
+    let mut vec_mut_view = distributed_vec.view_mut().unwrap();
+
+    for (index, value) in (domain_layout.local_range().0..domain_layout.local_range().1).enumerate()
+    {
+        *vec_mut_view.get_mut(index).unwrap() = value as f64;
+    }
+
+    dist_mat.matmul(1.0, &distributed_vec, 1.0, &mut result_vec);
 
     if rank == 1 {
-        println!("Indices: {:#?}", dist_mat.indices());
-        println!("Data: {:#?}", dist_mat.data());
-        println!("Indptr: {:#?}", dist_mat.indptr());
-        println!("Shape: {:#?}", dist_mat.shape());
-        println!("Local Shape {:#?}", dist_mat.local_shape());
+        println!("Result: {:#?}", result_vec.view().unwrap().data());
     }
 }
