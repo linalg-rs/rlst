@@ -4,7 +4,7 @@ use super::{GenericBaseMatrixMut, Matrix, SliceMatrix, SliceMatrixMut};
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::traits::*;
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>>
     Matrix<Item, BaseMatrix<Item, Data, Dynamic, Dynamic>, Dynamic, Dynamic>
@@ -15,8 +15,8 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>>
     /// top-left element of the block and its dimension.
     pub fn block<'a>(
         &'a self,
-        top_left: (IndexType, IndexType),
-        dim: (IndexType, IndexType),
+        top_left: (usize, usize),
+        dim: (usize, usize),
     ) -> SliceMatrix<'a, Item, Dynamic, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)
@@ -44,8 +44,8 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
     /// top-left element of the block and its dimension.
     pub fn block_mut<'a>(
         &'a mut self,
-        top_left: (IndexType, IndexType),
-        dim: (IndexType, IndexType),
+        top_left: (usize, usize),
+        dim: (usize, usize),
     ) -> SliceMatrixMut<'a, Item, Dynamic, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)

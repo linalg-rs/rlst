@@ -1,7 +1,7 @@
 //! An indexable vector is the standard type for n-dimensional containers
 
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 
 pub trait IndexableVector {
     type Item: Scalar;
@@ -28,11 +28,11 @@ pub trait IndexableVectorView {
 
     fn iter(&self) -> Self::Iter<'_>;
 
-    fn get(&self, index: IndexType) -> Option<&Self::T>;
+    fn get(&self, index: usize) -> Option<&Self::T>;
 
-    unsafe fn get_unchecked(&self, index: IndexType) -> &Self::T;
+    unsafe fn get_unchecked(&self, index: usize) -> &Self::T;
 
-    fn len(&self) -> IndexType;
+    fn len(&self) -> usize;
 
     fn data(&self) -> &[Self::T];
 }
@@ -44,9 +44,9 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
-    fn get_mut(&mut self, index: IndexType) -> Option<&mut Self::T>;
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self::T>;
 
-    unsafe fn get_unchecked_mut(&mut self, index: IndexType) -> &mut Self::T;
+    unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::T;
 
     fn data_mut(&mut self) -> &mut [Self::T];
 }

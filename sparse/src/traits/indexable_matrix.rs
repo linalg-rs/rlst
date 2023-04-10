@@ -2,11 +2,11 @@
 
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::IndexableVector;
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 
 pub enum DenseMatrixLayout {
-    RowMajor((IndexType, IndexType)),
-    ColMajor((IndexType, IndexType)),
+    RowMajor((usize, usize)),
+    ColMajor((usize, usize)),
 }
 
 pub trait IndexableMatrix {
@@ -26,7 +26,7 @@ pub trait IndexableMatrix {
     fn column_layout(&self) -> &Self::Ind;
     fn row_layout(&self) -> &Self::Ind;
 
-    fn shape(&self) -> (IndexType, IndexType) {
+    fn shape(&self) -> (usize, usize) {
         (
             self.row_layout().number_of_global_indices(),
             self.column_layout().number_of_global_indices(),
@@ -38,10 +38,10 @@ pub trait IndexableDenseMatrixView {
     type T: Scalar;
 
     /// Return a reference to the element at position (`row`, `col`).
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::T;
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::T;
 
     /// Return a reference to the element at position `index` in one-dimensional numbering.
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::T;
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::T;
 
     /// Return a reference to the element at position (`row`, `col`).
     fn get(&self, row: usize, col: usize) -> Option<&Self::T>;
@@ -57,10 +57,10 @@ pub trait IndexableDenseMatrixViewMut {
     type T: Scalar;
 
     /// Return a mutable reference to the element at position (`row`, `col`).
-    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::T;
+    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::T;
 
     /// Return a mutable reference to the element at position `index` in one-dimensional numbering.
-    unsafe fn get1d_unchecked_mut(&mut self, index: IndexType) -> &mut Self::T;
+    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::T;
 
     /// Return a mutable reference to the element at position (`row`, `col`).
     fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut Self::T>;
@@ -75,9 +75,9 @@ pub trait IndexableDenseMatrixViewMut {
 pub trait CsrMatrixView {
     type T: Scalar;
 
-    fn indices(&self) -> &[IndexType];
+    fn indices(&self) -> &[usize];
 
-    fn indptr(&self) -> &[IndexType];
+    fn indptr(&self) -> &[usize];
 
     fn data(&self) -> &[Self::T];
 }

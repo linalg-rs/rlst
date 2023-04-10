@@ -3,21 +3,21 @@
 use crate::sparse::SparseMatType;
 use rlst_common::types::RlstResult;
 
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 
 pub struct CsrMatrix<T: Scalar> {
     mat_type: SparseMatType,
-    shape: (IndexType, IndexType),
-    indices: Vec<IndexType>,
-    indptr: Vec<IndexType>,
+    shape: (usize, usize),
+    indices: Vec<usize>,
+    indptr: Vec<usize>,
     data: Vec<T>,
 }
 
 impl<T: Scalar> CsrMatrix<T> {
     pub fn new(
-        shape: (IndexType, IndexType),
-        indices: Vec<IndexType>,
-        indptr: Vec<IndexType>,
+        shape: (usize, usize),
+        indices: Vec<usize>,
+        indptr: Vec<usize>,
         data: Vec<T>,
     ) -> Self {
         Self {
@@ -33,15 +33,15 @@ impl<T: Scalar> CsrMatrix<T> {
         &self.mat_type
     }
 
-    pub fn shape(&self) -> (IndexType, IndexType) {
+    pub fn shape(&self) -> (usize, usize) {
         self.shape
     }
 
-    pub fn indices(&self) -> &[IndexType] {
+    pub fn indices(&self) -> &[usize] {
         &self.indices
     }
 
-    pub fn indptr(&self) -> &[IndexType] {
+    pub fn indptr(&self) -> &[usize] {
         &self.indptr
     }
 
@@ -69,21 +69,21 @@ impl<T: Scalar> CsrMatrix<T> {
     }
 
     pub fn from_aij(
-        shape: (IndexType, IndexType),
-        rows: &[IndexType],
-        cols: &[IndexType],
+        shape: (usize, usize),
+        rows: &[usize],
+        cols: &[usize],
         data: &[T],
     ) -> RlstResult<Self> {
-        let mut sorted: Vec<IndexType> = (0..rows.len()).collect();
+        let mut sorted: Vec<usize> = (0..rows.len()).collect();
         sorted.sort_by_key(|&idx| rows[idx]);
 
         let nelems = data.len();
 
-        let mut indptr = Vec::<IndexType>::with_capacity(1 + shape.0);
-        let mut indices = Vec::<IndexType>::with_capacity(nelems);
+        let mut indptr = Vec::<usize>::with_capacity(1 + shape.0);
+        let mut indices = Vec::<usize>::with_capacity(nelems);
         let mut new_data = Vec::<T>::with_capacity(nelems);
 
-        let mut count: IndexType = 0;
+        let mut count: usize = 0;
 
         for row in 0..(shape.0) {
             indptr.push(count);

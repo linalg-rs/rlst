@@ -2,7 +2,7 @@
 
 pub use crate::linalg::indexable_matrix::IndexableMatrix;
 pub use crate::linalg::indexable_vector::*;
-pub use crate::types::{IndexType, Scalar};
+pub use crate::types::{usize, Scalar};
 
 /// Compute the Frobenious norm of a matrix.
 pub trait NormFrob: IndexableMatrix {

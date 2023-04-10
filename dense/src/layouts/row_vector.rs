@@ -4,15 +4,15 @@
 //! are in consecutive order in memory.
 
 use crate::traits::*;
-use crate::types::IndexType;
+use crate::types::usize;
 
 /// A type that describes a row vector with consecutive elements.
 pub struct RowVector {
-    dim: IndexType,
+    dim: usize,
 }
 
 impl RowVector {
-    pub fn new(dim: IndexType) -> Self {
+    pub fn new(dim: usize) -> Self {
         Self { dim }
     }
 }
@@ -21,37 +21,37 @@ impl LayoutType for RowVector {
     type IndexLayout = RowVector;
 
     #[inline]
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
         (1, index)
     }
 
     #[inline]
-    fn convert_2d_1d(&self, _row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_1d(&self, _row: usize, col: usize) -> usize {
         col
     }
 
     #[inline]
-    fn convert_2d_raw(&self, _row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_raw(&self, _row: usize, col: usize) -> usize {
         col
     }
 
     #[inline]
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType {
+    fn convert_1d_raw(&self, index: usize) -> usize {
         index
     }
 
     #[inline]
-    fn dim(&self) -> (IndexType, IndexType) {
+    fn dim(&self) -> (usize, usize) {
         (1, self.dim)
     }
 
     #[inline]
-    fn stride(&self) -> (IndexType, IndexType) {
+    fn stride(&self) -> (usize, usize) {
         (self.dim, 1)
     }
 
     #[inline]
-    fn number_of_elements(&self) -> IndexType {
+    fn number_of_elements(&self) -> usize {
         self.dim
     }
 
@@ -62,7 +62,7 @@ impl LayoutType for RowVector {
 }
 
 impl BaseLayoutType for RowVector {
-    fn from_dimension(dim: (IndexType, IndexType)) -> Self {
+    fn from_dimension(dim: (usize, usize)) -> Self {
         assert_eq!(
             dim.0, 1,
             "Number of rows is {} but must be one for RowVector.",
@@ -73,7 +73,7 @@ impl BaseLayoutType for RowVector {
 }
 
 impl VectorBaseLayoutType for RowVector {
-    fn from_length(length: IndexType) -> Self {
+    fn from_length(length: usize) -> Self {
         Self { dim: length }
     }
 }

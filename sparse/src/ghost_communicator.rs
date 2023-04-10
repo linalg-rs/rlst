@@ -5,7 +5,7 @@ use std::os::raw::c_void;
 use mpi::topology::UserCommunicator;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence};
 use mpi_sys;
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 
 use crate::traits::index_layout::IndexLayout;
 
@@ -23,13 +23,13 @@ pub struct GhostCommunicator {
 
 impl GhostCommunicator {
     pub fn new<C: Communicator, Layout: IndexLayout>(
-        ghost_indices: &[IndexType],
+        ghost_indices: &[usize],
         layout: &Layout,
         comm: &C,
     ) -> GhostCommunicator {
         // Get the processes of global indices and create a map rank -> indices_on_rank
 
-        let mut ranks = Vec::<IndexType>::new();
+        let mut ranks = Vec::<usize>::new();
         let mut receive_counts = vec![0; comm.size() as usize];
         let my_rank = comm.rank() as usize;
 
@@ -50,7 +50,7 @@ impl GhostCommunicator {
             let mut sorted_ghost_index_args = (0..ghost_indices.len() as usize).collect::<Vec<_>>();
             sorted_ghost_index_args.sort_by_key(|&i| ranks[i]);
 
-            let mut global_indices_t = Vec::<IndexType>::with_capacity(ghost_indices.len());
+            let mut global_indices_t = Vec::<usize>::with_capacity(ghost_indices.len());
             for arg in sorted_ghost_index_args {
                 global_indices_t.push(ghost_indices[arg]);
             }

@@ -6,7 +6,7 @@ use crate::index_layout::DefaultSerialIndexLayout;
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::{Inner, Norm2};
 use crate::vector::DefaultSerialVector;
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 use rlst_operator::{Element, IndexableSpace, InnerProductSpace, NormedSpace};
 
 pub struct LocalIndexableVectorSpace<T: Scalar> {
@@ -15,7 +15,7 @@ pub struct LocalIndexableVectorSpace<T: Scalar> {
 }
 
 impl<T: Scalar> LocalIndexableVectorSpace<T> {
-    pub fn new(n: IndexType) -> Self {
+    pub fn new(n: usize) -> Self {
         LocalIndexableVectorSpace {
             index_layout: DefaultSerialIndexLayout::new(n),
             _phantom: PhantomData,
@@ -59,7 +59,7 @@ impl<T: Scalar> rlst_operator::LinearSpace for LocalIndexableVectorSpace<T> {
 }
 
 impl<T: Scalar> IndexableSpace for LocalIndexableVectorSpace<T> {
-    fn dimension(&self) -> IndexType {
+    fn dimension(&self) -> usize {
         self.index_layout.number_of_global_indices()
     }
 }

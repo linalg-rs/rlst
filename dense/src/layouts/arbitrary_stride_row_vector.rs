@@ -6,18 +6,18 @@
 //! elements of the vector in memory.
 
 use crate::traits::*;
-use crate::types::IndexType;
+use crate::types::usize;
 
 use super::*;
 
 /// A type that describes a row vector with arbitrary stride.
 pub struct ArbitraryStrideRowVector {
-    dim: IndexType,
-    stride: IndexType,
+    dim: usize,
+    stride: usize,
 }
 
 impl ArbitraryStrideRowVector {
-    pub fn new(dim: IndexType, stride: IndexType) -> Self {
+    pub fn new(dim: usize, stride: usize) -> Self {
         Self { dim, stride }
     }
 }
@@ -26,37 +26,37 @@ impl LayoutType for ArbitraryStrideRowVector {
     type IndexLayout = RowVector;
 
     #[inline]
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
         (1, index)
     }
 
     #[inline]
-    fn convert_2d_1d(&self, _row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_1d(&self, _row: usize, col: usize) -> usize {
         col
     }
 
     #[inline]
-    fn convert_2d_raw(&self, _row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_raw(&self, _row: usize, col: usize) -> usize {
         col * self.stride
     }
 
     #[inline]
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType {
+    fn convert_1d_raw(&self, index: usize) -> usize {
         index * self.stride
     }
 
     #[inline]
-    fn dim(&self) -> (IndexType, IndexType) {
+    fn dim(&self) -> (usize, usize) {
         (1, self.dim)
     }
 
     #[inline]
-    fn stride(&self) -> (IndexType, IndexType) {
+    fn stride(&self) -> (usize, usize) {
         (self.stride * self.dim, self.stride)
     }
 
     #[inline]
-    fn number_of_elements(&self) -> IndexType {
+    fn number_of_elements(&self) -> usize {
         self.dim
     }
 

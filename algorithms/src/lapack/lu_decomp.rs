@@ -1,7 +1,7 @@
 use crate::lapack::LapackData;
 use crate::traits::lu_decomp::LUDecomp;
 use lapacke;
-use rlst_common::types::{c32, c64, IndexType, RlstError, RlstResult, Scalar};
+use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{
     DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixTraitMut, SizeIdentifier,
 };
@@ -68,7 +68,7 @@ macro_rules! lu_decomp_impl {
                 self.data.mat.data()
             }
 
-            fn dim(&self) -> (IndexType, IndexType) {
+            fn dim(&self) -> (usize, usize) {
                 self.data.mat.dim()
             }
 

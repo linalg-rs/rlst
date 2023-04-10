@@ -40,7 +40,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     /// [crate::traits::LayoutType::convert_1d_raw] or to convert from a 2d index
     /// to a raw index use [crate::traits::LayoutType::convert_2d_raw].
     #[inline]
-    pub fn get_slice(&self, first: IndexType, last: IndexType) -> &[Item] {
+    pub fn get_slice(&self, first: usize, last: usize) -> &[Item] {
         self.0.get_slice(first, last)
     }
 
@@ -69,7 +69,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
     /// [crate::traits::LayoutType::convert_1d_raw] or to convert from a 2d index
     /// to a raw index use [crate::traits::LayoutType::convert_2d_raw].
     #[inline]
-    pub fn get_slice_mut(&mut self, first: IndexType, last: IndexType) -> &mut [Item] {
+    pub fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
         self.0.get_slice_mut(first, last)
     }
 

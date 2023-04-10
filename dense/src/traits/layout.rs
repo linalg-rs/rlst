@@ -76,34 +76,32 @@
 //! `householder` provides a number of concrete layouts. These are defined
 //! in the [Layouts module](crate::layouts).
 
-use crate::types::IndexType;
-
 /// The main trait defining a layout. For detailed information see the
 /// [module description](crate::traits::layout).
 pub trait LayoutType {
     /// Return the stride as tuple `(r, c)` with `r` the row strice and `c` the column stride.
-    fn stride(&self) -> (IndexType, IndexType);
+    fn stride(&self) -> (usize, usize);
 
     /// Return the dimension of the matrix as tuple `(rows, cols)`.
-    fn dim(&self) -> (IndexType, IndexType);
+    fn dim(&self) -> (usize, usize);
 
     /// The number of elements in the matrix or vector.
-    fn number_of_elements(&self) -> IndexType;
+    fn number_of_elements(&self) -> usize;
 
     /// Convert a 1d logical `index` to a 2d `(row, col)` index.
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType);
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize);
 
     /// Convert a 2d logical `(row, col)` index to a 1d logical `index`.
-    fn convert_2d_1d(&self, row: IndexType, col: IndexType) -> IndexType;
+    fn convert_2d_1d(&self, row: usize, col: usize) -> usize;
 
     /// Convert a 1d logical `index` to a raw memory index.
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType;
+    fn convert_1d_raw(&self, index: usize) -> usize;
 
     /// Convert a 2d logical `(row, col)` index to a raw memory index.
-    fn convert_2d_raw(&self, row: IndexType, col: IndexType) -> IndexType;
+    fn convert_2d_raw(&self, row: usize, col: usize) -> usize;
 
     /// Create a new layout from providing the matrix dimension as `(rows, cols)` tuple.
-    fn from_dimension(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self;
+    fn from_dimension(dim: (usize, usize), stride: (usize, usize)) -> Self;
 }
 
 /// This layout provides a method to return layout information.

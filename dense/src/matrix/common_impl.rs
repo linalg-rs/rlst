@@ -1,7 +1,7 @@
 //! Implementation of common matrix traits and methods.
 
 use crate::matrix::{Matrix, MatrixD};
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 use crate::{traits::*, DefaultLayout};
 
 impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
@@ -26,12 +26,12 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.0.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.0.get1d_value_unchecked(index)
     }
 }
@@ -46,12 +46,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item {
+    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item {
         self.0.get_unchecked_mut(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
+    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get1d_unchecked_mut(index)
     }
 }
@@ -66,12 +66,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item {
         self.0.get_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get1d_unchecked(index)
     }
 }
@@ -81,11 +81,11 @@ impl<
         MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::Index<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
+    > std::ops::Index<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
     type Output = Item;
 
-    fn index(&self, index: [IndexType; 2]) -> &Self::Output {
+    fn index(&self, index: [usize; 2]) -> &Self::Output {
         self.get(index[0], index[1]).unwrap()
     }
 }
@@ -95,9 +95,9 @@ impl<
         MatImpl: MatrixTraitMut<Item, RS, CS> + MatrixTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::IndexMut<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
+    > std::ops::IndexMut<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
-    fn index_mut(&mut self, index: [IndexType; 2]) -> &mut Self::Output {
+    fn index_mut(&mut self, index: [usize; 2]) -> &mut Self::Output {
         self.get_mut(index[0], index[1]).unwrap()
     }
 }
@@ -128,7 +128,7 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     Matrix<Item, MatImpl, RS, CS>
 {
     /// Return dimension of the matrix.
-    pub fn dim(&self) -> (IndexType, IndexType) {
+    pub fn dim(&self) -> (usize, usize) {
         self.layout().dim()
     }
 }
@@ -137,7 +137,7 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, Fixed1, Dynamic>>
     Matrix<Item, MatImpl, Fixed1, Dynamic>
 {
     /// Return length of a vector.
-    pub fn length(&self) -> IndexType {
+    pub fn length(&self) -> usize {
         self.layout().dim().1
     }
 }
@@ -146,7 +146,7 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, Dynamic, Fixed1>>
     Matrix<Item, MatImpl, Dynamic, Fixed1>
 {
     /// Return length of a vector.
-    pub fn length(&self) -> IndexType {
+    pub fn length(&self) -> usize {
         self.layout().dim().0
     }
 }

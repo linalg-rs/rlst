@@ -16,7 +16,7 @@
 
 use crate::matrix::Matrix;
 use crate::traits::*;
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 use crate::DefaultLayout;
 use std::marker::PhantomData;
 
@@ -113,12 +113,12 @@ macro_rules! matrix_ref_traits {
             type Item = Item;
 
             #[inline]
-            unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+            unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
                 self.0.get_value_unchecked(row, col)
             }
 
             #[inline]
-            unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+            unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
                 self.0.get1d_value_unchecked(index)
             }
         }
@@ -139,12 +139,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item {
         self.0.get_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get1d_unchecked(index)
     }
 }
@@ -160,12 +160,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item {
         self.0.get_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get1d_unchecked(index)
     }
 }
@@ -181,12 +181,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item {
+    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item {
         self.0.get_unchecked_mut(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
+    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get1d_unchecked_mut(index)
     }
 }

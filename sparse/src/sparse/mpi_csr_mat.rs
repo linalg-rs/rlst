@@ -13,11 +13,11 @@ use crate::traits::indexable_vector::{
 use crate::vector::DefaultMpiVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 
 pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
-    shape: (IndexType, IndexType),
+    shape: (usize, usize),
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
@@ -28,9 +28,9 @@ pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
 
 impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     pub fn new(
-        shape: (IndexType, IndexType),
-        indices: Vec<IndexType>,
-        indptr: Vec<IndexType>,
+        shape: (usize, usize),
+        indices: Vec<usize>,
+        indptr: Vec<usize>,
         data: Vec<T>,
         domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
         range_layout: &'a DefaultMpiIndexLayout<'a, C>,
@@ -89,19 +89,19 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         &self.mat_type
     }
 
-    pub fn shape(&self) -> (IndexType, IndexType) {
+    pub fn shape(&self) -> (usize, usize) {
         self.shape
     }
 
-    pub fn local_shape(&self) -> (IndexType, IndexType) {
+    pub fn local_shape(&self) -> (usize, usize) {
         self.local_matrix.shape()
     }
 
-    pub fn indices(&self) -> &[IndexType] {
+    pub fn indices(&self) -> &[usize] {
         &self.global_indices
     }
 
-    pub fn indptr(&self) -> &[IndexType] {
+    pub fn indptr(&self) -> &[usize] {
         &self.local_matrix.indptr()
     }
 

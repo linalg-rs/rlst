@@ -5,15 +5,15 @@
 //! see [crate::traits::layout].
 
 use crate::traits::*;
-use crate::types::IndexType;
+use crate::types::usize;
 
 /// A type that describes a matrix in column major format.
 pub struct ColumnMajor {
-    dim: (IndexType, IndexType),
+    dim: (usize, usize),
 }
 
 impl ColumnMajor {
-    pub fn new(dim: (IndexType, IndexType)) -> Self {
+    pub fn new(dim: (usize, usize)) -> Self {
         Self { dim }
     }
 }
@@ -22,37 +22,37 @@ impl LayoutType for ColumnMajor {
     type IndexLayout = ColumnMajor;
 
     #[inline]
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
         (index % self.dim.0, index / self.dim.0)
     }
 
     #[inline]
-    fn convert_2d_1d(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_1d(&self, row: usize, col: usize) -> usize {
         col * self.dim.0 + row
     }
 
     #[inline]
-    fn convert_2d_raw(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_raw(&self, row: usize, col: usize) -> usize {
         self.convert_2d_1d(row, col)
     }
 
     #[inline]
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType {
+    fn convert_1d_raw(&self, index: usize) -> usize {
         index
     }
 
     #[inline]
-    fn dim(&self) -> (IndexType, IndexType) {
+    fn dim(&self) -> (usize, usize) {
         self.dim
     }
 
     #[inline]
-    fn stride(&self) -> (IndexType, IndexType) {
+    fn stride(&self) -> (usize, usize) {
         (1, self.dim.0)
     }
 
     #[inline]
-    fn number_of_elements(&self) -> IndexType {
+    fn number_of_elements(&self) -> usize {
         self.dim.0 * self.dim.1
     }
 
@@ -63,7 +63,7 @@ impl LayoutType for ColumnMajor {
 }
 
 impl BaseLayoutType for ColumnMajor {
-    fn from_dimension(dim: (IndexType, IndexType)) -> Self {
+    fn from_dimension(dim: (usize, usize)) -> Self {
         Self { dim }
     }
 }

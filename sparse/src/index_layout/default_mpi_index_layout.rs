@@ -1,24 +1,24 @@
 use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_common::types::{IndexType, RlstResult};
+use rlst_common::types::RlstResult;
 
 pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
-    size: IndexType,
-    my_rank: IndexType,
-    counts: Vec<IndexType>,
+    size: usize,
+    my_rank: usize,
+    counts: Vec<usize>,
     comm: &'a C,
 }
 
 impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
-    pub fn new(size: IndexType, comm: &'a C) -> Self {
-        let comm_size = comm.size() as IndexType;
+    pub fn new(size: usize, comm: &'a C) -> Self {
+        let comm_size = comm.size() as usize;
 
         assert!(
             comm_size > 0,
             "Group size is zero. At least one process needs to be in the group."
         );
-        let my_rank = comm.rank() as IndexType;
-        let mut counts = vec![0 as IndexType; 1 + comm_size as usize];
+        let my_rank = comm.rank() as usize;
+        let mut counts = vec![0 as usize; 1 + comm_size as usize];
 
         // The following code computes what index is on what rank. No MPI operation necessary.
         // Each process computes it from its own rank and the number of MPI processes in
@@ -84,27 +84,27 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
 }
 
 impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
-    fn index_range(&self, rank: IndexType) -> RlstResult<(IndexType, IndexType)> {
-        if rank < self.comm.size() as IndexType {
+    fn index_range(&self, rank: usize) -> RlstResult<(usize, usize)> {
+        if rank < self.comm.size() as usize {
             Ok((self.counts[rank], self.counts[1 + rank]))
         } else {
             Err(rlst_common::types::RlstError::MpiRankError(rank as i32))
         }
     }
 
-    fn local_range(&self) -> (IndexType, IndexType) {
+    fn local_range(&self) -> (usize, usize) {
         self.index_range(self.my_rank).unwrap()
     }
 
-    fn number_of_local_indices(&self) -> IndexType {
+    fn number_of_local_indices(&self) -> usize {
         self.counts[1 + self.my_rank] - self.counts[self.my_rank]
     }
 
-    fn number_of_global_indices(&self) -> IndexType {
+    fn number_of_global_indices(&self) -> usize {
         self.size
     }
 
-    fn local2global(&self, index: IndexType) -> Option<IndexType> {
+    fn local2global(&self, index: usize) -> Option<usize> {
         if index < self.number_of_local_indices() {
             Some(self.counts[self.my_rank] + index)
         } else {
@@ -112,7 +112,7 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
         }
     }
 
-    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType> {
+    fn global2local(&self, rank: usize, index: usize) -> Option<usize> {
         if let Ok(index_range) = self.index_range(rank) {
             if index >= index_range.1 {
                 return None;
@@ -124,10 +124,10 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
         }
     }
 
-    fn rank_from_index(&self, index: IndexType) -> Option<IndexType> {
+    fn rank_from_index(&self, index: usize) -> Option<usize> {
         for (count_index, &count) in self.counts[1..].iter().enumerate() {
             if index < count {
-                return Some(count_index as IndexType);
+                return Some(count_index as usize);
             }
         }
         None

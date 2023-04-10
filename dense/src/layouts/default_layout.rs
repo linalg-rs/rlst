@@ -5,57 +5,56 @@
 //! see [crate::traits::layout].
 
 use crate::traits::*;
-use crate::types::IndexType;
 
 pub struct DefaultLayout {
-    dim: (IndexType, IndexType),
-    stride: (IndexType, IndexType),
+    dim: (usize, usize),
+    stride: (usize, usize),
 }
 
 impl DefaultLayout {
-    pub fn new(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self {
+    pub fn new(dim: (usize, usize), stride: (usize, usize)) -> Self {
         Self { dim, stride }
     }
 }
 
 impl LayoutType for DefaultLayout {
     #[inline]
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
         (index / self.dim.1, index % self.dim.1)
     }
 
     #[inline]
-    fn convert_2d_1d(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_1d(&self, row: usize, col: usize) -> usize {
         row * self.dim.1 + col
     }
 
     #[inline]
-    fn convert_2d_raw(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_raw(&self, row: usize, col: usize) -> usize {
         self.stride.0 * row + self.stride.1 * col
     }
 
     #[inline]
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType {
+    fn convert_1d_raw(&self, index: usize) -> usize {
         let (row, col) = self.convert_1d_2d(index);
         self.convert_2d_raw(row, col)
     }
 
     #[inline]
-    fn dim(&self) -> (IndexType, IndexType) {
+    fn dim(&self) -> (usize, usize) {
         self.dim
     }
 
     #[inline]
-    fn stride(&self) -> (IndexType, IndexType) {
+    fn stride(&self) -> (usize, usize) {
         self.stride
     }
 
     #[inline]
-    fn number_of_elements(&self) -> IndexType {
+    fn number_of_elements(&self) -> usize {
         self.dim.0 * self.dim.1
     }
 
-    fn from_dimension(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> Self {
+    fn from_dimension(dim: (usize, usize), stride: (usize, usize)) -> Self {
         Self { dim, stride }
     }
 }

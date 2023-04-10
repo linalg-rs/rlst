@@ -7,7 +7,7 @@ use crate::index_layout::DefaultMpiIndexLayout;
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::Inner;
 use crate::vector::DefaultMpiVector;
-use rlst_common::types::{IndexType, Scalar};
+use rlst_common::types::Scalar;
 use rlst_operator::{Element, IndexableSpace, InnerProductSpace};
 
 pub struct DistributedIndexableVectorSpace<'comm, T: Scalar + Equivalence, C: Communicator> {
@@ -77,7 +77,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableSpace
 where
     T::Real: Equivalence,
 {
-    fn dimension(&self) -> IndexType {
+    fn dimension(&self) -> usize {
         self.index_layout.number_of_global_indices()
     }
 }

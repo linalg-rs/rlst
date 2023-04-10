@@ -1,6 +1,6 @@
 //! Trait for LU Decomposition
 use crate::lapack::TransposeMode;
-pub use rlst_common::types::{IndexType, RlstError, RlstResult, Scalar};
+pub use rlst_common::types::{RlstError, RlstResult, Scalar};
 use rlst_dense::{DataContainerMut, GenericBaseMatrixMut, SizeIdentifier};
 
 pub trait LUDecomp {
@@ -8,7 +8,7 @@ pub trait LUDecomp {
 
     fn data(&self) -> &[Self::T];
 
-    fn dim(&self) -> (IndexType, IndexType);
+    fn dim(&self) -> (usize, usize);
 
     fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
         &self,
