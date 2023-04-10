@@ -11,8 +11,7 @@ use crate::traits::indexable_vector::{
     IndexableVector, IndexableVectorView, IndexableVectorViewMut,
 };
 use crate::vector::DefaultMpiVector;
-use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
+use mpi::traits::{Communicator, Equivalence, Root};
 
 use rlst_common::types::{IndexType, Scalar};
 
@@ -109,6 +108,14 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
     pub fn data(&self) -> &[T] {
         &self.local_matrix.data()
+    }
+
+    pub fn domain_layout(&self) -> &'a DefaultMpiIndexLayout<'a, C> {
+        self.domain_layout
+    }
+
+    pub fn range_layout(&self) -> &'a DefaultMpiIndexLayout<'a, C> {
+        self.range_layout
     }
 
     pub fn from_csr(

@@ -2,9 +2,7 @@
 
 use std::os::raw::c_void;
 
-use mpi::datatype::{Partition, PartitionMut};
 use mpi::topology::UserCommunicator;
-use mpi::traits::*;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence};
 use mpi_sys;
 use rlst_common::types::{IndexType, Scalar};
@@ -48,17 +46,15 @@ impl GhostCommunicator {
 
         // Now sort the global indices by ranks
 
-        let (global_receive_indices, ranks) = {
+        let global_receive_indices = {
             let mut sorted_ghost_index_args = (0..ghost_indices.len() as usize).collect::<Vec<_>>();
             sorted_ghost_index_args.sort_by_key(|&i| ranks[i]);
 
             let mut global_indices_t = Vec::<IndexType>::with_capacity(ghost_indices.len());
-            let mut ranks_t = Vec::<IndexType>::with_capacity(ghost_indices.len());
             for arg in sorted_ghost_index_args {
                 global_indices_t.push(ghost_indices[arg]);
-                ranks_t.push(ranks[arg]);
             }
-            (global_indices_t, ranks_t)
+            global_indices_t
         };
 
         // We have now completed setting up the data on the ghost receivers. We now need

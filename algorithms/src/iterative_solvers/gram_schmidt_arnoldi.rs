@@ -2,7 +2,6 @@ use crate::traits::arnoldi::Arnoldi;
 use rlst_common::basic_traits::*;
 use rlst_common::types::{IndexType, Scalar};
 use rlst_dense::MatrixD;
-use std::marker::PhantomData;
 
 pub struct GramSchmidtArnoldi<
     T: Scalar,
