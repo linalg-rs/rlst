@@ -6,4 +6,5 @@ members = [
     "sparse",
     "common",
     "algorithms",
+    "io",
 ]

@@ -22,6 +22,8 @@ pub enum RlstError {
     LapackError(i32),
     #[error("{0}")]
     GeneralError(String),
+    #[error("I/O Error: {0}")]
+    IoError(String),
 }
 
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
