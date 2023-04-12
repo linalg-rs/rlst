@@ -203,7 +203,21 @@ mod test {
 
     use super::*;
     use approx::assert_ulps_eq;
-    use rlst_dense::{RandomAccessByValue, Dot, rlst_mat, MatrixD, matrix};
+    use rlst_dense::{RandomAccessByValue, Dot, rlst_mat, MatrixD, matrix, ColumnVectorD, rlst_vec};
+
+    #[macro_export]
+    macro_rules! assert_approx_matrices {
+        ($expected_matrix:expr, $actual_matrix:expr) => {
+            {
+                assert_eq!($expected_matrix.dim(),$actual_matrix.dim());
+                for row in 0..$expected_matrix.dim().0 {
+                    for col in 0..$expected_matrix.dim().1 {
+                        assert_ulps_eq!($expected_matrix[[row,col]], $expected_matrix[[row,col]], max_ulps = 100);
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_qr_solve_f64() {
@@ -229,11 +243,7 @@ mod test {
         print_matrix(&expected_rhs);
         println!("actual rhs");
         print_matrix(&actual_rhs);
-        for index in 0..expected_rhs.layout().number_of_elements() {
-            let val1 = expected_rhs.get1d_value(index);
-            let val2 = actual_rhs.get1d_value(index);
-            assert_ulps_eq!(&val1, &val2, max_ulps = 100);
-        }
+        assert_approx_matrices!(&expected_rhs, &actual_rhs)
     }
 
     #[test]
@@ -253,55 +263,41 @@ mod test {
             .unwrap()
             .solve_qr(&mut rhs, TransposeMode::NoTrans);
 
+        let mut actual_sol = rlst_vec!(f64,exp_sol.dim().0);
+        actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, n));
+
         println!("expected sol");
         print_matrix(&exp_sol);
         println!("actual sol");
-        print_matrix(&rhs);
-        for index in 0..exp_sol.layout().number_of_elements() {
-            let val1 = exp_sol.get1d_value(index);
-            let val2 = rhs.get1d_value(index);
-            assert_ulps_eq!(&val1, &val2, max_ulps = 100);
-        }
+        print_matrix(&actual_sol);
+        assert_approx_matrices!(&exp_sol, &actual_sol);
     }
     #[test]
-    fn test_q_unitary_f64() {
+    fn test_q1_orth_cols_f64() {
         let m = 4;
         let n = 3;
         let rlst_mat = rlst_dense::rlst_rand_mat![f64, (m, n)];
         let mut qr = rlst_mat.lapack().unwrap().qr().unwrap();
 
-        let mut expected_I = MatrixD::<f64>::zeros_from_dim(m, m);
-        for i in 0..m {
-            expected_I[[i,i]] = 1.;
+        let info = unsafe {
+            lapacke::dorgqr(
+                lapacke::Layout::ColumnMajor,
+                m as i32,
+                n as i32,
+                n as i32,
+                qr.data.mat.data_mut(),
+                m as i32,
+                &qr.tau,
+            )
+        };
+        if info != 0 {
+            panic!("DORGQR failed, code {}", info)
         }
-        println!("expected_I");
-        print_matrix(&expected_I);
+        let mut matrix_q = qr.data.mat;
 
-        let mut matrix_q = rlst_mat![f64,(m,m)];
-        matrix_q.data_mut().copy_from_slice(expected_I.data());
-
-        qr.xormqr(&mut matrix_q, TransposeMode::NoTrans);
-
-        // alternative to get Q_1 (mxn) instead
-        // let info = unsafe {
-        //     lapacke::dorgqr(
-        //         lapacke::Layout::ColumnMajor,
-        //         m as i32,
-        //         n as i32,
-        //         n as i32,
-        //         qr.data.mat.data_mut(),
-        //         m as i32,
-        //         &qr.tau,
-        //     )
-        // };
-
-        // if info != 0 {
-        //     panic!("DORGQR failed, code {}", info)
-        // }
-
-        let mut matrix_q_t = rlst_mat![f64,(m,m)];
-        for row in 0..m {
-            for col in 0..m {
+        let mut matrix_q_t = rlst_mat![f64,(matrix_q.dim().1,matrix_q.dim().0)];
+        for row in 0..matrix_q.dim().0 {
+            for col in 0..matrix_q.dim().1 {
                 matrix_q_t[[col,row]] = matrix_q[[row,col]];
             }
         }
@@ -310,17 +306,57 @@ mod test {
         println!("QT");
         print_matrix(&matrix_q_t);
 
-        let actual_I = matrix_q.dot(&matrix_q_t);
-        expected_I = matrix_q_t.dot(&matrix_q);
+        let actual_i_t = matrix_q_t.dot(&matrix_q);
         println!("QT*Q");
-        print_matrix(&expected_I);
-        println!("Q*QT");
-        print_matrix(&actual_I);
-        for index in 0..expected_I.layout().number_of_elements() {
-            let val1 = expected_I.get1d_value(index);
-            let val2 = actual_I.get1d_value(index);
-            assert_ulps_eq!(&val1, &val2, max_ulps = 100);
+        print_matrix(&actual_i_t);
+
+        let mut expected_i = MatrixD::<f64>::zeros_from_dim(n, n);
+        for i in 0..expected_i.dim().0 {
+            expected_i[[i,i]] = 1.;
         }
+        println!("expected_I");
+        print_matrix(&expected_i);
+
+        assert_approx_matrices!(&expected_i, &actual_i_t);
+
+    }
+
+    #[test]
+    fn test_q_orth_f64() {
+        let m = 4;
+        let n = 3;
+        let rlst_mat = rlst_dense::rlst_rand_mat![f64, (m, n)];
+        let mut qr = rlst_mat.lapack().unwrap().qr().unwrap();
+
+        let mut expected_i = MatrixD::<f64>::zeros_from_dim(m, m);
+        for i in 0..m {
+            expected_i[[i,i]] = 1.;
+        }
+        println!("expected_I");
+        print_matrix(&expected_i);
+
+        // get full Q
+        let mut matrix_q = rlst_mat![f64,(m,m)];
+        matrix_q.data_mut().copy_from_slice(expected_i.data());
+        qr.xormqr(&mut matrix_q, TransposeMode::NoTrans);
+
+        let mut matrix_q_t = rlst_mat![f64,(matrix_q.dim().1,matrix_q.dim().0)];
+        for row in 0..matrix_q.dim().0 {
+            for col in 0..matrix_q.dim().1 {
+                matrix_q_t[[col,row]] = matrix_q[[row,col]];
+            }
+        }
+        println!("Q");
+        print_matrix(&matrix_q);
+        println!("QT");
+        print_matrix(&matrix_q_t);
+
+        let actual_i_t = matrix_q_t.dot(&matrix_q);
+        println!("QT*Q");
+        print_matrix(&actual_i_t);
+        println!("I");
+        print_matrix(&actual_i_t);
+        assert_approx_matrices!(&expected_i, &actual_i_t);
 
     }
 
@@ -358,13 +394,9 @@ mod test {
         }
         qr.xormqr(&mut matrix_r, TransposeMode::NoTrans).unwrap();
 
-        for index in 0..expected_a.layout().number_of_elements() {
-                    let val1 = expected_a.get1d_value(index);
-                    let val2 = matrix_r.get1d_value(index);
-                    assert_ulps_eq!(&val1, &val2, max_ulps = 100);
-                }
+        assert_approx_matrices!(expected_a,matrix_r);
     }
-
+    
     #[test]
     fn test_qr_decomp_and_solve() {
         let m = 4;
@@ -383,15 +415,15 @@ mod test {
             .unwrap()
             .solve(&mut rhs, TransposeMode::NoTrans);
 
+    
+        let mut actual_sol = rlst_vec!(f64,exp_sol.dim().0);
+        actual_sol.data_mut().copy_from_slice(rhs.get_slice(0,n));
+
         println!("expected sol");
         print_matrix(&exp_sol);
         println!("actual sol");
-        print_matrix(&rhs);
-        for index in 0..exp_sol.layout().number_of_elements() {
-            let val1 = exp_sol.get1d_value(index);
-            let val2 = rhs.get1d_value(index);
-            assert_ulps_eq!(&val1, &val2, max_ulps = 100);
-        }
+        print_matrix(&actual_sol);
+        assert_approx_matrices!(&exp_sol, &actual_sol);
     }
 
     fn print_matrix<
@@ -404,9 +436,10 @@ mod test {
     ) {
         for row in 0..matrix.dim().0 {
             for col in 0..matrix.dim().1 {
-                print!("{:.3}", matrix[[row, col]]);
+                print!("{:.3} ", matrix[[row, col]]);
             }
             println!();
         }
     }
+
 }
