@@ -10,6 +10,16 @@ pub trait QRDecompTrait {
 
     fn dim(&self) -> (IndexType, IndexType);
 
+    fn xormqr<
+    RhsData: DataContainerMut<Item = Self::T>,
+    RhsR: SizeIdentifier,
+    RhsC: SizeIdentifier,
+    >(
+        &mut self,
+        rhs: &mut GenericBaseMatrixMut<Self::T, RhsData, RhsR, RhsC>,
+        trans: TransposeMode,
+    ) -> RlstResult<()>;
+
     fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
         &mut self,
         rhs: &mut GenericBaseMatrixMut<Self::T, Data, RhsR, RhsC>,
