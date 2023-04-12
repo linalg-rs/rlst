@@ -1,15 +1,13 @@
+use crate::lapack::LapackData;
 use crate::traits::qr_decomp_trait::QRDecompTrait;
-use crate::{lapack::LapackData};
 use lapacke;
 use rlst_common::types::{c32, c64, IndexType, RlstError, RlstResult, Scalar};
 use rlst_dense::{
-    DataContainerMut, GenericBaseMatrix,
-    GenericBaseMatrixMut, Layout, LayoutType, MatrixTraitMut, SizeIdentifier, 
+    rlst_vec, ColumnVectorD, DataContainerMut, GenericBaseMatrix, GenericBaseMatrixMut, Layout,
+    LayoutType, MatrixTraitMut, SizeIdentifier,
 };
 
-use super::{
-    check_lapack_stride, SideMode, TransposeMode, TriangularDiagonal, TriangularType,
-};
+use super::{check_lapack_stride, SideMode, TransposeMode, TriangularDiagonal, TriangularType};
 
 pub struct QRDecompLapack<
     Item: Scalar,
@@ -21,9 +19,21 @@ pub struct QRDecompLapack<
     tau: Vec<Item>,
 }
 
+pub struct QRPivotDecompLapack<
+    Item: Scalar,
+    RS: SizeIdentifier,
+    CS: SizeIdentifier,
+    Mat: MatrixTraitMut<Item, RS, CS> + Sized,
+> {
+    data: LapackData<Item, RS, CS, Mat>,
+    tau: Vec<Item>,
+    jpvt: Vec<i32>,
+}
+
 impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
     LapackData<f64, RS, CS, GenericBaseMatrixMut<f64, Data, RS, CS>>
 {
+    /// Returns the QR decomposition of the input matrix assuming full rank and using LAPACK xGEQRF
     pub fn qr(
         mut self,
     ) -> RlstResult<QRDecompLapack<f64, RS, CS, GenericBaseMatrixMut<f64, Data, RS, CS>>> {
@@ -53,6 +63,51 @@ impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
         }
     }
 
+    /// Returns the QR decomposition of the input matrix using column pivoting (LAPACK xGEQP3).
+    /// # Arguments
+    /// * `jpvt'
+    ///    On Input:
+    ///     - If jpvt(j) ≠ 0, the j-th column of a is permuted to the front of AP (a leading column);
+    ///     - If jpvt(j) = 0, the j-th column of a is a free column.
+    ///     - Specified as: a one-dimensional array of dimension max(1, n);
+    ///    On Output:
+    ///     - If jpvt(j) = k, then the j-th column of AP was the k-th column of a.
+    ///     - Specified as: a one-dimensional array of dimension max(1, n);
+    pub fn qr_col_pivot(
+        mut self,
+        mut jpvt: Vec<i32>,
+    ) -> RlstResult<QRPivotDecompLapack<f64, RS, CS, GenericBaseMatrixMut<f64, Data, RS, CS>>> {
+        let dim = self.mat.layout().dim();
+        let stride = self.mat.layout().stride();
+
+        let m = dim.0 as i32;
+        let n = dim.1 as i32;
+        let lda = stride.1 as i32;
+        let mut tau: Vec<f64> = vec![0.0; std::cmp::min(dim.0, dim.1)];
+
+        let info = unsafe {
+            lapacke::dgeqp3(
+                lapacke::Layout::ColumnMajor,
+                m,
+                n,
+                self.mat.data_mut(),
+                lda,
+                &mut jpvt,
+                &mut tau,
+            )
+        };
+
+        if info == 0 {
+            return Ok(QRPivotDecompLapack {
+                data: self,
+                tau: tau,
+                jpvt: jpvt,
+            });
+        } else {
+            return Err(RlstError::LapackError(info));
+        }
+    }
+
     fn solve_qr<
         RhsData: DataContainerMut<Item = f64>,
         RhsR: SizeIdentifier,
@@ -65,6 +120,7 @@ impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
         if !check_lapack_stride(rhs.layout().dim(), rhs.layout().stride()) {
             return Err(RlstError::IncompatibleStride);
         } else {
+            //TODO: add a check for m>n?
             // let mat = &self.data.mat;
             let dim = self.mat.layout().dim();
             let stride = self.mat.layout().stride();
@@ -96,6 +152,57 @@ impl<RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = f64>>
             }
         }
     }
+
+    fn solve_qr_pivot<
+        RhsData: DataContainerMut<Item = f64>,
+        RhsR: SizeIdentifier,
+        RhsC: SizeIdentifier,
+    >(
+        &mut self,
+        rhs: &mut GenericBaseMatrixMut<f64, RhsData, RhsR, RhsC>,
+        trans: TransposeMode,
+    ) -> RlstResult<()> {
+        if !check_lapack_stride(rhs.layout().dim(), rhs.layout().stride()) {
+            return Err(RlstError::IncompatibleStride);
+        } else {
+            //TODO: add a check for m>n?
+            // let mat = &self.data.mat;
+            let dim = self.mat.layout().dim();
+            let stride = self.mat.layout().stride();
+
+            let m = dim.0 as i32;
+            let n = dim.1 as i32;
+            let lda = stride.1 as i32;
+            let ldb = rhs.layout().stride().1 as i32;
+            let nrhs = rhs.dim().1;
+
+            let mut jpvt = vec![0, n];
+            let rcond = 0.0;
+            let mut rank = 0;
+
+            let info = unsafe {
+                lapacke::dgelsy(
+                    lapacke::Layout::ColumnMajor,
+                    m,
+                    n,
+                    nrhs as i32,
+                    self.mat.data_mut(),
+                    lda,
+                    rhs.data_mut(),
+                    ldb,
+                    &mut jpvt,
+                    rcond,
+                    &mut rank,
+                )
+            };
+
+            if info != 0 {
+                return Err(RlstError::LapackError(info));
+            } else {
+                Ok(())
+            }
+        }
+    }
 }
 
 impl<Data: DataContainerMut<Item = f64>, RS: SizeIdentifier, CS: SizeIdentifier> QRDecompTrait
@@ -111,6 +218,7 @@ impl<Data: DataContainerMut<Item = f64>, RS: SizeIdentifier, CS: SizeIdentifier>
         self.data.mat.dim()
     }
 
+    /// Returns Q*RHS
     fn xormqr<
         RhsData: DataContainerMut<Item = Self::T>,
         RhsR: SizeIdentifier,
@@ -203,26 +311,30 @@ mod test {
 
     use super::*;
     use approx::assert_ulps_eq;
-    use rlst_dense::{RandomAccessByValue, Dot, rlst_mat, MatrixD, matrix, ColumnVectorD, rlst_vec};
+    use rlst_dense::{
+        matrix, rlst_mat, rlst_vec, ColumnVectorD, Dot, MatrixD, RandomAccessByValue,
+    };
 
     #[macro_export]
     macro_rules! assert_approx_matrices {
-        ($expected_matrix:expr, $actual_matrix:expr) => {
-            {
-                assert_eq!($expected_matrix.dim(),$actual_matrix.dim());
-                for row in 0..$expected_matrix.dim().0 {
-                    for col in 0..$expected_matrix.dim().1 {
-                        assert_ulps_eq!($expected_matrix[[row,col]], $expected_matrix[[row,col]], max_ulps = 100);
-                    }
+        ($expected_matrix:expr, $actual_matrix:expr) => {{
+            assert_eq!($expected_matrix.dim(), $actual_matrix.dim());
+            for row in 0..$expected_matrix.dim().0 {
+                for col in 0..$expected_matrix.dim().1 {
+                    assert_ulps_eq!(
+                        $expected_matrix[[row, col]],
+                        $expected_matrix[[row, col]],
+                        max_ulps = 100
+                    );
                 }
             }
-        }
+        }};
     }
 
     #[test]
     fn test_qr_solve_f64() {
         let orig_mat = rlst_dense::rlst_rand_mat![f64, (4, 4)];
-        let mut rlst_mat = rlst_dense::rlst_mat![f64,(4,4)];
+        let mut rlst_mat = rlst_dense::rlst_mat![f64, (4, 4)];
         rlst_mat.data_mut().copy_from_slice(orig_mat.data());
 
         // TODO: this should be rlst_rand_vec but for some reason that doesn't work and I couldn't figure out why
@@ -247,13 +359,12 @@ mod test {
     }
 
     #[test]
-    fn test_qr_ls_f64()
-    {
+    fn test_qr_ls_f64() {
         let m = 4;
         let n = 3;
         let matrix_a = rlst_dense::rlst_rand_mat![f64, (m, n)];
         // TODO: this should be rlst_rand_vec but for some reason that doesn't work and I couldn't figure out why
-        let mut exp_sol = rlst_dense::rlst_vec![f64,n];
+        let mut exp_sol = rlst_dense::rlst_vec![f64, n];
         let mut rng = rand::thread_rng();
         exp_sol.fill_from_rand_standard_normal(&mut rng);
         let mut rhs = matrix_a.dot(&exp_sol);
@@ -263,7 +374,7 @@ mod test {
             .unwrap()
             .solve_qr(&mut rhs, TransposeMode::NoTrans);
 
-        let mut actual_sol = rlst_vec!(f64,exp_sol.dim().0);
+        let mut actual_sol = rlst_vec!(f64, exp_sol.dim().0);
         actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, n));
 
         println!("expected sol");
@@ -295,10 +406,10 @@ mod test {
         }
         let mut matrix_q = qr.data.mat;
 
-        let mut matrix_q_t = rlst_mat![f64,(matrix_q.dim().1,matrix_q.dim().0)];
+        let mut matrix_q_t = rlst_mat![f64, (matrix_q.dim().1, matrix_q.dim().0)];
         for row in 0..matrix_q.dim().0 {
             for col in 0..matrix_q.dim().1 {
-                matrix_q_t[[col,row]] = matrix_q[[row,col]];
+                matrix_q_t[[col, row]] = matrix_q[[row, col]];
             }
         }
         println!("Q");
@@ -312,13 +423,12 @@ mod test {
 
         let mut expected_i = MatrixD::<f64>::zeros_from_dim(n, n);
         for i in 0..expected_i.dim().0 {
-            expected_i[[i,i]] = 1.;
+            expected_i[[i, i]] = 1.;
         }
         println!("expected_I");
         print_matrix(&expected_i);
 
         assert_approx_matrices!(&expected_i, &actual_i_t);
-
     }
 
     #[test]
@@ -330,20 +440,20 @@ mod test {
 
         let mut expected_i = MatrixD::<f64>::zeros_from_dim(m, m);
         for i in 0..m {
-            expected_i[[i,i]] = 1.;
+            expected_i[[i, i]] = 1.;
         }
         println!("expected_I");
         print_matrix(&expected_i);
 
         // get full Q
-        let mut matrix_q = rlst_mat![f64,(m,m)];
+        let mut matrix_q = rlst_mat![f64, (m, m)];
         matrix_q.data_mut().copy_from_slice(expected_i.data());
         qr.xormqr(&mut matrix_q, TransposeMode::NoTrans);
 
-        let mut matrix_q_t = rlst_mat![f64,(matrix_q.dim().1,matrix_q.dim().0)];
+        let mut matrix_q_t = rlst_mat![f64, (matrix_q.dim().1, matrix_q.dim().0)];
         for row in 0..matrix_q.dim().0 {
             for col in 0..matrix_q.dim().1 {
-                matrix_q_t[[col,row]] = matrix_q[[row,col]];
+                matrix_q_t[[col, row]] = matrix_q[[row, col]];
             }
         }
         println!("Q");
@@ -357,7 +467,6 @@ mod test {
         println!("I");
         print_matrix(&actual_i_t);
         assert_approx_matrices!(&expected_i, &actual_i_t);
-
     }
 
     #[test]
@@ -394,16 +503,16 @@ mod test {
         }
         qr.xormqr(&mut matrix_r, TransposeMode::NoTrans).unwrap();
 
-        assert_approx_matrices!(expected_a,matrix_r);
+        assert_approx_matrices!(expected_a, matrix_r);
     }
-    
+
     #[test]
     fn test_qr_decomp_and_solve() {
         let m = 4;
         let n = 3;
         let matrix_a = rlst_dense::rlst_rand_mat![f64, (m, n)];
         // TODO: this should be rlst_rand_vec but for some reason that doesn't work and I couldn't figure out why
-        let mut exp_sol = rlst_dense::rlst_vec![f64,n];
+        let mut exp_sol = rlst_dense::rlst_vec![f64, n];
         let mut rng = rand::thread_rng();
         exp_sol.fill_from_rand_standard_normal(&mut rng);
         let mut rhs = matrix_a.dot(&exp_sol);
@@ -415,9 +524,8 @@ mod test {
             .unwrap()
             .solve(&mut rhs, TransposeMode::NoTrans);
 
-    
-        let mut actual_sol = rlst_vec!(f64,exp_sol.dim().0);
-        actual_sol.data_mut().copy_from_slice(rhs.get_slice(0,n));
+        let mut actual_sol = rlst_vec!(f64, exp_sol.dim().0);
+        actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, n));
 
         println!("expected sol");
         print_matrix(&exp_sol);
@@ -441,5 +549,4 @@ mod test {
             println!();
         }
     }
-
 }
