@@ -2,6 +2,7 @@
 
 use rlst_common::types::Scalar;
 use rlst_common::types::{RlstError, RlstResult};
+use rlst_dense::matrix::MatrixD;
 use rlst_sparse::sparse::csr_mat::CsrMatrix;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -34,7 +35,63 @@ pub struct MatrixMarketInfo {
     symmetry: SymmetryType,
 }
 
-pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<RlstResult<CsrMatrix<T>>> {
+pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
+    let mut reader = open_file(fname).unwrap();
+    let mm_info = parse_header(&mut reader).unwrap();
+
+    if mm_info.format != MatrixFormat::Array {
+        return Err(RlstError::IoError(
+            "Matrix not in array format.".to_string(),
+        ));
+    }
+
+    if mm_info.data_type == DataType::Integer {
+        return Err(RlstError::IoError(
+            "Integer matrices not supported.".to_string(),
+        ));
+    }
+
+    if mm_info.symmetry != SymmetryType::General {
+        return Err(RlstError::IoError(
+            "Only matrices with Symmetry type `general` currently supported.".to_string(),
+        ));
+    }
+
+    let mut nrows = 0;
+    let mut ncols = 0;
+
+    while let Some(line) = reader.next() {
+        let current_str = line.unwrap().to_string();
+        if !current_str.starts_with("%") {
+            let items = current_str
+                .split_whitespace()
+                .map(|elem| elem.to_string())
+                .collect::<Vec<String>>();
+
+            if items.len() != 2 {
+                return Err(RlstError::IoError(
+                    "Dimension line has unknown format.".to_string(),
+                ));
+            }
+
+            nrows = usize::from_str_radix(&items[0], 10).unwrap();
+            ncols = usize::from_str_radix(&items[1], 10).unwrap();
+
+            break;
+        }
+    }
+
+    let mut mat = rlst_dense::rlst_mat!(T, (nrows, ncols));
+    let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
+
+    if let Ok(_) = res {
+        return Ok(mat);
+    } else {
+        return Err(res.unwrap_err());
+    }
+}
+
+pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -91,7 +148,7 @@ pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<RlstResult<CsrMa
     if let Ok(_) = res {
         rows.iter_mut().for_each(|elem| *elem = *elem - 1);
         cols.iter_mut().for_each(|elem| *elem = *elem - 1);
-        return Ok(CsrMatrix::from_aij((nrows, ncols), &rows, &cols, &data));
+        return Ok(CsrMatrix::from_aij((nrows, ncols), &rows, &cols, &data).unwrap());
     } else {
         return Err(res.unwrap_err());
     }

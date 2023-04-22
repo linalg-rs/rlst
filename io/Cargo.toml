@@ -26,6 +26,8 @@ matrixmultiply = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
 rlst-common = {path = "../common"}
 rlst-sparse = {path = "../sparse"}
+rlst-dense = {path = "../dense"}
+
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
