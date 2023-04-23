@@ -74,17 +74,45 @@ impl<T: Scalar> CsrMatrix<T> {
         cols: &[usize],
         data: &[T],
     ) -> RlstResult<Self> {
-        let mut sorted: Vec<usize> = (0..rows.len()).collect();
+        let nelems = data.len();
+        let mut sorted: Vec<usize> = (0..nelems).collect();
+        // Sorts first by column, then by row. Ensures that
+        // elements with consecutive columns are next to each other.
+        sorted.sort_by_key(|&idx| cols[idx]);
         sorted.sort_by_key(|&idx| rows[idx]);
 
-        let nelems = data.len();
+        // Now merge consecutive elements together and filter out zeros
+
+        let mut rows_t = Vec::<usize>::with_capacity(nelems);
+        let mut cols_t = Vec::<usize>::with_capacity(nelems);
+        let mut data_t = Vec::<T>::with_capacity(nelems);
+
+        let mut count: usize = 0;
+        while count < nelems {
+            let current_row = rows[sorted[count]];
+            let current_col = cols[sorted[count]];
+            let mut current_data = T::zero();
+            while count < nelems
+                && rows[sorted[count]] == current_row
+                && cols[sorted[count]] == current_col
+            {
+                current_data += data[sorted[count]];
+                count += 1;
+            }
+            if current_data != T::zero() {
+                rows_t.push(current_row);
+                cols_t.push(current_col);
+                data_t.push(current_data);
+            }
+        }
+
+        let nelems = data_t.len();
 
         let mut indptr = Vec::<usize>::with_capacity(1 + shape.0);
         let mut indices = Vec::<usize>::with_capacity(nelems);
         let mut new_data = Vec::<T>::with_capacity(nelems);
 
         let mut count: usize = 0;
-
         for row in 0..(shape.0) {
             indptr.push(count);
             while count < nelems && row == rows[sorted[count]] {
@@ -94,8 +122,8 @@ impl<T: Scalar> CsrMatrix<T> {
         indptr.push(count);
 
         for index in 0..nelems {
-            indices.push(cols[sorted[index]]);
-            new_data.push(data[sorted[index]]);
+            indices.push(cols_t[index]);
+            new_data.push(data_t[index]);
         }
 
         Ok(Self::new(shape, indices, indptr, new_data))
@@ -145,6 +173,13 @@ impl<'a, T: Scalar> std::iter::Iterator for CsrAijIterator<'a, T> {
 
         result
     }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.mat.data().len()
+    }
 }
 
 impl<T: Scalar> rlst_common::basic_traits::AijIterator for CsrMatrix<T> {
@@ -172,20 +207,21 @@ mod test {
     #[test]
     fn test_csr_from_aij() {
         // Test the matrix [[1, 2], [3, 4]]
-        let rows = vec![0, 0, 1, 1];
-        let cols = vec![0, 1, 0, 1];
-        let data = vec![1.0, 2.0, 3.0, 4.0];
+        let rows = vec![0, 0, 1, 1, 0];
+        let cols = vec![0, 1, 0, 1, 1];
+        let data = vec![1.0, 2.0, 3.0, 4.0, 6.0];
 
         let csr = CsrMatrix::from_aij((2, 2), &rows, &cols, &data).unwrap();
 
         assert_eq!(csr.data().len(), 4);
         assert_eq!(csr.indices().len(), 4);
         assert_eq!(csr.indptr().len(), 3);
+        assert_eq!(csr.data()[1], 8.0);
 
         //Test the matrix [[0, 0, 0], [2.0, 0, 0], [0, 0, 0]]
-        let rows = vec![1];
-        let cols = vec![0];
-        let data = vec![2.0];
+        let rows = vec![1, 2, 1];
+        let cols = vec![0, 2, 0];
+        let data = vec![2.0, 0.0, 3.0];
 
         let csr = CsrMatrix::from_aij((3, 3), &rows, &cols, &data).unwrap();
 
@@ -193,6 +229,7 @@ mod test {
         assert_eq!(csr.indptr()[1], 0);
         assert_eq!(csr.indptr()[2], 1);
         assert_eq!(csr.indptr()[3], 1);
+        assert_eq!(csr.data()[0], 5.0);
     }
 
     #[test]
