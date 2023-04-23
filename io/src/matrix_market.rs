@@ -5,6 +5,7 @@ use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::matrix::MatrixD;
 use rlst_sparse::sparse::csr_mat::CsrMatrix;
 use std::fs::File;
+use std::io::Write;
 use std::io::{self, BufRead};
 use std::path::Path;
 
@@ -21,6 +22,26 @@ pub enum DataType {
     Complex,
 }
 
+pub trait MmIdentifier {
+    const MMTYPE: &'static str;
+}
+
+impl MmIdentifier for f32 {
+    const MMTYPE: &'static str = "real";
+}
+
+impl MmIdentifier for f64 {
+    const MMTYPE: &'static str = "real";
+}
+
+impl MmIdentifier for rlst_common::types::c32 {
+    const MMTYPE: &'static str = "complex";
+}
+
+impl MmIdentifier for rlst_common::types::c64 {
+    const MMTYPE: &'static str = "complex";
+}
+
 #[derive(PartialEq, Clone, Copy)]
 pub enum SymmetryType {
     General,
@@ -29,11 +50,76 @@ pub enum SymmetryType {
     Hermitian,
 }
 
+pub fn write_coordinate_mm<
+    T: Scalar + MmIdentifier,
+    Mat: rlst_common::basic_traits::AijIterator<T = T> + rlst_common::basic_traits::Dimension,
+>(
+    mat: &Mat,
+    fname: &str,
+) -> RlstResult<()> {
+    let output = File::create(fname);
+
+    let count = mat.iter_aij().count();
+
+    if let Ok(mut output) = output {
+        write!(
+            output,
+            "%%MatrixMarket matrix coordinate {} general\n",
+            T::MMTYPE
+        )
+        .unwrap();
+        write!(output, "%\n").unwrap();
+        write!(output, "{} {} {}\n", mat.dim().0, mat.dim().1, count).unwrap();
+        for (row, col, data) in mat.iter_aij() {
+            write!(output, "{} {} {} \n", 1 + row, 1 + col, data).unwrap();
+        }
+
+        Ok(())
+    } else {
+        Err(RlstError::IoError(format!("Could not open file {}", fname)))
+    }
+}
+
+pub fn write_array_mm<
+    T: Scalar + MmIdentifier,
+    Mat: rlst_common::basic_traits::ColumnMajorIterator<T = T> + rlst_common::basic_traits::Dimension,
+>(
+    mat: &Mat,
+    fname: &str,
+) -> RlstResult<()> {
+    let output = File::create(fname);
+
+    if let Ok(mut output) = output {
+        write!(
+            output,
+            "%%MatrixMarket matrix array {} general\n",
+            T::MMTYPE
+        )
+        .unwrap();
+        write!(output, "%\n").unwrap();
+        write!(output, "{} {}\n", mat.dim().0, mat.dim().1).unwrap();
+        for value in mat.iter_col_major() {
+            write!(output, "{}\n", value).unwrap();
+        }
+
+        Ok(())
+    } else {
+        Err(RlstError::IoError(format!("Could not open file {}", fname)))
+    }
+}
+
 pub struct MatrixMarketInfo {
     format: MatrixFormat,
     data_type: DataType,
     symmetry: SymmetryType,
 }
+
+// macro_rules! mm_write {
+//     ($scalar:ty) => {};
+// }
+
+// mm_write!(f64);
+// mm_write!(rlst_common::types::c64);
 
 pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
     let mut reader = open_file(fname).unwrap();

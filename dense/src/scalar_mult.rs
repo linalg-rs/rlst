@@ -138,6 +138,6 @@ mod test {
         let res = 2.0 * mat;
         let res = res.eval();
 
-        assert_eq!(res.get_value(1, 2), 10.0);
+        assert_eq!(res.get_value(1, 2).unwrap(), 10.0);
     }
 }

@@ -22,6 +22,7 @@
 pub mod base_methods;
 pub mod common_impl;
 pub mod constructors;
+pub mod iterators;
 pub mod matrix_slices;
 pub mod random;
 

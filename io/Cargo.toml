@@ -31,6 +31,7 @@ rlst-dense = {path = "../dense"}
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
+tempfile = { version = "3.5.0"}
 
 
 [package.metadata.docs.rs]

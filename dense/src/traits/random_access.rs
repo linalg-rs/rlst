@@ -63,10 +63,10 @@ pub trait UnsafeRandomAccessMut {
 /// [Random Access](crate::traits::random_access) for a description.
 pub trait RandomAccessByValue: UnsafeRandomAccessByValue {
     /// Return the element at position (`row`, `col`).
-    fn get_value(&self, row: usize, col: usize) -> Self::Item;
+    fn get_value(&self, row: usize, col: usize) -> Option<Self::Item>;
 
     /// Return the element at position `index` in one-dimensional numbering.
-    fn get1d_value(&self, elem: usize) -> Self::Item;
+    fn get1d_value(&self, elem: usize) -> Option<Self::Item>;
 }
 
 /// This trait provides bounds checked mutable access to the underlying data. See
@@ -99,47 +99,23 @@ fn check_dimension1d(elem: usize, nelems: usize) -> bool {
     elem < nelems
 }
 
-/// Check that a given pair of `row` and `col` is not out of bounds for given dimension `dim`.
-#[inline]
-fn assert_dimension(row: usize, col: usize, dim: (usize, usize)) {
-    assert!(
-        row < dim.0,
-        "row {} out of bounds (dim: {}, {}",
-        row,
-        dim.0,
-        dim.1
-    );
-    assert!(
-        col < dim.1,
-        "col {} out of bounds (dim: {}, {}",
-        col,
-        dim.0,
-        dim.1
-    );
-}
-
-/// Check that a given `index` parameter is not out of bounds for `nelems` elements.
-#[inline]
-fn assert_dimension1d(elem: usize, nelems: usize) {
-    assert!(
-        elem < nelems,
-        "elem {} out of bounds (nelems: {})",
-        elem,
-        nelems
-    );
-}
-
 impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Layout> RandomAccessByValue
     for Mat
 {
-    fn get_value(&self, row: usize, col: usize) -> Self::Item {
-        assert_dimension(row, col, self.layout().dim());
-        unsafe { self.get_value_unchecked(row, col) }
+    fn get_value(&self, row: usize, col: usize) -> Option<Self::Item> {
+        if check_dimension(row, col, self.layout().dim()) {
+            Some(unsafe { self.get_value_unchecked(row, col) })
+        } else {
+            None
+        }
     }
 
-    fn get1d_value(&self, elem: usize) -> Self::Item {
-        assert_dimension1d(elem, self.layout().number_of_elements());
-        unsafe { self.get1d_value_unchecked(elem) }
+    fn get1d_value(&self, elem: usize) -> Option<Self::Item> {
+        if check_dimension1d(elem, self.layout().number_of_elements()) {
+            Some(unsafe { self.get1d_value_unchecked(elem) })
+        } else {
+            None
+        }
     }
 }
 
