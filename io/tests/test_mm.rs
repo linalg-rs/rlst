@@ -35,7 +35,6 @@ fn write_mm_array_file() {
     let temp_file = NamedTempFile::new().unwrap();
     let path = temp_file.into_temp_path();
     let pathname = path.to_str().unwrap();
-    println!("{}", pathname);
 
     let mat = rlst_rand_mat!(rlst_common::types::c64, (5, 4));
     write_array_mm(&mat, pathname).unwrap();
@@ -47,7 +46,6 @@ fn write_mm_array_file() {
     }
 
     path.close().unwrap();
-    //std::fs::remove_file(pathname).unwrap();
 }
 
 #[test]
@@ -56,7 +54,6 @@ fn write_mm_coordinate_file() {
     let temp_file = NamedTempFile::new().unwrap();
     let path = temp_file.into_temp_path();
     let pathname = path.to_str().unwrap();
-    println!("{}", pathname);
 
     let rows = vec![2, 3, 4, 4, 6];
     let cols = vec![0, 1, 0, 2, 1];
@@ -71,10 +68,8 @@ fn write_mm_coordinate_file() {
     let csr_in = read_coordinate_mm::<f64>(pathname).unwrap();
 
     for (expected, actual) in csr.iter_aij().zip(csr_in.iter_aij()) {
-        println!("{:#?}", expected);
         assert_eq!(expected, actual);
     }
 
     path.close().unwrap();
-    //std::fs::remove_file(pathname).unwrap();
 }
