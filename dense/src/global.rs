@@ -4,5 +4,4 @@ pub use crate::data_container::*;
 pub use crate::layouts::*;
 pub use crate::matrix::*;
 pub use crate::matrix_multiply::{Dot, MatMul};
-pub use crate::tools::*;
 pub use crate::traits::*;

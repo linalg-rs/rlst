@@ -5,7 +5,7 @@ use crate::traits::indexable_vector::{
     IndexableVector, IndexableVectorView, IndexableVectorViewMut,
 };
 use crate::vector::{DefaultSerialVector, LocalIndexableVectorView, LocalIndexableVectorViewMut};
-use mpi::datatype::Partition;
+use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
 use num::{Float, Zero};
 use rlst_common::types::{RlstResult, Scalar};
@@ -26,6 +26,43 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DefaultMpiVector<'a, T, C> {
     }
     fn local(&self) -> &DefaultSerialVector<T> {
         &self.local
+    }
+
+    pub fn to_root(&self) -> Option<DefaultSerialVector<T>> {
+        let comm = self.index_layout().comm();
+        let root_process = comm.process_at_rank(0);
+
+        let my_view = self.view().unwrap();
+
+        let data = my_view.data();
+
+        if comm.rank() == 0 {
+            let counts: Vec<i32> = (0..comm.size())
+                .map(|index| {
+                    let index_range = self.index_layout.index_range(index as usize).unwrap();
+                    (index_range.1 - index_range.0) as i32
+                })
+                .collect();
+            let displacements: Vec<i32> = (0..comm.size())
+                .map(|index| {
+                    let index_range = self.index_layout.index_range(index as usize).unwrap();
+                    index_range.0 as i32
+                })
+                .collect();
+            let global_dim = self.index_layout().number_of_global_indices();
+
+            let mut vec = DefaultSerialVector::<T>::new(global_dim);
+            let mut view = vec.view_mut().unwrap();
+
+            let mut partition = PartitionMut::new(view.data_mut(), counts, displacements);
+
+            root_process.gather_varcount_into_root(data, &mut partition);
+
+            Some(vec)
+        } else {
+            root_process.gather_varcount_into(data);
+            None
+        }
     }
 
     pub fn fill_from_root(&mut self, other: &Option<DefaultSerialVector<T>>) -> RlstResult<()> {

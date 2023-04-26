@@ -2,6 +2,9 @@
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::*;
 use num::{Float, Zero};
+use rand::prelude::*;
+use rand_distr::StandardNormal;
+use rlst_common::tools::RandScalar;
 use rlst_common::types::Scalar;
 use rlst_common::types::{RlstError, RlstResult};
 
@@ -26,6 +29,21 @@ impl<T: Scalar> DefaultSerialVector<T> {
             data: vec![T::zero(); size],
             index_layout: DefaultSerialIndexLayout::new(size),
         }
+    }
+}
+
+impl<T: Scalar + RandScalar> DefaultSerialVector<T>
+where
+    StandardNormal: Distribution<<T as Scalar>::Real>,
+{
+    /// Fill a matrix with normally distributed random numbers.
+    pub fn fill_from_rand_standard_normal<R: Rng>(&mut self, rng: &mut R) {
+        let dist = StandardNormal;
+        self.view_mut()
+            .unwrap()
+            .data_mut()
+            .iter_mut()
+            .for_each(|val| *val = T::random_scalar(rng, &dist));
     }
 }
 

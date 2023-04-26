@@ -320,9 +320,9 @@ mod test {
 
     use super::*;
     use crate::matrix::*;
-    use crate::tools::RandScalar;
     use approx::assert_ulps_eq;
     use rand_distr::StandardNormal;
+    use rlst_common::tools::RandScalar;
 
     use rand::prelude::*;
 

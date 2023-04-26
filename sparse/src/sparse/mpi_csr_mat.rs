@@ -145,7 +145,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
         // Need to compute how much data to send to each process.
 
-        let mut my_data_count: usize = 0;
+        let mut my_data_count: i32 = 0;
 
         if my_rank == 0 {
             let mut counts = vec![0 as i32; size];
@@ -171,8 +171,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
                 count += n;
             }
 
-            csr_data = vec![T::zero(); my_data_count];
-            csr_indices = vec![0 as usize; my_data_count];
+            csr_data = vec![T::zero(); my_data_count as usize];
+            csr_indices = vec![0 as usize; my_data_count as usize];
             csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
             shape = vec![csr_mat.shape().0, csr_mat.shape().1];
 
@@ -183,7 +183,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
             for rank in 0..size {
                 let local_index_range = range_layout.index_range(rank).unwrap();
-                idxptrcount[rank] = 1 + (local_index_range.1 - local_index_range.0) as i32;
+                idxptrcount[rank] = (local_index_range.1 - local_index_range.0) as i32;
                 idxptrdisplacements[rank] = local_index_range.0 as i32;
             }
 
@@ -210,7 +210,10 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             // Send everything around
             root_process.scatter_varcount_into_root(&data_partition, csr_data.as_mut_slice());
             root_process.scatter_varcount_into_root(&indices_partition, csr_indices.as_mut_slice());
-            root_process.scatter_varcount_into_root(&idx_partition, csr_indptr.as_mut_slice());
+            root_process.scatter_varcount_into_root(
+                &idx_partition,
+                &mut csr_indptr.as_mut_slice()[..my_number_of_rows],
+            );
             root_process.broadcast_into(shape.as_mut_slice());
         } else {
             // Allocate the shape
@@ -221,24 +224,26 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
             // Now make space for the matrix data.
 
-            csr_data = vec![T::zero(); my_data_count];
-            csr_indices = vec![0 as usize; my_data_count];
-            csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
+            csr_data = vec![T::zero(); my_data_count as usize];
+            csr_indices = vec![0 as usize; my_data_count as usize];
+            csr_indptr = vec![0 as usize; 1 + my_number_of_rows as usize];
 
             // Get the matrix data
             root_process.scatter_varcount_into(csr_data.as_mut_slice());
             root_process.scatter_varcount_into(csr_indices.as_mut_slice());
-            root_process.scatter_varcount_into(csr_indptr.as_mut_slice());
+            root_process.scatter_varcount_into(&mut csr_indptr.as_mut_slice()[..my_number_of_rows]);
             root_process.broadcast_into(shape.as_mut_slice());
 
             // We need to fix the index pointer as locally it needs to start at 0. But
             // the communicated data is offset by where the index pointer was on the
             // root process.
             let first_elem = csr_indptr[0];
-            csr_indptr
+            csr_indptr[..my_number_of_rows]
                 .iter_mut()
                 .for_each(|elem| *elem = *elem - first_elem);
         }
+
+        csr_indptr[my_number_of_rows] = my_data_count as usize;
 
         // Once everything is received we can finally create the matrix object.
 
