@@ -4,7 +4,7 @@ use super::{GenericBaseMatrixMut, Matrix, SliceMatrix, SliceMatrixMut};
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::traits::*;
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>>
     Matrix<Item, BaseMatrix<Item, Data, Dynamic, Dynamic>, Dynamic, Dynamic>
@@ -15,8 +15,8 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>>
     /// top-left element of the block and its dimension.
     pub fn block<'a>(
         &'a self,
-        top_left: (IndexType, IndexType),
-        dim: (IndexType, IndexType),
+        top_left: (usize, usize),
+        dim: (usize, usize),
     ) -> SliceMatrix<'a, Item, Dynamic, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)
@@ -44,8 +44,8 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
     /// top-left element of the block and its dimension.
     pub fn block_mut<'a>(
         &'a mut self,
-        top_left: (IndexType, IndexType),
-        dim: (IndexType, IndexType),
+        top_left: (usize, usize),
+        dim: (usize, usize),
     ) -> SliceMatrixMut<'a, Item, Dynamic, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)
@@ -148,8 +148,8 @@ mod test {
 
         let slice = mat.block((0, 1), (2, 2));
 
-        assert_eq!(slice.get_value(1, 1), 1.0);
-        assert_eq!(slice.get1d_value(3), 1.0);
+        assert_eq!(slice.get_value(1, 1).unwrap(), 1.0);
+        assert_eq!(slice.get1d_value(3).unwrap(), 1.0);
     }
 
     #[test]
@@ -160,8 +160,8 @@ mod test {
         let slice1 = mat.block((0, 1), (3, 3));
         let slice2 = slice1.block((1, 0), (2, 2));
 
-        assert_eq!(slice1.get_value(1, 1), 1.0);
-        assert_eq!(slice2.get_value(0, 1), 1.0);
+        assert_eq!(slice1.get_value(1, 1).unwrap(), 1.0);
+        assert_eq!(slice2.get_value(0, 1).unwrap(), 1.0);
     }
 
     #[test]
@@ -172,9 +172,9 @@ mod test {
         *m2.get_mut(3, 4).unwrap() = 3.0;
         *m3.get_mut(2, 1).unwrap() = 4.0;
         *m4.get_mut(4, 2).unwrap() = 5.0;
-        assert_eq!(mat.get_value(1, 0), 2.0);
-        assert_eq!(mat.get_value(3, 9), 3.0);
-        assert_eq!(mat.get_value(7, 1), 4.0);
-        assert_eq!(mat.get_value(9, 7), 5.0);
+        assert_eq!(mat.get_value(1, 0).unwrap(), 2.0);
+        assert_eq!(mat.get_value(3, 9).unwrap(), 3.0);
+        assert_eq!(mat.get_value(7, 1).unwrap(), 4.0);
+        assert_eq!(mat.get_value(9, 7).unwrap(), 5.0);
     }
 }

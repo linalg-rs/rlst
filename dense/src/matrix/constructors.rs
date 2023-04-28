@@ -5,7 +5,7 @@ use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, V
 use crate::layouts::*;
 use crate::matrix::{Matrix, SliceMatrix, SliceMatrixMut};
 use crate::traits::*;
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 
 // Construct mutable zero matrices
 
@@ -46,7 +46,7 @@ impl<Item: Scalar>
     Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Dynamic, Dynamic>, Dynamic, Dynamic>
 {
     /// Create a new zero matrix with given number of rows and columns.
-    pub fn zeros_from_dim(rows: IndexType, cols: IndexType) -> Self {
+    pub fn zeros_from_dim(rows: usize, cols: usize) -> Self {
         let layout = DefaultLayout::from_dimension((rows, cols), (1, rows));
         Self::from_data(
             VectorContainer::<Item>::new(layout.number_of_elements()),
@@ -59,7 +59,7 @@ impl<Item: Scalar>
     Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Dynamic, Fixed1>, Dynamic, Fixed1>
 {
     /// Create a new zero column vector with a given number of entries.
-    pub fn zeros_from_length(nelems: IndexType) -> Self {
+    pub fn zeros_from_length(nelems: usize) -> Self {
         let layout = DefaultLayout::from_dimension((nelems, 1), (1, nelems));
         Self::from_data(
             VectorContainer::<Item>::new(layout.number_of_elements()),
@@ -72,7 +72,7 @@ impl<Item: Scalar>
     Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Fixed1, Dynamic>, Fixed1, Dynamic>
 {
     /// Create a new zero row vector with a given number of entries.
-    pub fn zeros_from_length(nelems: IndexType) -> Self {
+    pub fn zeros_from_length(nelems: usize) -> Self {
         let layout = DefaultLayout::from_dimension((1, nelems), (1, 1));
         Self::from_data(
             VectorContainer::<Item>::new(layout.number_of_elements()),
@@ -87,8 +87,8 @@ macro_rules! from_pointer_strided {
             /// Create a new mutable matrix by specifying a pointer, dimension and stride tuple.
             pub unsafe fn from_pointer(
                 ptr: *mut Item,
-                dim: (IndexType, IndexType),
-                stride: (IndexType, IndexType),
+                dim: (usize, usize),
+                stride: (usize, usize),
             ) -> Self {
                 let new_layout = DefaultLayout::new(dim, stride);
                 let nindices = new_layout.convert_2d_raw(dim.0 - 1, dim.1 - 1) + 1;
@@ -103,8 +103,8 @@ macro_rules! from_pointer_strided {
             /// Create a new matrix by specifying a pointer, dimension and stride tuple.
             pub unsafe fn from_pointer(
                 ptr: *const Item,
-                dim: (IndexType, IndexType),
-                stride: (IndexType, IndexType),
+                dim: (usize, usize),
+                stride: (usize, usize),
             ) -> Self {
                 let new_layout = DefaultLayout::new(dim, stride);
                 let nindices = new_layout.convert_2d_raw(dim.0 - 1, dim.1 - 1) + 1;

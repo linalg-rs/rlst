@@ -1,7 +1,7 @@
 //! Interface to Lapack routines
 pub mod lu_decomp;
 pub use lapacke::Layout;
-pub use rlst_common::types::{IndexType, RlstError, RlstResult};
+pub use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::types::Scalar;
 use rlst_dense::{
     DataContainerMut, GenericBaseMatrixMut, LayoutType, MatrixTraitMut, SizeIdentifier,
@@ -29,7 +29,7 @@ pub struct LapackData<
     phantom_cs: PhantomData<CS>,
 }
 
-pub fn check_lapack_stride(dim: (IndexType, IndexType), stride: (IndexType, IndexType)) -> bool {
+pub fn check_lapack_stride(dim: (usize, usize), stride: (usize, usize)) -> bool {
     stride.0 == 1 && stride.1 >= std::cmp::max(1, dim.0)
 }
 

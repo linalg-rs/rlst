@@ -95,16 +95,12 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(
-        &self,
-        row: crate::types::IndexType,
-        col: crate::types::IndexType,
-    ) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.0.get_value_unchecked(row, col) - self.1.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: crate::types::IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.0.get1d_value_unchecked(index) - self.1.get1d_value_unchecked(index)
     }
 }

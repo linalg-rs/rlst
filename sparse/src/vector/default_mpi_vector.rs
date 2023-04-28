@@ -5,7 +5,7 @@ use crate::traits::indexable_vector::{
     IndexableVector, IndexableVectorView, IndexableVectorViewMut,
 };
 use crate::vector::{DefaultSerialVector, LocalIndexableVectorView, LocalIndexableVectorViewMut};
-use mpi::datatype::Partition;
+use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
 use num::{Float, Zero};
 use rlst_common::types::{RlstResult, Scalar};
@@ -28,22 +28,65 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DefaultMpiVector<'a, T, C> {
         &self.local
     }
 
-    pub fn fill_from_root(&mut self, other: &Option<DefaultSerialVector<T>>) -> RlstResult<()> {
-        let comm = self.index_layout().comm().duplicate();
+    pub fn to_root(&self) -> Option<DefaultSerialVector<T>> {
+        let comm = self.index_layout().comm();
+        let root_process = comm.process_at_rank(0);
+
+        let my_view = self.view().unwrap();
+
+        let data = my_view.data();
+
+        if comm.rank() == 0 {
+            let counts: Vec<i32> = (0..comm.size())
+                .map(|index| {
+                    let index_range = self.index_layout.index_range(index as usize).unwrap();
+                    (index_range.1 - index_range.0) as i32
+                })
+                .collect();
+            let displacements: Vec<i32> = (0..comm.size())
+                .map(|index| {
+                    let index_range = self.index_layout.index_range(index as usize).unwrap();
+                    index_range.0 as i32
+                })
+                .collect();
+            let global_dim = self.index_layout().number_of_global_indices();
+
+            let mut vec = DefaultSerialVector::<T>::new(global_dim);
+            let mut view = vec.view_mut().unwrap();
+
+            let mut partition = PartitionMut::new(view.data_mut(), counts, displacements);
+
+            root_process.gather_varcount_into_root(data, &mut partition);
+
+            Some(vec)
+        } else {
+            root_process.gather_varcount_into(data);
+            None
+        }
+    }
+
+    pub fn from_root(
+        index_layout: &'a DefaultMpiIndexLayout<'a, C>,
+        other: &Option<DefaultSerialVector<T>>,
+    ) -> RlstResult<Self> {
+        let comm = index_layout.comm();
         let counts: Vec<i32> = (0..comm.size())
             .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                let index_range = index_layout.index_range(index as usize).unwrap();
                 (index_range.1 - index_range.0) as i32
             })
             .collect();
         let displacements: Vec<i32> = (0..comm.size())
             .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                let index_range = index_layout.index_range(index as usize).unwrap();
                 index_range.0 as i32
             })
             .collect();
-        let global_dim = self.index_layout().number_of_global_indices();
-        let mut recvbuf = vec![T::zero(); self.index_layout().number_of_local_indices()];
+        let global_dim = index_layout.number_of_global_indices();
+
+        let mut distributed_vec = Self::new(index_layout);
+
+        //let mut recvbuf = vec![T::zero(); index_layout.number_of_local_indices()];
 
         let root_process = comm.process_at_rank(0);
         if comm.rank() == 0 {
@@ -63,17 +106,16 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DefaultMpiVector<'a, T, C> {
             let data = view.data().as_ref();
             let partition = Partition::new(data, counts, displacements);
 
-            root_process.scatter_varcount_into_root(&partition, &mut recvbuf);
+            root_process.scatter_varcount_into_root(
+                &partition,
+                distributed_vec.view_mut().unwrap().data_mut(),
+            );
         } else {
             assert!(other.is_none(), "`other` has a `Some` value.");
-            root_process.scatter_varcount_into(&mut recvbuf);
+            root_process.scatter_varcount_into(distributed_vec.view_mut().unwrap().data_mut());
         }
 
-        if let Some(mut view) = self.view_mut() {
-            view.data_mut().clone_from_slice(&recvbuf);
-        }
-
-        Ok(())
+        Ok(distributed_vec)
     }
 }
 

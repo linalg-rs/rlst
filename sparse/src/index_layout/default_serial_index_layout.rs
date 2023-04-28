@@ -1,30 +1,30 @@
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::{IndexType, RlstError, RlstResult};
+use rlst_common::types::{RlstError, RlstResult};
 
 pub struct DefaultSerialIndexLayout {
-    size: IndexType,
+    size: usize,
 }
 
 impl DefaultSerialIndexLayout {
-    pub fn new(size: IndexType) -> Self {
+    pub fn new(size: usize) -> Self {
         Self { size }
     }
 }
 
 impl IndexLayout for DefaultSerialIndexLayout {
-    fn number_of_local_indices(&self) -> IndexType {
+    fn number_of_local_indices(&self) -> usize {
         self.number_of_global_indices()
     }
 
-    fn local_range(&self) -> (IndexType, IndexType) {
+    fn local_range(&self) -> (usize, usize) {
         (0, self.size)
     }
 
-    fn number_of_global_indices(&self) -> IndexType {
+    fn number_of_global_indices(&self) -> usize {
         self.size
     }
 
-    fn index_range(&self, rank: IndexType) -> RlstResult<(IndexType, IndexType)> {
+    fn index_range(&self, rank: usize) -> RlstResult<(usize, usize)> {
         if rank == 0 {
             Ok((0, self.size))
         } else {
@@ -32,7 +32,7 @@ impl IndexLayout for DefaultSerialIndexLayout {
         }
     }
 
-    fn local2global(&self, index: IndexType) -> Option<IndexType> {
+    fn local2global(&self, index: usize) -> Option<usize> {
         if index < self.number_of_local_indices() {
             Some(index)
         } else {
@@ -40,7 +40,7 @@ impl IndexLayout for DefaultSerialIndexLayout {
         }
     }
 
-    fn global2local(&self, rank: IndexType, index: IndexType) -> Option<IndexType> {
+    fn global2local(&self, rank: usize, index: usize) -> Option<usize> {
         if rank == 0 && index < self.number_of_global_indices() {
             Some(index)
         } else {
@@ -48,7 +48,7 @@ impl IndexLayout for DefaultSerialIndexLayout {
         }
     }
 
-    fn rank_from_index(&self, index: IndexType) -> Option<IndexType> {
+    fn rank_from_index(&self, index: usize) -> Option<usize> {
         if index < self.number_of_global_indices() {
             Some(0)
         } else {

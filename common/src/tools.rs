@@ -18,13 +18,19 @@ pub trait RandScalar: Scalar {
 }
 
 impl RandScalar for f32 {
-    fn random_scalar<R: Rng, D: Distribution<Self>>(rng: &mut R, dist: &D) -> Self {
+    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+        rng: &mut R,
+        dist: &D,
+    ) -> Self {
         dist.sample(rng)
     }
 }
 
 impl RandScalar for f64 {
-    fn random_scalar<R: Rng, D: Distribution<Self>>(rng: &mut R, dist: &D) -> Self {
+    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+        rng: &mut R,
+        dist: &D,
+    ) -> Self {
         dist.sample(rng)
     }
 }

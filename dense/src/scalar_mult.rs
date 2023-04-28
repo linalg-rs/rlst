@@ -7,7 +7,7 @@
 
 use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
-use crate::types::{c32, c64, IndexType, Scalar};
+use crate::types::{c32, c64, Scalar};
 use crate::{matrix::*, DefaultLayout};
 use std::marker::PhantomData;
 
@@ -64,12 +64,12 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.1 * self.0.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.1 * self.0.get1d_value_unchecked(index)
     }
 }
@@ -138,6 +138,6 @@ mod test {
         let res = 2.0 * mat;
         let res = res.eval();
 
-        assert_eq!(res.get_value(1, 2), 10.0);
+        assert_eq!(res.get_value(1, 2).unwrap(), 10.0);
     }
 }

@@ -5,15 +5,15 @@
 //! storing the zero lower triangular elements.
 
 use crate::traits::*;
-use crate::types::IndexType;
+use crate::types::usize;
 
 /// A type that describes upper triangular matrices.
 pub struct UpperTriangular {
-    dim: IndexType,
+    dim: usize,
 }
 
 impl UpperTriangular {
-    pub fn new(dim: IndexType) -> Self {
+    pub fn new(dim: usize) -> Self {
         Self { dim }
     }
 }
@@ -22,9 +22,9 @@ impl LayoutType for UpperTriangular {
     type IndexLayout = Self;
 
     #[inline]
-    fn convert_1d_2d(&self, index: IndexType) -> (IndexType, IndexType) {
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
         let p = -0.5 + f64::sqrt(0.25 + 2.0 * (index as f64));
-        let p = f64::floor(p) as IndexType;
+        let p = f64::floor(p) as usize;
         (
             self.dim - 1 - p,
             self.dim - 1 - p + index - (p * (p + 1)) / 2,
@@ -32,12 +32,12 @@ impl LayoutType for UpperTriangular {
     }
 
     #[inline]
-    fn convert_1d_raw(&self, index: IndexType) -> IndexType {
+    fn convert_1d_raw(&self, index: usize) -> usize {
         index
     }
 
     #[inline]
-    fn convert_2d_1d(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_1d(&self, row: usize, col: usize) -> usize {
         assert!(
             col >= row,
             "For upper triangular require 'col' >= 'row': row={}, col={}",
@@ -48,12 +48,12 @@ impl LayoutType for UpperTriangular {
     }
 
     #[inline]
-    fn convert_2d_raw(&self, row: IndexType, col: IndexType) -> IndexType {
+    fn convert_2d_raw(&self, row: usize, col: usize) -> usize {
         self.convert_1d_raw(self.convert_2d_1d(row, col))
     }
 
     #[inline]
-    fn dim(&self) -> (IndexType, IndexType) {
+    fn dim(&self) -> (usize, usize) {
         (self.dim, self.dim)
     }
 
@@ -63,18 +63,18 @@ impl LayoutType for UpperTriangular {
     }
 
     #[inline]
-    fn number_of_elements(&self) -> IndexType {
+    fn number_of_elements(&self) -> usize {
         (self.dim * (self.dim + 1)) / 2
     }
 
     #[inline]
-    fn stride(&self) -> (IndexType, IndexType) {
+    fn stride(&self) -> (usize, usize) {
         std::unimplemented!("method 'stride' not implemented for UpperTriangular layout.")
     }
 }
 
 impl BaseLayoutType for UpperTriangular {
-    fn from_dimension(dim: (IndexType, IndexType)) -> Self {
+    fn from_dimension(dim: (usize, usize)) -> Self {
         assert_eq!(
             dim.0, dim.1,
             "Only square triangular matrices are supported. dim = {:#?}",

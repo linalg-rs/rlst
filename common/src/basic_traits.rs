@@ -1,4 +1,4 @@
-pub use crate::types::{IndexType, Scalar};
+pub use crate::types::Scalar;
 
 pub trait Scale {
     type T: Scalar;
@@ -91,25 +91,43 @@ pub trait NormInf {
 }
 
 pub trait Dimension {
-    fn dim(&self) -> (IndexType, IndexType);
+    fn dim(&self) -> (usize, usize);
 }
 
 pub trait RandomAccess {
     type T: Scalar;
 
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::T;
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::T;
 
-    unsafe fn get_unchecked_value(&self, row: IndexType, col: IndexType) -> Self::T {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::T {
         *self.get_unchecked(row, col)
     }
 
-    fn get(&self, row: IndexType, col: IndexType) -> Option<&Self::T>;
+    fn get(&self, row: usize, col: usize) -> Option<&Self::T>;
 
-    fn get_value(&self, row: IndexType, col: IndexType) -> Option<Self::T> {
+    fn get_value(&self, row: usize, col: usize) -> Option<Self::T> {
         if let Some(reference) = self.get(row, col) {
             Some(*reference)
         } else {
             None
         }
     }
+}
+
+pub trait AijIterator {
+    type T: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::T)>
+    where
+        Self: 'a;
+
+    fn iter_aij<'a>(&'a self) -> Self::Iter<'a>;
+}
+
+pub trait ColumnMajorIterator {
+    type T: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = Self::T>
+    where
+        Self: 'a;
+
+    fn iter_col_major<'a>(&'a self) -> Self::Iter<'a>;
 }

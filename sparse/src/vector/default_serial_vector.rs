@@ -2,8 +2,11 @@
 use crate::traits::index_layout::IndexLayout;
 use crate::traits::indexable_vector::*;
 use num::{Float, Zero};
+use rand::prelude::*;
+use rand_distr::StandardNormal;
+use rlst_common::tools::RandScalar;
 use rlst_common::types::Scalar;
-use rlst_common::types::{IndexType, RlstError, RlstResult};
+use rlst_common::types::{RlstError, RlstResult};
 
 use crate::index_layout::DefaultSerialIndexLayout;
 
@@ -21,11 +24,26 @@ pub struct LocalIndexableVectorViewMut<'a, T: Scalar> {
 }
 
 impl<T: Scalar> DefaultSerialVector<T> {
-    pub fn new(size: IndexType) -> DefaultSerialVector<T> {
+    pub fn new(size: usize) -> DefaultSerialVector<T> {
         DefaultSerialVector {
             data: vec![T::zero(); size],
             index_layout: DefaultSerialIndexLayout::new(size),
         }
+    }
+}
+
+impl<T: Scalar + RandScalar> DefaultSerialVector<T>
+where
+    StandardNormal: Distribution<<T as Scalar>::Real>,
+{
+    /// Fill a matrix with normally distributed random numbers.
+    pub fn fill_from_rand_standard_normal<R: Rng>(&mut self, rng: &mut R) {
+        let dist = StandardNormal;
+        self.view_mut()
+            .unwrap()
+            .data_mut()
+            .iter_mut()
+            .for_each(|val| *val = T::random_scalar(rng, &dist));
     }
 }
 
@@ -57,11 +75,11 @@ macro_rules! implement_view {
 
             type T = T;
 
-            fn get(&self, index: IndexType) -> Option<&Self::T> {
+            fn get(&self, index: usize) -> Option<&Self::T> {
                 self.data.get(index)
             }
 
-            unsafe fn get_unchecked(&self, index: IndexType) -> &Self::T {
+            unsafe fn get_unchecked(&self, index: usize) -> &Self::T {
                 self.data.get_unchecked(index)
             }
 
@@ -69,7 +87,7 @@ macro_rules! implement_view {
                 self.data.as_slice().iter()
             }
 
-            fn len(&self) -> IndexType {
+            fn len(&self) -> usize {
                 self.data.len()
             }
 
@@ -85,11 +103,11 @@ implement_view!(LocalIndexableVectorViewMut);
 impl<T: Scalar> IndexableVectorViewMut for LocalIndexableVectorViewMut<'_, T> {
     type IterMut<'b> = std::slice::IterMut<'b, T> where Self: 'b;
 
-    fn get_mut(&mut self, index: IndexType) -> Option<&mut Self::T> {
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self::T> {
         self.data.get_mut(index)
     }
 
-    unsafe fn get_unchecked_mut(&mut self, index: IndexType) -> &mut Self::T {
+    unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::T {
         self.data.get_unchecked_mut(index)
     }
 
@@ -244,9 +262,9 @@ mod tests {
     use cauchy::c64;
     use float_eq;
 
-    const VEC_SIZE: IndexType = 2;
+    const VEC_SIZE: usize = 2;
 
-    fn new_vec<T: Scalar>(size: IndexType) -> DefaultSerialVector<T> {
+    fn new_vec<T: Scalar>(size: usize) -> DefaultSerialVector<T> {
         DefaultSerialVector::<T>::new(size)
     }
 

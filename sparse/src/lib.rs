@@ -1,3 +1,4 @@
+pub mod ghost_communicator;
 pub mod index_layout;
 pub mod operator_interface;
 pub mod sparse;

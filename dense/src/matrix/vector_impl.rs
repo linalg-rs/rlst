@@ -6,7 +6,7 @@ use crate::data_container::{ArrayContainer, DataContainer, VectorContainer};
 use crate::layouts::*;
 use crate::matrix::Matrix;
 use crate::traits::*;
-use crate::types::{IndexType, Scalar};
+use crate::types::{usize, Scalar};
 
 macro_rules! vec_dynamic {
     ($MatrixType:ident, $BaseType:ident, $Layout:ident, $RS:ident, $CS:ident) => {
@@ -23,7 +23,7 @@ macro_rules! vec_dynamic {
                 Self::new($BaseType::<Item, VectorContainer<Item>, $Layout, $RS, $CS>::new(data))
             }
 
-            pub fn from_zeros(length: IndexType) -> Self {
+            pub fn from_zeros(length: usize) -> Self {
                 Self::from_data(VectorContainer::<Item>::new(length))
             }
         }
@@ -63,7 +63,7 @@ vec_fixed!(Matrix, BaseMatrix, RowMajor, Fixed1, Fixed3, 2);
 impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
     Matrix<Item, BaseMatrix<Item, Data, VLayout, RS, CS>, VLayout, RS, CS>
 {
-    pub fn length(&self) -> IndexType {
+    pub fn length(&self) -> usize {
         self.0.length()
     }
 }
