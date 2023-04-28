@@ -30,25 +30,37 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, RS, CS>;
+    MatImpl: MatrixImplTrait<Item, RS, CS>;
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    ScalarMult<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > ScalarMult<Item, MatImpl, RS, CS>
 {
     pub fn new(mat: Matrix<Item, MatImpl, RS, CS>, scalar: Item) -> Self {
         Self(mat, scalar, PhantomData, PhantomData, PhantomData)
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    SizeType for ScalarMult<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SizeType for ScalarMult<Item, MatImpl, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Layout for ScalarMult<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Layout for ScalarMult<Item, MatImpl, RS, CS>
 {
     type Impl = DefaultLayout;
 
@@ -58,8 +70,12 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessByValue for ScalarMult<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByValue for ScalarMult<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -76,7 +92,7 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
 
 macro_rules! scalar_mult_impl {
     ($Scalar:ty) => {
-        impl<MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+        impl<MatImpl: MatrixImplTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
             std::ops::Mul<Matrix<$Scalar, MatImpl, RS, CS>> for $Scalar
         {
             type Output = ScalarProdMat<$Scalar, MatImpl, RS, CS>;
@@ -86,8 +102,12 @@ macro_rules! scalar_mult_impl {
             }
         }
 
-        impl<'a, MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-            std::ops::Mul<&'a Matrix<$Scalar, MatImpl, RS, CS>> for $Scalar
+        impl<
+                'a,
+                MatImpl: MatrixImplTrait<$Scalar, RS, CS>,
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+            > std::ops::Mul<&'a Matrix<$Scalar, MatImpl, RS, CS>> for $Scalar
         {
             type Output = ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, RS, CS>, RS, CS>;
 
@@ -96,7 +116,7 @@ macro_rules! scalar_mult_impl {
             }
         }
 
-        impl<MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
+        impl<MatImpl: MatrixImplTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
             std::ops::Mul<$Scalar> for Matrix<$Scalar, MatImpl, RS, CS>
         {
             type Output = ScalarProdMat<$Scalar, MatImpl, RS, CS>;
@@ -106,8 +126,12 @@ macro_rules! scalar_mult_impl {
             }
         }
 
-        impl<'a, MatImpl: MatrixTrait<$Scalar, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-            std::ops::Mul<$Scalar> for &'a Matrix<$Scalar, MatImpl, RS, CS>
+        impl<
+                'a,
+                MatImpl: MatrixImplTrait<$Scalar, RS, CS>,
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+            > std::ops::Mul<$Scalar> for &'a Matrix<$Scalar, MatImpl, RS, CS>
         {
             type Output = ScalarProdMat<$Scalar, MatrixRef<'a, $Scalar, MatImpl, RS, CS>, RS, CS>;
 

@@ -11,10 +11,10 @@
 
 pub mod layout;
 pub mod matrix;
-pub mod random_access;
 pub mod size;
 
 pub use layout::*;
 pub use matrix::*;
-pub use random_access::*;
+pub use rlst_common::traits::properties::*;
+pub use rlst_common::traits::random_access::*;
 pub use size::*;

@@ -1,5 +1,5 @@
 use crate::traits::arnoldi::Arnoldi;
-use rlst_common::basic_traits::*;
+use rlst_common::traits::*;
 use rlst_common::types::Scalar;
 use rlst_dense::MatrixD;
 
@@ -13,8 +13,10 @@ pub struct GramSchmidtArnoldi<
     max_steps: usize,
 }
 
-impl<T: Scalar, Element: Inner<T = T> + Scale<T = T> + MultSomeInto<T = T> + NewFromZero> Arnoldi
-    for GramSchmidtArnoldi<T, Element>
+impl<
+        T: Scalar,
+        Element: Inner<T = T> + Scale<T = T> + MultSomeInto<T = T> + NewFromZero + Norm2<T = T>,
+    > Arnoldi for GramSchmidtArnoldi<T, Element>
 {
     type T = T;
     type Element = Element;

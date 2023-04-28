@@ -4,23 +4,14 @@
 //! methods for a matrix. The user needs to implement `UnsafeRandomAccess`
 //! and `UnsafeRandomAccessMut` (for mutable access).
 //!
-//! If additionally the [Layout](crate::traits::Layout) is implemented (aut-implemented
-//! if the [LayoutType](crate::traits::LayoutType) trait is implemented), then
-//! he corresponding safe traits `SafeRandomAccess` and
-//! `SafeRandomAccessMut` are auto-implemented.
 //!
 //! Each trait provides a two-dimensional and a one-dimensional access method,
 //! namely `get` and `get1d` (together with their mutable and unsafe variants).
 //! The two-dimensional access takes a row and a column and returns the corresponding
-//! matrix element. The one-dimensional access takes a single
-//!
-//! The one-dimensional access
-//! takes a single `index` parameter that iterates through the matrix elements.
-//! It is recommended to use the [convert_1d_raw](crate::traits::LayoutType::convert_1d_raw)
-//! functions from that trait to implement `get1d` to ensure compatibility with
-//! the memory layout defined in that trait.
+//! matrix element. The one-dimensional access takes a single `index` parameter that
+//! iterates through the matrix elements.
 
-use crate::traits::{Layout, LayoutType};
+use crate::traits::properties::{NumberOfElements, Shape};
 use crate::types::Scalar;
 
 /// This trait provides unsafe access to the underlying data. See
@@ -99,11 +90,11 @@ fn check_dimension1d(elem: usize, nelems: usize) -> bool {
     elem < nelems
 }
 
-impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Layout> RandomAccessByValue
-    for Mat
+impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Shape + NumberOfElements>
+    RandomAccessByValue for Mat
 {
     fn get_value(&self, row: usize, col: usize) -> Option<Self::Item> {
-        if check_dimension(row, col, self.layout().dim()) {
+        if check_dimension(row, col, self.shape()) {
             Some(unsafe { self.get_value_unchecked(row, col) })
         } else {
             None
@@ -111,7 +102,7 @@ impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Layout> RandomA
     }
 
     fn get1d_value(&self, elem: usize) -> Option<Self::Item> {
-        if check_dimension1d(elem, self.layout().number_of_elements()) {
+        if check_dimension1d(elem, self.number_of_elements()) {
             Some(unsafe { self.get1d_value_unchecked(elem) })
         } else {
             None
@@ -119,9 +110,11 @@ impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Layout> RandomA
     }
 }
 
-impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Layout> RandomAccessMut for Mat {
+impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Shape + NumberOfElements>
+    RandomAccessMut for Mat
+{
     fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut Self::Item> {
-        if check_dimension(row, col, self.layout().dim()) {
+        if check_dimension(row, col, self.shape()) {
             unsafe { Some(self.get_unchecked_mut(row, col)) }
         } else {
             None
@@ -129,7 +122,7 @@ impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Layout> RandomAcces
     }
 
     fn get1d_mut(&mut self, elem: usize) -> Option<&mut Self::Item> {
-        if check_dimension1d(elem, self.layout().number_of_elements()) {
+        if check_dimension1d(elem, self.number_of_elements()) {
             unsafe { Some(self.get1d_unchecked_mut(elem)) }
         } else {
             None
@@ -137,9 +130,11 @@ impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Layout> RandomAcces
     }
 }
 
-impl<Item: Scalar, Mat: UnsafeRandomAccessByRef<Item = Item> + Layout> RandomAccessByRef for Mat {
+impl<Item: Scalar, Mat: UnsafeRandomAccessByRef<Item = Item> + Shape + NumberOfElements>
+    RandomAccessByRef for Mat
+{
     fn get(&self, row: usize, col: usize) -> Option<&Self::Item> {
-        if check_dimension(row, col, self.layout().dim()) {
+        if check_dimension(row, col, self.shape()) {
             unsafe { Some(self.get_unchecked(row, col)) }
         } else {
             None
@@ -147,7 +142,7 @@ impl<Item: Scalar, Mat: UnsafeRandomAccessByRef<Item = Item> + Layout> RandomAcc
     }
 
     fn get1d(&self, elem: usize) -> Option<&Self::Item> {
-        if check_dimension1d(elem, self.layout().number_of_elements()) {
+        if check_dimension1d(elem, self.number_of_elements()) {
             unsafe { Some(self.get1d_unchecked(elem)) }
         } else {
             None

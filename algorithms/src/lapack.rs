@@ -4,7 +4,7 @@ pub use lapacke::Layout;
 pub use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::types::Scalar;
 use rlst_dense::{
-    DataContainerMut, GenericBaseMatrixMut, LayoutType, MatrixTraitMut, SizeIdentifier,
+    DataContainerMut, GenericBaseMatrixMut, LayoutType, MatrixImplTraitMut, SizeIdentifier,
 };
 use std::marker::PhantomData;
 
@@ -20,7 +20,7 @@ pub struct LapackData<
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    Mat: MatrixTraitMut<Item, RS, CS> + Sized,
+    Mat: MatrixImplTraitMut<Item, RS, CS> + Sized,
 > {
     pub mat: Mat,
     pub lda: i32,
@@ -38,7 +38,7 @@ pub trait AsLapack<
     Data: DataContainerMut<Item = Item>,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
->: MatrixTraitMut<Item, RS, CS> + Sized
+>: MatrixImplTraitMut<Item, RS, CS> + Sized
 {
     fn lapack(self) -> RlstResult<LapackData<Item, RS, CS, Self>> {
         let dim = self.layout().dim();

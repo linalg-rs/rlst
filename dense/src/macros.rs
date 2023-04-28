@@ -52,12 +52,14 @@ macro_rules! rlst_rand_vec {
 #[cfg(test)]
 mod test {
 
+    pub use crate::traits::*;
+
     #[test]
     fn create_matrix() {
         let dim = (2, 3);
         let mat = rlst_mat![f64, dim];
 
-        assert_eq!(mat.dim(), (2, 3));
+        assert_eq!(mat.shape(), (2, 3));
     }
 
     #[test]
@@ -65,7 +67,7 @@ mod test {
         let dim = (2, 3);
         let mat = rlst_rand_mat![f64, dim];
 
-        assert_eq!(mat.dim(), (2, 3));
+        assert_eq!(mat.shape(), (2, 3));
     }
 
     #[test]
@@ -73,7 +75,7 @@ mod test {
         let length = 5;
         let vec = rlst_vec![f64, length];
 
-        assert_eq!(vec.dim(), (5, 1));
+        assert_eq!(vec.shape(), (5, 1));
     }
 
     #[test]
@@ -81,7 +83,7 @@ mod test {
         let length = 5;
         let vec = rlst_vec![f64, length, RowVector];
 
-        assert_eq!(vec.dim(), (1, 5));
+        assert_eq!(vec.shape(), (1, 5));
     }
 
     #[test]
@@ -89,6 +91,6 @@ mod test {
         let length = 5;
         let vec = rlst_rand_vec![f64, length];
 
-        assert_eq!(vec.dim(), (5, 1));
+        assert_eq!(vec.shape(), (5, 1));
     }
 }

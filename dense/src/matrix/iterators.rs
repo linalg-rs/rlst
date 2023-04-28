@@ -1,5 +1,6 @@
 //! Various iterator implementations
 
+use crate::traits::*;
 use crate::{matrix::GenericBaseMatrix, DataContainer, RandomAccessByValue, SizeIdentifier};
 use rlst_common::types::Scalar;
 
@@ -39,14 +40,14 @@ impl<
     fn next(&mut self) -> Option<Self::Item> {
         let elem = self
             .mat
-            .get_value(self.pos % self.mat.dim().0, self.pos / self.mat.dim().0);
+            .get_value(self.pos % self.mat.shape().0, self.pos / self.mat.shape().0);
         self.pos += 1;
         elem
     }
 }
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    rlst_common::basic_traits::ColumnMajorIterator for GenericBaseMatrix<Item, Data, RS, CS>
+    rlst_common::traits::iterators::ColumnMajorIterator for GenericBaseMatrix<Item, Data, RS, CS>
 {
     type T = Item;
     type Iter<'a> = MatrixColumnMajorIterator<'a, Item, Data, RS, CS> where Self: 'a;

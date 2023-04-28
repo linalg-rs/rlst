@@ -32,12 +32,12 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, RS, CS>;
+    MatImpl: MatrixImplTrait<Item, RS, CS>;
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTrait<Item, RS, CS>,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > MatrixRef<'a, Item, MatImpl, RS, CS>
@@ -57,12 +57,12 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, RS, CS>;
+    MatImpl: MatrixImplTrait<Item, RS, CS>;
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTrait<Item, RS, CS>,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > MatrixRefMut<'a, Item, MatImpl, RS, CS>
@@ -77,7 +77,7 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, RS, CS>,
+                MatImpl: MatrixImplTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
             > Layout for $MatrixRefType<'a, Item, MatImpl, RS, CS>
@@ -93,7 +93,7 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, RS, CS>,
+                MatImpl: MatrixImplTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
             > SizeType for $MatrixRefType<'a, Item, MatImpl, RS, CS>
@@ -105,7 +105,7 @@ macro_rules! matrix_ref_traits {
         impl<
                 'a,
                 Item: Scalar,
-                MatImpl: MatrixTrait<Item, RS, CS>,
+                MatImpl: MatrixImplTrait<Item, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
             > UnsafeRandomAccessByValue for $MatrixRefType<'a, Item, MatImpl, RS, CS>
@@ -131,7 +131,7 @@ matrix_ref_traits!(MatrixRefMut);
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, RS, CS>
@@ -152,7 +152,7 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByRef for MatrixRef<'a, Item, MatImpl, RS, CS>
@@ -173,7 +173,7 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessMut for MatrixRefMut<'a, Item, MatImpl, RS, CS>
