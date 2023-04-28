@@ -117,7 +117,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         self.range_layout
     }
 
-    pub fn from_csr(
+    pub fn from_root(
         csr_mat: Option<CsrMatrix<T>>,
         domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
         range_layout: &'a DefaultMpiIndexLayout<'a, C>,
