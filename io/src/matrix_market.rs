@@ -52,7 +52,7 @@ pub enum SymmetryType {
 
 pub fn write_coordinate_mm<
     T: Scalar + MmIdentifier,
-    Mat: rlst_common::basic_traits::AijIterator<T = T> + rlst_common::basic_traits::Dimension,
+    Mat: rlst_common::traits::AijIterator<T = T> + rlst_common::traits::Shape,
 >(
     mat: &Mat,
     fname: &str,
@@ -69,7 +69,7 @@ pub fn write_coordinate_mm<
         )
         .unwrap();
         write!(output, "%\n").unwrap();
-        write!(output, "{} {} {}\n", mat.dim().0, mat.dim().1, count).unwrap();
+        write!(output, "{} {} {}\n", mat.shape().0, mat.shape().1, count).unwrap();
         for (row, col, data) in mat.iter_aij() {
             write!(output, "{} {} {} \n", 1 + row, 1 + col, data).unwrap();
         }
@@ -82,7 +82,7 @@ pub fn write_coordinate_mm<
 
 pub fn write_array_mm<
     T: Scalar + MmIdentifier,
-    Mat: rlst_common::basic_traits::ColumnMajorIterator<T = T> + rlst_common::basic_traits::Dimension,
+    Mat: rlst_common::traits::ColumnMajorIterator<T = T> + rlst_common::traits::Shape,
 >(
     mat: &Mat,
     fname: &str,
@@ -97,7 +97,7 @@ pub fn write_array_mm<
         )
         .unwrap();
         write!(output, "%\n").unwrap();
-        write!(output, "{} {}\n", mat.dim().0, mat.dim().1).unwrap();
+        write!(output, "{} {}\n", mat.shape().0, mat.shape().1).unwrap();
         for value in mat.iter_col_major() {
             write!(output, "{}\n", value).unwrap();
         }

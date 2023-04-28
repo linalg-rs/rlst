@@ -3,6 +3,7 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
 use mpi::traits::*;
+use rlst_common::traits::*;
 use rlst_io::matrix_market::read_coordinate_mm;
 use rlst_sparse::{
     index_layout::DefaultMpiIndexLayout,

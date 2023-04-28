@@ -8,7 +8,7 @@ pub trait LUDecomp {
 
     fn data(&self) -> &[Self::T];
 
-    fn dim(&self) -> (usize, usize);
+    fn shape(&self) -> (usize, usize);
 
     fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
         &self,

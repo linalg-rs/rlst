@@ -1,6 +1,6 @@
 //! Test the matrix market format
 
-use rlst_common::basic_traits::{AijIterator, ColumnMajorIterator};
+use rlst_common::traits::{AijIterator, ColumnMajorIterator, Shape};
 use rlst_dense::rlst_rand_mat;
 use rlst_io::matrix_market::{
     read_array_mm, read_coordinate_mm, write_array_mm, write_coordinate_mm,
@@ -25,7 +25,7 @@ fn read_mm_array_file() {
     );
     let mat = read_array_mm::<f64>(pathname).unwrap();
 
-    assert_eq!(mat.dim(), (70, 30));
+    assert_eq!(mat.shape(), (70, 30));
     assert_eq!(mat.data().len(), 70 * 30);
 }
 

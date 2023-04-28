@@ -13,6 +13,7 @@ use crate::traits::indexable_vector::{
 use crate::vector::DefaultMpiVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
+use rlst_common::traits::Shape;
 use rlst_common::types::Scalar;
 
 pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
@@ -87,10 +88,6 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
 
     pub fn mat_type(&self) -> &SparseMatType {
         &self.mat_type
-    }
-
-    pub fn shape(&self) -> (usize, usize) {
-        self.shape
     }
 
     pub fn local_shape(&self) -> (usize, usize) {
@@ -284,5 +281,11 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             beta,
             y.view_mut().unwrap().data_mut(),
         );
+    }
+}
+
+impl<'a, T: Scalar + Equivalence, C: Communicator> Shape for MpiCsrMatrix<'a, T, C> {
+    fn shape(&self) -> (usize, usize) {
+        self.shape
     }
 }

@@ -99,10 +99,14 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, RS, CS>;
+    MatImpl: MatrixImplTrait<Item, RS, CS>;
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, MatImpl: MatrixTrait<Item, RS, CS>>
-    Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+    > Matrix<Item, MatImpl, RS, CS>
 {
     pub fn new(mat: MatImpl) -> Self {
         Self(mat, PhantomData, PhantomData, PhantomData)

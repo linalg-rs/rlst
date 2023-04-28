@@ -3,7 +3,8 @@ use crate::traits::lu_decomp::LUDecomp;
 use lapacke;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{
-    DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixTraitMut, SizeIdentifier,
+    traits::*, DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixImplTraitMut,
+    SizeIdentifier,
 };
 
 use super::{check_lapack_stride, TransposeMode};
@@ -12,7 +13,7 @@ pub struct LUDecompLapack<
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    Mat: MatrixTraitMut<Item, RS, CS> + Sized,
+    Mat: MatrixImplTraitMut<Item, RS, CS> + Sized,
 > {
     data: LapackData<Item, RS, CS, Mat>,
     ipiv: Vec<i32>,
@@ -68,8 +69,8 @@ macro_rules! lu_decomp_impl {
                 self.data.mat.data()
             }
 
-            fn dim(&self) -> (usize, usize) {
-                self.data.mat.dim()
+            fn shape(&self) -> (usize, usize) {
+                self.data.mat.shape()
             }
 
             fn solve<

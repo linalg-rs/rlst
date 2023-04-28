@@ -3,6 +3,7 @@
 use crate::sparse::SparseMatType;
 use rlst_common::types::RlstResult;
 
+use rlst_common::traits::properties::Shape;
 use rlst_common::types::Scalar;
 
 pub struct CsrMatrix<T: Scalar> {
@@ -31,10 +32,6 @@ impl<T: Scalar> CsrMatrix<T> {
 
     pub fn mat_type(&self) -> &SparseMatType {
         &self.mat_type
-    }
-
-    pub fn shape(&self) -> (usize, usize) {
-        self.shape
     }
 
     pub fn indices(&self) -> &[usize] {
@@ -182,7 +179,7 @@ impl<'a, T: Scalar> std::iter::Iterator for CsrAijIterator<'a, T> {
     }
 }
 
-impl<T: Scalar> rlst_common::basic_traits::AijIterator for CsrMatrix<T> {
+impl<T: Scalar> rlst_common::traits::iterators::AijIterator for CsrMatrix<T> {
     type T = T;
     type Iter<'a> = CsrAijIterator<'a, T> where Self: 'a;
 
@@ -191,16 +188,16 @@ impl<T: Scalar> rlst_common::basic_traits::AijIterator for CsrMatrix<T> {
     }
 }
 
-impl<T: Scalar> rlst_common::basic_traits::Dimension for CsrMatrix<T> {
-    fn dim(&self) -> (usize, usize) {
-        self.shape()
+impl<T: Scalar> rlst_common::traits::Shape for CsrMatrix<T> {
+    fn shape(&self) -> (usize, usize) {
+        self.shape
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use rlst_common::basic_traits::AijIterator;
+    use rlst_common::traits::AijIterator;
 
     use super::*;
 

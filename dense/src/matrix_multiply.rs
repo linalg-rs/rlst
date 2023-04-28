@@ -31,7 +31,7 @@ pub trait Dot<Rhs> {
 }
 
 /// This trait is an interface for the `dgemm` operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
-pub trait MatMul<
+pub trait MultiplyAdd<
     Item: Scalar,
     Data1: DataContainer<Item = Item>,
     Data2: DataContainer<Item = Item>,
@@ -45,7 +45,7 @@ pub trait MatMul<
 >
 {
     /// Perform the operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
-    fn matmul(
+    fn multiply_add(
         alpha: Item,
         mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
         mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
@@ -69,7 +69,7 @@ macro_rules! dot_impl {
             ) -> Self::Output {
                 let mut res =
                     Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
-                <$Scalar>::matmul(
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -92,7 +92,7 @@ macro_rules! dot_impl {
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res = Self::Output::zeros_from_length(rhs.layout().dim().1);
-                <$Scalar>::matmul(
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -115,7 +115,7 @@ macro_rules! dot_impl {
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>,
             ) -> Self::Output {
                 let mut res = Self::Output::zeros_from_length(self.layout().dim().0);
-                <$Scalar>::matmul(
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -139,7 +139,7 @@ macro_rules! matmul_impl {
 >
 
 
-        MatMul<
+        MultiplyAdd<
             $Scalar,
             Data1,
             Data2,
@@ -154,7 +154,7 @@ macro_rules! matmul_impl {
 
         for $Scalar {
 
-            fn matmul(
+            fn multiply_add(
                 alpha: $Scalar,
                 mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                 mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
@@ -216,7 +216,7 @@ macro_rules! matmul_impl {
     >
 
 
-            MatMul<
+            MultiplyAdd<
                 $Scalar,
                 Data1,
                 Data2,
@@ -231,7 +231,7 @@ macro_rules! matmul_impl {
 
             for $Scalar {
 
-                fn matmul(
+                fn multiply_add(
                     alpha: $Scalar,
                     mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                     mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
@@ -386,7 +386,7 @@ mod test {
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d_value(index).unwrap();
@@ -423,7 +423,7 @@ mod test {
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d_value(index).unwrap();
@@ -460,7 +460,7 @@ mod test {
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d_value(index).unwrap();

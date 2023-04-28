@@ -27,13 +27,13 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl1: MatrixTrait<Item, RS, CS>,
-    MatImpl2: MatrixTrait<Item, RS, CS>;
+    MatImpl1: MatrixImplTrait<Item, RS, CS>,
+    MatImpl2: MatrixImplTrait<Item, RS, CS>;
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -59,8 +59,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > Layout for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -74,8 +74,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > SizeType for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -86,8 +86,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByValue for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -107,8 +107,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
@@ -123,8 +123,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
@@ -139,8 +139,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
@@ -155,8 +155,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>

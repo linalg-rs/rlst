@@ -2,10 +2,15 @@
 
 use crate::matrix::{Matrix, MatrixD};
 use crate::types::Scalar;
-use crate::{traits::*, DataContainer, DefaultLayout, GenericBaseMatrix};
+use crate::{traits::*, DefaultLayout};
+use rlst_common::traits::properties::*;
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Layout for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Layout for Matrix<Item, MatImpl, RS, CS>
 {
     type Impl = DefaultLayout;
     fn layout(&self) -> &Self::Impl {
@@ -13,15 +18,47 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    SizeType for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Shape for Matrix<Item, MatImpl, RS, CS>
+{
+    fn shape(&self) -> (usize, usize) {
+        self.layout().dim()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > NumberOfElements for Matrix<Item, MatImpl, RS, CS>
+{
+    fn number_of_elements(&self) -> usize {
+        self.layout().number_of_elements()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SizeType for Matrix<Item, MatImpl, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
@@ -38,7 +75,7 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessMut for Matrix<Item, MatImpl, RS, CS>
@@ -58,7 +95,7 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, RS, CS>
@@ -78,7 +115,7 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Index<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
@@ -92,7 +129,7 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, RS, CS> + MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS> + MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::IndexMut<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
@@ -102,8 +139,12 @@ impl<
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
 {
     /// Evaluate into a new matrix.
     pub fn eval(self) -> MatrixD<Item> {
@@ -117,62 +158,6 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
             }
         }
         result
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Matrix<Item, MatImpl, RS, CS>
-{
-    /// Return dimension of the matrix.
-    pub fn dim(&self) -> (usize, usize) {
-        self.layout().dim()
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, Fixed1, Dynamic>>
-    Matrix<Item, MatImpl, Fixed1, Dynamic>
-{
-    /// Return length of a vector.
-    pub fn length(&self) -> usize {
-        self.layout().dim().1
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, Dynamic, Fixed1>>
-    Matrix<Item, MatImpl, Dynamic, Fixed1>
-{
-    /// Return length of a vector.
-    pub fn length(&self) -> usize {
-        self.layout().dim().0
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    rlst_common::basic_traits::Dimension for Matrix<Item, MatImpl, RS, CS>
-{
-    fn dim(&self) -> (usize, usize) {
-        self.dim()
-    }
-}
-
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    rlst_common::basic_traits::RandomAccess for GenericBaseMatrix<Item, Data, RS, CS>
-{
-    type T = Item;
-    fn get(&self, row: usize, col: usize) -> Option<&Self::T> {
-        <Self as RandomAccessByRef>::get(self, row, col)
-    }
-
-    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::T {
-        <Self as UnsafeRandomAccessByRef>::get_unchecked(self, row, col)
-    }
-
-    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::T {
-        <Self as UnsafeRandomAccessByValue>::get_value_unchecked(self, row, col)
-    }
-
-    fn get_value(&self, row: usize, col: usize) -> Option<Self::T> {
-        <Self as RandomAccessByValue>::get_value(self, row, col)
     }
 }
 
