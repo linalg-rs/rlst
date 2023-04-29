@@ -155,7 +155,7 @@ mod test {
 
     #[test]
     fn scalar_mult() {
-        let mut mat = MatrixD::<f64>::zeros_from_dim(2, 3);
+        let mut mat = crate::rlst_mat![f64, (2, 3)];
 
         *mat.get_mut(1, 2).unwrap() = 5.0;
 

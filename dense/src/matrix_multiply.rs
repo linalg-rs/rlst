@@ -68,7 +68,7 @@ macro_rules! dot_impl {
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res =
-                    Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
+                    crate::rlst_mat!($Scalar, (self.layout().dim().0, rhs.layout().dim().1));
                 <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
@@ -91,7 +91,7 @@ macro_rules! dot_impl {
                 &self,
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
-                let mut res = Self::Output::zeros_from_length(rhs.layout().dim().1);
+                let mut res = crate::rlst_row_vec![$Scalar, rhs.layout().dim().1];
                 <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
@@ -114,7 +114,7 @@ macro_rules! dot_impl {
                 &self,
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>,
             ) -> Self::Output {
-                let mut res = Self::Output::zeros_from_length(self.layout().dim().0);
+                let mut res = crate::rlst_col_vec![$Scalar, self.layout().dim().0];
                 <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
@@ -319,7 +319,6 @@ dot_impl!(c64);
 mod test {
 
     use super::*;
-    use crate::matrix::*;
     use approx::assert_ulps_eq;
     use rand_distr::StandardNormal;
     use rlst_common::tools::RandScalar;
@@ -364,18 +363,18 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(6, 5);
-                let mut mat_c_actual = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
-                let mut mat_c_expect = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
+                let mut mat_a = crate::rlst_mat!($Scalar, (4, 6));
+                let mut mat_b = crate::rlst_mat!($Scalar, (6, 5));
+                let mut mat_c_actual = crate::rlst_mat!($Scalar, (4, 5));
+                let mut mat_c_expect = crate::rlst_mat!($Scalar, (4, 5));
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
                     *mat_c_expect.get1d_mut(index).unwrap() =
@@ -401,18 +400,18 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_b = ColumnVectorD::<$Scalar>::zeros_from_length(6);
-                let mut mat_c_actual = ColumnVectorD::<$Scalar>::zeros_from_length(4);
-                let mut mat_c_expect = ColumnVectorD::<$Scalar>::zeros_from_length(4);
+                let mut mat_a = crate::rlst_mat![$Scalar, (4, 6)];
+                let mut mat_b = crate::rlst_col_vec![$Scalar, 6];
+                let mut mat_c_actual = crate::rlst_col_vec![$Scalar, 4];
+                let mut mat_c_expect = crate::rlst_col_vec![$Scalar, 4];
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
                     *mat_c_expect.get1d_mut(index).unwrap() =
@@ -438,18 +437,18 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = RowVectorD::<$Scalar>::zeros_from_length(4);
-                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_c_actual = RowVectorD::<$Scalar>::zeros_from_length(6);
-                let mut mat_c_expect = RowVectorD::<$Scalar>::zeros_from_length(6);
+                let mut mat_a = crate::rlst_row_vec![$Scalar, 4];
+                let mut mat_b = crate::rlst_mat![$Scalar, (4, 6)];
+                let mut mat_c_actual = crate::rlst_row_vec![$Scalar, 6];
+                let mut mat_c_expect = crate::rlst_row_vec![$Scalar, 6];
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
                     *mat_c_expect.get1d_mut(index).unwrap() =
@@ -465,7 +464,7 @@ mod test {
                 for index in 0..mat_c_expect.layout().number_of_elements() {
                     let val1 = mat_c_actual.get1d_value(index).unwrap();
                     let val2 = mat_c_expect.get1d_value(index).unwrap();
-                    assert_ulps_eq!(&val1, &val2, max_ulps = 100);
+                    assert_ulps_eq!(&val1, &val2, max_ulps = 10);
                 }
             }
         };

@@ -1,5 +1,6 @@
 //! Matrix market reader/writer
 
+use rlst_common::traits::RawAccessMut;
 use rlst_common::types::Scalar;
 use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::matrix::MatrixD;

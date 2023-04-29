@@ -1,9 +1,7 @@
-pub trait NewFromZero {
-    fn new_from_zero(&self) -> Self;
-}
+//! Traits for the creation of new entities.
 
-pub trait Duplicate {
-    // Duplicate an object
-
-    fn duplicate(&self) -> Self;
+/// Create a new object from `self` initialized to zero.
+pub trait NewFromSelf {
+    type Out;
+    fn new_from_self(&self) -> Self::Out;
 }

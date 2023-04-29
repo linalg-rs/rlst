@@ -149,7 +149,7 @@ impl<
     /// Evaluate into a new matrix.
     pub fn eval(self) -> MatrixD<Item> {
         let dim = self.layout().dim();
-        let mut result = MatrixD::<Item>::zeros_from_dim(dim.0, dim.1);
+        let mut result = crate::rlst_mat![Item, dim];
         unsafe {
             for row in 0..dim.0 {
                 for col in 0..dim.1 {
@@ -158,6 +158,19 @@ impl<
             }
         }
         result
+    }
+}
+
+impl<T: Scalar> Clone for MatrixD<T> {
+    fn clone(&self) -> Self {
+        let mut out = crate::rlst_mat!(T, self.shape());
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
+            }
+        }
+        out
     }
 }
 

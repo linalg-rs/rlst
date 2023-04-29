@@ -15,6 +15,6 @@ pub mod size;
 
 pub use layout::*;
 pub use matrix::*;
+pub use rlst_common::traits::accessors::*;
 pub use rlst_common::traits::properties::*;
-pub use rlst_common::traits::random_access::*;
 pub use size::*;

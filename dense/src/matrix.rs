@@ -27,12 +27,10 @@ pub mod matrix_slices;
 pub mod random;
 
 use crate::base_matrix::BaseMatrix;
-use crate::data_container::{
-    ArrayContainer, DataContainer, SliceContainer, SliceContainerMut, VectorContainer,
-};
+use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, VectorContainer};
 use crate::matrix_ref::MatrixRef;
+use crate::traits::*;
 use crate::types::Scalar;
-use crate::{traits::*, DefaultLayout};
 use std::marker::PhantomData;
 
 /// A [RefMat] is a matrix whose implementation is a reference to another matrix.
@@ -100,29 +98,3 @@ where
     RS: SizeIdentifier,
     CS: SizeIdentifier,
     MatImpl: MatrixImplTrait<Item, RS, CS>;
-
-impl<
-        Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-    > Matrix<Item, MatImpl, RS, CS>
-{
-    pub fn new(mat: MatImpl) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData)
-    }
-
-    pub fn from_ref<'a>(
-        mat: &'a Matrix<Item, MatImpl, RS, CS>,
-    ) -> RefMat<'a, Item, MatImpl, RS, CS> {
-        RefMat::new(MatrixRef::new(mat))
-    }
-}
-
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<Item = Item>>
-    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>
-{
-    pub fn from_data(data: Data, layout: DefaultLayout) -> Self {
-        Self::new(BaseMatrix::<Item, Data, RS, CS>::new(data, layout))
-    }
-}

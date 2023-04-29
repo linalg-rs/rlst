@@ -1,7 +1,7 @@
-//! Row major layout with arbitrary stride.
+//! Column major layout with arbitrary stride.
 //!
 //! This layout uses an arbitrary stride in memory with 1d indexing
-//! in row major order. For further information on memory layouts
+//! in column major order. For further information on memory layouts
 //! see [crate::traits::layout].
 
 use crate::traits::*;
@@ -20,12 +20,12 @@ impl DefaultLayout {
 impl LayoutType for DefaultLayout {
     #[inline]
     fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
-        (index / self.dim.1, index % self.dim.1)
+        (index % self.dim.0, index / self.dim.0)
     }
 
     #[inline]
     fn convert_2d_1d(&self, row: usize, col: usize) -> usize {
-        row * self.dim.1 + col
+        col * self.dim.0 + row
     }
 
     #[inline]

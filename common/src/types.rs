@@ -1,9 +1,9 @@
 //! Basic types
 
-// The scalar type used in the library.
 pub use cauchy::{c32, c64, Scalar};
 use thiserror::Error;
 
+/// The RLST error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
     #[error("Method {0} is not implemented.")]
@@ -26,4 +26,5 @@ pub enum RlstError {
     IoError(String),
 }
 
+/// Alias for an RLST Result type.
 pub type RlstResult<T> = std::result::Result<T, RlstError>;

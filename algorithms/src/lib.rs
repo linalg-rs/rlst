@@ -1,3 +1,5 @@
+//! Collection of Linear Solver Algorithms and Interfaces
+
 #[allow(unused_imports)]
 use lapack_src;
 
