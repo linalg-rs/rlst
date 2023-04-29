@@ -1,6 +1,6 @@
 //! Creation of subblocks of matrices.
 
-use super::{GenericBaseMatrixMut, Matrix, SliceMatrix, SliceMatrixMut};
+use super::{GenericBaseMatrix, Matrix, SliceMatrix, SliceMatrixMut};
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::traits::*;
@@ -59,7 +59,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
 }
 
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
-    GenericBaseMatrixMut<Item, Data, Dynamic, Dynamic>
+    GenericBaseMatrix<Item, Data, Dynamic, Dynamic>
 {
     /// Split a mutable matrix into four mutable subblocks.
     ///

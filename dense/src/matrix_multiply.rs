@@ -14,7 +14,7 @@
 //! with a dynamic matrix.
 
 use crate::data_container::{DataContainer, DataContainerMut, VectorContainer};
-use crate::matrix::{GenericBaseMatrix, GenericBaseMatrixMut};
+use crate::matrix::GenericBaseMatrix;
 use crate::traits::*;
 use crate::types::*;
 
@@ -50,7 +50,7 @@ pub trait MultiplyAdd<
         mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
         mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrixMut<Item, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrix<Item, Data3, RS3, CS3>,
     );
 }
 
@@ -159,7 +159,7 @@ macro_rules! matmul_impl {
                 mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                 mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                 beta: $Scalar,
-                mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
+                mat_c: &mut GenericBaseMatrix<$Scalar, Data3, $RS3, $CS3>
             ) {
                 let dim1 = mat_a.layout().dim();
                 let dim2 = mat_b.layout().dim();
@@ -236,7 +236,7 @@ macro_rules! matmul_impl {
                     mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                     mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                     beta: $Scalar,
-                    mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
+                    mat_c: &mut GenericBaseMatrix<$Scalar, Data3, $RS3, $CS3>
                 ) {
                     let dim1 = mat_a.layout().dim();
                     let dim2 = mat_b.layout().dim();

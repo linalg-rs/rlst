@@ -1,9 +1,9 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::matrix::{Matrix, MatrixD};
+use crate::matrix::Matrix;
 use crate::types::Scalar;
 use crate::{traits::*, DefaultLayout};
-use rlst_common::traits::properties::*;
+use rlst_common::traits::{properties::*, NewFromSelf};
 
 impl<
         Item: Scalar,
@@ -145,14 +145,17 @@ impl<
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > Matrix<Item, MatImpl, RS, CS>
+where
+    Self: NewFromSelf,
+    <Self as NewFromSelf>::Out: Shape + RandomAccessMut<Item = Item>,
 {
     /// Evaluate into a new matrix.
-    pub fn eval(self) -> MatrixD<Item> {
-        let dim = self.layout().dim();
-        let mut result = crate::rlst_mat![Item, dim];
+    pub fn eval(self) -> <Self as NewFromSelf>::Out {
+        let mut result = self.new_from_self();
+        let shape = result.shape();
         unsafe {
-            for row in 0..dim.0 {
-                for col in 0..dim.1 {
+            for col in 0..shape.1 {
+                for row in 0..shape.0 {
                     *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
                 }
             }
@@ -160,76 +163,3 @@ impl<
         result
     }
 }
-
-impl<T: Scalar> Clone for MatrixD<T> {
-    fn clone(&self) -> Self {
-        let mut out = crate::rlst_mat!(T, self.shape());
-
-        for col in 0..self.shape().1 {
-            for row in 0..self.shape().0 {
-                unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
-            }
-        }
-        out
-    }
-}
-
-// macro_rules! eval_dynamic_matrix {
-//     ($L:ident) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, Dynamic, Dynamic>>
-//             Matrix<Item, MatImpl, $L, Dynamic, Dynamic>
-//         {
-//             pub fn eval(&self) -> MatrixD<Item, $L> {
-//                 let dim = self.dim();
-//                 let mut result = MatrixD::<Item, $L>::from_zeros(dim.0, dim.1);
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
-
-// macro_rules! eval_fixed_matrix {
-//     ($L:ident, $RS:ty, $CS:ty) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, $RS, $CS>>
-//             Matrix<Item, MatImpl, $L, $RS, $CS>
-//         {
-//             pub fn eval(
-//                 &self,
-//             ) -> Matrix<
-//                 Item,
-//                 BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                 $L,
-//                 $RS,
-//                 $CS,
-//             > {
-//                 let mut result = Matrix::<
-//                     Item,
-//                     BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                     $L,
-//                     $RS,
-//                     $CS,
-//                 >::from_zeros();
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
-
-// eval_dynamic_matrix!(CLayout);
-// eval_dynamic_matrix!(FLayout);
-
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed3);
-
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed3);

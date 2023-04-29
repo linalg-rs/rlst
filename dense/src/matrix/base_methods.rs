@@ -1,15 +1,14 @@
 //! This module implements traits specific to
-//! [GenericBaseMatrix](crate::matrix::GenericBaseMatrix) or
-//! [GenericBaseMatrixMut].
+//! [GenericBaseMatrix](crate::matrix::GenericBaseMatrix)
 
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::traits::*;
 use rlst_common::traits::*;
 
-use super::{GenericBaseMatrix, GenericBaseMatrixMut};
+use super::GenericBaseMatrix;
 
 impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    ForEach for GenericBaseMatrixMut<Item, Data, RS, CS>
+    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
 {
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
@@ -41,7 +40,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
 }
 
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    RawAccessMut for GenericBaseMatrixMut<Item, Data, RS, CS>
+    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
 {
     fn get_pointer_mut(&mut self) -> *mut Item {
         self.0.get_pointer_mut()

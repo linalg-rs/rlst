@@ -9,7 +9,7 @@ use lapacke;
 use num::traits::One;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{
-    rlst_mat, traits::*, DataContainerMut, GenericBaseMatrixMut, Layout, LayoutType, MatrixD,
+    rlst_mat, traits::*, DataContainerMut, GenericBaseMatrix, Layout, LayoutType, MatrixD,
     MatrixImplTraitMut, SizeIdentifier,
 };
 
@@ -32,13 +32,13 @@ macro_rules! lu_decomp_impl {
                 CS: SizeIdentifier,
                 Data: DataContainerMut<Item = $scalar>,
                 //Mat: MatrixTraitMut<Item, RS, CS> + Sized,
-            > LapackData<$scalar, RS, CS, GenericBaseMatrixMut<$scalar, Data, RS, CS>>
+            > LapackData<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>
         {
             /// Compute the LU decomposition.
             pub fn lu(
                 mut self,
             ) -> RlstResult<
-                LUDecompLapack<$scalar, RS, CS, GenericBaseMatrixMut<$scalar, Data, RS, CS>>,
+                LUDecompLapack<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>,
             > {
                 let dim = self.mat.layout().dim();
                 let stride = self.mat.layout().stride();
@@ -68,7 +68,7 @@ macro_rules! lu_decomp_impl {
 
         impl<Data: DataContainerMut<Item = $scalar>, RS: SizeIdentifier, CS: SizeIdentifier>
             LUDecomp
-            for LUDecompLapack<$scalar, RS, CS, GenericBaseMatrixMut<$scalar, Data, RS, CS>>
+            for LUDecompLapack<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>
         {
             type T = $scalar;
 
@@ -129,7 +129,7 @@ macro_rules! lu_decomp_impl {
                 RhsC: SizeIdentifier,
             >(
                 &self,
-                rhs: &mut GenericBaseMatrixMut<Self::T, RhsData, RhsR, RhsC>,
+                rhs: &mut GenericBaseMatrix<Self::T, RhsData, RhsR, RhsC>,
                 trans: TransposeMode,
             ) -> RlstResult<()> {
                 if !check_lapack_stride(rhs.layout().dim(), rhs.layout().stride()) {

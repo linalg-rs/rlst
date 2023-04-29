@@ -5,7 +5,7 @@
 macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {{
         use $crate::LayoutType;
-        $crate::GenericBaseMatrixMut::<
+        $crate::GenericBaseMatrix::<
             $ScalarType,
             $crate::VectorContainer<$ScalarType>,
             $crate::Dynamic,
@@ -56,7 +56,7 @@ macro_rules! rlst_fixed {
     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
         use paste::paste;
         use $crate::LayoutType;
-        $crate::GenericBaseMatrixMut::<
+        $crate::GenericBaseMatrix::<
             $ScalarType,
             $crate::ArrayContainer<$ScalarType, { $dim1 * $dim2 }>,
             paste! {[<Fixed $dim1>]},

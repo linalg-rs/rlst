@@ -4,7 +4,7 @@ pub use lapacke::Layout;
 pub use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::types::Scalar;
 use rlst_dense::{
-    DataContainerMut, GenericBaseMatrixMut, LayoutType, MatrixImplTraitMut, SizeIdentifier,
+    DataContainerMut, GenericBaseMatrix, LayoutType, MatrixImplTraitMut, SizeIdentifier,
 };
 use std::marker::PhantomData;
 
@@ -68,6 +68,6 @@ pub trait AsLapack<
 }
 
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    AsLapack<Item, Data, RS, CS> for GenericBaseMatrixMut<Item, Data, RS, CS>
+    AsLapack<Item, Data, RS, CS> for GenericBaseMatrix<Item, Data, RS, CS>
 {
 }

@@ -46,6 +46,19 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewFromSelf
     }
 }
 
+impl<T: Scalar> Clone for crate::MatrixD<T> {
+    fn clone(&self) -> Self {
+        let mut out = crate::rlst_mat!(T, self.shape());
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
+            }
+        }
+        out
+    }
+}
+
 macro_rules! implement_new_from_self_fixed {
     ($RS:ty, $CS:ty) => {
         impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewFromSelf
@@ -62,6 +75,29 @@ macro_rules! implement_new_from_self_fixed {
                     ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
                     DefaultLayout::from_dimension((<$RS>::N, <$CS>::N), (1, <$RS>::N)),
                 )
+            }
+        }
+
+        impl<Item: Scalar> Clone
+            for Matrix<
+                Item,
+                BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $RS, $CS>,
+                $RS,
+                $CS,
+            >
+        where
+            Self: NewFromSelf<Out = Self>,
+            <Self as NewFromSelf>::Out: RandomAccessMut<Item = Item>,
+        {
+            fn clone(&self) -> Self {
+                let mut out = self.new_from_self();
+
+                for col in 0..self.shape().1 {
+                    for row in 0..self.shape().0 {
+                        unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
+                    }
+                }
+                out
             }
         }
     };

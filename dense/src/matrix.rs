@@ -43,10 +43,6 @@ pub type RefMat<'a, Item, MatImpl, RS, CS> =
 pub type GenericBaseMatrix<Item, Data, RS, CS> =
     Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>;
 
-/// Similar to a [GenericBaseMatrix] but with mutable access.
-pub type GenericBaseMatrixMut<Item, Data, RS, CS> =
-    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>;
-
 /// A [SliceMatrix] is defined by a [BaseMatrix] whose container stores a memory slice.
 pub type SliceMatrix<'a, Item, RS, CS> =
     Matrix<Item, BaseMatrix<Item, SliceContainer<'a, Item>, RS, CS>, RS, CS>;
@@ -61,11 +57,11 @@ pub type MatrixD<Item> =
 
 /// A dynamic column vector. This means that the row dimension is dynamic and the column
 /// dimension is [Fixed1].
-pub type ColumnVectorD<Item> = GenericBaseMatrixMut<Item, VectorContainer<Item>, Dynamic, Fixed1>;
+pub type ColumnVectorD<Item> = GenericBaseMatrix<Item, VectorContainer<Item>, Dynamic, Fixed1>;
 
 /// A dynamic row vector. This means that the column dimension is dynamic and the row dimension
 /// is [Fixed1].
-pub type RowVectorD<Item> = GenericBaseMatrixMut<Item, VectorContainer<Item>, Fixed1, Dynamic>;
+pub type RowVectorD<Item> = GenericBaseMatrix<Item, VectorContainer<Item>, Fixed1, Dynamic>;
 
 /// A fixed 2x2 matrix.
 pub type Matrix22<Item> =
