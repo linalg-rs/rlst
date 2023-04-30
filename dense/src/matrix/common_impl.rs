@@ -1,9 +1,11 @@
 //! Implementation of common matrix traits and methods.
 
+use crate::data_container::{DataContainer, DataContainerMut};
 use crate::matrix::Matrix;
 use crate::types::Scalar;
+use crate::GenericBaseMatrix;
 use crate::{traits::*, DefaultLayout};
-use rlst_common::traits::{properties::*, NewFromSelf};
+use rlst_common::traits::*;
 
 impl<
         Item: Scalar,
@@ -144,14 +146,16 @@ impl<
         MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
+    > Eval for Matrix<Item, MatImpl, RS, CS>
 where
-    Self: NewFromSelf,
-    <Self as NewFromSelf>::Out: Shape + RandomAccessMut<Item = Item>,
+    Self: NewLikeSelf,
+    <Self as NewLikeSelf>::Out: Shape + RandomAccessMut<Item = Item>,
 {
+    type Out = <Self as NewLikeSelf>::Out;
+
     /// Evaluate into a new matrix.
-    pub fn eval(self) -> <Self as NewFromSelf>::Out {
-        let mut result = self.new_from_self();
+    fn eval(&self) -> Self::Out {
+        let mut result = self.new_like_self();
         let shape = result.shape();
         unsafe {
             for col in 0..shape.1 {
@@ -161,5 +165,53 @@ where
             }
         }
         result
+    }
+}
+
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+    fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
+        for index in 0..self.layout().number_of_elements() {
+            unsafe { f(self.get1d_unchecked_mut(index)) }
+        }
+    }
+}
+
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccess for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.get_slice(0, self.layout().number_of_elements())
+    }
+}
+
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    fn get_pointer_mut(&mut self) -> *mut Item {
+        self.0.get_pointer_mut()
+    }
+
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+        self.0.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.0.get_slice_mut(0, self.layout().number_of_elements())
     }
 }

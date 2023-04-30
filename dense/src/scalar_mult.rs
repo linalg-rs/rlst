@@ -152,6 +152,7 @@ scalar_mult_impl!(c64);
 mod test {
 
     use super::*;
+    use rlst_common::traits::*;
 
     #[test]
     fn scalar_mult() {

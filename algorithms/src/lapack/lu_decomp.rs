@@ -219,7 +219,7 @@ mod test {
 
         let mut mat = rlst_mat!(f64, (10, 6));
 
-        mat.fill_from_rand_standard_normal(&mut rng);
+        mat.fill_from_standard_normal(&mut rng);
 
         let mat2 = mat.clone();
 
@@ -244,7 +244,7 @@ mod test {
 
         let mut mat = rlst_mat!(f64, (6, 10));
 
-        mat.fill_from_rand_standard_normal(&mut rng);
+        mat.fill_from_standard_normal(&mut rng);
 
         let mat2 = mat.clone();
 

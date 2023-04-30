@@ -13,13 +13,13 @@
 //! A new column vector can be created by
 //! ```
 //! # use rlst_dense::*;
-//! let mut vec = rlst_vec![f64, 5];
+//! let mut vec = rlst_col_vec![f64, 5];
 //! ```
 //!
 //! For a row vector use
 //! ```
 //! # use rlst_dense::*;
-//! let mut vec = rlst_vec![f64, 5, RowVector];
+//! let mut vec = rlst_row_vec![f64, 5];
 //! ```
 //!
 //! A normally distributed random matrix is obtained as
@@ -32,7 +32,7 @@
 //! # use rlst_dense::*;
 //! let mut rng = rand::thread_rng();
 //! let mut mat = rlst_mat![f64, (3, 5)];
-//! mat.fill_from_rand_standard_normal(&mut rng);
+//! mat.fill_from_standard_normal(&mut rng);
 //! ```
 //! # Accessing entries
 //!
@@ -74,6 +74,7 @@
 //! Matrix/vector sums or products with a scalar are written as
 //! ```
 //! # use rlst_dense::*;
+//! # use rlst_common::traits::*;
 //! let mat1 = rlst_rand_mat![f64, (3, 5)];
 //! let mat2 = rlst_rand_mat![f64, (3, 5)];
 //! let sum = (3.0 * &mat1 + &mat2).eval();
@@ -92,8 +93,8 @@
 //! ```
 //! # use rlst_dense::*;
 //! let mat = rlst_rand_mat![f64, (3, 5)];
-//! let col_vec = rlst_rand_vec![f64, 5];
-//! let row_vec = rlst_rand_vec![f64, 3, RowVector];
+//! let col_vec = rlst_rand_col_vec![f64, 5];
+//! let row_vec = rlst_rand_row_vec![f64, 3];
 //! let res1 = mat.dot(&col_vec);
 //! let res2 = row_vec.dot(&mat);
 //! ```
@@ -115,6 +116,7 @@
 //! with the method `mat.split_in_four_mut` as the following example demonstrates.
 //! ```
 //! # use rlst_dense::*;
+//! # use rlst_common::traits::*;
 //! let mut mat = rlst_rand_mat![f64, (10, 10)];
 //! let (mut m1, mut m2, mut m3, mut m4) = mat.split_in_four_mut((5, 5));
 //! m1[[1, 0]] = 2.0;

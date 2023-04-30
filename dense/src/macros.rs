@@ -46,7 +46,7 @@ macro_rules! rlst_rand_mat {
     ($ScalarType:ty, $dim:expr) => {{
         let mut rng = rand::thread_rng();
         let mut mat = $crate::rlst_mat![$ScalarType, $dim];
-        mat.fill_from_rand_standard_normal(&mut rng);
+        mat.fill_from_standard_normal(&mut rng);
         mat
     }};
 }
@@ -95,7 +95,7 @@ macro_rules! rlst_rand_col_vec {
     ($ScalarType:ty, $dim:expr) => {{
         let mut rng = rand::thread_rng();
         let mut vec = $crate::rlst_col_vec![$ScalarType, $dim];
-        vec.fill_from_rand_standard_normal(&mut rng);
+        vec.fill_from_standard_normal(&mut rng);
         vec
     }};
 }
@@ -105,7 +105,7 @@ macro_rules! rlst_rand_row_vec {
     ($ScalarType:ty, $dim:expr) => {{
         let mut rng = rand::thread_rng();
         let mut vec = $crate::rlst_row_vec![$ScalarType, $dim];
-        vec.fill_from_rand_standard_normal(&mut rng);
+        vec.fill_from_standard_normal(&mut rng);
         vec
     }};
 }

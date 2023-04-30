@@ -181,6 +181,8 @@ impl<
 
 mod test {
 
+    use rlst_common::traits::*;
+
     #[test]
     fn scalar_mult() {
         let mut mat1 = crate::rlst_mat![f64, (2, 3)];

@@ -7,7 +7,7 @@ use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
 use crate::types::Scalar;
 use crate::{layouts::*, DataContainer};
-use rlst_common::traits::constructors::NewFromSelf;
+use rlst_common::traits::constructors::NewLikeSelf;
 use std::marker::PhantomData;
 
 impl<
@@ -36,12 +36,12 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<I
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewFromSelf
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
     for Matrix<Item, MatImpl, Dynamic, Dynamic>
 {
     type Out = crate::MatrixD<Item>;
 
-    fn new_from_self(&self) -> Self::Out {
+    fn new_like_self(&self) -> Self::Out {
         crate::rlst_mat![Item, self.layout().dim()]
     }
 }
@@ -61,7 +61,7 @@ impl<T: Scalar> Clone for crate::MatrixD<T> {
 
 macro_rules! implement_new_from_self_fixed {
     ($RS:ty, $CS:ty) => {
-        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewFromSelf
+        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeSelf
             for Matrix<Item, MatImpl, $RS, $CS>
         {
             type Out = Matrix<
@@ -70,7 +70,7 @@ macro_rules! implement_new_from_self_fixed {
                 $RS,
                 $CS,
             >;
-            fn new_from_self(&self) -> Self::Out {
+            fn new_like_self(&self) -> Self::Out {
                 <Self::Out>::from_data(
                     ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
                     DefaultLayout::from_dimension((<$RS>::N, <$CS>::N), (1, <$RS>::N)),
@@ -86,11 +86,11 @@ macro_rules! implement_new_from_self_fixed {
                 $CS,
             >
         where
-            Self: NewFromSelf<Out = Self>,
-            <Self as NewFromSelf>::Out: RandomAccessMut<Item = Item>,
+            Self: NewLikeSelf<Out = Self>,
+            <Self as NewLikeSelf>::Out: RandomAccessMut<Item = Item>,
         {
             fn clone(&self) -> Self {
-                let mut out = self.new_from_self();
+                let mut out = self.new_like_self();
 
                 for col in 0..self.shape().1 {
                     for row in 0..self.shape().0 {

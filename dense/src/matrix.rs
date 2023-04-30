@@ -19,7 +19,6 @@
 //! - `CS`. A type that implements [SizeType]  and specifies whether the column dimension is
 //!         known at compile time or dynamically at runtime.
 
-pub mod base_methods;
 pub mod common_impl;
 pub mod constructors;
 pub mod iterators;
