@@ -1,5 +1,11 @@
 //! Matrix market reader/writer
+//!
+//! The functions [read_array_mm] and [read_coordinate_mm] can read the Matrix Market array and coordinate
+//! file formats. Currently, matrices with special symmetry properties are not supported. Input
+//! files must use the `general` property. To write out matrices the functions [write_array_mm] and
+//! [write_coordinate_mm] are provided.
 
+use rlst_common::traits::RawAccessMut;
 use rlst_common::types::Scalar;
 use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::matrix::MatrixD;
@@ -9,19 +15,31 @@ use std::io::Write;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+/// Definition of Matrix format types
 #[derive(PartialEq, Clone, Copy)]
 pub enum MatrixFormat {
+    /// Matrices in coordinate format.
+    /// Entries are described as `(i, j, data)` triplets with row `i`,
+    /// column `j` and corresponding `data`. This is mainly used for
+    /// sparse matrices.
     Coordinate,
+    /// Matrices in array format. All entries are provided in column-major
+    /// format. This format is mainly used for dense matrices.
     Array,
 }
 
+/// Definition of the data type.
 #[derive(PartialEq, Clone, Copy)]
 pub enum DataType {
+    /// Real entries.
     Real,
+    /// Integer entries (currently not supported).
     Integer,
+    /// Complex entries.
     Complex,
 }
 
+/// Identifier trait to associate a matrix market identifier with a Rust type.
 pub trait MmIdentifier {
     const MMTYPE: &'static str;
 }
@@ -42,14 +60,31 @@ impl MmIdentifier for rlst_common::types::c64 {
     const MMTYPE: &'static str = "complex";
 }
 
+/// Matrix market symmetry type.
 #[derive(PartialEq, Clone, Copy)]
 pub enum SymmetryType {
+    /// General matrices without symmetry.
     General,
+    /// Symmetric matrices (currently not supported).
     Symmetric,
+    /// Skew-symmetric matrices (currently not supported).
     Skew,
+    /// Hermitian matrices (currently not supported).
     Hermitian,
 }
 
+/// A simple container to store the information section of a matrix market file.
+pub struct MatrixMarketInfo {
+    format: MatrixFormat,
+    data_type: DataType,
+    symmetry: SymmetryType,
+}
+
+/// Export a matrix in coordinate format.
+///
+/// This function requires objects to implement the [rlst_common::traits::AijIterator] and
+/// [rlst_common::traits::Shape] traits. Any object satisfying these traits can be written
+/// out with this function.
 pub fn write_coordinate_mm<
     T: Scalar + MmIdentifier,
     Mat: rlst_common::traits::AijIterator<T = T> + rlst_common::traits::Shape,
@@ -80,6 +115,11 @@ pub fn write_coordinate_mm<
     }
 }
 
+/// Export a matrix in array format.
+///
+/// This function requires objects to implement the [rlst_common::traits::ColumnMajorIterator] and
+/// [rlst_common::traits::Shape] traits. Any object satisfying these traits can be written
+/// out with this function.
 pub fn write_array_mm<
     T: Scalar + MmIdentifier,
     Mat: rlst_common::traits::ColumnMajorIterator<T = T> + rlst_common::traits::Shape,
@@ -108,19 +148,10 @@ pub fn write_array_mm<
     }
 }
 
-pub struct MatrixMarketInfo {
-    format: MatrixFormat,
-    data_type: DataType,
-    symmetry: SymmetryType,
-}
-
-// macro_rules! mm_write {
-//     ($scalar:ty) => {};
-// }
-
-// mm_write!(f64);
-// mm_write!(rlst_common::types::c64);
-
+/// Read an array in matrix market format.
+///
+/// The function returns a [MatrixD] object representing the data in the file.
+/// Currently only `general` matrices are supported without special symmetry.
 pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
@@ -177,6 +208,11 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
     }
 }
 
+/// Read a coordinate matrix in Matrix Market format.
+///
+/// Returns a [rlst_sparse::sparse::csr_mat::CsrMatrix] sparse matrix object representing
+/// the data in the file.
+/// Currently only `general` matrices are supported without special symmetry.
 pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
@@ -240,6 +276,7 @@ pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     }
 }
 
+/// Open a file and return the file handler.
 fn open_file<P>(fname: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
     P: AsRef<Path>,
@@ -248,6 +285,7 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
+/// Parse the header information.
 fn parse_header(reader: &mut io::Lines<io::BufReader<File>>) -> RlstResult<MatrixMarketInfo> {
     if let Some(line) = reader.next() {
         let items = line
@@ -309,6 +347,7 @@ fn parse_header(reader: &mut io::Lines<io::BufReader<File>>) -> RlstResult<Matri
     ))
 }
 
+/// Parse array information.
 fn parse_array<T: Scalar>(
     reader: &mut io::Lines<io::BufReader<File>>,
     buf: &mut [T],
@@ -358,6 +397,7 @@ fn parse_array<T: Scalar>(
     Ok(())
 }
 
+/// Parse coordinate information.
 fn parse_coordinate<T: Scalar>(
     reader: &mut io::Lines<io::BufReader<File>>,
     rows: &mut [usize],

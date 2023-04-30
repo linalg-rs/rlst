@@ -14,7 +14,7 @@ pub trait Arnoldi {
     fn initialize(start: Self::Element, max_steps: usize) -> Self;
 
     // Perform a single Arnoldi step.
-    fn arnoldi_step<Op: Apply<Self::Element, T = Self::T, Range = Self::Element>>(
+    fn arnoldi_step<Op: Apply<Self::Element, T = Self::T, Out = Self::Element>>(
         &self,
         operator: &Op,
         step_count: usize,

@@ -1,4 +1,4 @@
-//! General linear operator.
+//! Definition of a general linear operator.
 
 use crate::LinearSpace;
 use rlst_common::types::*;

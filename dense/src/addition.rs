@@ -1,8 +1,7 @@
 //! Addition of two matrices.
 //!
 //! This module defines a type [AdditionMat] that represents the addition of two
-//! matrices. Two matrices can be added together if they have the same dimension and
-//! same index layout, meaning a 1d indexing traverses both matrices in the same order.
+//! matrices.
 
 use crate::matrix::*;
 use crate::matrix_ref::MatrixRef;
@@ -178,12 +177,12 @@ impl<
 
 mod test {
 
-    use super::*;
+    use rlst_common::traits::*;
 
     #[test]
     fn scalar_mult() {
-        let mut mat1 = MatrixD::<f64>::zeros_from_dim(2, 3);
-        let mut mat2 = MatrixD::<f64>::zeros_from_dim(2, 3);
+        let mut mat1 = crate::rlst_mat!(f64, (2, 3));
+        let mut mat2 = crate::rlst_mat!(f64, (2, 3));
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;

@@ -1,6 +1,6 @@
 //! Creation of subblocks of matrices.
 
-use super::{GenericBaseMatrixMut, Matrix, SliceMatrix, SliceMatrixMut};
+use super::{GenericBaseMatrix, Matrix, SliceMatrix, SliceMatrixMut};
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::traits::*;
@@ -27,11 +27,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>>
         );
         let start_index = self.layout().convert_2d_raw(top_left.0, top_left.1);
         unsafe {
-            SliceMatrix::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                self.get_pointer().add(start_index),
-                dim,
-                self.layout().stride(),
-            )
+            crate::rlst_pointer_mat!('a, Item, self.get_pointer().add(start_index), dim, self.layout().stride())
         }
     }
 }
@@ -57,17 +53,13 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
         let start_index = self.layout().convert_2d_raw(top_left.0, top_left.1);
 
         unsafe {
-            SliceMatrixMut::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                self.get_pointer_mut().add(start_index),
-                dim,
-                self.layout().stride(),
-            )
+            crate::rlst_mut_pointer_mat!('a, Item, self.get_pointer_mut().add(start_index), dim, self.layout().stride())
         }
     }
 }
 
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
-    GenericBaseMatrixMut<Item, Data, Dynamic, Dynamic>
+    GenericBaseMatrix<Item, Data, Dynamic, Dynamic>
 {
     /// Split a mutable matrix into four mutable subblocks.
     ///
@@ -108,26 +100,10 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
 
         let blocks = unsafe {
             (
-                SliceMatrixMut::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                    ptr.offset(start0),
-                    dim0,
-                    stride,
-                ),
-                SliceMatrixMut::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                    ptr.offset(start1),
-                    dim1,
-                    stride,
-                ),
-                SliceMatrixMut::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                    ptr.offset(start2),
-                    dim2,
-                    stride,
-                ),
-                SliceMatrixMut::<'a, Item, Dynamic, Dynamic>::from_pointer(
-                    ptr.offset(start3),
-                    dim3,
-                    stride,
-                ),
+                crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start0), dim0, stride],
+                crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start1), dim1, stride],
+                crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start2), dim2, stride],
+                crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start3), dim3, stride],
             )
         };
         blocks
@@ -138,12 +114,11 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
 mod test {
 
     use super::*;
-    use crate::matrix::*;
     use crate::rlst_rand_mat;
 
     #[test]
     fn test_simple_slice() {
-        let mut mat = MatrixD::<f64>::zeros_from_dim(3, 4);
+        let mut mat = crate::rlst_mat![f64, (3, 4)];
         *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice = mat.block((0, 1), (2, 2));
@@ -154,7 +129,7 @@ mod test {
 
     #[test]
     fn test_double_slice() {
-        let mut mat = MatrixD::<f64>::zeros_from_dim(3, 4);
+        let mut mat = crate::rlst_mat![f64, (3, 4)];
         *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice1 = mat.block((0, 1), (3, 3));

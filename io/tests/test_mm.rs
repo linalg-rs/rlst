@@ -1,6 +1,6 @@
 //! Test the matrix market format
 
-use rlst_common::traits::{AijIterator, ColumnMajorIterator, Shape};
+use rlst_common::traits::{AijIterator, ColumnMajorIterator, RawAccess, Shape};
 use rlst_dense::rlst_rand_mat;
 use rlst_io::matrix_market::{
     read_array_mm, read_coordinate_mm, write_array_mm, write_coordinate_mm,

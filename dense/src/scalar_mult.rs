@@ -16,7 +16,7 @@ pub type ScalarProdMat<Item, MatImpl, RS, CS> =
     Matrix<Item, ScalarMult<Item, MatImpl, RS, CS>, RS, CS>;
 
 /// A structure holding a reference to the matrix and the scalar to be multiplied
-/// with it. This struct implements [MatrixTrait] and acts like a matrix.
+/// with it. This struct implements [MatrixImplTrait] and acts like a matrix.
 /// However, random access returns the corresponding matrix entry multiplied with
 /// the scalar.
 pub struct ScalarMult<Item, MatImpl, RS, CS>(
@@ -152,10 +152,11 @@ scalar_mult_impl!(c64);
 mod test {
 
     use super::*;
+    use rlst_common::traits::*;
 
     #[test]
     fn scalar_mult() {
-        let mut mat = MatrixD::<f64>::zeros_from_dim(2, 3);
+        let mut mat = crate::rlst_mat![f64, (2, 3)];
 
         *mat.get_mut(1, 2).unwrap() = 5.0;
 

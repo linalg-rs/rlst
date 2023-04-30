@@ -20,8 +20,8 @@ use crate::types::Scalar;
 use crate::DefaultLayout;
 use std::marker::PhantomData;
 
-// A struct that implements [MatrixTrait] by holding a reference
-// to a matrix and forwarding all matrix operations to the held reference.
+/// A struct that implements [MatrixImplTrait] by holding a reference
+/// to a matrix and forwarding all matrix operations to the held reference.
 pub struct MatrixRef<'a, Item, MatImpl, RS, CS>(
     &'a Matrix<Item, MatImpl, RS, CS>,
     PhantomData<Item>,

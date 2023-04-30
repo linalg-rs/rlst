@@ -1,120 +1,139 @@
 //! A collection of routines to construct matrix objects from scratch or existing data.
 
 use crate::base_matrix::BaseMatrix;
-use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, VectorContainer};
-use crate::layouts::*;
-use crate::matrix::{Matrix, SliceMatrix, SliceMatrixMut};
+use crate::data_container::ArrayContainer;
+use crate::matrix::Matrix;
+use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
 use crate::types::Scalar;
+use crate::{layouts::*, DataContainer};
+use rlst_common::traits::constructors::NewLikeSelf;
+use std::marker::PhantomData;
 
-// Construct mutable zero matrices
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    /// Create a new matrix from a given implementation.
+    pub fn new(mat: MatImpl) -> Self {
+        Self(mat, PhantomData, PhantomData, PhantomData)
+    }
 
-macro_rules! from_zeros_fixed {
-    ($RS:ident, $CS:ident) => {
-        impl<Item: Scalar>
-            Matrix<
+    /// Create a new matrix from a reference to an existing matrix.
+    pub fn from_ref<'a>(
+        mat: &'a Matrix<Item, MatImpl, RS, CS>,
+    ) -> crate::RefMat<'a, Item, MatImpl, RS, CS> {
+        crate::RefMat::new(MatrixRef::new(mat))
+    }
+}
+
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<Item = Item>>
+    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>
+{
+    /// Create a new matrix from a data container and a layout structure.
+    pub fn from_data(data: Data, layout: DefaultLayout) -> Self {
+        Self::new(BaseMatrix::<Item, Data, RS, CS>::new(data, layout))
+    }
+}
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
+    for Matrix<Item, MatImpl, Dynamic, Dynamic>
+{
+    type Out = crate::MatrixD<Item>;
+
+    fn new_like_self(&self) -> Self::Out {
+        crate::rlst_mat![Item, self.layout().dim()]
+    }
+}
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Fixed1, Dynamic>> NewLikeSelf
+    for Matrix<Item, MatImpl, Fixed1, Dynamic>
+{
+    type Out = crate::RowVectorD<Item>;
+
+    fn new_like_self(&self) -> Self::Out {
+        crate::rlst_row_vec![Item, self.layout().number_of_elements()]
+    }
+}
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Fixed1>> NewLikeSelf
+    for Matrix<Item, MatImpl, Dynamic, Fixed1>
+{
+    type Out = crate::ColumnVectorD<Item>;
+
+    fn new_like_self(&self) -> Self::Out {
+        crate::rlst_col_vec![Item, self.layout().number_of_elements()]
+    }
+}
+
+impl<T: Scalar> Clone for crate::MatrixD<T> {
+    fn clone(&self) -> Self {
+        let mut out = crate::rlst_mat!(T, self.shape());
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
+            }
+        }
+        out
+    }
+}
+
+macro_rules! implement_new_from_self_fixed {
+    ($RS:ty, $CS:ty) => {
+        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeSelf
+            for Matrix<Item, MatImpl, $RS, $CS>
+        {
+            type Out = Matrix<
                 Item,
-                BaseMatrix<Item, ArrayContainer<Item, { $RS::N * $CS::N }>, $RS, $CS>,
+                BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $RS, $CS>,
                 $RS,
                 $CS,
-            >
-        {
-            /// Create a new fixed dimension matrix.
-            pub fn zeros_from_dim() -> Self {
-                Self::from_data(
-                    ArrayContainer::<Item, { $RS::N * $CS::N }>::new(),
-                    DefaultLayout::from_dimension(($RS::N, $CS::N), (1, $RS::N)),
+            >;
+            fn new_like_self(&self) -> Self::Out {
+                <Self::Out>::from_data(
+                    ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
+                    DefaultLayout::from_dimension((<$RS>::N, <$CS>::N), (1, <$RS>::N)),
                 )
             }
         }
-    };
-}
 
-from_zeros_fixed!(Fixed2, Fixed2);
-from_zeros_fixed!(Fixed1, Fixed2);
+        impl<Item: Scalar> Clone
+            for Matrix<
+                Item,
+                BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $RS, $CS>,
+                $RS,
+                $CS,
+            >
+        where
+            Self: NewLikeSelf<Out = Self>,
+            <Self as NewLikeSelf>::Out: RandomAccessMut<Item = Item>,
+        {
+            fn clone(&self) -> Self {
+                let mut out = self.new_like_self();
 
-from_zeros_fixed!(Fixed3, Fixed3);
-from_zeros_fixed!(Fixed1, Fixed3);
-
-from_zeros_fixed!(Fixed2, Fixed3);
-from_zeros_fixed!(Fixed3, Fixed2);
-
-from_zeros_fixed!(Fixed2, Fixed1);
-from_zeros_fixed!(Fixed3, Fixed1);
-
-impl<Item: Scalar>
-    Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Dynamic, Dynamic>, Dynamic, Dynamic>
-{
-    /// Create a new zero matrix with given number of rows and columns.
-    pub fn zeros_from_dim(rows: usize, cols: usize) -> Self {
-        let layout = DefaultLayout::from_dimension((rows, cols), (1, rows));
-        Self::from_data(
-            VectorContainer::<Item>::new(layout.number_of_elements()),
-            layout,
-        )
-    }
-}
-
-impl<Item: Scalar>
-    Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Dynamic, Fixed1>, Dynamic, Fixed1>
-{
-    /// Create a new zero column vector with a given number of entries.
-    pub fn zeros_from_length(nelems: usize) -> Self {
-        let layout = DefaultLayout::from_dimension((nelems, 1), (1, nelems));
-        Self::from_data(
-            VectorContainer::<Item>::new(layout.number_of_elements()),
-            layout,
-        )
-    }
-}
-
-impl<Item: Scalar>
-    Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Fixed1, Dynamic>, Fixed1, Dynamic>
-{
-    /// Create a new zero row vector with a given number of entries.
-    pub fn zeros_from_length(nelems: usize) -> Self {
-        let layout = DefaultLayout::from_dimension((1, nelems), (1, 1));
-        Self::from_data(
-            VectorContainer::<Item>::new(layout.number_of_elements()),
-            layout,
-        )
-    }
-}
-
-macro_rules! from_pointer_strided {
-    ($RS:ident, $CS:ident) => {
-        impl<'a, Item: Scalar> SliceMatrixMut<'a, Item, $RS, $CS> {
-            /// Create a new mutable matrix by specifying a pointer, dimension and stride tuple.
-            pub unsafe fn from_pointer(
-                ptr: *mut Item,
-                dim: (usize, usize),
-                stride: (usize, usize),
-            ) -> Self {
-                let new_layout = DefaultLayout::new(dim, stride);
-                let nindices = new_layout.convert_2d_raw(dim.0 - 1, dim.1 - 1) + 1;
-                let slice = std::slice::from_raw_parts_mut(ptr, nindices);
-                let data = SliceContainerMut::<'a, Item>::new(slice);
-
-                SliceMatrixMut::<'a, Item, $RS, $CS>::from_data(data, new_layout)
-            }
-        }
-
-        impl<'a, Item: Scalar> SliceMatrix<'a, Item, $RS, $CS> {
-            /// Create a new matrix by specifying a pointer, dimension and stride tuple.
-            pub unsafe fn from_pointer(
-                ptr: *const Item,
-                dim: (usize, usize),
-                stride: (usize, usize),
-            ) -> Self {
-                let new_layout = DefaultLayout::new(dim, stride);
-                let nindices = new_layout.convert_2d_raw(dim.0 - 1, dim.1 - 1) + 1;
-                let slice = std::slice::from_raw_parts(ptr, nindices);
-                let data = SliceContainer::<'a, Item>::new(slice);
-
-                SliceMatrix::<'a, Item, $RS, $CS>::from_data(data, new_layout)
+                for col in 0..self.shape().1 {
+                    for row in 0..self.shape().0 {
+                        unsafe { *out.get_unchecked_mut(row, col) = *self.get_unchecked(row, col) }
+                    }
+                }
+                out
             }
         }
     };
 }
 
-from_pointer_strided!(Dynamic, Dynamic);
+implement_new_from_self_fixed!(Fixed2, Fixed2);
+implement_new_from_self_fixed!(Fixed1, Fixed2);
+
+implement_new_from_self_fixed!(Fixed3, Fixed3);
+implement_new_from_self_fixed!(Fixed1, Fixed3);
+
+implement_new_from_self_fixed!(Fixed2, Fixed3);
+implement_new_from_self_fixed!(Fixed3, Fixed2);
+
+implement_new_from_self_fixed!(Fixed2, Fixed1);
+implement_new_from_self_fixed!(Fixed3, Fixed1);

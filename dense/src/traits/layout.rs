@@ -61,20 +61,8 @@
 //! If this is implemented for a matrix the [Layout](crate::traits::Layout) is auto-implemented.
 //! This latter trait only provides a method to return the [LayoutType] implementation.
 //! This crate also provides a number of other traits.
-//! - [BaseLayoutType]: Derives from [LayoutType]
-//!   and marks simple base traits that are suitable
-//!   for logical indexing. Instantiations only depend on the matrix
-//!   dimension and not e.g. non-standard strides.
-//! - [VectorBaseLayoutType]: Derives from [BaseLayoutType]
-//!   and marks base layouts for vectors. Only requires the
-//!   length of the vector for instantiation.
-//! - [MatrixBaseLayoutType]: Derives from [BaseLayoutType]
-//!   and marks base layouts for matrices.
-//! - [StridedLayoutType]: Derives from [LayoutType] and
-//!   marks layouts with non-trivial strides.
 //!
-//! `householder` provides a number of concrete layouts. These are defined
-//! in the [Layouts module](crate::layouts).
+//! The *default layout* of RLST is a column-major stride with column-major 1D logical indexing.
 
 /// The main trait defining a layout. For detailed information see the
 /// [module description](crate::traits::layout).

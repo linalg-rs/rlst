@@ -1,9 +1,11 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::matrix::{Matrix, MatrixD};
+use crate::data_container::{DataContainer, DataContainerMut};
+use crate::matrix::Matrix;
 use crate::types::Scalar;
+use crate::GenericBaseMatrix;
 use crate::{traits::*, DefaultLayout};
-use rlst_common::traits::properties::*;
+use rlst_common::traits::*;
 
 impl<
         Item: Scalar,
@@ -144,15 +146,19 @@ impl<
         MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
+    > Eval for Matrix<Item, MatImpl, RS, CS>
+where
+    Self: NewLikeSelf,
+    <Self as NewLikeSelf>::Out: Shape + RandomAccessMut<Item = Item>,
 {
-    /// Evaluate into a new matrix.
-    pub fn eval(self) -> MatrixD<Item> {
-        let dim = self.layout().dim();
-        let mut result = MatrixD::<Item>::zeros_from_dim(dim.0, dim.1);
+    type Out = <Self as NewLikeSelf>::Out;
+
+    fn eval(&self) -> Self::Out {
+        let mut result = self.new_like_self();
+        let shape = result.shape();
         unsafe {
-            for row in 0..dim.0 {
-                for col in 0..dim.1 {
+            for col in 0..shape.1 {
+                for row in 0..shape.0 {
                     *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
                 }
             }
@@ -161,62 +167,50 @@ impl<
     }
 }
 
-// macro_rules! eval_dynamic_matrix {
-//     ($L:ident) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, Dynamic, Dynamic>>
-//             Matrix<Item, MatImpl, $L, Dynamic, Dynamic>
-//         {
-//             pub fn eval(&self) -> MatrixD<Item, $L> {
-//                 let dim = self.dim();
-//                 let mut result = MatrixD::<Item, $L>::from_zeros(dim.0, dim.1);
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+    fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
+        for index in 0..self.layout().number_of_elements() {
+            unsafe { f(self.get1d_unchecked_mut(index)) }
+        }
+    }
+}
 
-// macro_rules! eval_fixed_matrix {
-//     ($L:ident, $RS:ty, $CS:ty) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, $RS, $CS>>
-//             Matrix<Item, MatImpl, $L, $RS, $CS>
-//         {
-//             pub fn eval(
-//                 &self,
-//             ) -> Matrix<
-//                 Item,
-//                 BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                 $L,
-//                 $RS,
-//                 $CS,
-//             > {
-//                 let mut result = Matrix::<
-//                     Item,
-//                     BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                     $L,
-//                     $RS,
-//                     $CS,
-//                 >::from_zeros();
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccess for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
 
-// eval_dynamic_matrix!(CLayout);
-// eval_dynamic_matrix!(FLayout);
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
 
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed3);
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
 
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed3);
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.get_slice(0, self.layout().number_of_elements())
+    }
+}
+
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    fn get_pointer_mut(&mut self) -> *mut Item {
+        self.0.get_pointer_mut()
+    }
+
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+        self.0.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.0.get_slice_mut(0, self.layout().number_of_elements())
+    }
+}
