@@ -1,4 +1,4 @@
-//! This is a sandbox to test traits for sparse (and more general) operators.
+//! The operator library contains traits and methods to support arbitrary operator types.
 
 pub mod linalg;
 pub mod operator;
