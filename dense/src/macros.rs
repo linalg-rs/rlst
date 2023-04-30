@@ -1,6 +1,13 @@
-//! Useful macros
+//! The macros defined here make it easy to create new matrices and vectors.
 
-/// Generate a new matrix with C Layout
+/// Create a new matrix.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// // Creates a (3, 5) matrix with `f64` entries.
+/// let mat = rlst_mat![f64, (3, 5)];
+/// ```
 #[macro_export]
 macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {{
@@ -17,30 +24,64 @@ macro_rules! rlst_mat {
     }};
 }
 
+/// Create a new matrix from a given mutable pointer.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![0.0; 10];
+/// vec[5] = 5.0;
+/// let ptr = vec.as_mut_ptr();
+/// // Create a (2, 5) matrix with stride (1, 2).
+/// let mat = unsafe {rlst_mut_pointer_mat!['static, f64, ptr, (2, 5), (1, 2)] };
+/// assert_eq!(mat[[1, 2]], 5.0);
+/// ```
 #[macro_export]
 macro_rules! rlst_mut_pointer_mat {
     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
         let new_layout = $crate::DefaultLayout::new($dim, $stride);
         let nindices = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
         let slice = std::slice::from_raw_parts_mut($ptr, nindices);
-        let data = $crate::SliceContainerMut::<$a, Item>::new(slice);
+        let data = $crate::SliceContainerMut::<$a, $ScalarType>::new(slice);
 
-        $crate::SliceMatrixMut::<$a, Item, Dynamic, Dynamic>::from_data(data, new_layout)
+        $crate::SliceMatrixMut::<$a, $ScalarType, Dynamic, Dynamic>::from_data(data, new_layout)
     }};
 }
 
+/// Create a new matrix from a given pointer.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// let vec = vec![0.0; 10];
+/// let ptr = vec.as_ptr();
+/// // Create a (2, 5) matrix with stride (1, 2).
+/// let mat = unsafe {rlst_pointer_mat!['static, f64, ptr, (2, 5), (1, 2)] };
+/// # assert_eq!(mat.shape(), (2, 5));
+/// # assert_eq!(mat.layout().stride(), (1, 2));
+/// ```
 #[macro_export]
 macro_rules! rlst_pointer_mat {
     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
         let new_layout = $crate::DefaultLayout::new($dim, $stride);
         let nindices = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
         let slice = std::slice::from_raw_parts($ptr, nindices);
-        let data = $crate::SliceContainer::<$a, Item>::new(slice);
+        let data = $crate::SliceContainer::<$a, $ScalarType>::new(slice);
 
-        $crate::SliceMatrix::<$a, Item, Dynamic, Dynamic>::from_data(data, new_layout)
+        $crate::SliceMatrix::<$a, $ScalarType, Dynamic, Dynamic>::from_data(data, new_layout)
     }};
 }
 
+/// Create a new random matrix with normally distributed elements.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::types::*;
+/// // Creates a (3, 5) random matrix with `c64` entries.
+/// let mat = rlst_rand_mat![c64, (3, 5)];
+/// ```
 #[macro_export]
 macro_rules! rlst_rand_mat {
     ($ScalarType:ty, $dim:expr) => {{
@@ -51,8 +92,21 @@ macro_rules! rlst_rand_mat {
     }};
 }
 
+/// Create a new matrix with compile-time known dimension parameters and stack allocated storage.
+///
+/// Currently only dimensions 1, 2, 3 are supported as
+/// dimension parameters.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a (2, 3) .
+/// let mat = rlst_fixed_mat![f64, 2, 3];
+/// # assert_eq!(mat.shape(), (2, 3))
+/// ```
 #[macro_export]
-macro_rules! rlst_fixed {
+macro_rules! rlst_fixed_mat {
     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
         use paste::paste;
         use $crate::LayoutType;
@@ -68,6 +122,17 @@ macro_rules! rlst_fixed {
     }};
 }
 
+/// Create a new column vector.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a column vector with 5 elements.
+/// let vec = rlst_col_vec![f64, 5];
+/// # assert_eq!(vec.shape(), (5, 1));
+/// # assert_eq!(vec.layout().stride(), (1, 5));
+/// ```
 #[macro_export]
 macro_rules! rlst_col_vec {
     ($ScalarType:ty, $len:expr) => {{
@@ -79,6 +144,17 @@ macro_rules! rlst_col_vec {
     }};
 }
 
+/// Create a new row vector.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a row vector with 5 elements.
+/// let vec = rlst_row_vec![f64, 5];
+/// # assert_eq!(vec.shape(), (1, 5));
+/// # assert_eq!(vec.layout().stride(), (1, 1));
+/// ```
 #[macro_export]
 macro_rules! rlst_row_vec {
     ($ScalarType:ty, $len:expr) => {{
@@ -90,6 +166,16 @@ macro_rules! rlst_row_vec {
     }};
 }
 
+/// Create a new random column vector with normally distributed elements.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a random column vector with 5 elements.
+/// let vec = rlst_rand_col_vec![f64, 5];
+/// # assert_eq!(vec.shape(), (5, 1));
+/// ```
 #[macro_export]
 macro_rules! rlst_rand_col_vec {
     ($ScalarType:ty, $dim:expr) => {{
@@ -100,6 +186,16 @@ macro_rules! rlst_rand_col_vec {
     }};
 }
 
+/// Create a new random row vector with normally distributed elements.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a random column vector with 5 elements.
+/// let vec = rlst_rand_row_vec![f64, 5];
+/// # assert_eq!(vec.shape(), (1, 5));
+/// ```
 #[macro_export]
 macro_rules! rlst_rand_row_vec {
     ($ScalarType:ty, $dim:expr) => {{
@@ -125,7 +221,7 @@ mod test {
 
     #[test]
     fn create_fixed_matrix() {
-        let mat = rlst_fixed![f64, 2, 3];
+        let mat = rlst_fixed_mat![f64, 2, 3];
 
         assert_eq!(mat.shape(), (2, 3));
     }
@@ -160,5 +256,14 @@ mod test {
         let vec = rlst_rand_col_vec![f64, length];
 
         assert_eq!(vec.shape(), (5, 1));
+    }
+
+    #[test]
+    fn create_mut_pointer_mat() {
+        let mut vec = vec![0.0; 10];
+        let ptr = vec.as_mut_ptr();
+        // Create a (2, 5) matrix with stride (1, 2).
+        let mat = unsafe { rlst_mut_pointer_mat!['static, f64, ptr, (2, 5), (1, 2)] };
+        assert_eq!(mat.shape(), (2, 5));
     }
 }

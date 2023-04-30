@@ -5,12 +5,12 @@
 //! to which all calls are forwarded. Implementations can represent more basic
 //! types, addition operations on matrices, scalar multiplications, or other
 //! types of implementations. The only condition is that the implementation itself
-//! implements [MatrixTrait] or [MatrixTraitMut].
+//! implements [MatrixImplTrait] or [MatrixImplTraitMut].
 //! A matrix is generic over the following parameters:
 //! - `Item`. Implements the [Scalar] trait and represents the underlying scalar type
 //!           of the matrix.
 //! - `MatImpl`. The actual implementation of the matrix. It must itself implement the
-//!              trait [MatrixTrait] or [MatrixTraitMut] depending on whether mutable access
+//!              trait [MatrixImplTrait] or [MatrixImplTraitMut] depending on whether mutable access
 //!              is required.
 //! - `L`. A given type that implements the [LayoutType] trait and specifies the memory layout
 //!        of the matrix.

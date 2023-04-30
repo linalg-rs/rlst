@@ -1,19 +1,15 @@
-//! Matrix trait
+//! Matrix Implementation trait
 //!
-//! [MatrixTrait] and its mutable counterpart [MatrixTraitMut] are
-//! traits that define a matrix. [MatrixTrait] is automatically implemented
-//! if the following traits are available.
-//! - [RandomAccessByValue]. Provides an interface to access matrix elements.
-//! - [Layout]. Provides an interface to obtain layout information for the matrix.
-//! - [SizeType]. Specifies whether the row/column dimension is known at compile time
-//!               or specified at runtime.
+//! [MatrixImplTrait] and its mutable counterpart [MatrixImplTraitMut] are
+//! traits that define matrix implementations. The [MatrixImplTrait] is auto-implemented
+//! for any implementation that supports [UnsafeRandomAccessByValue], [Layout] and [SizeType].
+//! If the matrix elements are associated with a physical memory location one can implement
+//! [UnsafeRandomAccessByRef]. If also [MatrixImplTrait] is implemented the trait
+//! [MatrixImplTraitAccessByRef] is then auto-implemented. This marks matrix implementations
+//! who allow access by reference. The trait[MatrixImplTraitMut] marks an implementation that
+//! allows mutation of matrix elements. It is auto-implemented if [MatrixImplTrait] and
+//! [UnsafeRandomAccessMut] are implemented.
 //!
-//! [MatrixTraitMut] additionally depends on the trait [RandomAccessMut] to provide
-//! mutable access to matrix elements.
-//!
-//! In order to support standard index notation for Matrix elements a matrix
-//! needs to additionally define the trait [RandomAccessByRef]. This then
-//! auto-implements the trait [MatrixTraitAccessByRef].
 use crate::traits::{
     Layout, SizeIdentifier, SizeType, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,

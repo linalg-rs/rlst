@@ -1,7 +1,7 @@
 //! Addition of two matrices.
 //!
-//! This module defines a type [AdditionMat] that represents the addition of two
-//! matrices. Two matrices can be added together if they have the same dimension and
+//! This module defines a type [SubtractionMat] that represents the subtraction of two
+//! matrices. Two matrices can be subtracted if they have the same dimension and
 //! same index layout, meaning a 1d indexing traverses both matrices in the same order.
 
 use crate::matrix::*;

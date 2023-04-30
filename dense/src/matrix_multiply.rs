@@ -2,14 +2,14 @@
 //!
 //! This module implements the matrix multiplication. The current implementation
 //! uses the [matrixmultiply] crate. To implement with this crate two traits are
-//! provided. A low-level trait [MatMul] matmul provides the method
-//! [matmul](MatMul::matmul), which
+//! provided. A low-level trait [MultiplyAdd] provides the method
+//! [multiply_add](MultiplyAdd::multiply_add), which
 //! performs `mat_c = alpha * mat_a * mat_b + beta * mat_c`, where `*` is to be
 //! understood as matrix multipolitcation. A higher level [Dot] trait implements
 //! the operation `mat_c = mat_a.dot(&mat_b)`. The latter allocates new memory,
 //! while the former relies on suitable memory being allocated.
 //!
-//! The [MatMul] trait is currently implemented for the product of two dynamic matrices,
+//! The [MultiplyAdd] trait is currently implemented for the product of two dynamic matrices,
 //! the product of a dynamic matrix with a vector, and the product of a row vector
 //! with a dynamic matrix.
 

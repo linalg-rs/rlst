@@ -153,7 +153,6 @@ where
 {
     type Out = <Self as NewLikeSelf>::Out;
 
-    /// Evaluate into a new matrix.
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
         let shape = result.shape();

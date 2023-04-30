@@ -17,10 +17,12 @@ impl<
         MatImpl: MatrixImplTrait<Item, RS, CS>,
     > Matrix<Item, MatImpl, RS, CS>
 {
+    /// Create a new matrix from a given implementation.
     pub fn new(mat: MatImpl) -> Self {
         Self(mat, PhantomData, PhantomData, PhantomData)
     }
 
+    /// Create a new matrix from a reference to an existing matrix.
     pub fn from_ref<'a>(
         mat: &'a Matrix<Item, MatImpl, RS, CS>,
     ) -> crate::RefMat<'a, Item, MatImpl, RS, CS> {
@@ -31,6 +33,7 @@ impl<
 impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<Item = Item>>
     Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>
 {
+    /// Create a new matrix from a data container and a layout structure.
     pub fn from_data(data: Data, layout: DefaultLayout) -> Self {
         Self::new(BaseMatrix::<Item, Data, RS, CS>::new(data, layout))
     }
@@ -43,6 +46,26 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
 
     fn new_like_self(&self) -> Self::Out {
         crate::rlst_mat![Item, self.layout().dim()]
+    }
+}
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Fixed1, Dynamic>> NewLikeSelf
+    for Matrix<Item, MatImpl, Fixed1, Dynamic>
+{
+    type Out = crate::RowVectorD<Item>;
+
+    fn new_like_self(&self) -> Self::Out {
+        crate::rlst_row_vec![Item, self.layout().number_of_elements()]
+    }
+}
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Fixed1>> NewLikeSelf
+    for Matrix<Item, MatImpl, Dynamic, Fixed1>
+{
+    type Out = crate::ColumnVectorD<Item>;
+
+    fn new_like_self(&self) -> Self::Out {
+        crate::rlst_col_vec![Item, self.layout().number_of_elements()]
     }
 }
 

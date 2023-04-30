@@ -16,7 +16,7 @@ pub type ScalarProdMat<Item, MatImpl, RS, CS> =
     Matrix<Item, ScalarMult<Item, MatImpl, RS, CS>, RS, CS>;
 
 /// A structure holding a reference to the matrix and the scalar to be multiplied
-/// with it. This struct implements [MatrixTrait] and acts like a matrix.
+/// with it. This struct implements [MatrixImplTrait] and acts like a matrix.
 /// However, random access returns the corresponding matrix entry multiplied with
 /// the scalar.
 pub struct ScalarMult<Item, MatImpl, RS, CS>(
