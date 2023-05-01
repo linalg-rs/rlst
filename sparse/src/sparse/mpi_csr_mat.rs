@@ -7,14 +7,13 @@ use crate::index_layout::DefaultMpiIndexLayout;
 use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::SparseMatType;
 use crate::traits::index_layout::IndexLayout;
-use crate::traits::indexable_vector::{
-    IndexableVector, IndexableVectorView, IndexableVectorViewMut,
-};
-use crate::vector::DefaultMpiVector;
+
+use crate::distributed_vector::DistributedVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
 use rlst_common::traits::Shape;
 use rlst_common::types::Scalar;
+use rlst_dense::{RawAccess, RawAccessMut};
 
 pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
@@ -258,15 +257,14 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     pub fn matmul<'b>(
         &self,
         alpha: T,
-        x: &DefaultMpiVector<'b, T, C>,
+        x: &DistributedVector<'b, T, C>,
         beta: T,
-        y: &mut DefaultMpiVector<'b, T, C>,
+        y: &mut DistributedVector<'b, T, C>,
     ) {
         // Create a vector that combines local dofs and ghosts
 
         let mut local_vec = Vec::<T>::with_capacity(self.local_dof_count);
-        let x_view = x.view().unwrap();
-        let x_data = x_view.data();
+        let x_data = x.local().data();
         let mut ghost_data = vec![T::zero(); self.domain_ghosts.total_receive_count];
 
         local_vec.extend(x_data.iter().copied());
@@ -275,12 +273,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         local_vec.extend(ghost_data.iter());
 
         // Compute result
-        self.local_matrix.matmul(
-            alpha,
-            local_vec.as_slice(),
-            beta,
-            y.view_mut().unwrap().data_mut(),
-        );
+        self.local_matrix
+            .matmul(alpha, local_vec.as_slice(), beta, y.local_mut().data_mut());
     }
 }
 

@@ -82,19 +82,19 @@ where
     }
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> InnerProductSpace
-    for DistributedIndexableVectorSpace<'a, T, C>
-where
-    T::Real: Equivalence,
-{
-    fn inner<'b>(
-        &self,
-        x: &rlst_operator::ElementView<'b, Self>,
-        other: &rlst_operator::ElementView<'b, Self>,
-    ) -> rlst_common::types::RlstResult<Self::F>
-    where
-        Self: 'b,
-    {
-        x.inner(other)
-    }
-}
+// impl<'a, T: Scalar + Equivalence, C: Communicator> InnerProductSpace
+//     for DistributedIndexableVectorSpace<'a, T, C>
+// where
+//     T::Real: Equivalence,
+// {
+//     fn inner<'b>(
+//         &self,
+//         x: &rlst_operator::ElementView<'b, Self>,
+//         other: &rlst_operator::ElementView<'b, Self>,
+//     ) -> rlst_common::types::RlstResult<Self::F>
+//     where
+//         Self: 'b,
+//     {
+//         x.inner(other)
+//     }
+// }

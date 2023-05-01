@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
+rlst-dense = {path = "../dense"}
 mpi = { version = "0.6.*", optional=true }
 mpi-sys = { version = "0.2", optional=true }
 num = "0.4"
