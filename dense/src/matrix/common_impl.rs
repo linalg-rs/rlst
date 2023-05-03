@@ -214,3 +214,67 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
         self.0.get_slice_mut(0, self.layout().number_of_elements())
     }
 }
+
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    ScaleInPlace for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+
+    fn scale_in_place(&mut self, alpha: Self::T) {
+        self.for_each(|elem| *elem = alpha * *elem);
+    }
+}
+
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        Data: DataContainerMut<Item = Item>,
+        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+    > FillFrom<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    fn fill_from(&mut self, other: &Other) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "Shapes do not agree. {:#?} != {:#?}",
+            self.shape(),
+            other.shape()
+        );
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe { *self.get_unchecked_mut(row, col) = other.get_value_unchecked(row, col) };
+            }
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        Data: DataContainerMut<Item = Item>,
+        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+    > SumInto<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+
+    fn sum_into(&mut self, alpha: Self::T, other: &Other) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "Shapes do not agree. {:#?} != {:#?}",
+            self.shape(),
+            other.shape()
+        );
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe {
+                    *self.get_unchecked_mut(row, col) += alpha * other.get_value_unchecked(row, col)
+                };
+            }
+        }
+    }
+}
