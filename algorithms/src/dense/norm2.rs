@@ -29,7 +29,7 @@ where
                 .copy()
                 .into_lapack()
                 .unwrap()
-                .svd(Mode::Slim, Mode::Slim)
+                .svd(Mode::None, Mode::None)
                 .unwrap();
             s[0]
         }

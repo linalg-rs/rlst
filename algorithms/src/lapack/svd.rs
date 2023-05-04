@@ -38,21 +38,32 @@ macro_rules! implement_svd {
                 let mut vt_matrix;
                 let ldu;
                 let ldvt;
+                let u_data: &mut [Self::T];
+                let vt_data: &mut [Self::T];
+
+                // The following two are needed as dummy arrays for the case
+                // that the computation of u and v is not requested. Even then
+                // we still need to pass a valid reference to the Lapack routine.
+                let mut u_dummy = vec![<Self::T as Zero>::zero(); 1];
+                let mut vt_dummy = vec![<Self::T as Zero>::zero(); 1];
 
                 match u_mode {
                     Mode::All => {
                         jobu = b'A';
                         u_matrix = Some(rlst_mat![$scalar, (m as usize, m as usize)]);
+                        u_data = u_matrix.as_mut().unwrap().data_mut();
                         ldu = m as i32;
                     }
                     Mode::Slim => {
                         jobu = b'S';
                         u_matrix = Some(rlst_mat![$scalar, (m as usize, k as usize)]);
+                        u_data = u_matrix.as_mut().unwrap().data_mut();
                         ldu = m as i32;
                     }
                     Mode::None => {
                         jobu = b'N';
                         u_matrix = None;
+                        u_data = u_dummy.as_mut_slice();
                         ldu = m as i32;
                     }
                 };
@@ -61,16 +72,19 @@ macro_rules! implement_svd {
                     Mode::All => {
                         jobvt = b'A';
                         vt_matrix = Some(rlst_mat![$scalar, (n as usize, n as usize)]);
+                        vt_data = vt_matrix.as_mut().unwrap().data_mut();
                         ldvt = n as i32;
                     }
                     Mode::Slim => {
                         jobvt = b'S';
                         vt_matrix = Some(rlst_mat![$scalar, (k as usize, n as usize)]);
+                        vt_data = vt_matrix.as_mut().unwrap().data_mut();
                         ldvt = k as i32;
                     }
                     Mode::None => {
                         jobvt = b'N';
                         vt_matrix = None;
+                        vt_data = vt_dummy.as_mut_slice();
                         ldvt = k as i32;
                     }
                 }
@@ -85,9 +99,9 @@ macro_rules! implement_svd {
                         self.mat.data_mut(),
                         lda,
                         s_values.as_mut_slice(),
-                        u_matrix.as_mut().unwrap().data_mut(),
+                        u_data,
                         ldu,
-                        vt_matrix.as_mut().unwrap().data_mut(),
+                        vt_data,
                         ldvt,
                         superb.as_mut_slice(),
                     )
