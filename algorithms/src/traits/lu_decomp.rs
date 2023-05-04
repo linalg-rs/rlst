@@ -1,7 +1,7 @@
 //! Trait for LU Decomposition and linear system solves with LU.
 use crate::lapack::TransposeMode;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{DataContainerMut, GenericBaseMatrix, MatrixD, SizeIdentifier};
+use rlst_dense::{MatrixD, RawAccessMut, Shape, Stride};
 
 /// Defines the LU Decomposition of a matrix.
 ///
@@ -31,9 +31,16 @@ pub trait LUDecomp {
     fn shape(&self) -> (usize, usize);
 
     /// Solve for a right-hand side.
-    fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
+    fn solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         &self,
-        rhs: &mut GenericBaseMatrix<Self::T, Data, RhsR, RhsC>,
+        rhs: &mut Rhs,
         trans: TransposeMode,
     ) -> RlstResult<()>;
+}
+
+pub trait LU {
+    type T: Scalar;
+    type Out: LUDecomp<T = Self::T>;
+
+    fn lu(self) -> RlstResult<Self::Out>;
 }

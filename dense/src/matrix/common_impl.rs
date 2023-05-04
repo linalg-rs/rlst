@@ -5,6 +5,7 @@ use crate::matrix::Matrix;
 use crate::types::Scalar;
 use crate::GenericBaseMatrix;
 use crate::{traits::*, DefaultLayout};
+use num::traits::Zero;
 use rlst_common::traits::*;
 
 impl<
@@ -29,6 +30,18 @@ impl<
 {
     fn shape(&self) -> (usize, usize) {
         self.layout().dim()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Stride for Matrix<Item, MatImpl, RS, CS>
+{
+    fn stride(&self) -> (usize, usize) {
+        self.layout().stride()
     }
 }
 
@@ -167,6 +180,22 @@ where
     }
 }
 
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Copy for Matrix<Item, MatImpl, RS, CS>
+where
+    Self: Eval,
+{
+    type Out = <Self as Eval>::Out;
+
+    fn copy(&self) -> Self::Out {
+        self.eval()
+    }
+}
+
 impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
     ForEach for GenericBaseMatrix<Item, Data, RS, CS>
 {
@@ -276,5 +305,27 @@ impl<
                 };
             }
         }
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SquareSum for Matrix<Item, MatImpl, RS, CS>
+{
+    type T = Item;
+    fn square_sum(&self) -> <Self::T as Scalar>::Real {
+        let shape = self.shape();
+
+        let mut result = <<Self::T as Scalar>::Real as Zero>::zero();
+        for col in 0..shape.1 {
+            for row in 0..shape.0 {
+                let value = unsafe { self.get_value_unchecked(row, col) };
+                result += value.square();
+            }
+        }
+        result
     }
 }

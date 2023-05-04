@@ -1,12 +1,27 @@
 //! Interface to Lapack routines.
 pub mod lu_decomp;
+pub mod svd;
 pub use lapacke::Layout;
+use rlst_common::traits::*;
 pub use rlst_common::types::{RlstError, RlstResult};
-use rlst_dense::types::Scalar;
-use rlst_dense::{
-    DataContainerMut, GenericBaseMatrix, LayoutType, MatrixImplTraitMut, SizeIdentifier,
-};
-use std::marker::PhantomData;
+
+pub trait LapackCompatible:
+    RawAccessMut
+    + Shape
+    + Stride
+    + std::ops::IndexMut<[usize; 2], Output = <Self as RawAccess>::T>
+    + Sized
+{
+}
+
+impl<
+        Obj: RawAccessMut
+            + Shape
+            + Stride
+            + std::ops::IndexMut<[usize; 2], Output = <Self as RawAccess>::T>,
+    > LapackCompatible for Obj
+{
+}
 
 /// Transposition mode for Lapack.
 #[derive(Debug, Clone, Copy)]
@@ -21,19 +36,14 @@ pub enum TransposeMode {
 }
 
 /// A simple container to take ownership of a matrix for Lapack operations.
-pub struct LapackData<
-    Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    Mat: MatrixImplTraitMut<Item, RS, CS> + Sized,
-> {
+pub struct LapackData<T: Scalar, Mat: LapackCompatible>
+where
+    Mat: RawAccess<T = T>,
+{
     /// The matrix on which to perform a Lapack operation.
     pub mat: Mat,
     /// The Lapack LDA parameter, which is the distance from one column to the next in memory.
     pub lda: i32,
-    phantom_item: PhantomData<Item>,
-    phantom_rs: PhantomData<RS>,
-    phantom_cs: PhantomData<CS>,
 }
 
 /// Return true if a given stride is Lapack compatible. Otherwise, return false.
@@ -43,23 +53,14 @@ pub fn check_lapack_stride(dim: (usize, usize), stride: (usize, usize)) -> bool 
 
 /// A trait that attaches to RLST Matrices and makes sure that data is represented
 /// in a Lapack compatible format.
-pub trait AsLapack<
-    Item: Scalar,
-    Data: DataContainerMut<Item = Item>,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
->: MatrixImplTraitMut<Item, RS, CS> + Sized
-{
+pub trait AsLapack: LapackCompatible {
     /// Take ownership of a matrix and check that its layout is compatible with Lapack.
-    fn lapack(self) -> RlstResult<LapackData<Item, RS, CS, Self>> {
-        let dim = self.layout().dim();
-        if check_lapack_stride(self.layout().dim(), self.layout().stride()) {
+    fn into_lapack(self) -> RlstResult<LapackData<<Self as RawAccess>::T, Self>> {
+        let shape = self.shape();
+        if check_lapack_stride(shape, self.stride()) {
             Ok(LapackData {
                 mat: self,
-                lda: dim.0 as i32,
-                phantom_item: PhantomData,
-                phantom_rs: PhantomData,
-                phantom_cs: PhantomData,
+                lda: shape.0 as i32,
             })
         } else {
             Err(RlstError::IncompatibleStride)
@@ -67,7 +68,4 @@ pub trait AsLapack<
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    AsLapack<Item, Data, RS, CS> for GenericBaseMatrix<Item, Data, RS, CS>
-{
-}
+impl<Mat: LapackCompatible> AsLapack for Mat {}

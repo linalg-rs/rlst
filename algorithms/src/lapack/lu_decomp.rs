@@ -4,50 +4,39 @@
 //! `_getrs` to solve a linear system of equations.
 
 use crate::lapack::LapackData;
-use crate::traits::lu_decomp::LUDecomp;
+use crate::traits::lu_decomp::{LUDecomp, LU};
 use lapacke;
 use num::traits::One;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{
-    rlst_mat, traits::*, DataContainerMut, GenericBaseMatrix, Layout, LayoutType, MatrixD,
-    MatrixImplTraitMut, SizeIdentifier,
-};
+use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
-use super::{check_lapack_stride, TransposeMode};
+use super::{check_lapack_stride, LapackCompatible, TransposeMode};
+use std::marker::PhantomData;
 
-pub struct LUDecompLapack<
-    Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    Mat: MatrixImplTraitMut<Item, RS, CS> + Sized,
-> {
-    data: LapackData<Item, RS, CS, Mat>,
+pub struct LUDecompLapack<T: Scalar, Mat: LapackCompatible> {
+    data: LapackData<<Mat as RawAccess>::T, Mat>,
     ipiv: Vec<i32>,
+    _marker: PhantomData<T>,
 }
 
 macro_rules! lu_decomp_impl {
     ($scalar:ty, $lapack_getrf:ident, $lapack_getrs:ident) => {
-        impl<
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                Data: DataContainerMut<Item = $scalar>,
-                //Mat: MatrixTraitMut<Item, RS, CS> + Sized,
-            > LapackData<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>
+        impl<Mat: LapackCompatible> LU for LapackData<$scalar, Mat>
+        where
+            Mat: RawAccess<T = $scalar>,
         {
+            type T = $scalar;
+            type Out = LUDecompLapack<$scalar, Mat>;
             /// Compute the LU decomposition.
-            pub fn lu(
-                mut self,
-            ) -> RlstResult<
-                LUDecompLapack<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>,
-            > {
-                let dim = self.mat.layout().dim();
-                let stride = self.mat.layout().stride();
+            fn lu(mut self) -> RlstResult<LUDecompLapack<$scalar, Mat>> {
+                let shape = self.mat.shape();
+                let stride = self.mat.stride();
 
-                let m = dim.0 as i32;
-                let n = dim.1 as i32;
+                let m = shape.0 as i32;
+                let n = shape.1 as i32;
                 let lda = stride.1 as i32;
 
-                let mut ipiv: Vec<i32> = vec![0; std::cmp::min(dim.0, dim.1)];
+                let mut ipiv: Vec<i32> = vec![0; std::cmp::min(shape.0, shape.1)];
                 let info = unsafe {
                     lapacke::$lapack_getrf(
                         lapacke::Layout::ColumnMajor,
@@ -59,16 +48,20 @@ macro_rules! lu_decomp_impl {
                     )
                 };
                 if info == 0 {
-                    return Ok(LUDecompLapack { data: self, ipiv });
+                    return Ok(LUDecompLapack {
+                        data: self,
+                        ipiv,
+                        _marker: PhantomData,
+                    });
                 } else {
                     return Err(RlstError::LapackError(info));
                 }
             }
         }
 
-        impl<Data: DataContainerMut<Item = $scalar>, RS: SizeIdentifier, CS: SizeIdentifier>
-            LUDecomp
-            for LUDecompLapack<$scalar, RS, CS, GenericBaseMatrix<$scalar, Data, RS, CS>>
+        impl<Mat: LapackCompatible> LUDecomp for LUDecompLapack<$scalar, Mat>
+        where
+            Mat: RawAccess<T = $scalar>,
         {
             type T = $scalar;
 
@@ -123,29 +116,25 @@ macro_rules! lu_decomp_impl {
                 mat
             }
 
-            fn solve<
-                RhsData: DataContainerMut<Item = Self::T>,
-                RhsR: SizeIdentifier,
-                RhsC: SizeIdentifier,
-            >(
+            fn solve<Rhs: RawAccessMut<T = $scalar> + Shape + Stride>(
                 &self,
-                rhs: &mut GenericBaseMatrix<Self::T, RhsData, RhsR, RhsC>,
+                rhs: &mut Rhs,
                 trans: TransposeMode,
             ) -> RlstResult<()> {
-                if !check_lapack_stride(rhs.layout().dim(), rhs.layout().stride()) {
+                if !check_lapack_stride(rhs.shape(), rhs.stride()) {
                     return Err(RlstError::IncompatibleStride);
                 } else {
                     let mat = &self.data.mat;
-                    let ldb = rhs.layout().stride().1;
+                    let ldb = rhs.stride().1;
 
                     let info = unsafe {
                         lapacke::$lapack_getrs(
                             lapacke::Layout::ColumnMajor,
                             trans as u8,
-                            mat.layout().dim().1 as i32,
-                            mat.layout().dim().1 as i32,
+                            mat.shape().1 as i32,
+                            rhs.shape().1 as i32,
                             mat.data(),
-                            mat.layout().stride().1 as i32,
+                            mat.stride().1 as i32,
                             &self.ipiv,
                             rhs.data_mut(),
                             ldb as i32,
@@ -178,6 +167,8 @@ mod test {
     use rand_chacha::ChaCha8Rng;
     use rlst_dense::Dot;
 
+    use rlst_common::traits::*;
+
     #[test]
     fn test_lu_solve_f64() {
         let mut rlst_mat = rlst_dense::rlst_mat![f64, (2, 2)];
@@ -200,7 +191,7 @@ mod test {
         let mut rhs = rlst_mat.dot(&rlst_vec);
 
         let _ = rlst_mat
-            .lapack()
+            .into_lapack()
             .unwrap()
             .lu()
             .unwrap()
@@ -221,9 +212,9 @@ mod test {
 
         mat.fill_from_standard_normal(&mut rng);
 
-        let mat2 = mat.clone();
+        let mat2 = mat.copy();
 
-        let lu_decomp = mat2.lapack().unwrap().lu().unwrap();
+        let lu_decomp = mat2.into_lapack().unwrap().lu().unwrap();
 
         let l_mat = lu_decomp.get_l();
         let u_mat = lu_decomp.get_u();
@@ -246,9 +237,9 @@ mod test {
 
         mat.fill_from_standard_normal(&mut rng);
 
-        let mat2 = mat.clone();
+        let mat2 = mat.copy();
 
-        let lu_decomp = mat2.lapack().unwrap().lu().unwrap();
+        let lu_decomp = mat2.into_lapack().unwrap().lu().unwrap();
 
         let l_mat = lu_decomp.get_l();
         let u_mat = lu_decomp.get_u();
