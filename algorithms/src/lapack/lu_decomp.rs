@@ -10,10 +10,10 @@ use num::traits::One;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
-use super::{check_lapack_stride, LapackCompatible, TransposeMode};
+use super::{check_lapack_stride, TransposeMode};
 use std::marker::PhantomData;
 
-pub struct LUDecompLapack<T: Scalar, Mat: LapackCompatible> {
+pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     data: LapackData<<Mat as RawAccess>::T, Mat>,
     ipiv: Vec<i32>,
     _marker: PhantomData<T>,
@@ -21,10 +21,7 @@ pub struct LUDecompLapack<T: Scalar, Mat: LapackCompatible> {
 
 macro_rules! lu_decomp_impl {
     ($scalar:ty, $lapack_getrf:ident, $lapack_getrs:ident) => {
-        impl<Mat: LapackCompatible> LU for LapackData<$scalar, Mat>
-        where
-            Mat: RawAccess<T = $scalar>,
-        {
+        impl<Mat: RawAccessMut<T = $scalar> + Shape + Stride> LU for LapackData<$scalar, Mat> {
             type T = $scalar;
             type Out = LUDecompLapack<$scalar, Mat>;
             /// Compute the LU decomposition.
@@ -59,9 +56,14 @@ macro_rules! lu_decomp_impl {
             }
         }
 
-        impl<Mat: LapackCompatible> LUDecomp for LUDecompLapack<$scalar, Mat>
-        where
-            Mat: RawAccess<T = $scalar>,
+        impl<
+                Mat: RawAccessMut<T = $scalar>
+                    + Shape
+                    + Stride
+                    + std::ops::Index<[usize; 2], Output = $scalar>
+                    + std::ops::IndexMut<[usize; 2], Output = $scalar>
+                    + RawAccess<T = $scalar>,
+            > LUDecomp for LUDecompLapack<$scalar, Mat>
         {
             type T = $scalar;
 
@@ -153,9 +155,9 @@ macro_rules! lu_decomp_impl {
 }
 
 lu_decomp_impl!(f64, dgetrf, dgetrs);
-lu_decomp_impl!(f32, sgetrf, sgetrs);
-lu_decomp_impl!(c32, cgetrf, cgetrs);
-lu_decomp_impl!(c64, zgetrf, zgetrs);
+// lu_decomp_impl!(f32, sgetrf, sgetrs);
+// lu_decomp_impl!(c32, cgetrf, cgetrs);
+// lu_decomp_impl!(c64, zgetrf, zgetrs);
 
 #[cfg(test)]
 mod test {

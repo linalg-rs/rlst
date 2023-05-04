@@ -40,7 +40,7 @@ pub trait LUDecomp {
 
 pub trait LU {
     type T: Scalar;
-    type Out: LUDecomp<T = Self::T>;
+    type Out;
 
     fn lu(self) -> RlstResult<Self::Out>;
 }

@@ -5,23 +5,13 @@ pub use lapacke::Layout;
 use rlst_common::traits::*;
 pub use rlst_common::types::{RlstError, RlstResult};
 
-pub trait LapackCompatible:
-    RawAccessMut
-    + Shape
-    + Stride
-    + std::ops::IndexMut<[usize; 2], Output = <Self as RawAccess>::T>
-    + Sized
-{
-}
+// pub trait LapackCompatible: RawAccessMut + Shape + Stride + Sized {}
 
-impl<
-        Obj: RawAccessMut
-            + Shape
-            + Stride
-            + std::ops::IndexMut<[usize; 2], Output = <Self as RawAccess>::T>,
-    > LapackCompatible for Obj
-{
-}
+// impl<
+//         Obj: RawAccessMut + Shape + Stride, //+ std::ops::IndexMut<[usize; 2], Output = <Self as RawAccess>::T>,
+//     > LapackCompatible for Obj
+// {
+// }
 
 /// Transposition mode for Lapack.
 #[derive(Debug, Clone, Copy)]
@@ -36,10 +26,7 @@ pub enum TransposeMode {
 }
 
 /// A simple container to take ownership of a matrix for Lapack operations.
-pub struct LapackData<T: Scalar, Mat: LapackCompatible>
-where
-    Mat: RawAccess<T = T>,
-{
+pub struct LapackData<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     /// The matrix on which to perform a Lapack operation.
     pub mat: Mat,
     /// The Lapack LDA parameter, which is the distance from one column to the next in memory.
@@ -53,7 +40,7 @@ pub fn check_lapack_stride(dim: (usize, usize), stride: (usize, usize)) -> bool 
 
 /// A trait that attaches to RLST Matrices and makes sure that data is represented
 /// in a Lapack compatible format.
-pub trait AsLapack: LapackCompatible {
+pub trait AsLapack: RawAccessMut + Shape + Stride + Sized {
     /// Take ownership of a matrix and check that its layout is compatible with Lapack.
     fn into_lapack(self) -> RlstResult<LapackData<<Self as RawAccess>::T, Self>> {
         let shape = self.shape();
@@ -68,4 +55,4 @@ pub trait AsLapack: LapackCompatible {
     }
 }
 
-impl<Mat: LapackCompatible> AsLapack for Mat {}
+impl<Mat: RawAccessMut + Shape + Stride> AsLapack for Mat {}

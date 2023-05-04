@@ -1,5 +1,4 @@
 //! Implement the SVD
-use crate::lapack::LapackCompatible;
 use crate::lapack::LapackData;
 use crate::traits::svd::{Mode, Svd};
 use lapacke;
@@ -10,7 +9,7 @@ use rlst_dense::{rlst_mat, MatrixD};
 
 macro_rules! implement_svd {
     ($scalar:ty, $lapack_gesvd:ident) => {
-        impl<Mat: LapackCompatible> Svd for LapackData<$scalar, Mat>
+        impl<Mat: RawAccessMut<T = $scalar> + Shape + Stride> Svd for LapackData<$scalar, Mat>
         where
             Mat: RawAccess<T = $scalar>,
         {

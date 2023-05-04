@@ -2,19 +2,19 @@
 use num::Zero;
 use rlst_common::traits::{Copy, Scalar, SquareSum};
 use rlst_dense::{
-    rlst_rand_mat, DataContainer, RawAccess, Shape, SizeIdentifier, UnsafeRandomAccessByValue,
+    rlst_rand_mat, DataContainer, RawAccess, RawAccessMut, Shape, SizeIdentifier, Stride,
+    UnsafeRandomAccessByValue,
 };
 
 use crate::{
-    lapack::{AsLapack, LapackCompatible, LapackData},
+    lapack::{AsLapack, LapackData},
     traits::norm2::Norm2,
     traits::svd::{Mode, Svd},
 };
 
 impl<T: Scalar, Mat: Copy + Shape + SquareSum<T = T>> Norm2 for Mat
 where
-    <Mat as Copy>::Out: LapackCompatible,
-    <Mat as Copy>::Out: RawAccess<T = T>,
+    <Mat as Copy>::Out: RawAccessMut<T = T> + Shape + Stride,
     LapackData<T, <Mat as Copy>::Out>: Svd<T = T>,
 {
     type T = <<Mat as Copy>::Out as RawAccess>::T;
