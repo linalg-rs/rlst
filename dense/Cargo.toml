@@ -1,3 +1,6 @@
+[features]
+strict = []
+
 [package]
 name = "rlst-dense"
 version = "0.0.1"
