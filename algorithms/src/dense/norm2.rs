@@ -7,7 +7,7 @@ use rlst_dense::{
 };
 
 use crate::{
-    lapack::{AsLapack, LapackData},
+    lapack::LapackData,
     traits::norm2::Norm2,
     traits::svd::{Mode, Svd},
 };
@@ -26,7 +26,7 @@ where
             return self.square_sum().sqrt();
         } else {
             let (s, _, _) = self
-                .copy()
+                .linalg()
                 .into_lapack()
                 .unwrap()
                 .svd(Mode::None, Mode::None)

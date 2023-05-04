@@ -1,6 +1,7 @@
 //! Interface to Lapack routines.
 pub mod lu_decomp;
-pub mod svd;
+//pub mod svd;
+pub use crate::linalg::LinAlgBuilder;
 pub use lapacke::Layout;
 use rlst_common::traits::*;
 pub use rlst_common::types::{RlstError, RlstResult};
@@ -40,13 +41,19 @@ pub fn check_lapack_stride(dim: (usize, usize), stride: (usize, usize)) -> bool 
 
 /// A trait that attaches to RLST Matrices and makes sure that data is represented
 /// in a Lapack compatible format.
-pub trait AsLapack: RawAccessMut + Shape + Stride + Sized {
+impl<'a, Mat: Copy> LinAlgBuilder<'a, Mat>
+where
+    <Mat as Copy>::Out: RawAccessMut + Shape + Stride,
+{
     /// Take ownership of a matrix and check that its layout is compatible with Lapack.
-    fn into_lapack(self) -> RlstResult<LapackData<<Self as RawAccess>::T, Self>> {
-        let shape = self.shape();
-        if check_lapack_stride(shape, self.stride()) {
+    pub fn into_lapack(
+        self,
+    ) -> RlstResult<LapackData<<<Mat as Copy>::Out as RawAccess>::T, <Mat as Copy>::Out>> {
+        let copied = self.mat.copy();
+        let shape = copied.shape();
+        if check_lapack_stride(shape, copied.stride()) {
             Ok(LapackData {
-                mat: self,
+                mat: copied,
                 lda: shape.0 as i32,
             })
         } else {
@@ -55,4 +62,4 @@ pub trait AsLapack: RawAccessMut + Shape + Stride + Sized {
     }
 }
 
-impl<Mat: RawAccessMut + Shape + Stride> AsLapack for Mat {}
+//impl<Mat: RawAccessMut + Shape + Stride> AsLapack for Mat {}

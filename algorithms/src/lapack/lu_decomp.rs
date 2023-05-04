@@ -7,10 +7,12 @@ use crate::lapack::LapackData;
 use crate::traits::lu_decomp::{LUDecomp, LU};
 use lapacke;
 use num::traits::One;
+use rlst_common::traits::Copy;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
 use super::{check_lapack_stride, TransposeMode};
+use crate::linalg::LinAlgBuilder;
 use std::marker::PhantomData;
 
 pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
@@ -19,15 +21,23 @@ pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> 
     _marker: PhantomData<T>,
 }
 
+// impl<'a, Mat: Copy> LinAlgBuilder<'a, Mat>
+// where
+//     <Mat as Copy>::Out: RawAccessMut + Shape + Stride,
+
 macro_rules! lu_decomp_impl {
     ($scalar:ty, $lapack_getrf:ident, $lapack_getrs:ident) => {
-        impl<Mat: RawAccessMut<T = $scalar> + Shape + Stride> LU for LapackData<$scalar, Mat> {
+        impl<'a, Mat: Copy> LU for LinAlgBuilder<'a, Mat>
+        where
+            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
+        {
             type T = $scalar;
-            type Out = LUDecompLapack<$scalar, Mat>;
+            type Out = LUDecompLapack<$scalar, <Mat as Copy>::Out>;
             /// Compute the LU decomposition.
-            fn lu(mut self) -> RlstResult<LUDecompLapack<$scalar, Mat>> {
-                let shape = self.mat.shape();
-                let stride = self.mat.stride();
+            fn lu(self) -> RlstResult<LUDecompLapack<$scalar, <Mat as Copy>::Out>> {
+                let mut copied = self.into_lapack()?;
+                let shape = copied.mat.shape();
+                let stride = copied.mat.stride();
 
                 let m = shape.0 as i32;
                 let n = shape.1 as i32;
@@ -39,14 +49,14 @@ macro_rules! lu_decomp_impl {
                         lapacke::Layout::ColumnMajor,
                         m,
                         n,
-                        self.mat.data_mut(),
+                        copied.mat.data_mut(),
                         lda,
                         ipiv.as_mut_slice(),
                     )
                 };
                 if info == 0 {
                     return Ok(LUDecompLapack {
-                        data: self,
+                        data: copied,
                         ipiv,
                         _marker: PhantomData,
                     });
@@ -161,9 +171,10 @@ lu_decomp_impl!(f64, dgetrf, dgetrs);
 
 #[cfg(test)]
 mod test {
-    use crate::lapack::AsLapack;
     use approx::assert_relative_eq;
     use rand::SeedableRng;
+
+    use crate::linalg::LinAlg;
 
     use super::*;
     use rand_chacha::ChaCha8Rng;
@@ -193,8 +204,7 @@ mod test {
         let mut rhs = rlst_mat.dot(&rlst_vec);
 
         let _ = rlst_mat
-            .into_lapack()
-            .unwrap()
+            .linalg()
             .lu()
             .unwrap()
             .solve(&mut rhs, TransposeMode::NoTrans);
@@ -216,7 +226,7 @@ mod test {
 
         let mat2 = mat.copy();
 
-        let lu_decomp = mat2.into_lapack().unwrap().lu().unwrap();
+        let lu_decomp = mat2.linalg().lu().unwrap();
 
         let l_mat = lu_decomp.get_l();
         let u_mat = lu_decomp.get_u();
@@ -241,7 +251,7 @@ mod test {
 
         let mat2 = mat.copy();
 
-        let lu_decomp = mat2.into_lapack().unwrap().lu().unwrap();
+        let lu_decomp = mat2.linalg().lu().unwrap();
 
         let l_mat = lu_decomp.get_l();
         let u_mat = lu_decomp.get_u();
