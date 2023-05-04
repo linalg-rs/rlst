@@ -1,0 +1,60 @@
+name: 🧪 Test
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  run-tests:
+    name: Run tests (Rust)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust-version: ["stable", "beta", "nightly"]
+        mpi: [ 'mpich', 'openmpi']
+    steps:
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt
+      - name: Set up MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: ${{ matrix.mpi }}
+      - name: Install cargo-mpirun
+        run: cargo install cargo-mpirun
+      - uses: actions/checkout@v2
+      - name: Install LAPACK & OpenBLAS
+        run:
+          sudo apt-get install libopenblas-dev liblapack-dev
+      - name: Style checks
+        run: cargo fmt -- --check
+
+      - name: Build rust library (debug)
+        run: cargo build --features "strict"
+      - name: Build rust library (release)
+        run: cargo build --release --features "strict"
+      - name: Build rust library (release with mpi)
+        run: cargo build --release --features "strict,mpi"
+
+      - name: Run unit tests
+        run: cargo test --lib --features "strict"
+      - name: Run unit tests (with mpi enabled)
+        run: cargo test --lib --features "mpi,strict"
+      - name: Run tests
+        run: cargo test --examples --release --features "mpi,strict"
+      - name: Run examples
+        run: |
+          python3 find_examples.py
+          chmod +x examples.sh
+          ./examples.sh
+
+      - name: Build docs
+        run: cargo doc --features "strict"

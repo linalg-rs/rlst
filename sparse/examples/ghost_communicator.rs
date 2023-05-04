@@ -1,3 +1,5 @@
+//? mpirun -n {{NPROCESSES}} --features "mpi"
+
 fn main() {
     pub use mpi::traits::*;
     pub use rlst_sparse::ghost_communicator::GhostCommunicator;
