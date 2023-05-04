@@ -18,7 +18,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
     pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
-            local: rlst_col_vec![T, index_layout.number_of_global_indices()],
+            local: rlst_col_vec![T, index_layout.number_of_local_indices()],
         }
     }
     pub fn local(&self) -> &ColumnVectorD<T> {
