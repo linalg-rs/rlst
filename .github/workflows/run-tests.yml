@@ -25,12 +25,12 @@ jobs:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
       - name: Install MPI
-        run: apt-get install -y llvm-dev libclang-dev pkgconf ${{ matrix.mpi }}
+        run: sudo apt-get install -y llvm-dev libclang-dev pkgconf ${{ matrix.mpi }}
       - name: Install cargo-mpirun
         run: cargo install cargo-mpirun
       - uses: actions/checkout@v2
       - name: Install LAPACK & OpenBLAS
-        run: apt-get install -y libopenblas-dev liblapack-dev libclang-15-dev
+        run: sudo apt-get install -y libopenblas-dev liblapack-dev libclang-15-dev
       - name: Style checks
         run: cargo fmt -- --check
 
