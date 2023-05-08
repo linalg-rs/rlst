@@ -12,7 +12,7 @@ use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
 use super::{check_lapack_stride, TransposeMode};
-use crate::linalg::LinAlgBuilder;
+use crate::linalg::DenseMatrixLinAlgBuilder;
 use std::marker::PhantomData;
 
 pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
@@ -23,7 +23,7 @@ pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> 
 
 macro_rules! lu_decomp_impl {
     ($scalar:ty, $lapack_getrf:ident, $lapack_getrs:ident) => {
-        impl<'a, Mat: Copy> LU for LinAlgBuilder<'a, $scalar, Mat>
+        impl<'a, Mat: Copy> LU for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {

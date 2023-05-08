@@ -1,7 +1,7 @@
 //! Interface to Lapack routines.
 pub mod lu_decomp;
 pub mod svd;
-pub use crate::linalg::LinAlgBuilder;
+pub use crate::linalg::DenseMatrixLinAlgBuilder;
 pub use lapacke::Layout;
 use rlst_common::traits::*;
 pub use rlst_common::types::{RlstError, RlstResult};
@@ -39,7 +39,7 @@ pub fn check_lapack_stride(dim: (usize, usize), stride: (usize, usize)) -> bool 
     stride.0 == 1 && stride.1 >= std::cmp::max(1, dim.0)
 }
 
-impl<'a, Mat: Copy> LinAlgBuilder<'a, <<Mat as Copy>::Out as RawAccess>::T, Mat>
+impl<'a, Mat: Copy> DenseMatrixLinAlgBuilder<'a, <<Mat as Copy>::Out as RawAccess>::T, Mat>
 where
     <Mat as Copy>::Out: RawAccessMut + Shape + Stride,
 {

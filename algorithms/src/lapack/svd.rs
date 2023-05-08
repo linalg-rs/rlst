@@ -1,5 +1,5 @@
 //! Implement the SVD
-use crate::linalg::LinAlgBuilder;
+use crate::linalg::DenseMatrixLinAlgBuilder;
 use crate::traits::svd::Mode;
 use crate::traits::svd::Svd;
 use lapacke;
@@ -10,7 +10,7 @@ use rlst_dense::{rlst_mat, MatrixD};
 
 macro_rules! implement_svd {
     ($scalar:ty, $lapack_gesvd:ident) => {
-        impl<'a, Mat: Copy> Svd for LinAlgBuilder<'a, $scalar, Mat>
+        impl<'a, Mat: Copy> Svd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
