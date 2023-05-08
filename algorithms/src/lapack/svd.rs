@@ -1,6 +1,7 @@
 //! Implement the SVD
-use crate::lapack::LapackData;
-use crate::traits::svd::{Mode, Svd};
+use crate::linalg::LinAlgBuilder;
+use crate::traits::svd::Mode;
+use crate::traits::svd::Svd;
 use lapacke;
 use num::traits::Zero;
 use rlst_common::traits::*;
@@ -9,13 +10,13 @@ use rlst_dense::{rlst_mat, MatrixD};
 
 macro_rules! implement_svd {
     ($scalar:ty, $lapack_gesvd:ident) => {
-        impl<Mat: RawAccessMut<T = $scalar> + Shape + Stride> Svd for LapackData<$scalar, Mat>
+        impl<'a, Mat: Copy> Svd for LinAlgBuilder<'a, $scalar, Mat>
         where
-            Mat: RawAccess<T = $scalar>,
+            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
             type T = $scalar;
             fn svd(
-                mut self,
+                self,
                 u_mode: Mode,
                 vt_mode: Mode,
             ) -> RlstResult<(
@@ -23,10 +24,11 @@ macro_rules! implement_svd {
                 Option<MatrixD<$scalar>>,
                 Option<MatrixD<$scalar>>,
             )> {
-                let m = self.mat.shape().0 as i32;
-                let n = self.mat.shape().1 as i32;
+                let mut copied = self.into_lapack()?;
+                let m = copied.mat.shape().0 as i32;
+                let n = copied.mat.shape().1 as i32;
                 let k = std::cmp::min(m, n);
-                let lda = self.mat.stride().1 as i32;
+                let lda = copied.mat.stride().1 as i32;
 
                 let mut s_values = vec![<<$scalar as Scalar>::Real as Zero>::zero(); k as usize];
                 let mut superb =
@@ -95,7 +97,7 @@ macro_rules! implement_svd {
                         jobvt,
                         m,
                         n,
-                        self.mat.data_mut(),
+                        copied.mat.data_mut(),
                         lda,
                         s_values.as_mut_slice(),
                         u_data,
@@ -122,11 +124,11 @@ implement_svd!(c64, zgesvd);
 
 #[cfg(test)]
 mod test {
-    use crate::lapack::AsLapack;
     use approx::assert_relative_eq;
     use rand::SeedableRng;
 
     use super::*;
+    use crate::linalg::LinAlg;
     use rand_chacha::ChaCha8Rng;
     use rlst_dense::Dot;
 
@@ -142,11 +144,8 @@ mod test {
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
 
-        let (singular_values, u_matrix, vt_matrix) = mat
-            .into_lapack()
-            .unwrap()
-            .svd(Mode::Slim, Mode::Slim)
-            .unwrap();
+        let (singular_values, u_matrix, vt_matrix) =
+            mat.linalg().svd(Mode::Slim, Mode::Slim).unwrap();
 
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();
@@ -177,11 +176,8 @@ mod test {
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
 
-        let (singular_values, u_matrix, vt_matrix) = mat
-            .into_lapack()
-            .unwrap()
-            .svd(Mode::Slim, Mode::Slim)
-            .unwrap();
+        let (singular_values, u_matrix, vt_matrix) =
+            mat.linalg().svd(Mode::Slim, Mode::Slim).unwrap();
 
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();
@@ -212,11 +208,8 @@ mod test {
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
 
-        let (singular_values, u_matrix, vt_matrix) = mat
-            .into_lapack()
-            .unwrap()
-            .svd(Mode::All, Mode::All)
-            .unwrap();
+        let (singular_values, u_matrix, vt_matrix) =
+            mat.linalg().svd(Mode::All, Mode::All).unwrap();
 
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();

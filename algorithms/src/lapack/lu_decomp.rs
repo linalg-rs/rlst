@@ -21,13 +21,9 @@ pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> 
     _marker: PhantomData<T>,
 }
 
-// impl<'a, Mat: Copy> LinAlgBuilder<'a, Mat>
-// where
-//     <Mat as Copy>::Out: RawAccessMut + Shape + Stride,
-
 macro_rules! lu_decomp_impl {
     ($scalar:ty, $lapack_getrf:ident, $lapack_getrs:ident) => {
-        impl<'a, Mat: Copy> LU for LinAlgBuilder<'a, Mat>
+        impl<'a, Mat: Copy> LU for LinAlgBuilder<'a, $scalar, Mat>
         where
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
@@ -165,9 +161,9 @@ macro_rules! lu_decomp_impl {
 }
 
 lu_decomp_impl!(f64, dgetrf, dgetrs);
-// lu_decomp_impl!(f32, sgetrf, sgetrs);
-// lu_decomp_impl!(c32, cgetrf, cgetrs);
-// lu_decomp_impl!(c64, zgetrf, zgetrs);
+lu_decomp_impl!(f32, sgetrf, sgetrs);
+lu_decomp_impl!(c32, cgetrf, cgetrs);
+lu_decomp_impl!(c64, zgetrf, zgetrs);
 
 #[cfg(test)]
 mod test {
@@ -179,8 +175,6 @@ mod test {
     use super::*;
     use rand_chacha::ChaCha8Rng;
     use rlst_dense::Dot;
-
-    use rlst_common::traits::*;
 
     #[test]
     fn test_lu_solve_f64() {
