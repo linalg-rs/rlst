@@ -37,11 +37,31 @@ mod test {
 
     use super::*;
     use crate::linalg::LinAlg;
-    use rlst_dense::rlst_rand_mat;
+    use approx::assert_ulps_eq;
+    use rand::prelude::*;
+    use rand_chacha::ChaCha8Rng;
+    use rlst_dense::rlst_col_vec;
+    use rlst_dense::rlst_mat;
 
     #[test]
-    fn svd_test() {
-        let mat = rlst_rand_mat![f64, (4, 3)];
-        println!("The norm is {}", mat.linalg().norm2().unwrap());
+    fn test_vector_norm() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+        let mut mat = rlst_col_vec![f64, 2];
+        mat.fill_from_equally_distributed(&mut rng);
+
+        let expected = (mat[[0, 0]] * mat[[0, 0]] + mat[[1, 0]] * mat[[1, 0]]).sqrt();
+        let actual = mat.linalg().norm2().unwrap();
+
+        assert_ulps_eq![expected, actual, max_ulps = 10];
+    }
+
+    #[test]
+    fn test_matrix_norm() {
+        let mut mat = rlst_mat![f64, (2, 2)];
+
+        mat[[0, 0]] = -1.0;
+        mat[[1, 1]] = 0.5;
+
+        assert_ulps_eq![mat.linalg().norm2().unwrap(), 1.0, max_ulps = 10];
     }
 }

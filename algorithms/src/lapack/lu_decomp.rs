@@ -133,6 +133,18 @@ macro_rules! lu_decomp_impl {
                     return Err(RlstError::IncompatibleStride);
                 } else {
                     let mat = &self.data.mat;
+
+                    if mat.shape().0 != rhs.shape().0 {
+                        return Err(RlstError::SingleDimensionError {
+                            expected: mat.shape().0,
+                            actual: rhs.shape().0,
+                        });
+                    }
+
+                    if rhs.shape().1 == 0 {
+                        return Err(RlstError::MatrixIsEmpty(rhs.shape()));
+                    }
+
                     let ldb = rhs.stride().1;
 
                     let info = unsafe {
@@ -168,6 +180,7 @@ lu_decomp_impl!(c64, zgetrf, zgetrs);
 #[cfg(test)]
 mod test {
     use approx::assert_relative_eq;
+    use approx::assert_ulps_eq;
     use rand::SeedableRng;
 
     use crate::linalg::LinAlg;
@@ -180,12 +193,6 @@ mod test {
     fn test_lu_solve_f64() {
         let mut rlst_mat = rlst_dense::rlst_mat![f64, (2, 2)];
         let mut rlst_vec = rlst_dense::rlst_col_vec![f64, 2];
-
-        println!(
-            "Stride: {}, {}",
-            rlst_mat.layout().stride().0,
-            rlst_mat.layout().stride().1
-        );
 
         rlst_mat[[0, 0]] = 1.0;
         rlst_mat[[0, 1]] = 1.0;
@@ -205,9 +212,8 @@ mod test {
 
         let x = rhs;
 
-        println!("Sol: {}, {}", x[[0, 0]], x[[1, 0]]);
-
-        //let lu_decomp = rlst_mat.algorithms().lapack().lu();
+        assert_ulps_eq![x[[0, 0]], 2.3, max_ulps = 10];
+        assert_ulps_eq![x[[1, 0]], 7.1, max_ulps = 10];
     }
 
     #[test]
