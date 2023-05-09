@@ -1,7 +1,7 @@
 //! Trait for LU Decomposition
 use crate::lapack::TransposeMode;
 pub use rlst_common::types::{IndexType, RlstError, RlstResult, Scalar};
-use rlst_dense::{DataContainerMut, GenericBaseMatrixMut, SizeIdentifier};
+use rlst_dense::{DataContainerMut, GenericBaseMatrixMut, SizeIdentifier, rlst_mat, rlst_rand_mat};
 
 pub trait QRDecompTrait {
     type T: Scalar;
@@ -10,10 +10,10 @@ pub trait QRDecompTrait {
 
     fn dim(&self) -> (IndexType, IndexType);
 
-    fn xormqr<
-    RhsData: DataContainerMut<Item = Self::T>,
-    RhsR: SizeIdentifier,
-    RhsC: SizeIdentifier,
+    fn q_x_rhs<
+        RhsData: DataContainerMut<Item = Self::T>,
+        RhsR: SizeIdentifier,
+        RhsC: SizeIdentifier,
     >(
         &mut self,
         rhs: &mut GenericBaseMatrixMut<Self::T, RhsData, RhsR, RhsC>,
