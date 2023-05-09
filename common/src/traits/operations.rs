@@ -24,13 +24,6 @@ pub trait Apply<Domain> {
     fn apply(&self, alpha: Self::T, x: &Domain, y: &mut Self::Out, beta: Self::T);
 }
 
-/// Compute the 2-norm of an object.
-pub trait Norm2 {
-    type T: Scalar;
-
-    fn norm2(&self) -> <Self::T as Scalar>::Real;
-}
-
 /// Compute the 1-norm of an object.
 pub trait Norm1 {
     type T: Scalar;
@@ -62,4 +55,11 @@ pub trait Dual {
     type Other;
 
     fn dual(&self, other: &Self::Other) -> Self::T;
+}
+
+/// Compute the sum of squares of the absolute values of the entries.
+pub trait SquareSum {
+    type T: Scalar;
+
+    fn square_sum(&self) -> <Self::T as Scalar>::Real;
 }

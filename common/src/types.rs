@@ -10,6 +10,8 @@ pub enum RlstError {
     NotImplemented(String),
     #[error("Operation {0} failed.")]
     OperationFailed(String),
+    #[error("Matrix has empty dimension {0:#?}.")]
+    MatrixIsEmpty((usize, usize)),
     #[error("Dimension mismatch. Expected {expected:}. Actual {actual:}")]
     SingleDimensionError { expected: usize, actual: usize },
     #[error("Index Layout error: {0}")]
