@@ -19,9 +19,6 @@ jobs:
         rust-version: ["stable", "beta", "nightly"]
         mpi: [ 'mpich', 'openmpi' ]
     steps:
-      - name: Install compilers and MPI
-        run: sudo apt-get install -y llvm-dev libclang-dev pkgconf ${{ matrix.mpi }}
-
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
