@@ -18,8 +18,8 @@ jobs:
       matrix:
         # rust-version: ["stable", "beta", "nightly"]
         # mpi: [ 'mpich', 'openmpi' ]
-        rust-version: ["stable"]
-        mpi: [ 'openmpi' ]
+        rust-version: ["stable","beta","nightly"]
+        mpi: ["mpich"]
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
