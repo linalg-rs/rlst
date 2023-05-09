@@ -16,23 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust-version: ["stable", "beta", "nightly"]
+        # rust-version: ["stable", "beta", "nightly"]
         # mpi: [ 'mpich', 'openmpi' ]
-        mpi: [ 'mpich' ]
+        rust-version: ["stable"]
+        mpi: [ 'openmpi' ]
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
+      - name: Install LAPACK & OpenBLAS
+        run: sudo apt-get install -y libopenblas-dev liblapack-dev libclang-dev
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
         with:
           mpi: ${{ matrix.mpi }}
       - name: Install cargo-mpirun
         run: cargo install cargo-mpirun
-      - name: Install LAPACK & OpenBLAS
-        run: sudo apt-get install -y libopenblas-dev liblapack-dev
 
       - uses: actions/checkout@v3
 

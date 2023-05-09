@@ -41,12 +41,12 @@ pub trait Imag: IndexableMatrix {
 
 /// Swap entries with another matrix.
 pub trait Swap: IndexableMatrix {
-    fn swap(&mut self, other: &mut Self) -> crate::types::SparseLinAlgResult<()>;
+    fn swap(&mut self, other: &mut Self) -> crate::types::RlstResult<()>;
 }
 
 /// Fill matrix by copying from another matrix.
 pub trait Fill: IndexableMatrix {
-    fn fill(&mut self, other: &Self) -> crate::types::SparseLinAlgResult<()>;
+    fn fill(&mut self, other: &Self) -> crate::types::RlstResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -60,7 +60,7 @@ pub trait MultSumInto: IndexableMatrix {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> crate::types::SparseLinAlgResult<()>;
+    ) -> crate::types::RlstResult<()>;
 }
 
 /// Compute y-> alpha A x + y
