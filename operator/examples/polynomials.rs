@@ -115,8 +115,8 @@ fn main() {}
 #[cfg(test)]
 mod tests {
     use crate::{
-        Derivative, PointwiseEvaluate, PointwiseEvaluatorSpace, Polynomial, PolynomialSpace,
-        OperatorBase, Element, DualSpace, AsApply
+        AsApply, Derivative, DualSpace, Element, OperatorBase, PointwiseEvaluate,
+        PointwiseEvaluatorSpace, Polynomial, PolynomialSpace,
     };
     use rlst_common::types::RlstResult;
 
