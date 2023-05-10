@@ -16,9 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # rust-version: ["stable", "beta", "nightly"]
-        # mpi: [ 'mpich', 'openmpi' ]
         rust-version: ["stable","beta","nightly"]
+        # mpi: [ 'mpich', 'openmpi' ]
         mpi: ["mpich"]
     steps:
       - name: Set up Rust

@@ -50,6 +50,10 @@ for file, example_name in files:
             cmd = "run"
             options = None
 
+    # TODO: remove this skip once https://github.com/linalg-rs/rlst/issues/19 is fixed
+    if example_name == "ghost_communicator":
+        continue
+
     command = f"cargo {cmd} --example {example_name} --release"
     if options is not None:
         command += f" {options}"
