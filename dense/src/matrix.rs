@@ -5,12 +5,12 @@
 //! to which all calls are forwarded. Implementations can represent more basic
 //! types, addition operations on matrices, scalar multiplications, or other
 //! types of implementations. The only condition is that the implementation itself
-//! implements [MatrixTrait] or [MatrixTraitMut].
+//! implements [MatrixImplTrait] or [MatrixImplTraitMut].
 //! A matrix is generic over the following parameters:
 //! - `Item`. Implements the [Scalar] trait and represents the underlying scalar type
 //!           of the matrix.
 //! - `MatImpl`. The actual implementation of the matrix. It must itself implement the
-//!              trait [MatrixTrait] or [MatrixTraitMut] depending on whether mutable access
+//!              trait [MatrixImplTrait] or [MatrixImplTraitMut] depending on whether mutable access
 //!              is required.
 //! - `L`. A given type that implements the [LayoutType] trait and specifies the memory layout
 //!        of the matrix.
@@ -19,19 +19,17 @@
 //! - `CS`. A type that implements [SizeType]  and specifies whether the column dimension is
 //!         known at compile time or dynamically at runtime.
 
-pub mod base_methods;
 pub mod common_impl;
 pub mod constructors;
+pub mod iterators;
 pub mod matrix_slices;
 pub mod random;
 
 use crate::base_matrix::BaseMatrix;
-use crate::data_container::{
-    ArrayContainer, DataContainer, SliceContainer, SliceContainerMut, VectorContainer,
-};
+use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, VectorContainer};
 use crate::matrix_ref::MatrixRef;
+use crate::traits::*;
 use crate::types::Scalar;
-use crate::{traits::*, DefaultLayout};
 use std::marker::PhantomData;
 
 /// A [RefMat] is a matrix whose implementation is a reference to another matrix.
@@ -42,10 +40,6 @@ pub type RefMat<'a, Item, MatImpl, RS, CS> =
 
 /// This type represents a generic matrix that depends on a [BaseMatrix] type.
 pub type GenericBaseMatrix<Item, Data, RS, CS> =
-    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>;
-
-/// Similar to a [GenericBaseMatrix] but with mutable access.
-pub type GenericBaseMatrixMut<Item, Data, RS, CS> =
     Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>;
 
 /// A [SliceMatrix] is defined by a [BaseMatrix] whose container stores a memory slice.
@@ -62,11 +56,11 @@ pub type MatrixD<Item> =
 
 /// A dynamic column vector. This means that the row dimension is dynamic and the column
 /// dimension is [Fixed1].
-pub type ColumnVectorD<Item> = GenericBaseMatrixMut<Item, VectorContainer<Item>, Dynamic, Fixed1>;
+pub type ColumnVectorD<Item> = GenericBaseMatrix<Item, VectorContainer<Item>, Dynamic, Fixed1>;
 
 /// A dynamic row vector. This means that the column dimension is dynamic and the row dimension
 /// is [Fixed1].
-pub type RowVectorD<Item> = GenericBaseMatrixMut<Item, VectorContainer<Item>, Fixed1, Dynamic>;
+pub type RowVectorD<Item> = GenericBaseMatrix<Item, VectorContainer<Item>, Fixed1, Dynamic>;
 
 /// A fixed 2x2 matrix.
 pub type Matrix22<Item> =
@@ -98,26 +92,4 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixTrait<Item, RS, CS>;
-
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, MatImpl: MatrixTrait<Item, RS, CS>>
-    Matrix<Item, MatImpl, RS, CS>
-{
-    pub fn new(mat: MatImpl) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData)
-    }
-
-    pub fn from_ref<'a>(
-        mat: &'a Matrix<Item, MatImpl, RS, CS>,
-    ) -> RefMat<'a, Item, MatImpl, RS, CS> {
-        RefMat::new(MatrixRef::new(mat))
-    }
-}
-
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<Item = Item>>
-    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>
-{
-    pub fn from_data(data: Data, layout: DefaultLayout) -> Self {
-        Self::new(BaseMatrix::<Item, Data, RS, CS>::new(data, layout))
-    }
-}
+    MatImpl: MatrixImplTrait<Item, RS, CS>;

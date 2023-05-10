@@ -37,7 +37,6 @@ pub mod examples;
 pub mod layouts;
 pub mod macros;
 pub mod matrix;
-pub mod tools;
 pub mod traits;
 pub mod types;
 

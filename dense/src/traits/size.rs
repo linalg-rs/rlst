@@ -1,6 +1,6 @@
 //! Definition of Size Traits.
 //!
-//! Each matrix in ```householder``` has two size identifiers, one for the rows
+//! Each matrix in RLST has two size identifiers, one for the rows
 //! and one for the columns. The size identifiers determine if a row/column
 //! size is fixed at compile time or dynamically determined at runtime.
 //! The [SizeType] trait implements this functionality. It has two associated types,

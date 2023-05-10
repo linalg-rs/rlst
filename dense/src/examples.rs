@@ -7,38 +7,32 @@
 //!
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5)];
+//! let mut mat = rlst_mat![f64, (3, 5)];
 //! ```
-//! The result is a row-major matrix. To define a column-major
-//! matrix we use
-//!
-//! ```
-//! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5), ColumnMajor];
-//! ```
+//! The result is a column-major matrix.
 //! A new column vector can be created by
 //! ```
 //! # use rlst_dense::*;
-//! let mut vec = vector![f64, 5];
+//! let mut vec = rlst_col_vec![f64, 5];
 //! ```
 //!
 //! For a row vector use
 //! ```
 //! # use rlst_dense::*;
-//! let mut vec = vector![f64, 5, RowVector];
+//! let mut vec = rlst_row_vec![f64, 5];
 //! ```
 //!
 //! A normally distributed random matrix is obtained as
 //! ```
 //! # use rlst_dense::*;
-//! let mat = rand_mat![f64, (3, 5)];
+//! let mat = rlst_rand_mat![f64, (3, 5)];
 //! ```
 //! This is identical to the following commands.
 //! ```
 //! # use rlst_dense::*;
 //! let mut rng = rand::thread_rng();
-//! let mut mat = mat![f64, (3, 5)];
-//! mat.fill_from_rand_standard_normal(&mut rng);
+//! let mut mat = rlst_mat![f64, (3, 5)];
+//! mat.fill_from_standard_normal(&mut rng);
 //! ```
 //! # Accessing entries
 //!
@@ -46,7 +40,7 @@
 //! with bounds checks in the following way.
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5)];
+//! let mut mat = rlst_mat![f64, (3, 5)];
 //! mat[[2, 3]] = 4.0;
 //! assert_eq!(mat[[2, 3]], 4.0);
 //! ```
@@ -56,20 +50,20 @@
 //! an exception.
 //! ```should_panic
 //! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5)];
+//! let mut mat = rlst_mat![f64, (3, 5)];
 //! mat[[3, 5]] = 4.0;
 //! ```
 //!
 //! ```should_panic
 //! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5)];
+//! let mut mat = rlst_mat![f64, (3, 5)];
 //! println!("Print out of bounds entry: {}",mat[[3, 5]]);
 //! ```
 //! Bounds checks are not always desired. We therefore also provide
 //! unsafe access routines.
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = mat![f64, (3, 5)];
+//! let mut mat = rlst_mat![f64, (3, 5)];
 //! unsafe {
 //!     *mat.get_unchecked_mut(2, 3) = 4.0;
 //!     assert_eq!(*mat.get_unchecked(2, 3), 4.0);
@@ -80,8 +74,9 @@
 //! Matrix/vector sums or products with a scalar are written as
 //! ```
 //! # use rlst_dense::*;
-//! let mat1 = rand_mat![f64, (3, 5)];
-//! let mat2 = rand_mat![f64, (3, 5)];
+//! # use rlst_common::traits::*;
+//! let mat1 = rlst_rand_mat![f64, (3, 5)];
+//! let mat2 = rlst_rand_mat![f64, (3, 5)];
 //! let sum = (3.0 * &mat1 + &mat2).eval();
 //! assert_eq!(sum[[2, 4]], 3.0 * mat1[[2, 4]] + mat2[[2, 4]]);
 //! ```
@@ -97,9 +92,9 @@
 //! the [matrixmultiply] crate.
 //! ```
 //! # use rlst_dense::*;
-//! let mat = rand_mat![f64, (3, 5)];
-//! let col_vec = rand_vector![f64, 5];
-//! let row_vec = rand_vector![f64, 3, RowVector];
+//! let mat = rlst_rand_mat![f64, (3, 5)];
+//! let col_vec = rlst_rand_col_vec![f64, 5];
+//! let row_vec = rlst_rand_row_vec![f64, 3];
 //! let res1 = mat.dot(&col_vec);
 //! let res2 = row_vec.dot(&mat);
 //! ```
@@ -108,7 +103,7 @@
 //! We can access a single subblock of a matrix as follows.
 //! ```
 //! # use rlst_dense::*;
-//! let mat = rand_mat![f64, (10, 10)];
+//! let mat = rlst_rand_mat![f64, (10, 10)];
 //! let block = mat.block((2, 2), (3, 5));
 //! assert_eq!(block[[2, 4]], mat[[4, 6]])
 //! ```
@@ -121,7 +116,8 @@
 //! with the method `mat.split_in_four_mut` as the following example demonstrates.
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = rand_mat![f64, (10, 10)];
+//! # use rlst_common::traits::*;
+//! let mut mat = rlst_rand_mat![f64, (10, 10)];
 //! let (mut m1, mut m2, mut m3, mut m4) = mat.split_in_four_mut((5, 5));
 //! m1[[1, 0]] = 2.0;
 //! m2[[3, 4]] = 3.0;

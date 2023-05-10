@@ -1,11 +1,19 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::matrix::{Matrix, MatrixD};
-use crate::types::{IndexType, Scalar};
+use crate::data_container::{DataContainer, DataContainerMut};
+use crate::matrix::Matrix;
+use crate::types::Scalar;
+use crate::GenericBaseMatrix;
 use crate::{traits::*, DefaultLayout};
+use num::traits::Zero;
+use rlst_common::traits::*;
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Layout for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Layout for Matrix<Item, MatImpl, RS, CS>
 {
     type Impl = DefaultLayout;
     fn layout(&self) -> &Self::Impl {
@@ -13,32 +21,76 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    SizeType for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Shape for Matrix<Item, MatImpl, RS, CS>
+{
+    fn shape(&self) -> (usize, usize) {
+        self.layout().dim()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Stride for Matrix<Item, MatImpl, RS, CS>
+{
+    fn stride(&self) -> (usize, usize) {
+        self.layout().stride()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > NumberOfElements for Matrix<Item, MatImpl, RS, CS>
+{
+    fn number_of_elements(&self) -> usize {
+        self.layout().number_of_elements()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SizeType for Matrix<Item, MatImpl, RS, CS>
 {
     type R = RS;
     type C = CS;
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
 {
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.0.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.0.get1d_value_unchecked(index)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessMut for Matrix<Item, MatImpl, RS, CS>
@@ -46,19 +98,19 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item {
+    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item {
         self.0.get_unchecked_mut(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
+    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get1d_unchecked_mut(index)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, RS, CS>
@@ -66,52 +118,60 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item {
         self.0.get_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get1d_unchecked(index)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::Index<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
+    > std::ops::Index<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
     type Output = Item;
 
-    fn index(&self, index: [IndexType; 2]) -> &Self::Output {
+    fn index(&self, index: [usize; 2]) -> &Self::Output {
         self.get(index[0], index[1]).unwrap()
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixTraitMut<Item, RS, CS> + MatrixTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS> + MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::ops::IndexMut<[IndexType; 2]> for Matrix<Item, MatImpl, RS, CS>
+    > std::ops::IndexMut<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
 {
-    fn index_mut(&mut self, index: [IndexType; 2]) -> &mut Self::Output {
+    fn index_mut(&mut self, index: [usize; 2]) -> &mut Self::Output {
         self.get_mut(index[0], index[1]).unwrap()
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Eval for Matrix<Item, MatImpl, RS, CS>
+where
+    Self: NewLikeSelf,
+    <Self as NewLikeSelf>::Out: Shape + RandomAccessMut<Item = Item>,
 {
-    /// Evaluate into a new matrix.
-    pub fn eval(self) -> MatrixD<Item> {
-        let dim = self.layout().dim();
-        let mut result = MatrixD::<Item>::zeros_from_dim(dim.0, dim.1);
+    type Out = <Self as NewLikeSelf>::Out;
+
+    fn eval(&self) -> Self::Out {
+        let mut result = self.new_like_self();
+        let shape = result.shape();
         unsafe {
-            for row in 0..dim.0 {
-                for col in 0..dim.1 {
+            for col in 0..shape.1 {
+                for row in 0..shape.0 {
                     *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
                 }
             }
@@ -120,93 +180,152 @@ impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: S
     }
 }
 
-// eval_implementation_dynamic!(Dynamic, Dynamic);
-// eval_implementation_dynamic!(Dynamic, Fixed1);
-// eval_implementation_dynamic!(Fixed1, Dynamic);
-
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>
-    Matrix<Item, MatImpl, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Copy for Matrix<Item, MatImpl, RS, CS>
+where
+    Self: Eval,
 {
-    /// Return dimension of the matrix.
-    pub fn dim(&self) -> (IndexType, IndexType) {
-        self.layout().dim()
+    type Out = <Self as Eval>::Out;
+
+    fn copy(&self) -> Self::Out {
+        self.eval()
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, Fixed1, Dynamic>>
-    Matrix<Item, MatImpl, Fixed1, Dynamic>
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
 {
-    /// Return length of a vector.
-    pub fn length(&self) -> IndexType {
-        self.layout().dim().1
+    type T = Item;
+    fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
+        for index in 0..self.layout().number_of_elements() {
+            unsafe { f(self.get1d_unchecked_mut(index)) }
+        }
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixTrait<Item, Dynamic, Fixed1>>
-    Matrix<Item, MatImpl, Dynamic, Fixed1>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccess for GenericBaseMatrix<Item, Data, RS, CS>
 {
-    /// Return length of a vector.
-    pub fn length(&self) -> IndexType {
-        self.layout().dim().0
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.get_slice(0, self.layout().number_of_elements())
     }
 }
 
-// macro_rules! eval_dynamic_matrix {
-//     ($L:ident) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, Dynamic, Dynamic>>
-//             Matrix<Item, MatImpl, $L, Dynamic, Dynamic>
-//         {
-//             pub fn eval(&self) -> MatrixD<Item, $L> {
-//                 let dim = self.dim();
-//                 let mut result = MatrixD::<Item, $L>::from_zeros(dim.0, dim.1);
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    fn get_pointer_mut(&mut self) -> *mut Item {
+        self.0.get_pointer_mut()
+    }
 
-// macro_rules! eval_fixed_matrix {
-//     ($L:ident, $RS:ty, $CS:ty) => {
-//         impl<Item: Scalar, MatImpl: MatrixTrait<Item, $L, $RS, $CS>>
-//             Matrix<Item, MatImpl, $L, $RS, $CS>
-//         {
-//             pub fn eval(
-//                 &self,
-//             ) -> Matrix<
-//                 Item,
-//                 BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                 $L,
-//                 $RS,
-//                 $CS,
-//             > {
-//                 let mut result = Matrix::<
-//                     Item,
-//                     BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $L, $RS, $CS>,
-//                     $L,
-//                     $RS,
-//                     $CS,
-//                 >::from_zeros();
-//                 for index in 0..self.number_of_elements() {
-//                     unsafe { *result.get1d_unchecked_mut(index) = self.get1d_unchecked(index) };
-//                 }
-//                 result
-//             }
-//         }
-//     };
-// }
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+        self.0.get_slice_mut(first, last)
+    }
 
-// eval_dynamic_matrix!(CLayout);
-// eval_dynamic_matrix!(FLayout);
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.0.get_slice_mut(0, self.layout().number_of_elements())
+    }
+}
 
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(CLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(CLayout, Fixed3, Fixed3);
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    ScaleInPlace for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
 
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed2);
-// eval_fixed_matrix!(FLayout, Fixed2, Fixed3);
-// eval_fixed_matrix!(FLayout, Fixed3, Fixed3);
+    fn scale_in_place(&mut self, alpha: Self::T) {
+        self.for_each(|elem| *elem = alpha * *elem);
+    }
+}
+
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        Data: DataContainerMut<Item = Item>,
+        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+    > FillFrom<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    fn fill_from(&mut self, other: &Other) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "Shapes do not agree. {:#?} != {:#?}",
+            self.shape(),
+            other.shape()
+        );
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe { *self.get_unchecked_mut(row, col) = other.get_value_unchecked(row, col) };
+            }
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        Data: DataContainerMut<Item = Item>,
+        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+    > SumInto<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+
+    fn sum_into(&mut self, alpha: Self::T, other: &Other) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "Shapes do not agree. {:#?} != {:#?}",
+            self.shape(),
+            other.shape()
+        );
+
+        for col in 0..self.shape().1 {
+            for row in 0..self.shape().0 {
+                unsafe {
+                    *self.get_unchecked_mut(row, col) += alpha * other.get_value_unchecked(row, col)
+                };
+            }
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SquareSum for Matrix<Item, MatImpl, RS, CS>
+{
+    type T = Item;
+    fn square_sum(&self) -> <Self::T as Scalar>::Real {
+        let shape = self.shape();
+
+        let mut result = <<Self::T as Scalar>::Real as Zero>::zero();
+        for col in 0..shape.1 {
+            for row in 0..shape.0 {
+                let value = unsafe { self.get_value_unchecked(row, col) };
+                result += value.square();
+            }
+        }
+        result
+    }
+}

@@ -2,19 +2,19 @@
 //!
 //! This module implements the matrix multiplication. The current implementation
 //! uses the [matrixmultiply] crate. To implement with this crate two traits are
-//! provided. A low-level trait [MatMul] matmul provides the method
-//! [matmul](MatMul::matmul), which
+//! provided. A low-level trait [MultiplyAdd] provides the method
+//! [multiply_add](MultiplyAdd::multiply_add), which
 //! performs `mat_c = alpha * mat_a * mat_b + beta * mat_c`, where `*` is to be
 //! understood as matrix multipolitcation. A higher level [Dot] trait implements
 //! the operation `mat_c = mat_a.dot(&mat_b)`. The latter allocates new memory,
 //! while the former relies on suitable memory being allocated.
 //!
-//! The [MatMul] trait is currently implemented for the product of two dynamic matrices,
+//! The [MultiplyAdd] trait is currently implemented for the product of two dynamic matrices,
 //! the product of a dynamic matrix with a vector, and the product of a row vector
 //! with a dynamic matrix.
 
 use crate::data_container::{DataContainer, DataContainerMut, VectorContainer};
-use crate::matrix::{GenericBaseMatrix, GenericBaseMatrixMut};
+use crate::matrix::GenericBaseMatrix;
 use crate::traits::*;
 use crate::types::*;
 
@@ -31,7 +31,7 @@ pub trait Dot<Rhs> {
 }
 
 /// This trait is an interface for the `dgemm` operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
-pub trait MatMul<
+pub trait MultiplyAdd<
     Item: Scalar,
     Data1: DataContainer<Item = Item>,
     Data2: DataContainer<Item = Item>,
@@ -45,12 +45,12 @@ pub trait MatMul<
 >
 {
     /// Perform the operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
-    fn matmul(
+    fn multiply_add(
         alpha: Item,
         mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
         mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrixMut<Item, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrix<Item, Data3, RS3, CS3>,
     );
 }
 
@@ -68,8 +68,8 @@ macro_rules! dot_impl {
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
                 let mut res =
-                    Self::Output::zeros_from_dim(self.layout().dim().0, rhs.layout().dim().1);
-                <$Scalar>::matmul(
+                    crate::rlst_mat!($Scalar, (self.layout().dim().0, rhs.layout().dim().1));
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -91,8 +91,8 @@ macro_rules! dot_impl {
                 &self,
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
             ) -> Self::Output {
-                let mut res = Self::Output::zeros_from_length(rhs.layout().dim().1);
-                <$Scalar>::matmul(
+                let mut res = crate::rlst_row_vec![$Scalar, rhs.layout().dim().1];
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -114,8 +114,8 @@ macro_rules! dot_impl {
                 &self,
                 rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>,
             ) -> Self::Output {
-                let mut res = Self::Output::zeros_from_length(self.layout().dim().0);
-                <$Scalar>::matmul(
+                let mut res = crate::rlst_col_vec![$Scalar, self.layout().dim().0];
+                <$Scalar>::multiply_add(
                     num::cast::<f64, $Scalar>(1.0).unwrap(),
                     &self,
                     rhs,
@@ -139,7 +139,7 @@ macro_rules! matmul_impl {
 >
 
 
-        MatMul<
+        MultiplyAdd<
             $Scalar,
             Data1,
             Data2,
@@ -154,12 +154,12 @@ macro_rules! matmul_impl {
 
         for $Scalar {
 
-            fn matmul(
+            fn multiply_add(
                 alpha: $Scalar,
                 mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                 mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                 beta: $Scalar,
-                mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
+                mat_c: &mut GenericBaseMatrix<$Scalar, Data3, $RS3, $CS3>
             ) {
                 let dim1 = mat_a.layout().dim();
                 let dim2 = mat_b.layout().dim();
@@ -216,7 +216,7 @@ macro_rules! matmul_impl {
     >
 
 
-            MatMul<
+            MultiplyAdd<
                 $Scalar,
                 Data1,
                 Data2,
@@ -231,12 +231,12 @@ macro_rules! matmul_impl {
 
             for $Scalar {
 
-                fn matmul(
+                fn multiply_add(
                     alpha: $Scalar,
                     mat_a: &GenericBaseMatrix<$Scalar, Data1, $RS1, $CS1>,
                     mat_b: &GenericBaseMatrix<$Scalar, Data2, $RS2, $CS2>,
                     beta: $Scalar,
-                    mat_c: &mut GenericBaseMatrixMut<$Scalar, Data3, $RS3, $CS3>
+                    mat_c: &mut GenericBaseMatrix<$Scalar, Data3, $RS3, $CS3>
                 ) {
                     let dim1 = mat_a.layout().dim();
                     let dim2 = mat_b.layout().dim();
@@ -319,10 +319,9 @@ dot_impl!(c64);
 mod test {
 
     use super::*;
-    use crate::matrix::*;
-    use crate::tools::RandScalar;
     use approx::assert_ulps_eq;
     use rand_distr::StandardNormal;
+    use rlst_common::tools::RandScalar;
 
     use rand::prelude::*;
 
@@ -353,8 +352,8 @@ mod test {
                 *mat_c.get_mut(m_index, n_index).unwrap() *= beta;
                 for k_index in 0..k {
                     *mat_c.get_mut(m_index, n_index).unwrap() += alpha
-                        * mat_a.get_value(m_index, k_index)
-                        * mat_b.get_value(k_index, n_index);
+                        * mat_a.get_value(m_index, k_index).unwrap()
+                        * mat_b.get_value(k_index, n_index).unwrap();
                 }
             }
         }
@@ -364,32 +363,33 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(6, 5);
-                let mut mat_c_actual = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
-                let mut mat_c_expect = MatrixD::<$Scalar>::zeros_from_dim(4, 5);
+                let mut mat_a = crate::rlst_mat!($Scalar, (4, 6));
+                let mut mat_b = crate::rlst_mat!($Scalar, (6, 5));
+                let mut mat_c_actual = crate::rlst_mat!($Scalar, (4, 5));
+                let mut mat_c_expect = crate::rlst_mat!($Scalar, (4, 5));
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() =
+                        mat_c_actual.get1d_value(index).unwrap();
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d_value(index);
-                    let val2 = mat_c_expect.get1d_value(index);
+                    let val1 = mat_c_actual.get1d_value(index).unwrap();
+                    let val2 = mat_c_expect.get1d_value(index).unwrap();
                     assert_ulps_eq!(&val1, &val2, max_ulps = 100);
                 }
             }
@@ -400,32 +400,33 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_b = ColumnVectorD::<$Scalar>::zeros_from_length(6);
-                let mut mat_c_actual = ColumnVectorD::<$Scalar>::zeros_from_length(4);
-                let mut mat_c_expect = ColumnVectorD::<$Scalar>::zeros_from_length(4);
+                let mut mat_a = crate::rlst_mat![$Scalar, (4, 6)];
+                let mut mat_b = crate::rlst_col_vec![$Scalar, 6];
+                let mut mat_c_actual = crate::rlst_col_vec![$Scalar, 4];
+                let mut mat_c_expect = crate::rlst_col_vec![$Scalar, 4];
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() =
+                        mat_c_actual.get1d_value(index).unwrap();
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d_value(index);
-                    let val2 = mat_c_expect.get1d_value(index);
+                    let val1 = mat_c_actual.get1d_value(index).unwrap();
+                    let val2 = mat_c_expect.get1d_value(index).unwrap();
                     assert_ulps_eq!(&val1, &val2, max_ulps = 100);
                 }
             }
@@ -436,33 +437,34 @@ mod test {
         ($Scalar:ty, $fname:ident) => {
             #[test]
             fn $fname() {
-                let mut mat_a = RowVectorD::<$Scalar>::zeros_from_length(4);
-                let mut mat_b = MatrixD::<$Scalar>::zeros_from_dim(4, 6);
-                let mut mat_c_actual = RowVectorD::<$Scalar>::zeros_from_length(6);
-                let mut mat_c_expect = RowVectorD::<$Scalar>::zeros_from_length(6);
+                let mut mat_a = crate::rlst_row_vec![$Scalar, 4];
+                let mut mat_b = crate::rlst_mat![$Scalar, (4, 6)];
+                let mut mat_c_actual = crate::rlst_row_vec![$Scalar, 6];
+                let mut mat_c_expect = crate::rlst_row_vec![$Scalar, 6];
 
                 let dist = StandardNormal;
 
                 let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-                mat_a.fill_from_rand_standard_normal(&mut rng);
-                mat_b.fill_from_rand_standard_normal(&mut rng);
-                mat_c_actual.fill_from_rand_standard_normal(&mut rng);
+                mat_a.fill_from_equally_distributed(&mut rng);
+                mat_b.fill_from_equally_distributed(&mut rng);
+                mat_c_actual.fill_from_equally_distributed(&mut rng);
 
                 for index in 0..mat_c_actual.layout().number_of_elements() {
-                    *mat_c_expect.get1d_mut(index).unwrap() = mat_c_actual.get1d_value(index);
+                    *mat_c_expect.get1d_mut(index).unwrap() =
+                        mat_c_actual.get1d_value(index).unwrap();
                 }
 
                 let alpha = <$Scalar>::random_scalar(&mut rng, &dist);
                 let beta = <$Scalar>::random_scalar(&mut rng, &dist);
 
                 matmul_expect(alpha, &mat_a, &mat_b, beta, &mut mat_c_expect);
-                <$Scalar>::matmul(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
+                <$Scalar>::multiply_add(alpha, &mat_a, &mat_b, beta, &mut mat_c_actual);
 
                 for index in 0..mat_c_expect.layout().number_of_elements() {
-                    let val1 = mat_c_actual.get1d_value(index);
-                    let val2 = mat_c_expect.get1d_value(index);
-                    assert_ulps_eq!(&val1, &val2, max_ulps = 100);
+                    let val1 = mat_c_actual.get1d_value(index).unwrap();
+                    let val2 = mat_c_expect.get1d_value(index).unwrap();
+                    assert_ulps_eq!(&val1, &val2, max_ulps = 10);
                 }
             }
         };

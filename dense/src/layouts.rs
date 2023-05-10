@@ -1,25 +1,60 @@
-//! This module combines different concrete memory layout types.
+//! Column major layout with arbitrary stride.
 //!
-//! Memory layouts implement the [LayoutType](crate::traits::LayoutType) trait
-//! and describe iteration order of matrix elements and their map to memory
-//! locations.
+//! This layout uses an arbitrary stride in memory with 1d indexing
+//! in column major order. For further information on memory layouts
+//! see [crate::traits::layout].
 
-// pub mod arbitrary_stride_column_major;
-// pub mod arbitrary_stride_column_vector;
-// pub mod arbitrary_stride_row_vector;
-// pub mod column_major;
-// pub mod column_vector;
-pub mod default_layout;
-// pub mod row_major;
-// pub mod row_vector;
-// pub mod upper_triangular;
+use crate::traits::*;
 
-// pub use arbitrary_stride_column_major::*;
-// pub use arbitrary_stride_column_vector::*;
-// pub use arbitrary_stride_row_vector::*;
-// pub use column_major::*;
-// pub use column_vector::*;
-pub use default_layout::*;
-// pub use row_major::*;
-// pub use row_vector::*;
-// pub use upper_triangular::*;
+pub struct DefaultLayout {
+    dim: (usize, usize),
+    stride: (usize, usize),
+}
+
+impl DefaultLayout {
+    pub fn new(dim: (usize, usize), stride: (usize, usize)) -> Self {
+        Self { dim, stride }
+    }
+}
+
+impl LayoutType for DefaultLayout {
+    #[inline]
+    fn convert_1d_2d(&self, index: usize) -> (usize, usize) {
+        (index % self.dim.0, index / self.dim.0)
+    }
+
+    #[inline]
+    fn convert_2d_1d(&self, row: usize, col: usize) -> usize {
+        col * self.dim.0 + row
+    }
+
+    #[inline]
+    fn convert_2d_raw(&self, row: usize, col: usize) -> usize {
+        self.stride.0 * row + self.stride.1 * col
+    }
+
+    #[inline]
+    fn convert_1d_raw(&self, index: usize) -> usize {
+        let (row, col) = self.convert_1d_2d(index);
+        self.convert_2d_raw(row, col)
+    }
+
+    #[inline]
+    fn dim(&self) -> (usize, usize) {
+        self.dim
+    }
+
+    #[inline]
+    fn stride(&self) -> (usize, usize) {
+        self.stride
+    }
+
+    #[inline]
+    fn number_of_elements(&self) -> usize {
+        self.dim.0 * self.dim.1
+    }
+
+    fn from_dimension(dim: (usize, usize), stride: (usize, usize)) -> Self {
+        Self { dim, stride }
+    }
+}

@@ -1,8 +1,7 @@
 //! Addition of two matrices.
 //!
 //! This module defines a type [AdditionMat] that represents the addition of two
-//! matrices. Two matrices can be added together if they have the same dimension and
-//! same index layout, meaning a 1d indexing traverses both matrices in the same order.
+//! matrices.
 
 use crate::matrix::*;
 use crate::matrix_ref::MatrixRef;
@@ -27,13 +26,13 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl1: MatrixTrait<Item, RS, CS>,
-    MatImpl2: MatrixTrait<Item, RS, CS>;
+    MatImpl1: MatrixImplTrait<Item, RS, CS>,
+    MatImpl2: MatrixImplTrait<Item, RS, CS>;
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -59,8 +58,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > Layout for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -74,8 +73,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > SizeType for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -86,8 +85,8 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByValue for Addition<Item, MatImpl1, MatImpl2, RS, CS>
@@ -95,24 +94,20 @@ impl<
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(
-        &self,
-        row: crate::types::IndexType,
-        col: crate::types::IndexType,
-    ) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.0.get_value_unchecked(row, col) + self.1.get_value_unchecked(row, col)
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: crate::types::IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.0.get1d_value_unchecked(index) + self.1.get1d_value_unchecked(index)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
@@ -127,8 +122,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
@@ -143,8 +138,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
@@ -159,8 +154,8 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixTrait<Item, RS, CS>,
-        MatImpl2: MatrixTrait<Item, RS, CS>,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
@@ -182,12 +177,12 @@ impl<
 
 mod test {
 
-    use super::*;
+    use rlst_common::traits::*;
 
     #[test]
     fn scalar_mult() {
-        let mut mat1 = MatrixD::<f64>::zeros_from_dim(2, 3);
-        let mut mat2 = MatrixD::<f64>::zeros_from_dim(2, 3);
+        let mut mat1 = crate::rlst_mat!(f64, (2, 3));
+        let mut mat2 = crate::rlst_mat!(f64, (2, 3));
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;

@@ -9,6 +9,9 @@ edition = "2021"
 num = "0.4"
 cauchy = "0.4"
 thiserror = "1"
+rand = "0.8"
+rand_distr = "0.4"
+
 
 [lib]
 name = "rlst_common"

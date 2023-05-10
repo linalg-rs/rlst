@@ -9,7 +9,7 @@
 //! [BaseMatrix] implementation.
 //!
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::types::{IndexType, Scalar};
+use crate::types::Scalar;
 use crate::{traits::*, DefaultLayout};
 use std::marker::PhantomData;
 
@@ -53,7 +53,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     }
 
     #[inline]
-    pub fn get_slice(&self, first: IndexType, last: IndexType) -> &[Item] {
+    pub fn get_slice(&self, first: usize, last: usize) -> &[Item] {
         self.data.get_slice(first, last)
     }
 }
@@ -67,7 +67,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
     }
 
     #[inline]
-    pub fn get_slice_mut(&mut self, first: IndexType, last: IndexType) -> &mut [Item] {
+    pub fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
         self.data.get_slice_mut(first, last)
     }
 }
@@ -96,13 +96,13 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(&self, row: IndexType, col: IndexType) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
         self.data
             .get_unchecked_value(self.layout.convert_2d_raw(row, col))
     }
 
     #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: IndexType) -> Self::Item {
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
         self.data
             .get_unchecked_value(self.layout.convert_1d_raw(index))
     }
@@ -114,13 +114,13 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, row: IndexType, col: IndexType) -> &Self::Item {
+    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item {
         self.data
             .get_unchecked(self.layout.convert_2d_raw(row, col))
     }
 
     #[inline]
-    unsafe fn get1d_unchecked(&self, index: IndexType) -> &Self::Item {
+    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item {
         self.data.get_unchecked(self.layout.convert_1d_raw(index))
     }
 }
@@ -131,13 +131,13 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, row: IndexType, col: IndexType) -> &mut Self::Item {
+    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item {
         self.data
             .get_unchecked_mut(self.layout.convert_2d_raw(row, col))
     }
 
     #[inline]
-    unsafe fn get1d_unchecked_mut(&mut self, index: IndexType) -> &mut Self::Item {
+    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.data
             .get_unchecked_mut(self.layout.convert_1d_raw(index))
     }
