@@ -1,28 +1,36 @@
-//! Trait for LU Decomposition
+//! Trait for QR Decomposition
 use crate::lapack::TransposeMode;
-pub use rlst_common::types::{IndexType, RlstError, RlstResult, Scalar};
-use rlst_dense::{DataContainerMut, GenericBaseMatrixMut, SizeIdentifier, rlst_mat, rlst_rand_mat};
+pub use rlst_common::types::{RlstError, RlstResult, Scalar};
+use rlst_dense::{RawAccessMut, Shape, Stride};
 
 pub trait QRDecompTrait {
     type T: Scalar;
 
     fn data(&self) -> &[Self::T];
 
-    fn dim(&self) -> (IndexType, IndexType);
+    fn shape(&self) -> (usize, usize);
 
-    fn q_x_rhs<
-        RhsData: DataContainerMut<Item = Self::T>,
-        RhsR: SizeIdentifier,
-        RhsC: SizeIdentifier,
-    >(
-        &mut self,
-        rhs: &mut GenericBaseMatrixMut<Self::T, RhsData, RhsR, RhsC>,
+    fn q_x_rhs<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+        &self,
+        rhs: &mut Rhs,
         trans: TransposeMode,
     ) -> RlstResult<()>;
 
-    fn solve<Data: DataContainerMut<Item = Self::T>, RhsR: SizeIdentifier, RhsC: SizeIdentifier>(
-        &mut self,
-        rhs: &mut GenericBaseMatrixMut<Self::T, Data, RhsR, RhsC>,
+    fn solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+        &self,
+        rhs: &mut Rhs,
+        trans: TransposeMode,
+    ) -> RlstResult<()>;
+}
+
+pub trait QR {
+    type T: Scalar;
+    type Out;
+
+    fn qr(self) -> RlstResult<Self::Out>;
+    fn solve_qr<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+        self,
+        rhs: &mut Rhs,
         trans: TransposeMode,
     ) -> RlstResult<()>;
 }
