@@ -31,6 +31,7 @@
 //! - [Matrix storage layouts](crate::layouts)
 //! - [The Matrix type](crate::matrix)
 //! - [Examples](crate::examples)
+#![cfg_attr(feature = "strict", deny(warnings))]
 
 pub mod data_container;
 pub mod examples;

@@ -115,9 +115,10 @@ fn main() {}
 #[cfg(test)]
 mod tests {
     use crate::{
-        Derivative, PointwiseEvaluate, PointwiseEvaluatorSpace, Polynomial, PolynomialSpace,
+        AsApply, Derivative, DualSpace, Element, OperatorBase, PointwiseEvaluate,
+        PointwiseEvaluatorSpace, Polynomial, PolynomialSpace,
     };
-    use sparse_traits::{AsApply, DualSpace, Element, OperatorBase, SparseLinAlgResult};
+    use rlst_common::types::RlstResult;
 
     #[test]
     fn test_poly_eval() {
@@ -126,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dual() -> SparseLinAlgResult<()> {
+    fn test_dual() -> RlstResult<()> {
         let ds = PointwiseEvaluatorSpace;
         let p = Polynomial::from_monomial(&[1., 2., 3.]);
         let n = PointwiseEvaluate::new(2.);
@@ -136,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn test_derivative() -> SparseLinAlgResult<()> {
+    fn test_derivative() -> RlstResult<()> {
         let p = Polynomial::from_monomial(&[1., 2., 3.]);
         let mut dp = Polynomial::from_monomial(&[1., 1., 1.]);
         let d_ = Derivative;
