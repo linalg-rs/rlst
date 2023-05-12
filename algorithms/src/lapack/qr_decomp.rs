@@ -1,6 +1,9 @@
+use crate::linalg::LinAlg;
+use crate::traits::trisolve_trait::Trisolve;
 use crate::{lapack::LapackData, traits::qr_decomp_trait::QR};
 use crate::traits::qr_decomp_trait::QRDecompTrait;
 use lapacke;
+use num::One;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{Shape, Stride, RawAccessMut, RawAccess};
 use rlst_common::traits::Copy;
@@ -30,7 +33,7 @@ Mat: RawAccessMut<T = T> + Shape + Stride,
 
 impl<'a, Mat: Copy> QR for DenseMatrixLinAlgBuilder<'a, f64, Mat>
 where
-    <Mat as Copy>::Out: RawAccessMut<T=f64> + Shape + Stride
+    <Mat as Copy>::Out: RawAccessMut<T=f64> + Shape + Stride,
 {
     type T = f64;
     type Out = QRDecompLapack<f64, <Mat as Copy>::Out>;
@@ -65,46 +68,79 @@ where
 
     
 
-    fn solve_qr<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+    fn qr_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         self,
         rhs: &mut Rhs,
         trans: TransposeMode,
     ) -> RlstResult<()> {
-        if !check_lapack_stride(rhs.shape(), rhs.stride()) {
-            return Err(RlstError::IncompatibleStride);
+        //TODO: add a check for m>n?
+        let mut copied = self.into_lapack()?;
+        let dim = copied.mat.shape();
+        let stride = copied.mat.stride();
+
+        let m = dim.0 as i32;
+        let n = dim.1 as i32;
+        let lda = stride.1 as i32;
+        let ldb = rhs.stride().1;
+        let nrhs = rhs.shape().1;
+
+        let info = unsafe {
+            lapacke::dgels(
+                lapacke::Layout::ColumnMajor,
+                trans as u8,
+                m,
+                n,
+                nrhs as i32,
+                copied.mat.data_mut(),
+                lda,
+                rhs.data_mut(),
+                ldb as i32,
+            )
+        };
+
+        if info != 0 {
+            return Err(RlstError::LapackError(info));
         } else {
-            //TODO: add a check for m>n?
-            let mut copied = self.into_lapack()?;
-            let dim = copied.mat.shape();
-            let stride = copied.mat.stride();
-
-            let m = dim.0 as i32;
-            let n = dim.1 as i32;
-            let lda = stride.1 as i32;
-            let ldb = rhs.stride().1;
-            let nrhs = rhs.shape().1;
-
-            let info = unsafe {
-                lapacke::dgels(
-                    lapacke::Layout::ColumnMajor,
-                    trans as u8,
-                    m,
-                    n,
-                    nrhs as i32,
-                    copied.mat.data_mut(),
-                    lda,
-                    rhs.data_mut(),
-                    ldb as i32,
-                )
-            };
-
-            if info != 0 {
-                return Err(RlstError::LapackError(info));
-            } else {
-                Ok(())
-            }
+            Ok(())
         }
     }
+
+// solve qr in qr decomp
+    // fn solve_qr<Qr:QRDecompTrait<T=Self::T>>(
+    //     &self,
+    //     qr: &mut Qr,
+    //     trans: TransposeMode,
+    // ) -> RlstResult<()> {
+    //         // let mat = &self.data.mat;
+    //         // let mut copied = self.into_lapack()?;
+    //         let n = qr.shape().1 as i32;
+    //         let lda = qr.stride().1 as i32;
+    //         let nrhs = self.mat.shape().1 as i32;
+    //         let ldb = self.mat.stride().1 as i32;
+
+    //         qr.q_x_rhs(&mut self.mat, trans).unwrap();
+    //         qr.get_r()?.linalg().trisolve(&mut self.mat, TriangularType::Upper, TriangularDiagonal::NonUnit, trans);
+    //         // let info = unsafe {
+    //         //     lapacke::dtrtrs(
+    //         //         lapacke::Layout::ColumnMajor,
+    //         //         TriangularType::Upper as u8,
+    //         //         trans as u8,
+    //         //         TriangularDiagonal::NonUnit as u8,
+    //         //         n,
+    //         //         nrhs,
+    //         //         qr.data(),
+    //         //         lda,
+    //         //         copied.mat.data_mut(),
+    //         //         ldb,
+    //         //     )
+    //         // };
+
+    //         // if info != 0 {
+    //         //     return Err(RlstError::LapackError(info));
+    //         // } else {
+    //         //     Ok(())
+    //         // }
+    // }
 ///// Returns the QR decomposition of the input matrix using column pivoting (LAPACK xGEQP3).
     ///// # Arguments
     ///// * `jpvt'
@@ -212,7 +248,6 @@ impl<
         + Stride
         + std::ops::Index<[usize; 2], Output = f64>
         + std::ops::IndexMut<[usize; 2], Output = f64>
-        + RawAccess<T = f64>,
     > QRDecompTrait
     for QRDecompLapack<f64, Mat>
 {
@@ -226,19 +261,21 @@ impl<
         self.data.mat.shape()
     }
 
+    fn stride(&self) -> (usize, usize) {
+        self.data.mat.stride()
+    }
+
     /// Returns Q*RHS
     fn q_x_rhs<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         &self,
-        rhs: &mut Rhs,
+        mut rhs: Rhs,
         trans: TransposeMode,
-    ) -> RlstResult<()> {
+    ) -> RlstResult<Rhs> {
         if !check_lapack_stride(rhs.shape(), rhs.stride()) {
             return Err(RlstError::IncompatibleStride);
         } else {
-            let rhs_dim = rhs.shape();
-
-            let m = rhs_dim.0 as i32;
-            let n = rhs_dim.1 as i32;
+            let m = rhs.shape().0 as i32;
+            let n = rhs.shape().1 as i32;
             let lda = self.data.mat.stride().1 as i32;
             let ldc = rhs.stride().1 as i32;
 
@@ -260,52 +297,45 @@ impl<
             if info != 0 {
                 return Err(RlstError::LapackError(info));
             }
-            Ok(())
+            Ok(rhs)
         }
     }
 
-    fn solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
-        &self,
-        rhs: &mut Rhs,
-        trans: TransposeMode,
-    ) -> RlstResult<()> {
-        if !check_lapack_stride(rhs.shape(), rhs.stride()) {
-            return Err(RlstError::IncompatibleStride);
-        } else {
-            // let mat = &self.data.mat;
-            let dim = self.data.mat.shape();
-            let stride = self.data.mat.stride();
+    fn get_q(&self) -> RlstResult<MatrixD<Self::T>> {
+        let shape = self.shape();
+        let mut mat = rlst_mat!(Self::T, (self.shape().0, self.shape().0));
 
-            let m = dim.0 as i32;
-            let n = dim.1 as i32;
-            let lda = stride.1 as i32;
-            let ldb = rhs.stride().1 as i32;
-            let nrhs = rhs.shape().1 as i32;
+        for index in 0..self.shape().0 {
+            mat[[index, index]] = <Self::T as One>::one();
+        }
+        self.q_x_rhs(mat, TransposeMode::NoTrans)
+    }
 
-            self.q_x_rhs(rhs, trans).unwrap();
+    fn get_r(&self) -> RlstResult<MatrixD<Self::T>> {
+        let shape = self.shape();
+        let dim = std::cmp::min(shape.0, shape.1);
+        let mut mat = rlst_mat!(Self::T, (dim, shape.1));
 
-            let info = unsafe {
-                lapacke::dtrtrs(
-                    lapacke::Layout::ColumnMajor,
-                    TriangularType::Upper as u8,
-                    trans as u8,
-                    TriangularDiagonal::NonUnit as u8,
-                    n,
-                    nrhs,
-                    self.data(),
-                    lda,
-                    rhs.data_mut(),
-                    ldb,
-                )
-            };
-
-            if info != 0 {
-                return Err(RlstError::LapackError(info));
-            } else {
-                Ok(())
+        for row in 0..dim {
+            for col in row..shape.1 {
+                mat[[row, col]] = self.data.mat[[row, col]];
             }
         }
+        Ok(mat)
     }
+    fn solve_qr<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+        &self,
+        mut rhs: Rhs,
+        trans: TransposeMode,
+    ) -> RlstResult<Rhs> {
+            rhs = self.q_x_rhs(rhs, TransposeMode::Trans)?;
+            self.get_r()?.linalg().trisolve(
+                rhs, 
+                TriangularType::Upper, 
+                TriangularDiagonal::NonUnit, 
+                trans)
+    }
+
 }
 
 // impl QRDecompTrait
@@ -418,8 +448,6 @@ mod test {
         rlst_mat, rlst_col_vec, Dot
     };
 
-    // TODO Why does this need to be 10k ULPS? Should switch to epsilon
-
     #[macro_export]
     macro_rules! assert_approx_matrices {
         ($expected_matrix:expr, $actual_matrix:expr) => {{
@@ -482,7 +510,7 @@ mod test {
                 // get full Q
                 let mut matrix_q = rlst_mat![$scalar, ($m, $m)];
                 matrix_q.data_mut().copy_from_slice(expected_i.data());
-                qr.q_x_rhs(&mut matrix_q, TransposeMode::NoTrans).unwrap();
+                matrix_q = qr.q_x_rhs(matrix_q, TransposeMode::NoTrans).unwrap();
 
                 let mut matrix_q_t = rlst_mat![$scalar, (matrix_q.shape().1, matrix_q.shape().0)];
                 for row in 0..matrix_q.shape().0 {
@@ -538,16 +566,16 @@ mod test {
                 if info != 0 {
                     panic!("DLACPY failed, code {}", info);
                 }
-                qr.q_x_rhs(&mut matrix_r, TransposeMode::NoTrans).unwrap();
+                matrix_r = qr.q_x_rhs(matrix_r, TransposeMode::NoTrans).unwrap();
 
                 assert_approx_matrices!(expected_a, matrix_r);
             }
         };
     }
     //TODO: m and n should probably be in test cases not separate macros
-    test_qr_solve!(f64, solve_qr, test_solve_qr_f64, 4, 4);
+    test_qr_solve!(f64, qr_and_solve, test_solve_qr_f64, 4, 4);
     // test_qr_solve!(f64, solve_qr_pivot, test_solve_qr_pivot_f64, 4, 4);
-    test_qr_solve!(f64, solve_qr, test_solve_ls_qr_f64, 4, 3);
+    test_qr_solve!(f64, qr_and_solve, test_solve_ls_qr_f64, 4, 3);
     // test_qr_solve!(f64, solve_qr_pivot, test_solve_ls_qr_pivot_f64, 4, 3);
 
     test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3);
@@ -581,7 +609,7 @@ mod test {
         // get full Q
         let mut matrix_q = rlst_mat![f64, (m, m)];
         matrix_q.data_mut().copy_from_slice(expected_i.data());
-        qr.q_x_rhs(&mut matrix_q, TransposeMode::NoTrans).unwrap();
+        matrix_q = qr.q_x_rhs(matrix_q, TransposeMode::NoTrans).unwrap();
 
         let mut matrix_q_t = rlst_mat![f64, (matrix_q.shape().1, matrix_q.shape().0)];
         for row in 0..matrix_q.shape().0 {
@@ -606,21 +634,23 @@ mod test {
         let m = 4;
         let n = 3;
         let matrix_a = rlst_dense::rlst_rand_mat![f64, (m, n)];
-        // TODO: this should be rlst_rand_vec but for some reason that doesn't work and I couldn't figure out why
         let exp_sol = rlst_dense::rlst_rand_col_vec![f64, n];
         let mut rhs = matrix_a.dot(&exp_sol);
 
-        let _ = matrix_a
+        let rhs = matrix_a
             .linalg()
             .qr()
             .unwrap()
-            .solve(&mut rhs, TransposeMode::NoTrans);
+            .solve_qr(rhs, TransposeMode::NoTrans).unwrap();
 
-        println!("expected sol");
-        print_matrix(&exp_sol);
-        println!("actual sol");
-        print_matrix(&rhs);
-        assert_approx_matrices!(&exp_sol, &rhs);
+        let mut actual_sol = rlst_col_vec!(f64, n);
+        actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, n));
+
+        // println!("expected sol");
+        // print_matrix(&exp_sol);
+        // println!("actual sol");
+        // print_matrix(&actual_sol);
+        assert_approx_matrices!(&exp_sol, &actual_sol);
     }
 
     fn print_matrix<
