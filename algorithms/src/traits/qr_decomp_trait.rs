@@ -12,14 +12,16 @@ pub trait QRDecompTrait {
 
     fn stride(&self) -> (usize, usize);
 
-    fn q_x_rhs<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+    fn q_mult<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         &self,
         rhs: Rhs,
         trans: TransposeMode,
     ) -> RlstResult<Rhs>;
 
     fn get_q(&self) -> RlstResult<MatrixD<Self::T>>;
+
     fn get_r(&self) -> RlstResult<MatrixD<Self::T>>;
+
     fn solve_qr<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         &self,
         rhs: Rhs,
@@ -34,13 +36,15 @@ pub trait QR {
     fn qr(self) -> RlstResult<Self::Out>;
     fn qr_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         self,
-        rhs: &mut Rhs,
+        rhs: Rhs,
         trans: TransposeMode,
-    ) -> RlstResult<()>;
+    ) -> RlstResult<(Rhs)>;
 
-    // fn solve_qr<Qr:QRDecompTrait<T=Self::T>>(
-    //     &self,
-    //     qr: &mut Qr,
+    // fn qr_col_pivot(self) -> RlstResult<Self::Out>;
+    // fn qr_col_pivot_free_cols(self,jpvt: Vec<i32>) -> RlstResult<Self::Out>;
+    // fn qr_col_pivot_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+    //     self,
+    //     rhs: Rhs,
     //     trans: TransposeMode,
     // ) -> RlstResult<()>;
 }

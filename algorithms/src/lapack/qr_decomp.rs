@@ -70,9 +70,9 @@ where
 
     fn qr_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         self,
-        rhs: &mut Rhs,
+        mut rhs: Rhs,
         trans: TransposeMode,
-    ) -> RlstResult<()> {
+    ) -> RlstResult<(Rhs)> {
         //TODO: add a check for m>n?
         let mut copied = self.into_lapack()?;
         let dim = copied.mat.shape();
@@ -101,46 +101,10 @@ where
         if info != 0 {
             return Err(RlstError::LapackError(info));
         } else {
-            Ok(())
+            Ok(rhs)
         }
     }
 
-// solve qr in qr decomp
-    // fn solve_qr<Qr:QRDecompTrait<T=Self::T>>(
-    //     &self,
-    //     qr: &mut Qr,
-    //     trans: TransposeMode,
-    // ) -> RlstResult<()> {
-    //         // let mat = &self.data.mat;
-    //         // let mut copied = self.into_lapack()?;
-    //         let n = qr.shape().1 as i32;
-    //         let lda = qr.stride().1 as i32;
-    //         let nrhs = self.mat.shape().1 as i32;
-    //         let ldb = self.mat.stride().1 as i32;
-
-    //         qr.q_x_rhs(&mut self.mat, trans).unwrap();
-    //         qr.get_r()?.linalg().trisolve(&mut self.mat, TriangularType::Upper, TriangularDiagonal::NonUnit, trans);
-    //         // let info = unsafe {
-    //         //     lapacke::dtrtrs(
-    //         //         lapacke::Layout::ColumnMajor,
-    //         //         TriangularType::Upper as u8,
-    //         //         trans as u8,
-    //         //         TriangularDiagonal::NonUnit as u8,
-    //         //         n,
-    //         //         nrhs,
-    //         //         qr.data(),
-    //         //         lda,
-    //         //         copied.mat.data_mut(),
-    //         //         ldb,
-    //         //     )
-    //         // };
-
-    //         // if info != 0 {
-    //         //     return Err(RlstError::LapackError(info));
-    //         // } else {
-    //         //     Ok(())
-    //         // }
-    // }
 ///// Returns the QR decomposition of the input matrix using column pivoting (LAPACK xGEQP3).
     ///// # Arguments
     ///// * `jpvt'
@@ -266,7 +230,7 @@ impl<
     }
 
     /// Returns Q*RHS
-    fn q_x_rhs<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+    fn q_mult<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
         &self,
         mut rhs: Rhs,
         trans: TransposeMode,
@@ -308,13 +272,13 @@ impl<
         for index in 0..self.shape().0 {
             mat[[index, index]] = <Self::T as One>::one();
         }
-        self.q_x_rhs(mat, TransposeMode::NoTrans)
+        self.q_mult(mat, TransposeMode::NoTrans)
     }
 
     fn get_r(&self) -> RlstResult<MatrixD<Self::T>> {
         let shape = self.shape();
         let dim = std::cmp::min(shape.0, shape.1);
-        let mut mat = rlst_mat!(Self::T, (dim, shape.1));
+        let mut mat = rlst_mat!(Self::T, (shape.0, shape.1));
 
         for row in 0..dim {
             for col in row..shape.1 {
@@ -328,7 +292,7 @@ impl<
         mut rhs: Rhs,
         trans: TransposeMode,
     ) -> RlstResult<Rhs> {
-            rhs = self.q_x_rhs(rhs, TransposeMode::Trans)?;
+            rhs = self.q_mult(rhs, TransposeMode::Trans)?;
             self.get_r()?.linalg().trisolve(
                 rhs, 
                 TriangularType::Upper, 
@@ -469,24 +433,17 @@ mod test {
             #[test]
             fn $name() {
                 let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                // TODO: this should be rlst_rand_vec but for some reason that doesn't work and I couldn't figure out why
                 let mut exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
-                // let mut rng = ChaCha8Rng::seed_from_u64(0);
-                // exp_sol.fill_from_equally_distributed(&mut rng);
                 let mut rhs = matrix_a.dot(&exp_sol);
 
-                let _ = matrix_a
+                let rhs = matrix_a
                     .linalg()
-                    .$solver(&mut rhs, TransposeMode::NoTrans)
+                    .$solver(rhs, TransposeMode::NoTrans)
                     .unwrap();
 
                 let mut actual_sol = rlst_col_vec!($scalar, $n);
                 actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
 
-                // println!("expected sol");
-                // print_matrix(&exp_sol);
-                // println!("actual sol");
-                // print_matrix(&actual_sol);
                 assert_approx_matrices!(&exp_sol, &actual_sol);
             }
         };
@@ -497,78 +454,58 @@ mod test {
             #[test]
             fn $name() {
                 let rlst_mat = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-
-                println!("A");
-                print_matrix(&rlst_mat);
                 let mut qr = rlst_mat.linalg().$qr().unwrap();
 
                 let mut expected_i = rlst_mat!($scalar,($m, $m));
                 for i in 0..$m {
-                    expected_i[[i, i]] = 1.;
+                    expected_i[[i, i]] = <$scalar as One>::one();
                 }
 
-                // get full Q
-                let mut matrix_q = rlst_mat![$scalar, ($m, $m)];
-                matrix_q.data_mut().copy_from_slice(expected_i.data());
-                matrix_q = qr.q_x_rhs(matrix_q, TransposeMode::NoTrans).unwrap();
-
+                let mut matrix_q = qr.get_q().unwrap();
                 let mut matrix_q_t = rlst_mat![$scalar, (matrix_q.shape().1, matrix_q.shape().0)];
                 for row in 0..matrix_q.shape().0 {
                     for col in 0..matrix_q.shape().1 {
                         matrix_q_t[[col, row]] = matrix_q[[row, col]];
                     }
                 }
-                // println!("Q");
-                // print_matrix(&matrix_q);
-                // println!("QT");
-                // print_matrix(&matrix_q_t);
 
                 let actual_i_t = matrix_q_t.dot(&matrix_q);
-                println!("QT*Q");
-                print_matrix(&actual_i_t);
-                print_matrix(&expected_i);
                 assert_approx_matrices!(&expected_i, &actual_i_t);
             }
         };
     }
 
-    macro_rules! test_qr_decomp {
+    macro_rules! test_qr_is_a {
         ($scalar:ty, $qr_decomp:ident, $name:ident, $m:literal, $n:literal) => {
             #[test]
             fn $name() {
                 let expected_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
                 let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
                 rlst_mat.data_mut().copy_from_slice(expected_a.data());
-                // GenericBaseMatrixMut::new(BaseMatrix::new(DataContainerMut{}, layout))
+
                 let mut qr = rlst_mat.linalg().$qr_decomp().unwrap();
+                let mut matrix_r = qr.get_r().unwrap();
+                let mut matrix_q = qr.get_q().unwrap();
+                let actual_a = matrix_q.dot(&matrix_r);
 
-                let dim = qr.data.mat.shape();
-                let stride = qr.data.mat.stride();
-                let m = dim.0 as i32;
-                let n = dim.1 as i32;
-                let lda = stride.1 as i32;
-                let ldb = lda;
+                assert_approx_matrices!(expected_a, actual_a);
+            }
+        };
+    }
 
-                let mut matrix_r = rlst_dense::rlst_mat![$scalar, (m as usize, n as usize)];
-                //R=upper triangle of qr
-                let info = unsafe {
-                    lapacke::dlacpy(
-                        lapacke::Layout::ColumnMajor,
-                        TriangularType::Upper as u8,
-                        m,
-                        n,
-                        qr.data(),
-                        lda,
-                        matrix_r.data_mut(),
-                        ldb,
-                    )
-                };
-                if info != 0 {
-                    panic!("DLACPY failed, code {}", info);
-                }
-                matrix_r = qr.q_x_rhs(matrix_r, TransposeMode::NoTrans).unwrap();
+    macro_rules! test_q_mult_r_is_a {
+        ($scalar:ty, $qr_decomp:ident, $name:ident, $m:literal, $n:literal) => {
+            #[test]
+            fn $name() {
+                let expected_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
+                let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
+                rlst_mat.data_mut().copy_from_slice(expected_a.data());
 
-                assert_approx_matrices!(expected_a, matrix_r);
+                let mut qr = rlst_mat.linalg().$qr_decomp().unwrap();
+                let mut matrix_r = qr.get_r().unwrap();
+                let actual_a = qr.q_mult(matrix_r, TransposeMode::NoTrans).unwrap();
+
+                assert_approx_matrices!(&expected_a, &actual_a);
             }
         };
     }
@@ -581,8 +518,11 @@ mod test {
     test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3);
     // test_q_unitary!(f64, qr_col_pivot, test_q_pivot_unitary_f64, 4, 3);
 
-    test_qr_decomp!(f64, qr, test_qr_decomp_f64, 4, 3);
-    test_qr_decomp!(f64, qr, test_qr_pivot_decomp_f64, 40, 30);
+    test_qr_is_a!(f64, qr, test_qr_decomp_f64, 4, 3);
+    test_qr_is_a!(f64, qr, test_qr_pivot_decomp_f64, 40, 30);
+
+    test_q_mult_r_is_a!(f64, qr, test_q_mult_r_is_a_f64,4,3);
+    // test_q_mult_r_is_a!(f64, qr_col_pivot, test_q_pivot_mult_r_is_a_f64,4,3);
 
     #[test]
     fn test_q_unitary_from_array() {
@@ -597,8 +537,6 @@ mod test {
         ];
         let mut rlst_mat = rlst_mat![f64,(m,n)];
         rlst_mat.data_mut().clone_from_slice(&data);
-        println!("A");
-        print_matrix(&rlst_mat);
         let mut qr = rlst_mat.linalg().qr().unwrap();
 
         let mut expected_i = rlst_mat![f64,(m, m)];
@@ -607,9 +545,7 @@ mod test {
         }
 
         // get full Q
-        let mut matrix_q = rlst_mat![f64, (m, m)];
-        matrix_q.data_mut().copy_from_slice(expected_i.data());
-        matrix_q = qr.q_x_rhs(matrix_q, TransposeMode::NoTrans).unwrap();
+        let mut matrix_q= qr.get_q().unwrap();
 
         let mut matrix_q_t = rlst_mat![f64, (matrix_q.shape().1, matrix_q.shape().0)];
         for row in 0..matrix_q.shape().0 {
@@ -617,15 +553,8 @@ mod test {
                 matrix_q_t[[col, row]] = matrix_q[[row, col]];
             }
         }
-        println!("Q");
-        print_matrix(&matrix_q);
-        println!("QT");
-        print_matrix(&matrix_q_t);
 
         let actual_i_t = matrix_q_t.dot(&matrix_q);
-        println!("QT*Q");
-        print_matrix(&actual_i_t);
-        print_matrix(&expected_i);
         assert_approx_matrices!(&expected_i, &actual_i_t);
     }
 
@@ -645,11 +574,6 @@ mod test {
 
         let mut actual_sol = rlst_col_vec!(f64, n);
         actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, n));
-
-        // println!("expected sol");
-        // print_matrix(&exp_sol);
-        // println!("actual sol");
-        // print_matrix(&actual_sol);
         assert_approx_matrices!(&exp_sol, &actual_sol);
     }
 
