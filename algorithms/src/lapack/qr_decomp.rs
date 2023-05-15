@@ -269,7 +269,7 @@ mod test {
     }
 
     macro_rules! test_q_unitary {
-        ($scalar:ty, $qr:ident, $name:ident, $m:literal, $n:literal) => {
+        ($scalar:ty, $qr:ident, $name:ident, $m:literal, $n:literal, $trans:ident) => {
             #[test]
             fn $name() {
                 let rlst_mat = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
@@ -281,14 +281,8 @@ mod test {
                 }
 
                 let mut matrix_q = qr.get_q().unwrap();
-                let mut matrix_q_t = rlst_mat![$scalar, (matrix_q.shape().1, matrix_q.shape().0)];
-                for row in 0..matrix_q.shape().0 {
-                    for col in 0..matrix_q.shape().1 {
-                        matrix_q_t[[col, row]] = matrix_q[[row, col]];
-                    }
-                }
 
-                let actual_i_t = matrix_q_t.dot(&matrix_q);
+                let actual_i_t = qr.q_mult(matrix_q,TransposeMode::$trans).unwrap();
                 assert_approx_matrices!(&expected_i, &actual_i_t, 1000.*<$scalar as AbsDiffEq>::default_epsilon());
             }
         };
@@ -352,22 +346,22 @@ mod test {
         };
     }
     test_qr_solve!(f64, qr_and_solve, test_solve_ls_qr_f64, 4, 3);
-    test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3);
+    test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3, Trans);
     test_qr_is_a!(f64, qr, test_qr_decomp_f64, 4, 3);
     test_q_mult_r_is_a!(f64, qr, test_q_mult_r_is_a_f64,4,3);
     test_qr_decomp_and_solve!(f64, qr, test_qr_decomp_and_solve_f64,4,3);
     test_qr_solve!(f32, qr_and_solve, test_solve_ls_qr_f32, 4, 3);
-    test_q_unitary!(f32, qr, test_q_unitary_f32, 4, 3);
+    test_q_unitary!(f32, qr, test_q_unitary_f32, 4, 3, Trans);
     test_qr_is_a!(f32, qr, test_qr_decomp_f32, 4, 3);
     test_q_mult_r_is_a!(f32, qr, test_q_mult_r_is_a_f32,4,3);
     test_qr_decomp_and_solve!(f32, qr, test_qr_decomp_and_solve_f32,4,3);
     test_qr_solve!(c32, qr_and_solve, test_solve_ls_qr_c32, 4, 3);
-    // test_q_unitary!(c32, qr, test_q_unitary_c32, 4, 3);
+    test_q_unitary!(c32, qr, test_q_unitary_c32, 4, 3, ConjugateTrans);
     test_qr_is_a!(c32, qr, test_qr_decomp_c32, 4, 3);
     test_q_mult_r_is_a!(c32, qr, test_q_mult_r_is_a_c32,4,3);
     test_qr_decomp_and_solve!(c32, qr, test_qr_decomp_and_solve_c32,4,3);
     test_qr_solve!(c64, qr_and_solve, test_solve_ls_qr_c64, 4, 3);
-    // test_q_unitary!(c64, qr, test_q_unitary_c64, 4, 3);
+    test_q_unitary!(c64, qr, test_q_unitary_c64, 4, 3, ConjugateTrans);
     test_qr_is_a!(c64, qr, test_qr_decomp_c64, 4, 3);
     test_q_mult_r_is_a!(c64, qr, test_q_mult_r_is_a_c64,4,3);
     test_qr_decomp_and_solve!(c64, qr, test_qr_decomp_and_solve_c64,4,3);
