@@ -1,3 +1,5 @@
+//? mpirun -n {{NPROCESSES}} --features "mpi"
+
 use approx::assert_ulps_eq;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;

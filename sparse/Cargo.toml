@@ -29,3 +29,4 @@ name = "rlst_sparse"
 [features]
 default = ["mpi","mpi-sys"]
 mpi = ["dep:mpi"]
+strict = []
