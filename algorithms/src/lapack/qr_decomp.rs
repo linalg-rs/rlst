@@ -1,23 +1,23 @@
 use crate::linalg::LinAlg;
+use crate::traits::qr_decomp_trait::QRTrait;
 use crate::traits::trisolve_trait::Trisolve;
 use crate::{lapack::LapackData, traits::qr_decomp_trait::QRDecomposableTrait};
-use crate::traits::qr_decomp_trait::QRTrait;
 use lapacke;
-use num::{Zero,One};
-use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{Shape, Stride, RawAccessMut, RawAccess};
+use num::{One, Zero};
 use rlst_common::traits::Copy;
+use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{
-    rlst_mat,rlst_col_vec, ColumnVectorD, DataContainerMut, GenericBaseMatrix, MatrixD, Layout,
-    LayoutType, SizeIdentifier,
+    rlst_col_vec, rlst_mat, ColumnVectorD, DataContainerMut, GenericBaseMatrix, Layout, LayoutType,
+    MatrixD, SizeIdentifier,
+};
+use rlst_dense::{RawAccess, RawAccessMut, Shape, Stride};
+
+use super::{
+    check_lapack_stride, DenseMatrixLinAlgBuilder, SideMode, TransposeMode, TriangularDiagonal,
+    TriangularType,
 };
 
-use super::{check_lapack_stride, SideMode, TransposeMode, TriangularDiagonal, TriangularType, DenseMatrixLinAlgBuilder};
-
-pub struct QRDecompLapack<
-    T: Scalar,
-    Mat: RawAccessMut<T = T> + Shape + Stride,
-> {
+pub struct QRDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     data: LapackData<T, Mat>,
     tau: Vec<T>,
 }
@@ -26,12 +26,12 @@ macro_rules! qr_decomp_impl {
     ($scalar:ty, $lapack_qr:ident, $lapack_qr_solve:ident, $lapack_qmut:ident, $trans:ident) => {
         impl<'a, Mat: Copy> QRDecomposableTrait for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
-            <Mat as Copy>::Out: RawAccessMut<T=$scalar> + Shape + Stride,
+            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
             type T = $scalar;
             type Out = QRDecompLapack<$scalar, <Mat as Copy>::Out>;
             /// Returns the QR decomposition of the input matrix assuming full rank and using LAPACK xGEQRF
-            fn qr(self) -> RlstResult<QRDecompLapack<$scalar,<Mat as Copy>::Out>> {
+            fn qr(self) -> RlstResult<QRDecompLapack<$scalar, <Mat as Copy>::Out>> {
                 let mut copied = self.into_lapack()?;
                 let dim = copied.mat.shape();
                 let stride = copied.mat.stride();
@@ -39,7 +39,8 @@ macro_rules! qr_decomp_impl {
                 let m = dim.0 as i32;
                 let n = dim.1 as i32;
                 let lda = stride.1 as i32;
-                let mut tau: Vec<$scalar> = vec![<$scalar as Zero>::zero(); std::cmp::min(dim.0, dim.1)];
+                let mut tau: Vec<$scalar> =
+                    vec![<$scalar as Zero>::zero(); std::cmp::min(dim.0, dim.1)];
 
                 let info = unsafe {
                     lapacke::$lapack_qr(
@@ -58,8 +59,6 @@ macro_rules! qr_decomp_impl {
                     return Err(RlstError::LapackError(info));
                 }
             }
-
-            
 
             fn qr_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
                 self,
@@ -99,13 +98,12 @@ macro_rules! qr_decomp_impl {
         }
 
         impl<
-            Mat: RawAccessMut<T = $scalar>
-                + Shape
-                + Stride
-                + std::ops::Index<[usize; 2], Output = $scalar>
-                + std::ops::IndexMut<[usize; 2], Output = $scalar>
-            > QRTrait
-            for QRDecompLapack<$scalar, Mat>
+                Mat: RawAccessMut<T = $scalar>
+                    + Shape
+                    + Stride
+                    + std::ops::Index<[usize; 2], Output = $scalar>
+                    + std::ops::IndexMut<[usize; 2], Output = $scalar>,
+            > QRTrait for QRDecompLapack<$scalar, Mat>
         {
             type T = $scalar;
 
@@ -185,21 +183,22 @@ macro_rules! qr_decomp_impl {
                 mut rhs: Rhs,
                 trans: TransposeMode,
             ) -> RlstResult<Rhs> {
-                    rhs = self.q_mult(rhs, TransposeMode::$trans)?;
-                    self.get_r()?.linalg().trisolve(
-                        rhs, 
-                        TriangularType::Upper, 
-                        TriangularDiagonal::NonUnit, 
-                        trans)
+                rhs = self.q_mult(rhs, TransposeMode::$trans)?;
+                self.get_r()?.linalg().trisolve(
+                    rhs,
+                    TriangularType::Upper,
+                    TriangularDiagonal::NonUnit,
+                    trans,
+                )
             }
         }
-    }
+    };
 }
 
-qr_decomp_impl!(f32,sgeqrf,sgels,sormqr,Trans);
-qr_decomp_impl!(f64,dgeqrf,dgels,dormqr,Trans);
-qr_decomp_impl!(c32,cgeqrf,cgels,cunmqr,ConjugateTrans);
-qr_decomp_impl!(c64,zgeqrf,zgels,zunmqr,ConjugateTrans);
+qr_decomp_impl!(f32, sgeqrf, sgels, sormqr, Trans);
+qr_decomp_impl!(f64, dgeqrf, dgels, dormqr, Trans);
+qr_decomp_impl!(c32, cgeqrf, cgels, cunmqr, ConjugateTrans);
+qr_decomp_impl!(c64, zgeqrf, zgels, zunmqr, ConjugateTrans);
 
 #[cfg(test)]
 mod test {
@@ -209,9 +208,7 @@ mod test {
 
     use super::*;
     use approx::{assert_abs_diff_eq, AbsDiffEq};
-    use rlst_dense::{
-        rlst_mat, rlst_col_vec, Dot
-    };
+    use rlst_dense::{rlst_col_vec, rlst_mat, Dot};
 
     #[macro_export]
     macro_rules! assert_approx_matrices {
@@ -222,7 +219,7 @@ mod test {
                     assert_abs_diff_eq!(
                         $actual_matrix[[row, col]],
                         $expected_matrix[[row, col]],
-                        epsilon=$epsilon
+                        epsilon = $epsilon
                     );
                 }
             }
@@ -230,7 +227,7 @@ mod test {
     }
 
     // fn assert_approx_matrices<T,Mat>(expected_matrix: Mat, actual_matrix: Mat, epsilon:T)
-    //     where 
+    //     where
     //         T: Scalar + AbsDiffEq<Epsilon=T>,
     //         Mat: Shape + Index<[usize; 2], Output=T>
     //     {
@@ -245,7 +242,6 @@ mod test {
     //             }
     //         }
     //     }
-    
 
     macro_rules! test_qr_solve {
         ($scalar:ty, $solver:ident, $name:ident, $m:literal, $n:literal) => {
@@ -263,7 +259,11 @@ mod test {
                 let mut actual_sol = rlst_col_vec!($scalar, $n);
                 actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
 
-                assert_approx_matrices!(&exp_sol, &actual_sol,1000.*<$scalar as AbsDiffEq>::default_epsilon());
+                assert_approx_matrices!(
+                    &exp_sol,
+                    &actual_sol,
+                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
+                );
             }
         };
     }
@@ -275,15 +275,19 @@ mod test {
                 let rlst_mat = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
                 let mut qr = rlst_mat.linalg().$qr().unwrap();
 
-                let mut expected_i = rlst_mat!($scalar,($m, $m));
+                let mut expected_i = rlst_mat!($scalar, ($m, $m));
                 for i in 0..$m {
                     expected_i[[i, i]] = <$scalar as One>::one();
                 }
 
                 let mut matrix_q = qr.get_q().unwrap();
 
-                let actual_i_t = qr.q_mult(matrix_q,TransposeMode::$trans).unwrap();
-                assert_approx_matrices!(&expected_i, &actual_i_t, 1000.*<$scalar as AbsDiffEq>::default_epsilon());
+                let actual_i_t = qr.q_mult(matrix_q, TransposeMode::$trans).unwrap();
+                assert_approx_matrices!(
+                    &expected_i,
+                    &actual_i_t,
+                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
+                );
             }
         };
     }
@@ -301,7 +305,11 @@ mod test {
                 let mut matrix_q = qr.get_q().unwrap();
                 let actual_a = matrix_q.dot(&matrix_r);
 
-                assert_approx_matrices!(expected_a, actual_a, 1000.*<$scalar as AbsDiffEq>::default_epsilon());
+                assert_approx_matrices!(
+                    expected_a,
+                    actual_a,
+                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
+                );
             }
         };
     }
@@ -318,7 +326,11 @@ mod test {
                 let mut matrix_r = qr.get_r().unwrap();
                 let actual_a = qr.q_mult(matrix_r, TransposeMode::NoTrans).unwrap();
 
-                assert_approx_matrices!(&expected_a, &actual_a, 1000.*<$scalar as AbsDiffEq>::default_epsilon());
+                assert_approx_matrices!(
+                    &expected_a,
+                    &actual_a,
+                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
+                );
             }
         };
     }
@@ -331,40 +343,44 @@ mod test {
                 let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
                 let mut rhs = matrix_a.dot(&exp_sol);
 
-
                 let rhs = matrix_a
                     .linalg()
                     .$qr_decomp()
                     .unwrap()
-                    .solve_qr(rhs, TransposeMode::NoTrans).unwrap();
+                    .solve_qr(rhs, TransposeMode::NoTrans)
+                    .unwrap();
 
                 let mut actual_sol = rlst_col_vec!($scalar, $n);
                 actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
 
-                assert_approx_matrices!(&exp_sol, &actual_sol, 1000.*<$scalar as AbsDiffEq>::default_epsilon());
+                assert_approx_matrices!(
+                    &exp_sol,
+                    &actual_sol,
+                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
+                );
             }
         };
     }
     test_qr_solve!(f64, qr_and_solve, test_solve_ls_qr_f64, 4, 3);
     test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3, Trans);
     test_qr_is_a!(f64, qr, test_qr_decomp_f64, 4, 3);
-    test_q_mult_r_is_a!(f64, qr, test_q_mult_r_is_a_f64,4,3);
-    test_qr_decomp_and_solve!(f64, qr, test_qr_decomp_and_solve_f64,4,3);
+    test_q_mult_r_is_a!(f64, qr, test_q_mult_r_is_a_f64, 4, 3);
+    test_qr_decomp_and_solve!(f64, qr, test_qr_decomp_and_solve_f64, 4, 3);
     test_qr_solve!(f32, qr_and_solve, test_solve_ls_qr_f32, 4, 3);
     test_q_unitary!(f32, qr, test_q_unitary_f32, 4, 3, Trans);
     test_qr_is_a!(f32, qr, test_qr_decomp_f32, 4, 3);
-    test_q_mult_r_is_a!(f32, qr, test_q_mult_r_is_a_f32,4,3);
-    test_qr_decomp_and_solve!(f32, qr, test_qr_decomp_and_solve_f32,4,3);
+    test_q_mult_r_is_a!(f32, qr, test_q_mult_r_is_a_f32, 4, 3);
+    test_qr_decomp_and_solve!(f32, qr, test_qr_decomp_and_solve_f32, 4, 3);
     test_qr_solve!(c32, qr_and_solve, test_solve_ls_qr_c32, 4, 3);
     test_q_unitary!(c32, qr, test_q_unitary_c32, 4, 3, ConjugateTrans);
     test_qr_is_a!(c32, qr, test_qr_decomp_c32, 4, 3);
-    test_q_mult_r_is_a!(c32, qr, test_q_mult_r_is_a_c32,4,3);
-    test_qr_decomp_and_solve!(c32, qr, test_qr_decomp_and_solve_c32,4,3);
+    test_q_mult_r_is_a!(c32, qr, test_q_mult_r_is_a_c32, 4, 3);
+    test_qr_decomp_and_solve!(c32, qr, test_qr_decomp_and_solve_c32, 4, 3);
     test_qr_solve!(c64, qr_and_solve, test_solve_ls_qr_c64, 4, 3);
     test_q_unitary!(c64, qr, test_q_unitary_c64, 4, 3, ConjugateTrans);
     test_qr_is_a!(c64, qr, test_qr_decomp_c64, 4, 3);
-    test_q_mult_r_is_a!(c64, qr, test_q_mult_r_is_a_c64,4,3);
-    test_qr_decomp_and_solve!(c64, qr, test_qr_decomp_and_solve_c64,4,3);
+    test_q_mult_r_is_a!(c64, qr, test_q_mult_r_is_a_c64, 4, 3);
+    test_qr_decomp_and_solve!(c64, qr, test_qr_decomp_and_solve_c64, 4, 3);
 
     fn print_matrix<
         T: Scalar,

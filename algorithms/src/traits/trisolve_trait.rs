@@ -1,7 +1,7 @@
 use rlst_common::types::{RlstResult, Scalar};
 use rlst_dense::{RawAccessMut, Shape, Stride};
 
-use crate::lapack::{TriangularType, TriangularDiagonal, TransposeMode};
+use crate::lapack::{TransposeMode, TriangularDiagonal, TriangularType};
 
 pub trait Trisolve {
     type T: Scalar;
@@ -11,6 +11,6 @@ pub trait Trisolve {
         rhs: Rhs,
         tritype: TriangularType,
         tridiag: TriangularDiagonal,
-        trans: TransposeMode
+        trans: TransposeMode,
     ) -> RlstResult<Rhs>;
 }

@@ -1,7 +1,7 @@
 //! Trait for QR Decomposition
 use crate::lapack::TransposeMode;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{RawAccessMut, Shape, Stride, MatrixD};
+use rlst_dense::{MatrixD, RawAccessMut, Shape, Stride};
 
 pub trait QRTrait {
     type T: Scalar;
