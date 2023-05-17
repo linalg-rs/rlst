@@ -1,0 +1,56 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
+{
+  // A name for the dev container displayed in the UI.
+  "name": "Debian 11 (Bullseye) container for RLST development",
+  "build": {
+    // The location of a Dockerfile that defines the contents of the container.
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  // Add capabilities that are typically disabled for a container. Most often used to add the ptrace capability required to debug languages like C++, Go, and Rust.
+  "capAdd": [
+    "SYS_PTRACE"
+  ],
+  // Set container security options
+  "securityOpt": [
+    "seccomp=unconfined"
+  ],
+  // Use 'mounts' to make the cargo cache persistent in a Docker Volume.
+  "mounts": [
+   {
+     "source": "devcontainer-cargo-cache-${devcontainerId}",
+     "target": "/usr/local/cargo",
+     "type": "volume"
+   }
+  ],
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    // "ghcr.io/devcontainers/features/git:1": {} // // build the version corresponding to the default feature defined for current os image
+    // "ghcr.io/devcontainers/features/git": "2.39" // build a newer version of git from source
+    // "ghcr.io/devcontainers/features/git": "latest" // build a newer version of git from source
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": "rustc --version",
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Set *default* container specific settings.json values on container create.
+      "settings": {},
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  }
+
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}
+
