@@ -235,7 +235,6 @@ mod test {
                     .$solver(rhs, TransposeMode::NoTrans)
                     .unwrap();
 
-
                 let mut actual_sol = rlst_col_vec!($scalar, $n);
                 actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
 

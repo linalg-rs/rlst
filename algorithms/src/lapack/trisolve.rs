@@ -66,9 +66,7 @@ trisolve_impl!(c64, ztrtrs);
 #[cfg(test)]
 mod test {
     use num::Zero;
-    use rlst_dense::{
-        rlst_rand_col_vec, rlst_rand_mat, Dot,
-    };
+    use rlst_dense::{rlst_rand_col_vec, rlst_rand_mat, Dot};
 
     use super::*;
     use crate::{assert_approx_matrices, linalg::LinAlg};
