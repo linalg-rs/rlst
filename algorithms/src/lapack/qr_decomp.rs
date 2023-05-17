@@ -6,10 +6,7 @@ use lapacke;
 use num::{One, Zero};
 use rlst_common::traits::Copy;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{
-    rlst_col_vec, rlst_mat, ColumnVectorD, DataContainerMut, GenericBaseMatrix, Layout, LayoutType,
-    MatrixD, SizeIdentifier,
-};
+use rlst_dense::{rlst_mat, MatrixD};
 use rlst_dense::{RawAccess, RawAccessMut, Shape, Stride};
 
 use super::{
@@ -26,7 +23,7 @@ macro_rules! qr_decomp_impl {
     ($scalar:ty, $lapack_qr:ident, $lapack_qr_solve:ident, $lapack_qmut:ident, $trans:ident) => {
         impl<'a, Mat: Copy> QRDecomposableTrait for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
+            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + RawAccess<T = $scalar> + Shape + Stride,
         {
             type T = $scalar;
             type Out = QRDecompLapack<$scalar, <Mat as Copy>::Out>;
@@ -64,7 +61,7 @@ macro_rules! qr_decomp_impl {
                 self,
                 mut rhs: Rhs,
                 trans: TransposeMode,
-            ) -> RlstResult<(Rhs)> {
+            ) -> RlstResult<Rhs> {
                 let mut copied = self.into_lapack()?;
                 let dim = copied.mat.shape();
                 let stride = copied.mat.stride();
@@ -156,7 +153,6 @@ macro_rules! qr_decomp_impl {
             }
 
             fn get_q(&self) -> RlstResult<MatrixD<Self::T>> {
-                let shape = self.shape();
                 let mut mat = rlst_mat!(Self::T, (self.shape().0, self.shape().0));
 
                 for index in 0..self.shape().0 {
@@ -201,7 +197,7 @@ qr_decomp_impl!(c32, cgeqrf, cgels, cunmqr, ConjugateTrans);
 qr_decomp_impl!(c64, zgeqrf, zgels, zunmqr, ConjugateTrans);
 
 #[cfg(test)]
-mod test {
+mod test {    
     use std::ops::Index;
 
     use crate::linalg::LinAlg;
@@ -248,8 +244,8 @@ mod test {
             #[test]
             fn $name() {
                 let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let mut exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
-                let mut rhs = matrix_a.dot(&exp_sol);
+                let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
+                let rhs = matrix_a.dot(&exp_sol);
 
                 let rhs = matrix_a
                     .linalg()
@@ -273,14 +269,14 @@ mod test {
             #[test]
             fn $name() {
                 let rlst_mat = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let mut qr = rlst_mat.linalg().$qr().unwrap();
+                let qr = rlst_mat.linalg().$qr().unwrap();
 
                 let mut expected_i = rlst_mat!($scalar, ($m, $m));
                 for i in 0..$m {
                     expected_i[[i, i]] = <$scalar as One>::one();
                 }
 
-                let mut matrix_q = qr.get_q().unwrap();
+                let matrix_q = qr.get_q().unwrap();
 
                 let actual_i_t = qr.q_mult(matrix_q, TransposeMode::$trans).unwrap();
                 assert_approx_matrices!(
@@ -300,9 +296,9 @@ mod test {
                 let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
                 rlst_mat.data_mut().copy_from_slice(expected_a.data());
 
-                let mut qr = rlst_mat.linalg().$qr_decomp().unwrap();
-                let mut matrix_r = qr.get_r().unwrap();
-                let mut matrix_q = qr.get_q().unwrap();
+                let qr = rlst_mat.linalg().$qr_decomp().unwrap();
+                let matrix_r = qr.get_r().unwrap();
+                let matrix_q = qr.get_q().unwrap();
                 let actual_a = matrix_q.dot(&matrix_r);
 
                 assert_approx_matrices!(
@@ -322,8 +318,8 @@ mod test {
                 let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
                 rlst_mat.data_mut().copy_from_slice(expected_a.data());
 
-                let mut qr = rlst_mat.linalg().$qr_decomp().unwrap();
-                let mut matrix_r = qr.get_r().unwrap();
+                let qr = rlst_mat.linalg().$qr_decomp().unwrap();
+                let matrix_r = qr.get_r().unwrap();
                 let actual_a = qr.q_mult(matrix_r, TransposeMode::NoTrans).unwrap();
 
                 assert_approx_matrices!(
@@ -341,7 +337,7 @@ mod test {
             fn $name() {
                 let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
                 let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
-                let mut rhs = matrix_a.dot(&exp_sol);
+                let rhs = matrix_a.dot(&exp_sol);
 
                 let rhs = matrix_a
                     .linalg()
@@ -384,11 +380,9 @@ mod test {
 
     fn print_matrix<
         T: Scalar,
-        Data: DataContainerMut<Item = T>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
+        Mat: Index<[usize;2], Output = T> + Shape
     >(
-        matrix: &GenericBaseMatrix<T, Data, RS, CS>,
+        matrix: &Mat,
     ) {
         for row in 0..matrix.shape().0 {
             for col in 0..matrix.shape().1 {

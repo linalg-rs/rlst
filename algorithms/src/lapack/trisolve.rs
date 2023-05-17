@@ -67,7 +67,7 @@ trisolve_impl!(c64, ztrtrs);
 mod test {
     use num::Zero;
     use rlst_dense::{
-        rlst_rand_col_vec, rlst_rand_mat, DataContainerMut, Dot, GenericBaseMatrix, SizeIdentifier,
+        rlst_rand_col_vec, rlst_rand_mat, Dot,
     };
 
     use super::*;
