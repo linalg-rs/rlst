@@ -197,7 +197,8 @@ qr_decomp_impl!(c32, cgeqrf, cgels, cunmqr, ConjugateTrans);
 qr_decomp_impl!(c64, zgeqrf, zgels, zunmqr, ConjugateTrans);
 
 #[cfg(test)]
-mod test {    
+mod test {
+    #![allow(unused_imports)]
     use std::ops::Index;
 
     use crate::linalg::LinAlg;
@@ -222,23 +223,6 @@ mod test {
         }};
     }
 
-    // fn assert_approx_matrices<T,Mat>(expected_matrix: Mat, actual_matrix: Mat, epsilon:T)
-    //     where
-    //         T: Scalar + AbsDiffEq<Epsilon=T>,
-    //         Mat: Shape + Index<[usize; 2], Output=T>
-    //     {
-    //         assert_eq!(expected_matrix.shape(), actual_matrix.shape());
-    //         for row in 0..expected_matrix.shape().0 {
-    //             for col in 0..expected_matrix.shape().1 {
-    //                 assert_abs_diff_eq!(
-    //                     actual_matrix[[row, col]],
-    //                     expected_matrix[[row, col]],
-    //                     epsilon=epsilon
-    //                 );
-    //             }
-    //         }
-    //     }
-
     macro_rules! test_qr_solve {
         ($scalar:ty, $solver:ident, $name:ident, $m:literal, $n:literal) => {
             #[test]
@@ -246,11 +230,11 @@ mod test {
                 let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
                 let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
                 let rhs = matrix_a.dot(&exp_sol);
-
                 let rhs = matrix_a
                     .linalg()
                     .$solver(rhs, TransposeMode::NoTrans)
                     .unwrap();
+
 
                 let mut actual_sol = rlst_col_vec!($scalar, $n);
                 actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
@@ -377,18 +361,4 @@ mod test {
     test_qr_is_a!(c64, qr, test_qr_decomp_c64, 4, 3);
     test_q_mult_r_is_a!(c64, qr, test_q_mult_r_is_a_c64, 4, 3);
     test_qr_decomp_and_solve!(c64, qr, test_qr_decomp_and_solve_c64, 4, 3);
-
-    fn print_matrix<
-        T: Scalar,
-        Mat: Index<[usize;2], Output = T> + Shape
-    >(
-        matrix: &Mat,
-    ) {
-        for row in 0..matrix.shape().0 {
-            for col in 0..matrix.shape().1 {
-                print!("{:.3} ", matrix[[row, col]]);
-            }
-            println!();
-        }
-    }
 }
