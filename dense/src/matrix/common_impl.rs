@@ -329,3 +329,59 @@ impl<
         result
     }
 }
+
+#[cfg(test)]
+mod test {
+    // use crate::rlst_rand_mat;
+    // use rlst_common::types::c64;
+    use rlst_common::tools::ToMatDisplayWrapper;
+
+    #[test]
+    fn test_display_dense_real_3x1() {
+        let mut rlst_vec_real_3x1 = crate::rlst_col_vec![f64, 3];
+
+        rlst_vec_real_3x1[[0, 0]] = 2.3;
+        rlst_vec_real_3x1[[1, 0]] = 7.1;
+        rlst_vec_real_3x1[[2, 0]] = -143.175;
+        println!("{}", rlst_vec_real_3x1.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_real_3x2() {
+        let mut rlst_mat_real_3x2 = crate::rlst_mat![f64, (3, 2)];
+
+        rlst_mat_real_3x2[[0, 0]] = 2.3;
+        rlst_mat_real_3x2[[0, 1]] = -64.28;
+        rlst_mat_real_3x2[[1, 0]] = 7.1;
+        rlst_mat_real_3x2[[1, 1]] = -137.16;
+        rlst_mat_real_3x2[[2, 0]] = -143.175;
+        rlst_mat_real_3x2[[2, 1]] = 8962.7904;
+        println!("{}", rlst_mat_real_3x2.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_real_4x4() {
+        let mut rlst_mat_real_4x4 = crate::rlst_mat![f64, (4, 4)];
+
+        rlst_mat_real_4x4[[0, 0]] = -42.389645;
+        rlst_mat_real_4x4[[0, 1]] = -974917292.0000328;
+        rlst_mat_real_4x4[[0, 2]] = 14.0;
+        rlst_mat_real_4x4[[0, 3]] = 810.98;
+        rlst_mat_real_4x4[[1, 0]] = 78324674.1;
+        rlst_mat_real_4x4[[1, 1]] = 1437.769999;
+        rlst_mat_real_4x4[[1, 2]] = 3648726.0;
+        rlst_mat_real_4x4[[1, 3]] = -19823.64921768;
+        rlst_mat_real_4x4[[2, 0]] = -14378721.175;
+        rlst_mat_real_4x4[[2, 1]] = 8962.7904;
+        rlst_mat_real_4x4[[2, 2]] = -123.456;
+        rlst_mat_real_4x4[[2, 3]] = -100_000_000.0;
+        rlst_mat_real_4x4[[3, 0]] = 5.3e12;
+        rlst_mat_real_4x4[[3, 1]] = -123_456_789.101_1;
+        rlst_mat_real_4x4[[3, 2]] = 999_999_999_999.00;
+        rlst_mat_real_4x4[[3, 3]] = 0.0;
+        println!("{}", rlst_mat_real_4x4.to_stdout());
+        assert!(true);
+    }
+}
