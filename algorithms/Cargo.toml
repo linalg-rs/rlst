@@ -18,7 +18,7 @@ lapacke = { version = "0.5"}
 lapack-src = { version = "0.8", features = ["openblas"]}
 rand_chacha = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
-openblas-src = { features = ["system"], optional = true }
+openblas-src = { version = "0.10", features = ["system"], optional = true }
 
 [dev-dependencies]
 cauchy = "0.4"
