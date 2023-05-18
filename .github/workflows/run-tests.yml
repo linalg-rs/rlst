@@ -40,9 +40,9 @@ jobs:
       - name: Build OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz openblas
+          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
           rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          cd openblas
+          cd OpenBLAS-$OPENBLAS_VERSION
           make -j4
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
       - name: Cache OpenBLAS
@@ -54,7 +54,7 @@ jobs:
 
       - name: Install OpenBLAS
         run: |
-          cd openblas
+          cd OpenBLAS-$OPENBLAS_VERSION
           make install
 
       - name: Set up MPI
