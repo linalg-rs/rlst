@@ -53,6 +53,10 @@ jobs:
         with:
           path: /opt/openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
+      - name: Update paths
+        run: |
+          export LD_LIBRARY_PATH="/opt/openblas/lib:$LD_LIBRARY_PATH"
+          export PATH="/opt/openblas/bin:$PATH"
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
