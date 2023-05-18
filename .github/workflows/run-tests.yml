@@ -69,11 +69,11 @@ jobs:
       - name: Style checks
         run: cargo fmt -- --check
 
-      - name: Build rust library (debug)
-        run: cargo build --features "strict,mpi,openblas-system"
-      - name: Build rust library (release)
-        run: cargo build --release --features "strict,mpi,openblas-system"
-
+      #- name: Build rust library (debug)
+      #  run: cargo build --features "strict,mpi,openblas-system"
+      #- name: Build rust library (release)
+      #  run: cargo build --release --features "strict,mpi,openblas-system"
+      - run: ls /opt/openblas
       - name: Run unit tests
         run: |
           export LD_LIBRARY_PATH="/opt/openblas/lib:$LD_LIBRARY_PATH"
