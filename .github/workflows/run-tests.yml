@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /usr/local/
-        restore-keys: openblas-${{ matrix.openblas }}
+          restore-keys: openblas-${{ matrix.openblas }}
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
         with:
