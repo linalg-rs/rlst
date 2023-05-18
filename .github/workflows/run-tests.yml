@@ -35,32 +35,27 @@ jobs:
         id: cache-openblas-restore
         uses: actions/cache/restore@v3
         with:
-          path: /opt/openblas
-          key: ${{ env.OPENBLAS_VERSION }}
-      - name: Install OpenBLAS
+          path: openblas
+          key: blas-${{ env.OPENBLAS_VERSION }}
+      - name: Build OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
+          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz openblas
           rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          cd OpenBLAS-$OPENBLAS_VERSION
+          cd openblas
           make -j4
-          make PREFIX=/opt/openblas install
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
       - name: Cache OpenBLAS
         id: cache-openblas
         uses: actions/cache/save@v3
         with:
-          path: /opt/openblas
+          path: openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
 
-      - run: ls /opt/openblas
-      - run: ls /opt/openblas/bin
-      - run: ls /opt/openblas/include
-      - run: ls /opt/openblas/lib
-      - name: Move OpenBLAS to /usr
+      - name: Install OpenBLAS
         run: |
-          sudo mv /opt/openblas/include/* /usr/include/
-          sudo mv /opt/openblas/lib/* /usr/lib/
+          cd openblas
+          make install
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
