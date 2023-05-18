@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust-version: ["stable","beta","nightly"]
-        mpi: ["mpich", "openmpi"]
+        #rust-version: ["stable","beta","nightly"]
+        #mpi: ["mpich", "openmpi"]
+        rust-version: ["stable"]
+        mpi: ["mpich"]
         openblas: ["0.3.23"]
     steps:
       - name: Set up Rust
@@ -25,19 +27,18 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
+      - name: REMOVE BEFORE PUSHING
+        run: sudo apt-get update
       - name: Install LAPACK
         run: sudo apt-get install -y liblapack-dev libclang-dev
       - name: Install OpenBLAS
         run: |
-          git clone --depth 1 --branch v${{ matrix.openblas }} https://github.com/xianyi/OpenBLAS.git
-          cd OpenBLAS
-          make -j2
-          make install
-      - name: Cache OpenBLAS and other dependencies
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/
-          restore-keys: openblas-${{ matrix.openblas }}
+          wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-${{ matrix.openblas }}.tar.gz
+          tar -xf OpenBLAS-${{ matrix.openblas }}-x64.tar.gz
+          rm OpenBLAS-${{ matrix.openblas }}-x64.tar.gz
+          cd OpenBLAS-${{ matrix.openblas }}-x64
+          make -j4
+          make PREFIX=/opt/openblas install
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
         with:
