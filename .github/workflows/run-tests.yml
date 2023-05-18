@@ -18,14 +18,26 @@ jobs:
       matrix:
         rust-version: ["stable","beta","nightly"]
         mpi: ["mpich", "openmpi"]
+        openblas: ["0.3.23"]
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
-      - name: Install LAPACK & OpenBLAS
-        run: sudo apt-get install -y libopenblas-dev liblapack-dev libclang-dev
+      - name: Install LAPACK
+        run: sudo apt-get install -y liblapack-dev libclang-dev
+      - name: Install OpenBLAS
+        run: |
+          git clone --depth 1 --branch v${{ matrix.openblas }} https://github.com/xianyi/OpenBLAS.git
+          cd OpenBLAS
+          make -j2
+          make install
+      - name: Cache OpenBLAS and other dependencies
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/
+        restore-keys: openblas-${{ matrix.openblas }}
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
         with:
@@ -39,19 +51,19 @@ jobs:
         run: cargo fmt -- --check
 
       - name: Build rust library (debug)
-        run: cargo build --features "strict,mpi"
+        run: cargo build --features "strict,mpi,openblas-system"
       - name: Build rust library (release)
-        run: cargo build --release --features "strict,mpi"
+        run: cargo build --release --features "strict,mpi,openblas-system"
 
       - name: Run unit tests
-        run: cargo test --lib --features "mpi,strict"
+        run: cargo test --lib --features "mpi,strict,openblas-system"
       - name: Run tests
-        run: cargo test --examples --release --features "mpi,strict"
+        run: cargo test --examples --release --features "mpi,strict,openblas-system"
       - name: Run examples
         run: |
-          python3 find_examples.py
+          python3 find_examples.py --features "mpi,strict,openblas-system"
           chmod +x examples.sh
           ./examples.sh
 
       - name: Build docs
-        run: cargo doc --features "mpi,strict"
+        run: cargo doc --features "mpi,strict,openblas-system"
