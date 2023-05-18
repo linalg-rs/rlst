@@ -57,8 +57,6 @@ jobs:
           mv /opt/openblas/bin/* /usr/bin/
           mv /opt/openblas/include/* /usr/include/
           mv /opt/openblas/lib/* /usr/lib/
-          echo "LD_LIBRARY_PATH=/opt/openblas/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          echo "/opt/openblas/bin" >> $GITHUB_PATH
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
