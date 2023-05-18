@@ -20,15 +20,14 @@ jobs:
         #mpi: ["mpich", "openmpi"]
         rust-version: ["stable"]
         mpi: ["mpich"]
-        openblas: ["0.3.23"]
+    env:
+      OPENBLAS_VERSION: "0.3.23"
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
-      - name: REMOVE BEFORE PUSHING
-        run: sudo apt-get update
       - name: Install LAPACK
         run: sudo apt-get install -y liblapack-dev libclang-dev
 
@@ -37,13 +36,13 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: /opt/openblas
-          key: ${{ matrix.openblas }}
+          key: ${{ env.OPENBLAS_VERSION }}
       - name: Install OpenBLAS
         run: |
-          wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-${{ matrix.openblas }}.tar.gz
-          tar -xf OpenBLAS-${{ matrix.openblas }}.tar.gz
-          rm OpenBLAS-${{ matrix.openblas }}.tar.gz
-          cd OpenBLAS-${{ matrix.openblas }}
+          wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
+          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
+          rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
+          cd OpenBLAS-$OPENBLAS_VERSION
           make -j4
           make PREFIX=/opt/openblas install
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
@@ -55,8 +54,8 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
       - name: Update paths
         run: |
-          export LD_LIBRARY_PATH="/opt/openblas/lib:$LD_LIBRARY_PATH"
-          export PATH="/opt/openblas/bin:$PATH"
+          echo "/opt/openblas/lib" >> $GITHUB_ENV
+          echo "/opt/openblas/bin" >> $GITHUB_PATH
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
