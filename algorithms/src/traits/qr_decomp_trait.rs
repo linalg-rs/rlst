@@ -39,12 +39,4 @@ pub trait QRDecomposableTrait {
         rhs: Rhs,
         trans: TransposeMode,
     ) -> RlstResult<Rhs>;
-
-    // fn qr_col_pivot(self) -> RlstResult<Self::Out>;
-    // fn qr_col_pivot_free_cols(self,jpvt: Vec<i32>) -> RlstResult<Self::Out>;
-    // fn qr_col_pivot_and_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
-    //     self,
-    //     rhs: Rhs,
-    //     trans: TransposeMode,
-    // ) -> RlstResult<()>;
 }
