@@ -54,7 +54,7 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
       - name: Update paths
         run: |
-          echo "/opt/openblas/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/openblas/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo "/opt/openblas/bin" >> $GITHUB_PATH
 
       - name: Set up MPI
