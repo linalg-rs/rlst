@@ -31,6 +31,13 @@ jobs:
         run: sudo apt-get update
       - name: Install LAPACK
         run: sudo apt-get install -y liblapack-dev libclang-dev
+
+      - name: Restore cached OpenBLAS
+        id: cache-openblas-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: /opt/openblas
+          key: ${{ matrix.openblas }}
       - name: Install OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-${{ matrix.openblas }}.tar.gz
@@ -39,6 +46,14 @@ jobs:
           cd OpenBLAS-${{ matrix.openblas }}
           make -j4
           make PREFIX=/opt/openblas install
+        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
+      - name: Cache OpenBLAS
+        id: cache-openblas
+        uses: actions/cache/save@v3
+        with:
+          path: /opt/openblas
+          key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
+
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
         with:
