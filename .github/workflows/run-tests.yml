@@ -34,9 +34,9 @@ jobs:
       - name: Install OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-${{ matrix.openblas }}.tar.gz
-          tar -xf OpenBLAS-${{ matrix.openblas }}-x64.tar.gz
-          rm OpenBLAS-${{ matrix.openblas }}-x64.tar.gz
-          cd OpenBLAS-${{ matrix.openblas }}-x64
+          tar -xf OpenBLAS-${{ matrix.openblas }}.tar.gz
+          rm OpenBLAS-${{ matrix.openblas }}.tar.gz
+          cd OpenBLAS-${{ matrix.openblas }}
           make -j4
           make PREFIX=/opt/openblas install
       - name: Set up MPI
