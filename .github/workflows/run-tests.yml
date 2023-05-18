@@ -55,6 +55,8 @@ jobs:
 
       - run: ls /opt/openblas
       - run: ls /opt/openblas/bin
+      - run: ls /opt/openblas/include
+      - run: ls /opt/openblas/lib
       - name: Move OpenBLAS to /usr
         run: |
           mv /opt/openblas/bin/* /usr/bin/
