@@ -59,8 +59,8 @@ jobs:
       - run: ls /opt/openblas/lib
       - name: Move OpenBLAS to /usr
         run: |
-          mv /opt/openblas/include/* /usr/include/
-          mv /opt/openblas/lib/* /usr/lib/
+          sudo mv /opt/openblas/include/* /usr/include/
+          sudo mv /opt/openblas/lib/* /usr/lib/
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
