@@ -52,8 +52,11 @@ jobs:
         with:
           path: /opt/openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
-      - name: Update paths
+      - name: Move OpenBLAS to /usr
         run: |
+          mv /opt/openblas/bin/* /usr/bin/
+          mv /opt/openblas/include/* /usr/include/
+          mv /opt/openblas/lib/* /usr/lib/
           echo "LD_LIBRARY_PATH=/opt/openblas/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo "/opt/openblas/bin" >> $GITHUB_PATH
 
@@ -75,10 +78,7 @@ jobs:
       #  run: cargo build --release --features "strict,mpi,openblas-system"
       - run: ls /opt/openblas
       - name: Run unit tests
-        run: |
-          export LD_LIBRARY_PATH="/opt/openblas/lib:$LD_LIBRARY_PATH"
-          export PATH="/opt/openblas/bin:$PATH"
-          cargo test --lib --features "mpi,strict,openblas-system"
+        run: cargo test --lib --features "mpi,strict,openblas-system"
       - name: Run tests
         run: cargo test --examples --release --features "mpi,strict,openblas-system"
       - name: Run examples
