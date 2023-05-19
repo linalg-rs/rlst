@@ -21,8 +21,6 @@ jobs:
         mpi: ["mpich", "openmpi"]
     env:
       OPENBLAS_VERSION: "0.3.23"
-    outputs:
-      cache-key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
     steps:
       - name: Get processor type
         run: echo "type=${cat /sys/devices/cpu/caps/pmu_name}" >> $GITHUB_OUTPUT
@@ -50,23 +48,16 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
 
+      - name: Install OpenBLAS
+        run: |
+          cd openblas
+          sudo make install PREFIX=/usr
+
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
-
-      - name: Restore cached OpenBLAS
-        id: cache-openblas-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: openblas
-          key: ${{ needs.build-openblas.outputs.cache-key }}
-
-      - name: Install OpenBLAS
-        run: |
-          cd openblas
-          sudo make install PREFIX=/usr
 
       - name: Install LAPACK and Clang
         run: sudo apt-get install -y liblapack-dev libclang-dev
