@@ -56,42 +56,6 @@ impl RandScalar for c64 {
     }
 }
 
-// pub struct MatrixPrettyPrinter<'a, T: Scalar, Mat: RandomAccessByValue<Item = T> + Shape> {
-//     mat: &'a Mat,
-//     print_width: usize,
-//     mantissa: usize,
-//     exponent: usize,
-//     _phantom: std::marker::PhantomData<T>,
-// }
-
-// impl<'a, T: Scalar, Mat: RandomAccessByValue<Item = T> + Shape> MatrixPrettyPrinter<'a, T, Mat> {
-//     pub fn new(mat: &'a Mat, print_width: usize, mantissa: usize, exponent: usize) -> Self {
-//         Self {
-//             mat,
-//             print_width,
-//             mantissa,
-//             exponent,
-//             _phantom: std::marker::PhantomData,
-//         }
-//     }
-// }
-
-// pub trait ToPrettyPrinter {
-//     type T: Scalar;
-//     type Out<'a>
-//     where
-//         Self: 'a;
-
-//     fn pretty_print<'a>(&'a self) -> Self::Out<'a>;
-
-//     fn pretty_print_with_parameters<'a>(
-//         &'a self,
-//         print_width: usize,
-//         mantissa: usize,
-//         exponent: usize,
-//     ) -> Self::Out<'a>;
-// }
-
 pub trait PrettyPrint<T: Scalar> {
     fn pretty_print(&self);
     fn pretty_print_with_dimension(&self, rows: usize, cols: usize);
