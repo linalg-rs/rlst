@@ -11,20 +11,28 @@ on:
     - cron: "0 7 * * 1"
 
 jobs:
-  build-openblas:
-    name: Build and cache OpenBLAS
+  run-tests:
+    name: Run tests (Rust)
     runs-on: ubuntu-latest
+    needs: build-openblas
+    strategy:
+      matrix:
+        rust-version: ["stable","beta","nightly"]
+        mpi: ["mpich", "openmpi"]
     env:
       OPENBLAS_VERSION: "0.3.23"
     outputs:
       cache-key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
     steps:
+      - name: Get processor type
+        run: echo "type=${cat /sys/devices/cpu/caps/pmu_name}" >> $GITHUB_OUTPUT
+        id: processor
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
         uses: actions/cache/restore@v3
         with:
           path: openblas
-          key: testing-openblas-${{ env.OPENBLAS_VERSION }}
+          key: openblas-${{ env.OPENBLAS_VERSION }}-${{ steps.processor.output.type }}
       - name: Build OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
@@ -42,19 +50,6 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
 
-      - run: ls openblas
-      - run: ls openblas/*
-      - run: ls openblas/*/*
-
-  run-tests:
-    name: Run tests (Rust)
-    runs-on: ubuntu-latest
-    needs: build-openblas
-    strategy:
-      matrix:
-        rust-version: ["stable","beta","nightly"]
-        mpi: ["mpich", "openmpi"]
-    steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
