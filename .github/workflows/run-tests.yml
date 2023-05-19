@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: openblas
-          key: test-openblas-${{ env.OPENBLAS_VERSION }}
+          key: openblas-${{ env.OPENBLAS_VERSION }}
       - name: Build OpenBLAS
         run: |
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
