@@ -24,8 +24,7 @@ jobs:
       - uses: kenchan0130/actions-system-info@master
         id: system-info
       - name: Get processor type
-        run: echo "type=${{ steps.system-info.outputs.cpu_model }}" >> $GITHUB_OUTPUT
-        id: processor
+        run: echo "type=${{ steps.system-info.outputs.cpu-model }}" >> $GITHUB_OUTPUT id: processor
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
         uses: actions/cache/restore@v3
