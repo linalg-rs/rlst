@@ -28,7 +28,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
-      - name: Install LAPACK
+      - name: Install LAPACK and Clang
         run: sudo apt-get install -y liblapack-dev libclang-dev
 
       - name: Restore cached OpenBLAS
@@ -43,18 +43,20 @@ jobs:
           tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
           rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
           cd OpenBLAS-$OPENBLAS_VERSION
+          mv OpenBLAS-$OPENBLAS_VERSION openblas
+          cd openblas
           make -j4
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
       - name: Cache OpenBLAS
         id: cache-openblas
         uses: actions/cache/save@v3
         with:
-          path: openblas
+          path: OpenBLAS-${{ env.OPENBLAS_VERSION }}
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
 
       - name: Install OpenBLAS
         run: |
-          cd OpenBLAS-$OPENBLAS_VERSION
+          cd openblas
           make install PREFIX=/usr/
 
       - name: Set up MPI
