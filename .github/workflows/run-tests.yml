@@ -50,7 +50,7 @@ jobs:
         id: cache-openblas
         uses: actions/cache/save@v3
         with:
-          path: OpenBLAS-${{ env.OPENBLAS_VERSION }}
+          path: openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
 
       - name: Install OpenBLAS
