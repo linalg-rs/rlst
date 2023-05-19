@@ -11,26 +11,14 @@ on:
     - cron: "0 7 * * 1"
 
 jobs:
-  run-tests:
-    name: Run tests (Rust)
+  build-openblas:
+    name: Build and cache OpenBLAS
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        #rust-version: ["stable","beta","nightly"]
-        #mpi: ["mpich", "openmpi"]
-        rust-version: ["stable"]
-        mpi: ["mpich"]
     env:
       OPENBLAS_VERSION: "0.3.23"
+    outputs:
+      cache-key: steps.cache-openblas-restore.outputs.cache-primary-key
     steps:
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust-version }}
-          components: rustfmt
-      - name: Install LAPACK and Clang
-        run: sudo apt-get install -y liblapack-dev libclang-dev
-
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
         uses: actions/cache/restore@v3
@@ -53,6 +41,32 @@ jobs:
           path: openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
+
+  run-tests:
+    name: Run tests (Rust)
+    runs-on: ubuntu-latest
+    needs: build-openblas
+    strategy:
+      matrix:
+        #rust-version: ["stable","beta","nightly"]
+        #mpi: ["mpich", "openmpi"]
+        rust-version: ["stable"]
+        mpi: ["mpich"]
+    steps:
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt
+      - name: Install LAPACK and Clang
+        run: sudo apt-get install -y liblapack-dev libclang-dev
+
+      - name: Restore cached OpenBLAS
+        id: cache-openblas-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: openblas
+          key:  ${{ needs.build-openblas.output.cache-key }}
 
       - name: Install OpenBLAS
         run: |
