@@ -17,7 +17,7 @@ jobs:
     env:
       OPENBLAS_VERSION: "0.3.23"
     outputs:
-      cache-key: steps.cache-openblas-restore.outputs.cache-primary-key
+      cache-key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
     steps:
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
