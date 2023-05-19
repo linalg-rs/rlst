@@ -42,6 +42,8 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
 
+      - run: echo ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
+
   run-tests:
     name: Run tests (Rust)
     runs-on: ubuntu-latest
@@ -61,12 +63,13 @@ jobs:
       - name: Install LAPACK and Clang
         run: sudo apt-get install -y liblapack-dev libclang-dev
 
+      - run: echo ${{ needs.build-openblas.output.cache-key }}
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
         uses: actions/cache/restore@v3
         with:
           path: openblas
-          key:  ${{ needs.build-openblas.output.cache-key }}
+          key: ${{ needs.build-openblas.output.cache-key }}
 
       - name: Install OpenBLAS
         run: |
