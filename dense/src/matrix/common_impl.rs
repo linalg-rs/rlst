@@ -332,9 +332,12 @@ impl<
 
 #[cfg(test)]
 mod test {
-    // use crate::rlst_rand_mat;
-    // use rlst_common::types::c64;
-    use rlst_common::tools::ToMatDisplayWrapper;
+    use crate::rlst_rand_mat;
+    use rlst_common::tools::ToMatDisplayWrapper_c64;
+    use rlst_common::tools::ToMatDisplayWrapper_f64;
+    use rlst_common::types::c64;
+
+    // use crate::common_impl::test;
 
     #[test]
     fn test_display_dense_real_3x1() {
@@ -382,6 +385,41 @@ mod test {
         rlst_mat_real_4x4[[3, 2]] = 999_999_999_999.00;
         rlst_mat_real_4x4[[3, 3]] = 0.0;
         println!("{}", rlst_mat_real_4x4.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_complex_3x1() {
+        let rlst_vec_complex_3x1 = rlst_rand_mat![c64, (3, 1)];
+        println!("{}", rlst_vec_complex_3x1.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_complex_2x2() {
+        let rlst_mat_complex_2x2 = rlst_rand_mat![c64, (2, 2)];
+        println!("{}", rlst_mat_complex_2x2.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_complex_4x2() {
+        let rlst_mat_complex_4x2 = rlst_rand_mat![c64, (4, 2)];
+        println!("{}", rlst_mat_complex_4x2.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_complex_2x3() {
+        let rlst_mat_complex_2x3 = rlst_rand_mat![c64, (2, 3)];
+        println!("{}", rlst_mat_complex_2x3.to_stdout());
+        assert!(true);
+    }
+
+    #[test]
+    fn test_display_dense_complex_4x4() {
+        let rlst_mat_complex_4x4 = rlst_rand_mat![c64, (4, 4)];
+        println!("{}", rlst_mat_complex_4x4.to_stdout());
         assert!(true);
     }
 }
