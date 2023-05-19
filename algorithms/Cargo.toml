@@ -15,7 +15,7 @@ rlst-dense = {path = "../dense"}
 num = "0.4"
 rand = "0.8"
 lapacke = { version = "0.5"}
-lapack-src = { version = "0.8", features = ["openblas"]}
+lapack-src = { version = "0.9", features = ["openblas"]}
 rand_chacha = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
 openblas-src = { version = "0.10", features = ["system"], optional = true }
