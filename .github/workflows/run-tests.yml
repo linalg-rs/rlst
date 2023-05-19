@@ -70,10 +70,10 @@ jobs:
       - name: Style checks
         run: cargo fmt -- --check
 
-      #- name: Build rust library (debug)
-      #  run: cargo build --features "strict,mpi,openblas-system"
-      #- name: Build rust library (release)
-      #  run: cargo build --release --features "strict,mpi,openblas-system"
+      - name: Build rust library (debug)
+        run: cargo build --features "strict,mpi,openblas-system"
+      - name: Build rust library (release)
+        run: cargo build --release --features "strict,mpi,openblas-system"
       - name: Run unit tests
         run: cargo test --lib --features "mpi,strict,openblas-system"
       - name: Run tests
