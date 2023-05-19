@@ -42,7 +42,6 @@ jobs:
           wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
           tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
           rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          cd OpenBLAS-$OPENBLAS_VERSION
           mv OpenBLAS-$OPENBLAS_VERSION openblas
           cd openblas
           make -j4
