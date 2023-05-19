@@ -48,10 +48,8 @@ jobs:
     needs: build-openblas
     strategy:
       matrix:
-        #rust-version: ["stable","beta","nightly"]
-        #mpi: ["mpich", "openmpi"]
-        rust-version: ["stable"]
-        mpi: ["mpich"]
+        rust-version: ["stable","beta","nightly"]
+        mpi: ["mpich", "openmpi"]
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
