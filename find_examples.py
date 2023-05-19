@@ -13,6 +13,17 @@ and the "mpi" features turned on.
 """
 
 import os
+import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--features', default=None,
+                    help='feature flags to pass to the examples')
+
+raw_features = parser.parse_args().features
+
+features = []
+if raw_features is not None:
+    features += raw_features.split(",")
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -49,6 +60,15 @@ for file, example_name in files:
         else:
             cmd = "run"
             options = None
+
+    if len(features) > 0:
+        if options is None:
+            options = ""
+        if "--features" in options:
+            a, b = options.split("--features \"")
+            options = f"{a}--features \"{','.join(features)},{b}"
+        else:
+            options += f" --features \"{','.join(features)}\""
 
     command = f"cargo {cmd} --example {example_name} --release"
     if options is not None:
