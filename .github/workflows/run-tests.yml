@@ -52,6 +52,7 @@ jobs:
         with:
           path: openblas
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
+        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
 
       - name: Install OpenBLAS
         run: |
