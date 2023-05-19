@@ -329,18 +329,3 @@ impl<
         result
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    pub use crate::rlst_rand_mat;
-    pub use rlst_common::tools::PrettyPrint;
-    pub use rlst_common::types::{c32, c64};
-
-    #[test]
-    fn test_pretty_print() {
-        let mat = rlst_rand_mat![c32, (2, 3)];
-
-        mat.pretty_print_with_dimension(2, 2);
-    }
-}

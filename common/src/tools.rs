@@ -73,7 +73,7 @@ macro_rules! pretty_print_impl {
     ($scalar:ty, $fmtfun:ident) => {
         impl<Mat: RandomAccessByValue<Item = $scalar> + Shape> PrettyPrint<$scalar> for Mat {
             fn pretty_print(&self) {
-                self.pretty_print_advanced(self.shape().0, self.shape().1, 11, 3, 2)
+                self.pretty_print_advanced(10, 10, 11, 3, 2)
             }
 
             fn pretty_print_with_dimension(&self, rows: usize, cols: usize) {
@@ -88,8 +88,10 @@ macro_rules! pretty_print_impl {
                 mantissa: usize,
                 exponent: usize,
             ) {
-                let shape = self.shape();
-                let shape = (std::cmp::min(shape.0, rows), std::cmp::min(shape.1, cols));
+                let shape = (
+                    std::cmp::min(self.shape().0, rows),
+                    std::cmp::min(self.shape().1, cols),
+                );
                 let mut content_str = String::new();
 
                 // For alignment in columns, must satisfy: 4 + mantissa + exponent < print_width
@@ -122,6 +124,13 @@ macro_rules! pretty_print_impl {
                 let btm_str = format!(
                     "└{}┘\n",
                     " ".repeat((shape.1 * (colwidth + 1)) + num_outer_spaces)
+                );
+                println!(
+                    "Printing the upper left {} x {} block of a matrix with dimensions {} x {}.",
+                    shape.0,
+                    shape.1,
+                    self.shape().0,
+                    self.shape().1
                 );
                 println!("{top_str}{content_str}{btm_str}");
             }
