@@ -49,7 +49,7 @@ pub trait Inner {
 
 /// Compute a dual form of an object with `other`.
 /// The convention for complex objecdts is that the complex-conjugate
-/// of `other is taken when appropriate for the dual form.
+/// of `other` is taken when appropriate for the dual form.
 pub trait Dual {
     type T: Scalar;
     type Other;

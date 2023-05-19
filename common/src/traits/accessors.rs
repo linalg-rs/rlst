@@ -12,7 +12,7 @@
 //! corresponding bounds-checked traits [`RandomAccessByValue`], [`RandomAccessByRef`] and
 //! [`RandomAccessMut`] are auto-implemented.
 //!
-//! To get raw access to the underlying data use the [`RawAccess`] and ['RawAccessMut`] traits.
+//! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
 use crate::traits::properties::{NumberOfElements, Shape};
 use crate::types::Scalar;
