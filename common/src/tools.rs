@@ -134,6 +134,7 @@ pretty_print_impl!(f32, fmt_real);
 pretty_print_impl!(c32, fmt_complex);
 pretty_print_impl!(c64, fmt_complex);
 
+// https://stackoverflow.com/a/65266882
 fn fmt_real<T: Scalar>(num: T::Real, width: usize, precision: usize, exp_pad: usize) -> String {
     let mut num = format!("{:.precision$e}", num, precision = precision);
     // Safe to `unwrap` as `num` is guaranteed to contain `'e'`
