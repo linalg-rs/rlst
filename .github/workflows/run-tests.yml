@@ -42,6 +42,10 @@ jobs:
           key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
         if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
 
+      - run: ls openblas
+      - run: ls openblas/*
+      - run: ls openblas/*/*
+
   run-tests:
     name: Run tests (Rust)
     runs-on: ubuntu-latest
@@ -56,8 +60,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
           components: rustfmt
-      - name: Install LAPACK and Clang
-        run: sudo apt-get install -y liblapack-dev libclang-dev
 
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
@@ -70,6 +72,9 @@ jobs:
         run: |
           cd openblas
           sudo make install PREFIX=/usr
+
+      - name: Install LAPACK and Clang
+        run: sudo apt-get install -y liblapack-dev libclang-dev
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
