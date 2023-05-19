@@ -21,8 +21,10 @@ jobs:
     env:
       OPENBLAS_VERSION: "0.3.23"
     steps:
+      - uses: kenchan0130/actions-system-info@master
+        id: system-info
       - name: Get processor type
-        run: echo "type=$(cat /sys/devices/cpu/caps/pmu_name)" >> $GITHUB_OUTPUT
+        run: echo "type=${{ steps.system-info.cpu_model }}" >> $GITHUB_OUTPUT
         id: processor
       - name: Restore cached OpenBLAS
         id: cache-openblas-restore
