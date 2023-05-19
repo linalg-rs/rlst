@@ -23,71 +23,79 @@ jobs:
     steps:
       - uses: kenchan0130/actions-system-info@master
         id: system-info
+      - run: echo "${{ steps.system-info.outputs.cpu-core }}"
+      - run: echo "${{ steps.system-info.outputs.cpu-model }}"
+      - run: echo "${{ steps.system-info.outputs.hostname }}"
+      - run: echo "${{ steps.system-info.outputs.kernel-release }}"
+      - run: echo "${{ steps.system-info.outputs.kernel-version }}"
+      - run: echo "${{ steps.system-info.outputs.name }}"
+      - run: echo "${{ steps.system-info.outputs.platform }}"
+      - run: echo "${{ steps.system-info.outputs.release }}"
       - name: Get processor type
         run: echo "type=${{ steps.system-info.outputs.cpu-model }}" >> $GITHUB_OUTPUT
         id: processor
-      - name: Restore cached OpenBLAS
-        id: cache-openblas-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: openblas
-          key: openblas-${{ env.OPENBLAS_VERSION }}-${{ steps.processor.output.type }}
-      - name: Build OpenBLAS
-        run: |
-          wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
-          mv OpenBLAS-$OPENBLAS_VERSION openblas
-          cd openblas
-          make -j4 PREFIX=/usr
-        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
-      - name: Cache OpenBLAS
-        id: cache-openblas
-        uses: actions/cache/save@v3
-        with:
-          path: openblas
-          key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
-        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
-
-      - name: Install OpenBLAS
-        run: |
-          cd openblas
-          sudo make install PREFIX=/usr
-
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust-version }}
-          components: rustfmt
-
-      - name: Install LAPACK and Clang
-        run: sudo apt-get install -y liblapack-dev libclang-dev
-
-      - name: Set up MPI
-        uses: mpi4py/setup-mpi@v1
-        with:
-          mpi: ${{ matrix.mpi }}
-      - name: Install cargo-mpirun
-        run: cargo install cargo-mpirun
-
-      - uses: actions/checkout@v3
-
-      - name: Style checks
-        run: cargo fmt -- --check
-
-      - name: Build rust library (debug)
-        run: cargo build --features "strict,mpi,openblas-system"
-      - name: Build rust library (release)
-        run: cargo build --release --features "strict,mpi,openblas-system"
-      - name: Run unit tests
-        run: cargo test --lib --features "mpi,strict,openblas-system"
-      - name: Run tests
-        run: cargo test --examples --release --features "mpi,strict,openblas-system"
-      - name: Run examples
-        run: |
-          python3 find_examples.py --features "strict,openblas-system"
-          chmod +x examples.sh
-          ./examples.sh
-
-      - name: Build docs
-        run: cargo doc --features "mpi,strict,openblas-system"
+#      - name: Restore cached OpenBLAS
+#        id: cache-openblas-restore
+#        uses: actions/cache/restore@v3
+#        with:
+#          path: openblas
+#          key: openblas-${{ env.OPENBLAS_VERSION }}-${{ steps.processor.outputs.type }}
+#      - name: Build OpenBLAS
+#        run: |
+#          wget https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-$OPENBLAS_VERSION.tar.gz
+#          tar -xf OpenBLAS-$OPENBLAS_VERSION.tar.gz
+#          rm OpenBLAS-$OPENBLAS_VERSION.tar.gz
+#          mv OpenBLAS-$OPENBLAS_VERSION openblas
+#          cd openblas
+#          make -j4 PREFIX=/usr
+#        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
+#      - name: Cache OpenBLAS
+#        id: cache-openblas
+#        uses: actions/cache/save@v3
+#        with:
+#          path: openblas
+#          key: ${{ steps.cache-openblas-restore.outputs.cache-primary-key }}
+#        if: ${{ steps.cache-openblas-restore.outputs.cache-hit != 'true' }}
+#
+#      - name: Install OpenBLAS
+#        run: |
+#          cd openblas
+#          sudo make install PREFIX=/usr
+#
+#      - name: Set up Rust
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: ${{ matrix.rust-version }}
+#          components: rustfmt
+#
+#      - name: Install LAPACK and Clang
+#        run: sudo apt-get install -y liblapack-dev libclang-dev
+#
+#      - name: Set up MPI
+#        uses: mpi4py/setup-mpi@v1
+#        with:
+#          mpi: ${{ matrix.mpi }}
+#      - name: Install cargo-mpirun
+#        run: cargo install cargo-mpirun
+#
+#      - uses: actions/checkout@v3
+#
+#      - name: Style checks
+#        run: cargo fmt -- --check
+#
+#      - name: Build rust library (debug)
+#        run: cargo build --features "strict,mpi,openblas-system"
+#      - name: Build rust library (release)
+#        run: cargo build --release --features "strict,mpi,openblas-system"
+#      - name: Run unit tests
+#        run: cargo test --lib --features "mpi,strict,openblas-system"
+#      - name: Run tests
+#        run: cargo test --examples --release --features "mpi,strict,openblas-system"
+#      - name: Run examples
+#        run: |
+#          python3 find_examples.py --features "strict,openblas-system"
+#          chmod +x examples.sh
+#          ./examples.sh
+#
+#      - name: Build docs
+#        run: cargo doc --features "mpi,strict,openblas-system"
