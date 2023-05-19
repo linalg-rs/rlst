@@ -56,7 +56,7 @@ jobs:
       - name: Install OpenBLAS
         run: |
           cd openblas
-          make install PREFIX=/usr/
+          sudo make install PREFIX=/usr/
 
       - name: Set up MPI
         uses: mpi4py/setup-mpi@v1
