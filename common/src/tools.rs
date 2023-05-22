@@ -43,7 +43,7 @@ impl RandScalar for c32 {
         rng: &mut R,
         dist: &D,
     ) -> Self {
-        c32::new(dist.sample(rng), dist.sample(rng))
+        Self::new(dist.sample(rng), dist.sample(rng))
     }
 }
 
@@ -52,7 +52,7 @@ impl RandScalar for c64 {
         rng: &mut R,
         dist: &D,
     ) -> Self {
-        c64::new(dist.sample(rng), dist.sample(rng))
+        Self::new(dist.sample(rng), dist.sample(rng))
     }
 }
 
