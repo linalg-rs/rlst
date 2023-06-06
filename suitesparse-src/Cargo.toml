@@ -1,0 +1,18 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-algorithms"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+name = "rlst_suitesparse_src"
+
+[dev-dependencies]
+bindgen = "0.65.*"
+cmake = "0.1.*"
+
