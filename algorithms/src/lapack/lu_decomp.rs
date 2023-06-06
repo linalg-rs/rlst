@@ -249,9 +249,7 @@ mod test {
 
         mat.fill_from_standard_normal(&mut rng);
 
-        let mat2 = mat.copy();
-
-        let lu_decomp = mat2.linalg().lu().unwrap();
+        let lu_decomp = mat.linalg().lu().unwrap();
 
         let l_mat = lu_decomp.get_l();
         let u_mat = lu_decomp.get_u();
