@@ -2,21 +2,17 @@
 strict = []
 
 [package]
-name = "rlst-suitesparse-src"
+name = "rlst-umfpack"
 version = "0.1.0"
 edition = "2021"
-links = "suitesparse"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies]
+rlst-suitesparse-src = {path = "../suitesparse-src"}
 
 [lib]
-name = "rlst_suitesparse_src"
-
-[dependencies]
-rlst-blis-src = { path = "../blis-src"}
+name = "rlst_umfpack"
 
 [build-dependencies]
 bindgen = "0.65.*"
-cmake = "0.1.*"
-

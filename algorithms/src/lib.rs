@@ -1,8 +1,7 @@
 //! Collection of Linear Solver Algorithms and Interfaces
 #![cfg_attr(feature = "strict", deny(warnings))]
 
-#[allow(unused_imports)]
-use lapack_src;
+extern crate rlst_blis_src;
 
 pub mod dense;
 pub mod iterative_solvers;

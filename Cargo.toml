@@ -7,4 +7,7 @@ members = [
     "common",
     "algorithms",
     "io",
+    "suitesparse-src",
+    "blis-src",
+    "umfpack",
 ]

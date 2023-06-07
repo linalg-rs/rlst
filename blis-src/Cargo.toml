@@ -2,21 +2,20 @@
 strict = []
 
 [package]
-name = "rlst-suitesparse-src"
+name = "rlst-blis-src"
 version = "0.1.0"
 edition = "2021"
-links = "suitesparse"
+links = "blis"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
 [lib]
-name = "rlst_suitesparse_src"
-
-[dependencies]
-rlst-blis-src = { path = "../blis-src"}
+name = "rlst_blis_src"
 
 [build-dependencies]
 bindgen = "0.65.*"
 cmake = "0.1.*"
+autotools = "0.2"
+cc = "1.*"
 
