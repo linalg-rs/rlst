@@ -1,6 +1,7 @@
 [submodule "suitesparse-src/suitesparse"]
 	path = suitesparse-src/suitesparse
 	url = https://github.com/DrTimothyAldenDavis/SuiteSparse.git
+
 [submodule "blis-src/blis"]
 	path = blis-src/blis
 	url = https://github.com/flame/blis.git
