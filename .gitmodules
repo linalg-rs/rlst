@@ -1,9 +1,9 @@
 [submodule "suitesparse-src/suitesparse"]
 	path = suitesparse-src/suitesparse
 	url = https://github.com/DrTimothyAldenDavis/SuiteSparse.git
-[submodule "blis/blis"]
-	path = blis/blis
+[submodule "blis-src/blis"]
+	path = blis-src/blis
 	url = https://github.com/flame/blis.git
-[submodule "blis/lapack"]
-	path = blis/lapack
+[submodule "blis-src/lapack"]
+	path = blis-src/lapack
 	url = https://github.com/Reference-LAPACK/lapack.git
