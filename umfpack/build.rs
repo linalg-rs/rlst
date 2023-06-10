@@ -8,6 +8,13 @@ fn main() {
         // The input header we would like to generate
         // bindings for.
         .header("src/wrapper.h")
+        // Need to block some types in math.h that cause problems with bindgen
+        // on Linux. See https://github.com/rust-lang/rust-bindgen/issues/984
+        .blocklist_type("FP_NAN")
+        .blocklist_type("FP_INFINITE")
+        .blocklist_type("FP_ZERO")
+        .blocklist_type("FP_SUBNORMAL")
+        .blocklist_type("FP_NORMAL")
         // Add an include path
         .clang_arg(format!("-I{}", root.join("include").display()))
         // Tell cargo to invalidate the built crate whenever any of the
