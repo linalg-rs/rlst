@@ -58,4 +58,10 @@ fn main() {
     println!("cargo:rustc-link-lib=static=ccolamd");
     println!("cargo:rustc-link-lib=static=cholmod");
     println!("cargo:rustc-link-lib=static=umfpack");
+
+    // On Linux OpenMP is automatically enabled. Need to link against
+    // gomp library.
+    if cfg!(target_os = "linux") {
+        println!("cargo:rustc-link-lib=dynamic=gomp");
+    }
 }
