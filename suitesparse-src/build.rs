@@ -1,13 +1,15 @@
 use cmake::Config;
 
 macro_rules! build_dep {
-    ($name:literal, $blas_lib:expr, $lapack_lib:expr) => {
+    ($name:literal, $blas_lib:expr, $lapack_lib:expr) => {{
+        let out_dir = std::env::var("OUT_DIR").unwrap();
         Config::new(format!("suitesparse/{}", $name))
+            .define("CMAKE_PREFIX_PATH", out_dir)
             .define("LAPACK_LIBRARIES", $lapack_lib)
             .define("BLAS_LIBRARIES", $blas_lib)
             .define("BLA_STATIC", "TRUE")
             .build()
-    };
+    }};
 }
 
 fn main() {
