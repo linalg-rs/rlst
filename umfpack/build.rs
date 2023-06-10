@@ -4,30 +4,8 @@ use bindgen::{
 };
 use std::{collections::HashSet, path::PathBuf};
 
-// From https://github.com/rust-lang/rust-bindgen/issues/984
-
-const IGNORE_MACROS: [&str; 20] = [
-    "FE_DIVBYZERO",
-    "FE_DOWNWARD",
-    "FE_INEXACT",
-    "FE_INVALID",
-    "FE_OVERFLOW",
-    "FE_TONEAREST",
-    "FE_TOWARDZERO",
-    "FE_UNDERFLOW",
-    "FE_UPWARD",
-    "FP_INFINITE",
-    "FP_INT_DOWNWARD",
-    "FP_INT_TONEAREST",
-    "FP_INT_TONEARESTFROMZERO",
-    "FP_INT_TOWARDZERO",
-    "FP_INT_UPWARD",
-    "FP_NAN",
-    "FP_NORMAL",
-    "FP_SUBNORMAL",
-    "FP_ZERO",
-    "IPPORT_RESERVED",
-];
+// NOTE: If FP_NORMAL and other symbols from math.h cause problems use
+// the solution from https://github.com/rust-lang/rust-bindgen/issues/984
 
 #[derive(Debug)]
 struct IgnoreMacros(HashSet<String>);
@@ -57,13 +35,12 @@ fn main() {
         .header("src/wrapper.h")
         // Add an include path
         .clang_arg(format!("-I{}", root.join("include").display()))
+        .allowlist_function("umfpack.*")
+        .allowlist_type("UMFPACK.*")
+        .allowlist_var("UMFPACK.*")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        // Need to block some types in math.h that cause problems with bindgen
-        // on Linux. See https://github.com/rust-lang/rust-bindgen/issues/984
-        .parse_callbacks(Box::new(IgnoreMacros::new()))
-        // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
