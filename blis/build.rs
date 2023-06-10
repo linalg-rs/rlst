@@ -10,6 +10,9 @@ fn main() {
         .header("src/wrapper.h")
         // Add an include path
         .clang_arg(format!("-I{}", root.join("include/blis").display()))
+        .allowlist_function("bli.*")
+        .allowlist_type("BLIS.*")
+        .allowlist_var("BLIS.*")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
