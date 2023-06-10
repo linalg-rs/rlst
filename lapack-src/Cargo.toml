@@ -1,0 +1,19 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-lapack-src"
+version = "0.1.0"
+edition = "2021"
+links = "lapack"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+name = "rlst_lapack_src"
+
+[build-dependencies]
+cmake = "0.1.*"
+
+

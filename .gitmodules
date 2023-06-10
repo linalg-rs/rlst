@@ -5,6 +5,7 @@
 [submodule "blis-src/blis"]
 	path = blis-src/blis
 	url = https://github.com/flame/blis.git
-[submodule "blis-src/lapack"]
-	path = blis-src/lapack
+
+[submodule "lapack-src/lapack"]
+	path = lapack-src/lapack
 	url = https://github.com/Reference-LAPACK/lapack.git

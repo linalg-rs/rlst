@@ -44,28 +44,7 @@ fn main() {
         panic!("Build command failed with error {}", status);
     }
 
-    // Build Lapack shared
-
-    let _lapack = cmake::Config::new("lapack")
-        .define("BUILD_SHARED_LIBS", "ON")
-        .define("LAPACKE", "ON")
-        .define("BLA_VENDOR", "FLAME")
-        .define("CMAKE_PREFIX_PATH", &dst)
-        .define("USE_OPTIMIZED_BLAS", "ON")
-        .build();
-
-    // Build Lapack static
-
-    let _lapack = cmake::Config::new("lapack")
-        .define("BUILD_SHARED_LIBS", "OFF")
-        .define("LAPACKE", "ON")
-        .define("BLA_VENDOR", "FLAME")
-        .define("CMAKE_PREFIX_PATH", &dst)
-        .define("USE_OPTIMIZED_BLAS", "ON")
-        .build();
-
+    println!("cargo:root={}", dst.display());
     println!("cargo:rustc-link-search={}", dst.join("lib").display());
     println!("cargo:rustc-link-lib=blis");
-    println!("cargo:rustc-link-lib=lapack");
-    println!("cargo:rustc-link-lib=lapacke");
 }
