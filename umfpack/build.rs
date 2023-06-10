@@ -1,30 +1,8 @@
-use bindgen::{
-    self,
-    callbacks::{MacroParsingBehavior, ParseCallbacks},
-};
-use std::{collections::HashSet, path::PathBuf};
+use bindgen;
+use std::path::PathBuf;
 
 // NOTE: If FP_NORMAL and other symbols from math.h cause problems use
 // the solution from https://github.com/rust-lang/rust-bindgen/issues/984
-
-#[derive(Debug)]
-struct IgnoreMacros(HashSet<String>);
-
-impl ParseCallbacks for IgnoreMacros {
-    fn will_parse_macro(&self, name: &str) -> MacroParsingBehavior {
-        if self.0.contains(name) {
-            MacroParsingBehavior::Ignore
-        } else {
-            MacroParsingBehavior::Default
-        }
-    }
-}
-
-impl IgnoreMacros {
-    fn new() -> Self {
-        Self(IGNORE_MACROS.into_iter().map(|s| s.to_owned()).collect())
-    }
-}
 
 fn main() {
     let root = PathBuf::from(std::env::var("DEP_SUITESPARSE_ROOT").unwrap());
