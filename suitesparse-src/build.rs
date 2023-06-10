@@ -62,6 +62,6 @@ fn main() {
     // On Linux OpenMP is automatically enabled. Need to link against
     // gomp library.
     if cfg!(target_os = "linux") {
-        println!("cargo:rustc-link-lib=dynamic=gomp");
+        println!("cargo:rustc-link-lib=dylib=gomp");
     }
 }
