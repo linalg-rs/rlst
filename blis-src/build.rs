@@ -7,7 +7,7 @@ fn main() {
     // Build BLIS
 
     let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let build = dst.join("build_blis");
+    let build = dst.join("build");
     let _ = fs::create_dir(&build);
 
     let configure = PathBuf::from("blis")
@@ -46,5 +46,5 @@ fn main() {
 
     println!("cargo:root={}", dst.display());
     println!("cargo:rustc-link-search={}", dst.join("lib").display());
-    println!("cargo:rustc-link-lib=blis");
+    println!("cargo:rustc-link-lib=static=blis");
 }

@@ -2,21 +2,20 @@
 strict = []
 
 [package]
-name = "rlst-lapack-src"
+name = "rlst-blis"
 version = "0.1.0"
 edition = "2021"
-links = "lapack"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rlst-blis-src = { path = "../blis-src" }
-rlst-gfortran-src = { path = "../gfortran-src"}
+rlst-blis-src = { path = "../blis-src"}
+num_cpus = "1"
 
 [lib]
-name = "rlst_lapack_src"
+name = "rlst_blis"
 
 [build-dependencies]
-cmake = "0.1.*"
+bindgen = "0.65.*"
 
 

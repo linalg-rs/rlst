@@ -11,5 +11,6 @@ members = [
     "blis-src",
     "umfpack",
     "gfortran-src",
-    "lapack-src"
+    "lapack-src",
+    "blis"
 ]

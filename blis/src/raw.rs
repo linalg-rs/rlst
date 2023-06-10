@@ -3,7 +3,5 @@
 #![allow(non_snake_case)]
 
 extern crate rlst_blis_src;
-extern crate rlst_lapack_src;
-extern crate rlst_suitesparse_src;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

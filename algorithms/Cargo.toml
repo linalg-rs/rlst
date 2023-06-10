@@ -13,6 +13,7 @@ edition = "2021"
 rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
 rlst-blis-src = {path = "../blis-src"}
+rlst-lapack-src = {path = "../lapack-src"}
 num = "0.4"
 rand = "0.8"
 lapacke = { version = "0.5"}
