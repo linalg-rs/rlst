@@ -17,7 +17,7 @@ fn main() {
     let blas_lib = std::env::var("DEP_BLIS_ROOT").unwrap() + "/lib/libblis.a";
     let lapack_lib = std::env::var("DEP_LAPACK_ROOT").unwrap() + "/lib/liblapack.a";
 
-    let suitesparse = build_dep!("Suitesparse_config", &blas_lib, &lapack_lib);
+    let suitesparse = build_dep!("SuiteSparse_config", &blas_lib, &lapack_lib);
     let _amd = build_dep!("AMD", &blas_lib, &lapack_lib);
     let _camd = build_dep!("CAMD", &blas_lib, &lapack_lib);
     let _colamd = build_dep!("COLAMD", &blas_lib, &lapack_lib);
