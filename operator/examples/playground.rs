@@ -38,11 +38,11 @@ impl Element for Vec {
     type View<'a> = View<'a> where Self: 'a;
     type ViewMut<'a> = View<'a> where Self: 'a;
 
-    fn view<'a>(&'a self) -> Self::View<'a> {
+    fn view(&self) -> Self::View<'_> {
         View::new()
     }
 
-    fn view_mut<'a>(&'a mut self) -> Self::View<'a> {
+    fn view_mut(&mut self) -> Self::View<'_> {
         View::new()
     }
 }

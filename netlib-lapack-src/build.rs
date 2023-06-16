@@ -1,5 +1,3 @@
-use cmake;
-
 fn main() {
     // // Build Lapack static
 

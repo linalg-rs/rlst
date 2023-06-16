@@ -103,9 +103,7 @@ macro_rules! lu_decomp_impl {
                 let mut perm = (0..self.shape().0).collect::<Vec<_>>();
 
                 for index in 0..ipiv.len() {
-                    let t = perm[index];
-                    perm[index] = perm[ipiv[index]];
-                    perm[ipiv[index]] = t;
+                    perm.swap(index, ipiv[index]);
                 }
 
                 perm

@@ -18,7 +18,7 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
             "Group size is zero. At least one process needs to be in the group."
         );
         let my_rank = comm.rank() as usize;
-        let mut counts = vec![0 as usize; 1 + comm_size as usize];
+        let mut counts = vec![0; 1 + comm_size];
 
         // The following code computes what index is on what rank. No MPI operation necessary.
         // Each process computes it from its own rank and the number of MPI processes in
@@ -29,13 +29,14 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
             // give one index to each rank until filled up.
             // Then fill the rest with None.
 
-            for index in 0..size {
-                counts[index] = index;
+            for (index, item) in counts.iter_mut().enumerate().take(size) {
+                *item = index;
             }
 
-            for index in size..comm_size {
-                counts[index] = size;
+            for item in counts.iter_mut().take(comm_size).skip(size) {
+                *item = size;
             }
+
             counts[comm_size] = size;
         } else {
             // We want to equally distribute the range
@@ -127,7 +128,7 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
     fn rank_from_index(&self, index: usize) -> Option<usize> {
         for (count_index, &count) in self.counts[1..].iter().enumerate() {
             if index < count {
-                return Some(count_index as usize);
+                return Some(count_index);
             }
         }
         None

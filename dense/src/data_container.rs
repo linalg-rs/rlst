@@ -17,9 +17,15 @@ pub trait DataContainer {
     type Item: Scalar;
 
     /// Access the container unchecked.
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item;
 
     /// Access the container by reference
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item;
 
     /// Get pointer to data.
@@ -50,6 +56,9 @@ pub trait DataContainer {
 
 pub trait DataContainerMut: DataContainer {
     /// Access the container mutably unchecked.
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item;
 
     /// Get mutable pointer to data.

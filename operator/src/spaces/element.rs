@@ -16,9 +16,9 @@ pub trait Element {
         std::unimplemented!();
     }
 
-    fn view<'b>(&'b self) -> Self::View<'b>;
+    fn view(&self) -> Self::View<'_>;
 
-    fn view_mut<'b>(&'b mut self) -> Self::ViewMut<'b>;
+    fn view_mut(&mut self) -> Self::ViewMut<'_>;
 }
 
 // The view type associated with elements of linear spaces.

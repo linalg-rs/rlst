@@ -39,7 +39,7 @@ pub fn main() {
         )
     };
 
-    let _ = unsafe { umfpack::umfpack_di_free_symbolic(&mut symbolic) };
+    unsafe { umfpack::umfpack_di_free_symbolic(&mut symbolic) };
 
     let _ = unsafe {
         umfpack::umfpack_di_solve(
@@ -55,7 +55,7 @@ pub fn main() {
         )
     };
 
-    let _ = unsafe { umfpack::umfpack_di_free_numeric(&mut numeric) };
+    unsafe { umfpack::umfpack_di_free_numeric(&mut numeric) };
 
     println!("Solution: {:#?}", x);
 }

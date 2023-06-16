@@ -11,7 +11,7 @@ pub trait AijIterator {
     where
         Self: 'a;
 
-    fn iter_aij<'a>(&'a self) -> Self::Iter<'a>;
+    fn iter_aij(&self) -> Self::Iter<'_>;
 }
 
 /// Iterate through the elements in column-major ordering.
@@ -21,7 +21,7 @@ pub trait ColumnMajorIterator {
     where
         Self: 'a;
 
-    fn iter_col_major<'a>(&'a self) -> Self::Iter<'a>;
+    fn iter_col_major(&self) -> Self::Iter<'_>;
 }
 
 /// Apply an `FnMut` closure to each element.

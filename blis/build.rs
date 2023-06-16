@@ -1,4 +1,3 @@
-use bindgen;
 use std::path::PathBuf;
 
 fn main() {

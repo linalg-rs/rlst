@@ -47,7 +47,7 @@ impl GhostCommunicator {
         // Now sort the global indices by ranks
 
         let global_receive_indices = {
-            let mut sorted_ghost_index_args = (0..ghost_indices.len() as usize).collect::<Vec<_>>();
+            let mut sorted_ghost_index_args = (0..ghost_indices.len()).collect::<Vec<_>>();
             sorted_ghost_index_args.sort_by_key(|&i| ranks[i]);
 
             let mut global_indices_t = Vec::<usize>::with_capacity(ghost_indices.len());
@@ -119,7 +119,7 @@ impl GhostCommunicator {
 
         // We now communicate the global indices back from the receivers to the senders.
 
-        let mut global_send_indices = vec![0 as usize; total_send_count as usize];
+        let mut global_send_indices = vec![0; total_send_count];
 
         unsafe {
             mpi_sys::MPI_Neighbor_alltoallv(

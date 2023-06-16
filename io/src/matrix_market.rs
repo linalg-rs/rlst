@@ -97,16 +97,16 @@ pub fn write_coordinate_mm<
     let count = mat.iter_aij().count();
 
     if let Ok(mut output) = output {
-        write!(
+        writeln!(
             output,
-            "%%MatrixMarket matrix coordinate {} general\n",
+            "%%MatrixMarket matrix coordinate {} general",
             T::MMTYPE
         )
         .unwrap();
-        write!(output, "%\n").unwrap();
-        write!(output, "{} {} {}\n", mat.shape().0, mat.shape().1, count).unwrap();
+        writeln!(output, "%").unwrap();
+        writeln!(output, "{} {} {}", mat.shape().0, mat.shape().1, count).unwrap();
         for (row, col, data) in mat.iter_aij() {
-            write!(output, "{} {} {} \n", 1 + row, 1 + col, data).unwrap();
+            writeln!(output, "{} {} {} ", 1 + row, 1 + col, data).unwrap();
         }
 
         Ok(())
@@ -130,16 +130,11 @@ pub fn write_array_mm<
     let output = File::create(fname);
 
     if let Ok(mut output) = output {
-        write!(
-            output,
-            "%%MatrixMarket matrix array {} general\n",
-            T::MMTYPE
-        )
-        .unwrap();
-        write!(output, "%\n").unwrap();
-        write!(output, "{} {}\n", mat.shape().0, mat.shape().1).unwrap();
+        writeln!(output, "%%MatrixMarket matrix array {} general", T::MMTYPE).unwrap();
+        writeln!(output, "%").unwrap();
+        writeln!(output, "{} {}", mat.shape().0, mat.shape().1).unwrap();
         for value in mat.iter_col_major() {
-            write!(output, "{}\n", value).unwrap();
+            writeln!(output, "{}", value).unwrap();
         }
 
         Ok(())
@@ -177,9 +172,10 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
     let mut nrows = 0;
     let mut ncols = 0;
 
-    while let Some(line) = reader.next() {
+    for line in reader.by_ref() {
+        //while let Some(line) = reader.next() {
         let current_str = line.unwrap().to_string();
-        if !current_str.starts_with("%") {
+        if !current_str.starts_with('%') {
             let items = current_str
                 .split_whitespace()
                 .map(|elem| elem.to_string())
@@ -191,8 +187,8 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
                 ));
             }
 
-            nrows = usize::from_str_radix(&items[0], 10).unwrap();
-            ncols = usize::from_str_radix(&items[1], 10).unwrap();
+            nrows = items[0].parse().unwrap();
+            ncols = items[1].parse().unwrap();
 
             break;
         }
@@ -201,10 +197,10 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
     let mut mat = rlst_dense::rlst_mat!(T, (nrows, ncols));
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
-    if let Ok(_) = res {
-        return Ok(mat);
+    if let Err(e) = res {
+        Err(e)
     } else {
-        return Err(res.unwrap_err());
+        Ok(mat)
     }
 }
 
@@ -239,9 +235,9 @@ pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     let mut ncols = 0;
     let mut nelems = 0;
 
-    while let Some(line) = reader.next() {
+    for line in reader.by_ref() {
         let current_str = line.unwrap().to_string();
-        if !current_str.starts_with("%") {
+        if !current_str.starts_with('%') {
             let items = current_str
                 .split_whitespace()
                 .map(|elem| elem.to_string())
@@ -253,26 +249,26 @@ pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
                 ));
             }
 
-            nrows = usize::from_str_radix(&items[0], 10).unwrap();
-            ncols = usize::from_str_radix(&items[1], 10).unwrap();
-            nelems = usize::from_str_radix(&items[2], 10).unwrap();
+            nrows = items[0].parse().unwrap();
+            ncols = items[1].parse().unwrap();
+            nelems = items[2].parse().unwrap();
 
             break;
         }
     }
 
-    let mut rows = vec![0 as usize; nelems];
-    let mut cols = vec![0 as usize; nelems];
+    let mut rows = vec![0; nelems];
+    let mut cols = vec![0; nelems];
     let mut data = vec![T::zero(); nelems];
 
     let res = parse_coordinate(&mut reader, &mut rows, &mut cols, &mut data, nelems);
 
-    if let Ok(_) = res {
-        rows.iter_mut().for_each(|elem| *elem = *elem - 1);
-        cols.iter_mut().for_each(|elem| *elem = *elem - 1);
-        return Ok(CsrMatrix::from_aij((nrows, ncols), &rows, &cols, &data).unwrap());
+    if let Err(e) = res {
+        Err(e)
     } else {
-        return Err(res.unwrap_err());
+        rows.iter_mut().for_each(|elem| *elem -= 1);
+        cols.iter_mut().for_each(|elem| *elem -= 1);
+        Ok(CsrMatrix::from_aij((nrows, ncols), &rows, &cols, &data).unwrap())
     }
 }
 
@@ -389,9 +385,10 @@ fn parse_array<T: Scalar>(
     }
 
     if count != nelems {
-        return Err(RlstError::IoError(
-            format!("There were only {} data lines, expected {}", count, nelems).to_string(),
-        ));
+        return Err(RlstError::IoError(format!(
+            "There were only {} data lines, expected {}",
+            count, nelems
+        )));
     }
 
     Ok(())
@@ -421,8 +418,8 @@ fn parse_coordinate<T: Scalar>(
             )));
         }
 
-        let row = usize::from_str_radix(&items[0], 10);
-        let col = usize::from_str_radix(&items[1], 10);
+        let row = items[0].parse();
+        let col = items[1].parse();
         let val = T::from_str_radix(&items[2], 10);
 
         match row {
@@ -467,9 +464,10 @@ fn parse_coordinate<T: Scalar>(
     }
 
     if count != nelems {
-        return Err(RlstError::IoError(
-            format!("There were only {} data lines, expected {}", count, nelems).to_string(),
-        ));
+        return Err(RlstError::IoError(format!(
+            "There were only {} data lines, expected {}",
+            count, nelems
+        )));
     }
 
     Ok(())

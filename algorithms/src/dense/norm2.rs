@@ -23,7 +23,7 @@ where
 
         // If we have a vector just use the standard vector norm definition.
         if shape.0 == 1 || shape.1 == 1 {
-            return Ok(self.mat.square_sum().sqrt());
+            Ok(self.mat.square_sum().sqrt())
         } else {
             // For matrices compute the 2-norm as largest singular value.
             let (s, _, _) = self.svd(Mode::None, Mode::None)?;

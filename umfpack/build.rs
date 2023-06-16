@@ -1,4 +1,3 @@
-use bindgen;
 use std::path::PathBuf;
 
 // NOTE: If FP_NORMAL and other symbols from math.h cause problems use

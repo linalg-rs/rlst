@@ -52,7 +52,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     type T = Item;
     type Iter<'a> = MatrixColumnMajorIterator<'a, Item, Data, RS, CS> where Self: 'a;
 
-    fn iter_col_major<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter_col_major(&self) -> Self::Iter<'_> {
         MatrixColumnMajorIterator::new(self)
     }
 }

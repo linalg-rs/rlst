@@ -23,9 +23,9 @@ impl<
     }
 
     /// Create a new matrix from a reference to an existing matrix.
-    pub fn from_ref<'a>(
-        mat: &'a Matrix<Item, MatImpl, RS, CS>,
-    ) -> crate::RefMat<'a, Item, MatImpl, RS, CS> {
+    pub fn from_ref(
+        mat: &Matrix<Item, MatImpl, RS, CS>,
+    ) -> crate::RefMat<'_, Item, MatImpl, RS, CS> {
         crate::RefMat::new(MatrixRef::new(mat))
     }
 }

@@ -17,7 +17,7 @@ pub trait LinearSpace {
         Self: 'b;
 
     /// Create a new vector from the space.
-    fn create_element<'b>(&'b self) -> Self::E<'b> {
+    fn create_element(&self) -> Self::E<'_> {
         std::unimplemented!();
     }
 }
