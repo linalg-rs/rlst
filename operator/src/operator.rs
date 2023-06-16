@@ -80,11 +80,11 @@ mod tests {
         type View<'b> = View<'b> where Self: 'b;
         type ViewMut<'b> = View<'b> where Self: 'b;
 
-        fn view<'b>(&'b self) -> Self::View<'b> {
+        fn view(&self) -> Self::View<'_> {
             View::new()
         }
 
-        fn view_mut<'b>(&'b mut self) -> Self::View<'b> {
+        fn view_mut(&mut self) -> Self::View<'_> {
             View::new()
         }
     }

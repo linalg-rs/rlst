@@ -40,12 +40,13 @@ impl Element for Polynomial {
     type View<'b> = PolynomialView<'b> where Self: 'b ;
     type ViewMut<'b> = PolynomialViewMut<'b> where Self: 'b;
 
-    fn view<'b>(&'b self) -> Self::View<'b> {
+    fn view(&self) -> Self::View<'_> {
         PolynomialView {
             monomial_coeffs: &self.monomial_coeffs,
         }
     }
-    fn view_mut<'b>(&'b mut self) -> PolynomialViewMut<'b> {
+
+    fn view_mut(&mut self) -> PolynomialViewMut<'_> {
         PolynomialViewMut {
             monomial_coeffs: &mut self.monomial_coeffs,
         }
@@ -83,10 +84,12 @@ impl Element for PointwiseEvaluate {
     type Space = PointwiseEvaluatorSpace;
     type View<'a> = &'a PointwiseEvaluate where Self: 'a;
     type ViewMut<'a> = &'a mut PointwiseEvaluate where Self: 'a;
-    fn view<'a>(&'a self) -> Self::View<'a> {
-        &self
+
+    fn view(&self) -> Self::View<'_> {
+        self
     }
-    fn view_mut<'a>(&'a mut self) -> Self::ViewMut<'a> {
+
+    fn view_mut(&mut self) -> Self::ViewMut<'_> {
         self
     }
 }

@@ -102,8 +102,9 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
             );
 
             let mut data = vec![T::zero(); local_dim];
-            for index in 0..local_dim {
-                data[index] = other.get1d_value(index).unwrap();
+
+            for (index, item) in data.iter_mut().enumerate() {
+                *item = other.get1d_value(index).unwrap()
             }
             let partition = Partition::new(data.as_slice(), counts, displacements);
 

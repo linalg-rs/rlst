@@ -7,4 +7,10 @@ members = [
     "common",
     "algorithms",
     "io",
+    "suitesparse-src",
+    "blis-src",
+    "umfpack",
+    "gfortran-src",
+    "netlib-lapack-src",
+    "blis"
 ]

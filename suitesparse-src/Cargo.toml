@@ -1,0 +1,24 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-suitesparse-src"
+version = "0.1.0"
+edition = "2021"
+links = "suitesparse"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+name = "rlst_suitesparse_src"
+
+[dependencies]
+rlst-blis-src = { path = "../blis-src"}
+rlst-netlib-lapack-src = { path = "../netlib-lapack-src"}
+
+[build-dependencies]
+bindgen = "0.65.*"
+cmake = "0.1.*"
+glob = "0.3"
+

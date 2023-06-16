@@ -22,9 +22,15 @@ pub trait UnsafeRandomAccessByValue {
     type Item: Scalar;
 
     /// Return the element at position (`row`, `col`).
+    ///
+    /// # Safety
+    /// `row` and `col` must not be out of bounds.
     unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item;
 
     /// Return the element at position `index` in one-dimensional numbering.
+    ///
+    /// # Safety
+    /// `row` and `col` must not be out of bounds.
     unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item;
 }
 
@@ -33,9 +39,15 @@ pub trait UnsafeRandomAccessByRef {
     type Item: Scalar;
 
     /// Return a mutable reference to the element at position (`row`, `col`).
+    ///
+    /// # Safety
+    /// `row` and `col` must not be out of bounds.
     unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item;
 
     /// Return a mutable reference at position `index` in one-dimensional numbering.
+    ///
+    /// # Safety
+    /// `row` and `col` must not be out of bounds.
     unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item;
 }
 
@@ -44,9 +56,15 @@ pub trait UnsafeRandomAccessMut {
     type Item: Scalar;
 
     /// Return a mutable reference to the element at position (`row`, `col`).
+    ///
+    /// # Safety
+    /// `row` and `col` must not be out of bounds.
     unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item;
 
     /// Return a mutable reference at position `index` in one-dimensional numbering.
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
     unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item;
 }
 

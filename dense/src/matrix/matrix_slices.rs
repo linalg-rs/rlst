@@ -61,6 +61,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
     GenericBaseMatrix<Item, Data, Dynamic, Dynamic>
 {
+    #[allow(clippy::type_complexity)]
     /// Split a mutable matrix into four mutable subblocks.
     ///
     /// This method splits the matrix into 4 blocks according to the
@@ -98,15 +99,14 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
         let start2 = self.layout().convert_2d_raw(origin2.0, origin2.1) as isize;
         let start3 = self.layout().convert_2d_raw(origin3.0, origin3.1) as isize;
 
-        let blocks = unsafe {
+        unsafe {
             (
                 crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start0), dim0, stride],
                 crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start1), dim1, stride],
                 crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start2), dim2, stride],
                 crate::rlst_mut_pointer_mat!['a, Item, ptr.offset(start3), dim3, stride],
             )
-        };
-        blocks
+        }
     }
 }
 

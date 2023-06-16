@@ -147,7 +147,6 @@ pretty_print_impl!(c64, fmt_complex);
 fn fmt_real<T: Scalar>(num: T::Real, width: usize, precision: usize, exp_pad: usize) -> String {
     let mut num = format!("{:.precision$e}", num, precision = precision);
     // Safe to `unwrap` as `num` is guaranteed to contain `'e'`
-    #[allow(clippy::unwrap_used)]
     let exp = num.split_off(num.find('e').unwrap());
 
     let (sign, exp) = exp

@@ -15,7 +15,7 @@ pub trait LinAlg {
     where
         Self: 'a;
 
-    fn linalg<'a>(&'a self) -> Self::Out<'a>;
+    fn linalg(&self) -> Self::Out<'_>;
 }
 
 impl<T: Scalar, Mat: MatrixImplTrait<T, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> LinAlg
@@ -23,9 +23,9 @@ impl<T: Scalar, Mat: MatrixImplTrait<T, RS, CS>, RS: SizeIdentifier, CS: SizeIde
 {
     type T = T;
     type Out<'a> = DenseMatrixLinAlgBuilder<'a, Self::T, Self> where Self: 'a;
-    fn linalg<'a>(&'a self) -> Self::Out<'a> {
+    fn linalg(&self) -> Self::Out<'_> {
         DenseMatrixLinAlgBuilder {
-            mat: &self,
+            mat: self,
             _marker: PhantomData,
         }
     }

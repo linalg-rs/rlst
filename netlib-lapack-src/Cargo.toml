@@ -1,0 +1,22 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-netlib-lapack-src"
+version = "0.1.0"
+edition = "2021"
+links = "netliblapack"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rlst-blis-src = { path = "../blis-src" }
+rlst-gfortran-src = { path = "../gfortran-src"}
+
+[lib]
+name = "rlst_netlib_lapack_src"
+
+[build-dependencies]
+cmake = "0.1.*"
+
+

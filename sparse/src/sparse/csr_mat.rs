@@ -183,7 +183,7 @@ impl<T: Scalar> rlst_common::traits::iterators::AijIterator for CsrMatrix<T> {
     type T = T;
     type Iter<'a> = CsrAijIterator<'a, T> where Self: 'a;
 
-    fn iter_aij<'a>(&'a self) -> Self::Iter<'a> {
+    fn iter_aij(&self) -> Self::Iter<'_> {
         CsrAijIterator::new(self)
     }
 }

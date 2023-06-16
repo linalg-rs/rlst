@@ -98,11 +98,11 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     }
 
     pub fn indptr(&self) -> &[usize] {
-        &self.local_matrix.indptr()
+        self.local_matrix.indptr()
     }
 
     pub fn data(&self) -> &[T] {
-        &self.local_matrix.data()
+        self.local_matrix.data()
     }
 
     pub fn domain_layout(&self) -> &'a DefaultMpiIndexLayout<'a, C> {
@@ -144,12 +144,12 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         let mut my_data_count: i32 = 0;
 
         if my_rank == 0 {
-            let mut counts = vec![0 as i32; size];
+            let mut counts: Vec<i32> = vec![0; size];
             let csr_mat = csr_mat.unwrap();
 
-            for rank in 0..size {
+            for (rank, item) in counts.iter_mut().enumerate() {
                 let local_index_range = range_layout.index_range(rank).unwrap();
-                counts[rank] = (csr_mat.indptr()[local_index_range.1]
+                *item = (csr_mat.indptr()[local_index_range.1]
                     - csr_mat.indptr()[local_index_range.0]) as i32;
             }
 
@@ -168,14 +168,14 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             }
 
             csr_data = vec![T::zero(); my_data_count as usize];
-            csr_indices = vec![0 as usize; my_data_count as usize];
-            csr_indptr = vec![0 as usize; 1 + my_number_of_rows];
+            csr_indices = vec![0; my_data_count as usize];
+            csr_indptr = vec![0; 1 + my_number_of_rows];
             shape = vec![csr_mat.shape().0, csr_mat.shape().1];
 
             // The following code computes the counts and displacements for the indexptr vector.
 
-            let mut idxptrcount = vec![0 as i32; size];
-            let mut idxptrdisplacements = vec![0 as i32; size];
+            let mut idxptrcount: Vec<i32> = vec![0; size];
+            let mut idxptrdisplacements: Vec<i32> = vec![0; size];
 
             for rank in 0..size {
                 let local_index_range = range_layout.index_range(rank).unwrap();
@@ -213,7 +213,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             root_process.broadcast_into(shape.as_mut_slice());
         } else {
             // Allocate the shape
-            shape = vec![0 as usize; 2];
+            shape = vec![0; 2];
 
             // Receive the number of data entries.
             root_process.scatter_into(&mut my_data_count);
@@ -221,8 +221,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             // Now make space for the matrix data.
 
             csr_data = vec![T::zero(); my_data_count as usize];
-            csr_indices = vec![0 as usize; my_data_count as usize];
-            csr_indptr = vec![0 as usize; 1 + my_number_of_rows as usize];
+            csr_indices = vec![0; my_data_count as usize];
+            csr_indptr = vec![0; 1 + my_number_of_rows];
 
             // Get the matrix data
             root_process.scatter_varcount_into(csr_data.as_mut_slice());
@@ -236,7 +236,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             let first_elem = csr_indptr[0];
             csr_indptr[..my_number_of_rows]
                 .iter_mut()
-                .for_each(|elem| *elem = *elem - first_elem);
+                .for_each(|elem| *elem -= first_elem);
         }
 
         csr_indptr[my_number_of_rows] = my_data_count as usize;

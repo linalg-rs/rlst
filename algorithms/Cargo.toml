@@ -1,6 +1,5 @@
 [features]
 strict = []
-openblas-system = ["dep:openblas-src"]
 
 [package]
 name = "rlst-algorithms"
@@ -12,13 +11,16 @@ edition = "2021"
 [dependencies]
 rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
+rlst-blis-src = {path = "../blis-src"}
+rlst-netlib-lapack-src = {path = "../netlib-lapack-src"}
 num = "0.4"
 rand = "0.8"
 lapacke = { version = "0.5"}
-lapack-src = { version = "0.9", features = ["openblas"]}
+lapack = "0.19.*"
+# lapack-src = { version = "0.9", features = ["accelerate"]}
 rand_chacha = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
-openblas-src = { version = "0.10", features = ["system"], optional = true }
+
 
 [dev-dependencies]
 cauchy = "0.4"

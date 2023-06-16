@@ -11,6 +11,7 @@ pub enum Mode {
 pub trait Svd {
     type T: Scalar;
 
+    #[allow(clippy::type_complexity)]
     fn svd(
         self,
         u_mode: Mode,

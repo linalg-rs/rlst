@@ -14,8 +14,8 @@ pub trait IndexableVector {
     where
         Self: 'a;
 
-    fn view<'a>(&'a self) -> Option<Self::View<'a>>;
-    fn view_mut<'a>(&'a mut self) -> Option<Self::ViewMut<'a>>;
+    fn view(&self) -> Option<Self::View<'_>>;
+    fn view_mut(&mut self) -> Option<Self::ViewMut<'_>>;
 
     fn index_layout(&self) -> &Self::Ind;
 }
@@ -30,9 +30,15 @@ pub trait IndexableVectorView {
 
     fn get(&self, index: usize) -> Option<&Self::T>;
 
+    /// # Safety
+    /// `index` must not exceed bounds.
     unsafe fn get_unchecked(&self, index: usize) -> &Self::T;
 
     fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 
     fn data(&self) -> &[Self::T];
 }
@@ -46,6 +52,8 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
     fn get_mut(&mut self, index: usize) -> Option<&mut Self::T>;
 
+    /// # Safety
+    /// `index` must not exceed bounds.
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::T;
 
     fn data_mut(&mut self) -> &mut [Self::T];
