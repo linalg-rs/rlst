@@ -18,8 +18,6 @@ jobs:
       matrix:
         rust-version: ["stable"]
         mpi: ["mpich"]
-    env:
-      OPENBLAS_VERSION: "0.3.23"
     steps:
       - uses: kenchan0130/actions-system-info@master
         id: system-info
