@@ -39,6 +39,8 @@ jobs:
         run: cargo install cargo-mpirun
 
       - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
 
       - name: Style checks
         run: cargo fmt -- --check
