@@ -24,7 +24,7 @@ jobs:
       - name: Get processor type
         run: echo "type=${{ steps.system-info.outputs.cpu-model }}" >> $GITHUB_OUTPUT
         id: processor
-
+        
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -42,6 +42,12 @@ jobs:
         with:
           submodules: 'true'
 
+      - name: Install Clang
+        run: sudo apt-get install -y libclang-dev
+
+      - name: Install CMake
+        run: sudo apt-get install -y cmake
+  
       - name: Style checks
         run: cargo fmt -- --check
 
