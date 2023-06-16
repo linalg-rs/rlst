@@ -6,6 +6,6 @@
 	path = blis-src/blis
 	url = https://github.com/flame/blis.git
 
-[submodule "lapack-src/lapack"]
-	path = lapack-src/lapack
+[submodule "netlib-lapack-src/lapack"]
+	path = netlib-lapack-src/lapack
 	url = https://github.com/Reference-LAPACK/lapack.git
