@@ -11,7 +11,7 @@ edition = "2021"
 [dependencies]
 rlst-suitesparse-src = {path = "../suitesparse-src"}
 rlst-blis-src = { path = "../blis-src"}
-rlst-lapack-src = { path = "../lapack-src"}
+rlst-netlib-lapack-src = { path = "../netlib-lapack-src"}
 
 [lib]
 name = "rlst_umfpack"

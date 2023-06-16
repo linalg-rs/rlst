@@ -15,7 +15,7 @@ name = "rlst_suitesparse_src"
 
 [dependencies]
 rlst-blis-src = { path = "../blis-src"}
-rlst-lapack-src = { path = "../lapack-src"}
+rlst-netlib-lapack-src = { path = "../netlib-lapack-src"}
 
 [build-dependencies]
 bindgen = "0.65.*"
