@@ -63,3 +63,17 @@ pub trait SquareSum {
 
     fn square_sum(&self) -> <Self::T as Scalar>::Real;
 }
+
+/// Transpose of an operator
+pub trait Transpose {
+    type Out;
+
+    fn transpose(&self) -> Self::Out;
+}
+
+/// Conjugate transpose of an operator
+pub trait ConjTranspose {
+    type Out;
+
+    fn conj_transpose(&self) -> Self::Out;
+}

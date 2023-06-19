@@ -17,7 +17,7 @@ pub use rlst_common::types::{RlstError, RlstResult};
 // }
 
 /// Transposition mode for Lapack.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum TransposeMode {
     /// No transpose
@@ -28,14 +28,14 @@ pub enum TransposeMode {
     ConjugateTrans = b'C',
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum SideMode {
     Left = b'L',
     Right = b'R',
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum TriangularType {
     Upper = b'U',
@@ -49,9 +49,17 @@ pub enum TriangularDiagonal {
     NonUnit = b'N',
 }
 /// A simple container to take ownership of a matrix for Lapack operations.
-pub struct LapackData<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
+pub struct LapackDataOwned<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     /// The matrix on which to perform a Lapack operation.
     pub mat: Mat,
+    /// The Lapack LDA parameter, which is the distance from one column to the next in memory.
+    pub lda: i32,
+}
+
+/// A simple container that borrows a matrix for Lapack operations.
+pub struct LapackDataBorrowed<'a, T: Scalar, Mat: RawAccess<T = T> + Shape + Stride> {
+    /// The matrix on which to perform a Lapack operation.
+    pub mat: &'a Mat,
     /// The Lapack LDA parameter, which is the distance from one column to the next in memory.
     pub lda: i32,
 }
@@ -68,12 +76,27 @@ where
     /// Take ownership of a matrix and check that its layout is compatible with Lapack.
     pub fn into_lapack(
         self,
-    ) -> RlstResult<LapackData<<<Mat as Copy>::Out as RawAccess>::T, <Mat as Copy>::Out>> {
+    ) -> RlstResult<LapackDataOwned<<<Mat as Copy>::Out as RawAccess>::T, <Mat as Copy>::Out>> {
         let copied = self.mat.copy();
         let shape = copied.shape();
         if check_lapack_stride(shape, copied.stride()) {
-            Ok(LapackData {
+            Ok(LapackDataOwned {
                 mat: copied,
+                lda: shape.0 as i32,
+            })
+        } else {
+            Err(RlstError::IncompatibleStride)
+        }
+    }
+}
+
+impl<'a, T: Scalar, Mat: RawAccess<T = T> + Shape + Stride> DenseMatrixLinAlgBuilder<'a, T, Mat> {
+    /// Take ownership of a matrix and check that its layout is compatible with Lapack.
+    pub fn borrow_lapack(&'a self) -> RlstResult<LapackDataBorrowed<'a, T, Mat>> {
+        let shape = self.mat.shape();
+        if check_lapack_stride(shape, self.mat.stride()) {
+            Ok(LapackDataBorrowed {
+                mat: self.mat,
                 lda: shape.0 as i32,
             })
         } else {

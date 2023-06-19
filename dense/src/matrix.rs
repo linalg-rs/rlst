@@ -23,6 +23,7 @@ pub mod common_impl;
 pub mod constructors;
 pub mod iterators;
 pub mod matrix_slices;
+pub mod operations;
 pub mod random;
 
 use crate::base_matrix::BaseMatrix;

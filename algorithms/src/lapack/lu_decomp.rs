@@ -3,7 +3,7 @@
 //! The Lapack LU interface uses the Lapack routines `_getrf` to compute an LU decomposition and
 //! `_getrs` to solve a linear system of equations.
 
-use crate::lapack::LapackData;
+use crate::lapack::LapackDataOwned;
 use crate::traits::lu_decomp::{LUDecomp, LU};
 use lapacke;
 use num::traits::One;
@@ -16,7 +16,7 @@ use crate::linalg::DenseMatrixLinAlgBuilder;
 use std::marker::PhantomData;
 
 pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
-    data: LapackData<<Mat as RawAccess>::T, Mat>,
+    data: LapackDataOwned<<Mat as RawAccess>::T, Mat>,
     ipiv: Vec<i32>,
     _marker: PhantomData<T>,
 }

@@ -3,6 +3,13 @@
 /// Return the shape of the object.
 pub trait Shape {
     fn shape(&self) -> (usize, usize);
+
+    /// Return true if a dimension is 0.
+    fn is_empty(&self) -> bool {
+        let shape = self.shape();
+
+        shape.0 == 0 || shape.1 == 0
+    }
 }
 
 /// Return the stride of the object.
