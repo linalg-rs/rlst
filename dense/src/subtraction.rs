@@ -184,16 +184,16 @@ mod test {
     use rlst_common::traits::*;
 
     #[test]
-    fn scalar_mult() {
+    fn test_subtraction() {
         let mut mat1 = crate::rlst_mat![f64, (2, 3)];
         let mut mat2 = crate::rlst_mat![f64, (2, 3)];
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;
 
-        let res = 2.0 * mat1 + mat2;
+        let res = 2.0 * mat1 - mat2;
         let res = res.eval();
 
-        assert_eq!(res[[1, 2]], 16.0);
+        assert_eq!(res[[1, 2]], 4.0);
     }
 }
