@@ -79,52 +79,6 @@ macro_rules! dot_impl {
                 res
             }
         }
-
-        // RowVector x Matrix = RowVector
-        impl<Data1: DataContainer<Item = $Scalar>, Data2: DataContainer<Item = $Scalar>>
-            Dot<GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>>
-            for GenericBaseMatrix<$Scalar, Data1, Fixed1, Dynamic>
-        {
-            type Output = GenericBaseMatrix<$Scalar, VectorContainer<$Scalar>, Fixed1, Dynamic>;
-
-            fn dot(
-                &self,
-                rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Dynamic>,
-            ) -> Self::Output {
-                let mut res = crate::rlst_row_vec![$Scalar, rhs.layout().dim().1];
-                <$Scalar>::multiply_add(
-                    num::cast::<f64, $Scalar>(1.0).unwrap(),
-                    &self,
-                    rhs,
-                    num::cast::<f64, $Scalar>(0.0).unwrap(),
-                    &mut res,
-                );
-                res
-            }
-        }
-
-        // Matrix x ColumnVector = ColumnVector
-        impl<Data1: DataContainer<Item = $Scalar>, Data2: DataContainer<Item = $Scalar>>
-            Dot<GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>>
-            for GenericBaseMatrix<$Scalar, Data1, Dynamic, Dynamic>
-        {
-            type Output = GenericBaseMatrix<$Scalar, VectorContainer<$Scalar>, Dynamic, Fixed1>;
-
-            fn dot(
-                &self,
-                rhs: &GenericBaseMatrix<$Scalar, Data2, Dynamic, Fixed1>,
-            ) -> Self::Output {
-                let mut res = crate::rlst_col_vec![$Scalar, self.layout().dim().0];
-                <$Scalar>::multiply_add(
-                    num::cast::<f64, $Scalar>(1.0).unwrap(),
-                    &self,
-                    rhs,
-                    num::cast::<f64, $Scalar>(0.0).unwrap(),
-                    &mut res,
-                );
-                res
-            }
-        }
     };
 }
 

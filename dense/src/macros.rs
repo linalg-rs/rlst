@@ -161,11 +161,7 @@ macro_rules! rlst_fixed_rand_mat {
 #[macro_export]
 macro_rules! rlst_col_vec {
     ($ScalarType:ty, $len:expr) => {{
-        use $crate::LayoutType;
-        $crate::ColumnVectorD::<$ScalarType>::from_data(
-            $crate::VectorContainer::<$ScalarType>::new($len),
-            $crate::DefaultLayout::from_dimension(($len, 1), (1, $len)),
-        )
+        $crate::rlst_mat![$ScalarType, ($len, 1)]
     }};
 }
 
@@ -183,11 +179,7 @@ macro_rules! rlst_col_vec {
 #[macro_export]
 macro_rules! rlst_row_vec {
     ($ScalarType:ty, $len:expr) => {{
-        use $crate::LayoutType;
-        $crate::RowVectorD::<$ScalarType>::from_data(
-            $crate::VectorContainer::<$ScalarType>::new($len),
-            $crate::DefaultLayout::from_dimension((1, $len), (1, 1)),
-        )
+        $crate::rlst_mat![$ScalarType, (1, $len)]
     }};
 }
 

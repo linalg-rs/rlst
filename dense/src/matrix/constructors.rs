@@ -76,46 +76,6 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeTran
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Fixed1, Dynamic>> NewLikeSelf
-    for Matrix<Item, MatImpl, Fixed1, Dynamic>
-{
-    type Out = crate::RowVectorD<Item>;
-
-    fn new_like_self(&self) -> Self::Out {
-        crate::rlst_row_vec![Item, self.layout().number_of_elements()]
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Fixed1, Dynamic>> NewLikeTranspose
-    for Matrix<Item, MatImpl, Fixed1, Dynamic>
-{
-    type Out = crate::ColumnVectorD<Item>;
-
-    fn new_like_transpose(&self) -> Self::Out {
-        crate::rlst_col_vec![Item, self.layout().number_of_elements()]
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Fixed1>> NewLikeSelf
-    for Matrix<Item, MatImpl, Dynamic, Fixed1>
-{
-    type Out = crate::ColumnVectorD<Item>;
-
-    fn new_like_self(&self) -> Self::Out {
-        crate::rlst_col_vec![Item, self.layout().number_of_elements()]
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Fixed1>> NewLikeTranspose
-    for Matrix<Item, MatImpl, Dynamic, Fixed1>
-{
-    type Out = crate::RowVectorD<Item>;
-
-    fn new_like_transpose(&self) -> Self::Out {
-        crate::rlst_row_vec![Item, self.layout().number_of_elements()]
-    }
-}
-
 macro_rules! implement_new_from_self_fixed {
     ($RS:ty, $CS:ty) => {
         impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeSelf

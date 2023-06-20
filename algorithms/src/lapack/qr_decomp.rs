@@ -77,6 +77,20 @@ macro_rules! qr_decomp_impl {
 
                 let mut copied = self.into_lapack()?;
                 let shape = copied.mat.shape();
+
+                let expected_rhs_rows = match trans {
+                    TransposeMode::NoTrans => shape.0,
+                    _ => shape.1,
+                };
+
+                if rhs.shape().0 != expected_rhs_rows {
+                    return Err(RlstError::GeneralError(format!(
+                        "rhs has wrong dimension. Expected {}. Actual {}",
+                        expected_rhs_rows,
+                        rhs.shape().0
+                    )));
+                }
+
                 let stride = copied.mat.stride();
 
                 let ldb = std::cmp::max(shape.0, shape.1);
@@ -91,7 +105,7 @@ macro_rules! qr_decomp_impl {
 
                 // Copy rhs into work_rhs
                 for col_index in 0..nrhs {
-                    for row_index in 0..shape.0 {
+                    for row_index in 0..rhs.shape().0 {
                         work_rhs[[row_index, col_index]] =
                             rhs.get_value(row_index, col_index).unwrap();
                     }
@@ -214,6 +228,7 @@ mod test {
 
     use crate::linalg::LinAlg;
     use crate::traits::lu_decomp::LU;
+    use crate::traits::norm2::Norm2;
     use rlst_common::assert_matrix_abs_diff_eq;
     use rlst_common::assert_matrix_relative_eq;
     use rlst_common::traits::ConjTranspose;
@@ -308,7 +323,9 @@ mod test {
     }
 
     #[test]
-    fn test_least_squares_solve_thin_no_conj_trans() {
+    fn test_least_squares_solve_thin() {
+        // Test notrans
+
         let mat = rlst_rand_mat![c64, (5, 3)];
 
         let rhs = rlst_rand_mat![c64, (5, 2)];
@@ -326,6 +343,56 @@ mod test {
         let actual = mat
             .linalg()
             .solve_least_squares(&rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        assert_matrix_relative_eq!(expected, actual, 1E-12);
+
+        let rhs = rlst_rand_col_vec![c64, 3];
+        let sol = mat
+            .linalg()
+            .solve_least_squares(&rhs, TransposeMode::ConjugateTrans)
+            .unwrap();
+
+        let res_norm = (mat.conj_transpose().dot(&sol) - &rhs)
+            .linalg()
+            .norm2()
+            .unwrap();
+
+        assert!(res_norm / rhs.linalg().norm2().unwrap() < 1E-12);
+    }
+
+    #[test]
+    fn test_least_squares_solve_thick_no_conj_trans() {
+        let mat = rlst_rand_mat![c64, (3, 5)];
+
+        let rhs = rlst_rand_col_vec![c64, 3];
+
+        let sol = mat
+            .linalg()
+            .solve_least_squares(&rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        let res_norm = (&rhs - &mat.dot(&sol)).linalg().norm2().unwrap();
+
+        assert!(res_norm / rhs.linalg().norm2().unwrap() < 1E-12);
+
+        // Test transpose mode
+
+        let rhs = rlst_rand_col_vec![c64, 5];
+
+        let normal_lhs = mat.dot(&mat.conj_transpose());
+        let normal_rhs = mat.dot(&rhs);
+
+        let expected = normal_lhs
+            .linalg()
+            .lu()
+            .unwrap()
+            .solve(&normal_rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        let actual = mat
+            .linalg()
+            .solve_least_squares(&rhs, TransposeMode::ConjugateTrans)
             .unwrap();
 
         assert_matrix_relative_eq!(expected, actual, 1E-12);

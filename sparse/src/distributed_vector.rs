@@ -5,13 +5,13 @@ use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
 use rlst_common::types::{RlstResult, Scalar};
 use rlst_dense::{rlst_col_vec, RawAccess, RawAccessMut};
-use rlst_dense::{ColumnVectorD, RandomAccessByValue, Shape};
+use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 
 use crate::index_layout::DefaultMpiIndexLayout;
 
 pub struct DistributedVector<'a, T: Scalar + Equivalence, C: Communicator> {
     index_layout: &'a DefaultMpiIndexLayout<'a, C>,
-    local: ColumnVectorD<T>,
+    local: MatrixD<T>,
 }
 
 impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
@@ -21,15 +21,15 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
             local: rlst_col_vec![T, index_layout.number_of_local_indices()],
         }
     }
-    pub fn local(&self) -> &ColumnVectorD<T> {
+    pub fn local(&self) -> &MatrixD<T> {
         &self.local
     }
 
-    pub fn local_mut(&mut self) -> &mut ColumnVectorD<T> {
+    pub fn local_mut(&mut self) -> &mut MatrixD<T> {
         &mut self.local
     }
 
-    pub fn to_root(&self) -> Option<ColumnVectorD<T>> {
+    pub fn to_root(&self) -> Option<MatrixD<T>> {
         let comm = self.index_layout().comm();
         let root_process = comm.process_at_rank(0);
 
