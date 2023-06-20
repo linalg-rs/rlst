@@ -189,7 +189,7 @@ macro_rules! qr_decomp_impl {
             fn r(&self) -> RlstResult<MatrixD<Self::T>> {
                 let shape = self.data.mat.shape();
                 let dim = std::cmp::min(shape.0, shape.1);
-                let mut mat = rlst_mat!(Self::T, (shape.0, shape.1));
+                let mut mat = rlst_mat!(Self::T, (dim, shape.1));
 
                 for row in 0..dim {
                     for col in row..shape.1 {
@@ -213,162 +213,121 @@ mod test {
     use std::ops::Index;
 
     use crate::linalg::LinAlg;
+    use crate::traits::lu_decomp::LU;
+    use rlst_common::assert_matrix_abs_diff_eq;
+    use rlst_common::assert_matrix_relative_eq;
+    use rlst_common::traits::ConjTranspose;
+    use rlst_common::traits::Eval;
 
     use super::*;
-    use approx::{assert_abs_diff_eq, AbsDiffEq};
-    use rlst_dense::{rlst_col_vec, rlst_mat, Dot};
+    use crate::traits::lu_decomp::LUDecomp;
+    use rlst_dense::{rlst_col_vec, rlst_mat, rlst_rand_col_vec, rlst_rand_mat, Dot};
 
-    #[macro_export]
-    macro_rules! assert_approx_matrices {
-        ($expected_matrix:expr, $actual_matrix:expr, $epsilon:expr) => {{
-            assert_eq!($expected_matrix.shape(), $actual_matrix.shape());
-            for row in 0..$expected_matrix.shape().0 {
-                for col in 0..$expected_matrix.shape().1 {
-                    assert_abs_diff_eq!(
-                        $actual_matrix[[row, col]],
-                        $expected_matrix[[row, col]],
-                        epsilon = $epsilon
-                    );
-                }
+    #[test]
+    fn test_thick_qr() {
+        // QR Decomposition of a thick matrix.
+
+        let mat = rlst_rand_mat![c64, (3, 5)];
+
+        let qr = mat.linalg().qr().unwrap();
+
+        let q = qr.q(Mode::Reduced).unwrap();
+        let r = qr.r().unwrap();
+
+        // Test dimensions
+
+        assert_eq!(q.shape(), (3, 3));
+        assert_eq!(r.shape(), (3, 5));
+
+        // Test orthogonality of Q
+
+        let actual = q.conj_transpose().dot(&q);
+        let expected = MatrixD::<c64>::identity((3, 3));
+
+        assert_eq!(actual.shape(), (3, 3));
+        assert_matrix_abs_diff_eq!(actual, expected, 1E-12);
+
+        // Test that r is triangular
+
+        for row_index in 0..r.shape().0 {
+            for col_index in 0..row_index {
+                assert_eq!(r[[row_index, col_index]], c64::zero());
             }
-        }};
+        }
+
+        // Test backward error
+
+        let actual = q.dot(&r);
+        assert_matrix_relative_eq!(actual, mat.eval(), 1E-14);
     }
 
-    macro_rules! test_qr_solve {
-        ($scalar:ty, $solver:ident, $name:ident, $m:literal, $n:literal) => {
-            #[test]
-            fn $name() {
-                let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
-                let rhs = matrix_a.dot(&exp_sol);
-                let rhs = matrix_a
-                    .linalg()
-                    .$solver(rhs, TransposeMode::NoTrans)
-                    .unwrap();
+    #[test]
+    fn test_thin_qr() {
+        // QR Decomposition of a thin matrix.
 
-                let mut actual_sol = rlst_col_vec!($scalar, $n);
-                actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
+        let mat = rlst_rand_mat![c64, (5, 3)];
 
-                assert_approx_matrices!(
-                    &exp_sol,
-                    &actual_sol,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
+        let qr = mat.linalg().qr().unwrap();
+
+        let q_thin = qr.q(Mode::Reduced).unwrap();
+        let q_thick = qr.q(Mode::Full).unwrap();
+        let r = qr.r().unwrap();
+
+        // Test dimensions
+
+        assert_eq!(q_thin.shape(), (5, 3));
+        assert_eq!(q_thick.shape(), (5, 5));
+        assert_eq!(r.shape(), (3, 3));
+
+        // Test orthogonality of Q
+
+        let actual_thin = q_thin.conj_transpose().dot(&q_thin);
+        let expected_thin = MatrixD::<c64>::identity((3, 3));
+
+        let actual_thick = q_thick.conj_transpose().dot(&q_thick);
+        let expected_thick = MatrixD::<c64>::identity((5, 5));
+
+        assert_eq!(actual_thin.shape(), (3, 3));
+        assert_eq!(actual_thick.shape(), (5, 5));
+
+        assert_matrix_abs_diff_eq!(actual_thin, expected_thin, 1E-12);
+        assert_matrix_abs_diff_eq!(actual_thick, expected_thick, 1E-12);
+
+        // Test that r is triangular
+
+        for row_index in 0..r.shape().0 {
+            for col_index in 0..row_index {
+                assert_eq!(r[[row_index, col_index]], c64::zero());
             }
-        };
+        }
+
+        // Test backward error
+
+        let actual = q_thin.dot(&r);
+        assert_matrix_relative_eq!(actual, mat.eval(), 1E-14);
     }
 
-    macro_rules! test_q_unitary {
-        ($scalar:ty, $qr:ident, $name:ident, $m:literal, $n:literal, $trans:ident) => {
-            #[test]
-            fn $name() {
-                let rlst_mat = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let qr = rlst_mat.linalg().$qr().unwrap();
+    #[test]
+    fn test_least_squares_solve_thin_no_conj_trans() {
+        let mat = rlst_rand_mat![c64, (5, 3)];
 
-                let mut expected_i = rlst_mat!($scalar, ($m, $m));
-                for i in 0..$m {
-                    expected_i[[i, i]] = <$scalar as One>::one();
-                }
+        let rhs = rlst_rand_mat![c64, (5, 2)];
 
-                let matrix_q = qr.get_q().unwrap();
+        let normal_lhs = mat.conj_transpose().dot(&mat);
+        let normal_rhs = mat.conj_transpose().dot(&rhs);
 
-                let actual_i_t = qr.q_mult(matrix_q, TransposeMode::$trans).unwrap();
-                assert_approx_matrices!(
-                    &expected_i,
-                    &actual_i_t,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
-            }
-        };
+        let expected = normal_lhs
+            .linalg()
+            .lu()
+            .unwrap()
+            .solve(&normal_rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        let actual = mat
+            .linalg()
+            .solve_least_squares(&rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        assert_matrix_relative_eq!(expected, actual, 1E-12);
     }
-
-    macro_rules! test_qr_is_a {
-        ($scalar:ty, $qr_decomp:ident, $name:ident, $m:literal, $n:literal) => {
-            #[test]
-            fn $name() {
-                let expected_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
-                rlst_mat.data_mut().copy_from_slice(expected_a.data());
-
-                let qr = rlst_mat.linalg().$qr_decomp().unwrap();
-                let matrix_r = qr.get_r().unwrap();
-                let matrix_q = qr.get_q().unwrap();
-                let actual_a = matrix_q.dot(&matrix_r);
-
-                assert_approx_matrices!(
-                    expected_a,
-                    actual_a,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
-            }
-        };
-    }
-
-    macro_rules! test_q_mult_r_is_a {
-        ($scalar:ty, $qr_decomp:ident, $name:ident, $m:literal, $n:literal) => {
-            #[test]
-            fn $name() {
-                let expected_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let mut rlst_mat = rlst_dense::rlst_mat![$scalar, expected_a.shape()];
-                rlst_mat.data_mut().copy_from_slice(expected_a.data());
-
-                let qr = rlst_mat.linalg().$qr_decomp().unwrap();
-                let matrix_r = qr.get_r().unwrap();
-                let actual_a = qr.q_mult(matrix_r, TransposeMode::NoTrans).unwrap();
-
-                assert_approx_matrices!(
-                    &expected_a,
-                    &actual_a,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
-            }
-        };
-    }
-
-    macro_rules! test_qr_decomp_and_solve {
-        ($scalar:ty, $qr_decomp:ident, $name:ident, $m:literal, $n:literal) => {
-            #[test]
-            fn $name() {
-                let matrix_a = rlst_dense::rlst_rand_mat![$scalar, ($m, $n)];
-                let exp_sol = rlst_dense::rlst_rand_col_vec![$scalar, $n];
-                let rhs = matrix_a.dot(&exp_sol);
-
-                let rhs = matrix_a
-                    .linalg()
-                    .$qr_decomp()
-                    .unwrap()
-                    .solve_qr(rhs, TransposeMode::NoTrans)
-                    .unwrap();
-
-                let mut actual_sol = rlst_col_vec!($scalar, $n);
-                actual_sol.data_mut().copy_from_slice(rhs.get_slice(0, $n));
-
-                assert_approx_matrices!(
-                    &exp_sol,
-                    &actual_sol,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
-            }
-        };
-    }
-    // test_qr_solve!(f64, solve_least_squares, test_solve_ls_qr_f64, 4, 3);
-    // test_q_unitary!(f64, qr, test_q_unitary_f64, 4, 3, Trans);
-    // test_qr_is_a!(f64, qr, test_qr_decomp_f64, 4, 3);
-    // test_q_mult_r_is_a!(f64, qr, test_q_mult_r_is_a_f64, 4, 3);
-    // test_qr_decomp_and_solve!(f64, qr, test_qr_decomp_and_solve_f64, 4, 3);
-    // test_qr_solve!(f32, solve_least_squares, test_solve_ls_qr_f32, 4, 3);
-    // test_q_unitary!(f32, qr, test_q_unitary_f32, 4, 3, Trans);
-    // test_qr_is_a!(f32, qr, test_qr_decomp_f32, 4, 3);
-    // test_q_mult_r_is_a!(f32, qr, test_q_mult_r_is_a_f32, 4, 3);
-    // test_qr_decomp_and_solve!(f32, qr, test_qr_decomp_and_solve_f32, 4, 3);
-    // test_qr_solve!(c32, solve_least_squares, test_solve_ls_qr_c32, 4, 3);
-    // test_q_unitary!(c32, qr, test_q_unitary_c32, 4, 3, ConjugateTrans);
-    // test_qr_is_a!(c32, qr, test_qr_decomp_c32, 4, 3);
-    // test_q_mult_r_is_a!(c32, qr, test_q_mult_r_is_a_c32, 4, 3);
-    // test_qr_decomp_and_solve!(c32, qr, test_qr_decomp_and_solve_c32, 4, 3);
-    // test_qr_solve!(c64, solve_least_squares, test_solve_ls_qr_c64, 4, 3);
-    // test_q_unitary!(c64, qr, test_q_unitary_c64, 4, 3, ConjugateTrans);
-    // test_qr_is_a!(c64, qr, test_qr_decomp_c64, 4, 3);
-    // test_q_mult_r_is_a!(c64, qr, test_q_mult_r_is_a_c64, 4, 3);
-    // test_qr_decomp_and_solve!(c64, qr, test_qr_decomp_and_solve_c64, 4, 3);
 }

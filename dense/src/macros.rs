@@ -110,6 +110,8 @@ macro_rules! rlst_fixed_mat {
     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
         use paste::paste;
         use $crate::LayoutType;
+        #[allow(unused_imports)]
+        use $crate::{Fixed1, Fixed2, Fixed3};
         $crate::GenericBaseMatrix::<
             $ScalarType,
             $crate::ArrayContainer<$ScalarType, { $dim1 * $dim2 }>,
@@ -119,6 +121,29 @@ macro_rules! rlst_fixed_mat {
             $crate::ArrayContainer::<$ScalarType, { $dim1 * $dim2 }>::new(),
             $crate::DefaultLayout::from_dimension(($dim1, $dim2), (1, $dim1)),
         )
+    }};
+}
+
+/// Create a new random matrix with compile-time known dimension parameters and stack allocated storage.
+///
+/// Currently only dimensions 1, 2, 3 are supported as
+/// dimension parameters.
+///
+/// Example:
+/// ```
+/// # use rlst_dense::*;
+/// # use rlst_common::traits::*;
+/// // Creates a (2, 3) .
+/// let mat = rlst_fixed_rand_mat![f64, 2, 3];
+/// # assert_eq!(mat.shape(), (2, 3))
+/// ```
+#[macro_export]
+macro_rules! rlst_fixed_rand_mat {
+    ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
+        let mut rng = rand::thread_rng();
+        let mut mat = $crate::rlst_fixed_mat![$ScalarType, $dim1, $dim2];
+        mat.fill_from_standard_normal(&mut rng);
+        mat
     }};
 }
 

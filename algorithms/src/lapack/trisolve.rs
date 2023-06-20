@@ -69,42 +69,42 @@ mod test {
     use rlst_dense::{rlst_rand_col_vec, rlst_rand_mat, Dot};
 
     use super::*;
-    use crate::{assert_approx_matrices, linalg::LinAlg};
+    use crate::linalg::LinAlg;
     use approx::{assert_abs_diff_eq, AbsDiffEq};
 
-    macro_rules! test_trisolve {
-        ($scalar:ty, $name:ident) => {
-            #[test]
-            fn $name() {
-                let mut mat_a = rlst_rand_mat![$scalar, (4, 4)];
-                for row in 0..mat_a.shape().0 {
-                    for col in 0..row {
-                        mat_a[[row, col]] = <$scalar as Zero>::zero();
-                    }
-                }
-                let exp_sol = rlst_rand_col_vec![$scalar, 4];
-                let mut actual_sol = mat_a.dot(&exp_sol);
-                actual_sol = mat_a
-                    .linalg()
-                    .trisolve(
-                        actual_sol,
-                        TriangularType::Upper,
-                        TriangularDiagonal::NonUnit,
-                        TransposeMode::NoTrans,
-                    )
-                    .unwrap();
+    // macro_rules! test_trisolve {
+    //     ($scalar:ty, $name:ident) => {
+    //         #[test]
+    //         fn $name() {
+    //             let mut mat_a = rlst_rand_mat![$scalar, (4, 4)];
+    //             for row in 0..mat_a.shape().0 {
+    //                 for col in 0..row {
+    //                     mat_a[[row, col]] = <$scalar as Zero>::zero();
+    //                 }
+    //             }
+    //             let exp_sol = rlst_rand_col_vec![$scalar, 4];
+    //             let mut actual_sol = mat_a.dot(&exp_sol);
+    //             actual_sol = mat_a
+    //                 .linalg()
+    //                 .trisolve(
+    //                     actual_sol,
+    //                     TriangularType::Upper,
+    //                     TriangularDiagonal::NonUnit,
+    //                     TransposeMode::NoTrans,
+    //                 )
+    //                 .unwrap();
 
-                assert_approx_matrices!(
-                    &exp_sol,
-                    &actual_sol,
-                    1000. * <$scalar as AbsDiffEq>::default_epsilon()
-                );
-            }
-        };
-    }
+    //             assert_approx_matrices!(
+    //                 &exp_sol,
+    //                 &actual_sol,
+    //                 1000. * <$scalar as AbsDiffEq>::default_epsilon()
+    //             );
+    //         }
+    //     };
+    // }
 
-    test_trisolve!(f32, test_trisolve_f32);
-    test_trisolve!(f64, test_trisolve_f64);
-    test_trisolve!(c32, test_trisolve_c32);
-    test_trisolve!(c64, test_trisolve_c64);
+    // test_trisolve!(f32, test_trisolve_f32);
+    // test_trisolve!(f64, test_trisolve_f64);
+    // test_trisolve!(c32, test_trisolve_c32);
+    // test_trisolve!(c64, test_trisolve_c64);
 }

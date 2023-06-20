@@ -64,3 +64,65 @@ where
         new_mat
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::{rlst_fixed_rand_mat, rlst_rand_col_vec, rlst_rand_mat, rlst_rand_row_vec};
+    use rlst_common::types::c64;
+
+    #[test]
+    fn test_conj_transpose() {
+        let mat = rlst_rand_mat![c64, (3, 4)];
+
+        let transpose_mat = mat.conj_transpose();
+
+        assert_eq!(transpose_mat.shape(), (4, 3));
+
+        for col_index in 0..mat.shape().1 {
+            for row_index in 0..mat.shape().0 {
+                assert_eq!(
+                    mat[[row_index, col_index]],
+                    transpose_mat[[col_index, row_index]].conj()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_transpose() {
+        let mat = rlst_rand_mat![c64, (3, 4)];
+
+        let transpose_mat = mat.transpose();
+
+        assert_eq!(transpose_mat.shape(), (4, 3));
+
+        for col_index in 0..mat.shape().1 {
+            for row_index in 0..mat.shape().0 {
+                assert_eq!(
+                    mat[[row_index, col_index]],
+                    transpose_mat[[col_index, row_index]]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_fixed_mat_transpose() {
+        let mat = rlst_fixed_rand_mat![c64, 2, 3];
+
+        let transpose_mat = mat.transpose();
+
+        assert_eq!(transpose_mat.shape(), (3, 2));
+
+        for col_index in 0..mat.shape().1 {
+            for row_index in 0..mat.shape().0 {
+                assert_eq!(
+                    mat[[row_index, col_index]],
+                    transpose_mat[[col_index, row_index]]
+                );
+            }
+        }
+    }
+}
