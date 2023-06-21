@@ -1,29 +1,26 @@
-use crate::linalg::LinAlg;
-use crate::traits::qr_decomp_trait::{Mode, QRTrait};
-use crate::traits::trisolve_trait::Trisolve;
+use crate::traits::qr_decomp_trait::QRTrait;
 use crate::{lapack::LapackDataOwned, traits::qr_decomp_trait::QRDecomposableTrait};
 use lapacke::{cunmqr, dormqr, sormqr, zunmqr};
-use num::{One, Zero};
-use rlst_common::traits::{Copy, Identity};
+use num::Zero;
+#[allow(unused_imports)]
+use rlst_common::traits::{Copy, Identity, PermuteColumns};
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, MatrixD};
 use rlst_dense::{RandomAccessByValue, RawAccess, RawAccessMut, Shape, Stride};
 
-use super::{
-    check_lapack_stride, DenseMatrixLinAlgBuilder, SideMode, TransposeMode, TriangularDiagonal,
-    TriangularType,
-};
+use super::DenseMatrixLinAlgBuilder;
+use crate::traits::types::*;
 
 pub struct QRDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     data: LapackDataOwned<T, Mat>,
     tau: Vec<T>,
     lda: i32,
     shape: (usize, usize),
-    stride: (usize, usize),
+    jpvt: Vec<usize>,
 }
 
 macro_rules! qr_decomp_impl {
-    ($scalar:ty, $lapack_qr:ident, $lapack_qr_solve:ident, $lapack_qmult:ident) => {
+    ($scalar:ty, $lapack_qr:ident, $lapack_qr_pivoting:ident, $lapack_qr_solve:ident, $lapack_qmult:ident) => {
         impl<'a, Mat: Copy> QRDecomposableTrait for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + RawAccess<T = $scalar> + Shape + Stride,
@@ -31,7 +28,10 @@ macro_rules! qr_decomp_impl {
             type T = $scalar;
             type Out = QRDecompLapack<$scalar, <Mat as Copy>::Out>;
             /// Returns the QR decomposition of the input matrix assuming full rank and using LAPACK xGEQRF
-            fn qr(self) -> RlstResult<QRDecompLapack<$scalar, <Mat as Copy>::Out>> {
+            fn qr(
+                self,
+                pivoting: PivotMode,
+            ) -> RlstResult<QRDecompLapack<$scalar, <Mat as Copy>::Out>> {
                 let mut copied = self.into_lapack()?;
                 let shape = copied.mat.shape();
                 let stride = copied.mat.stride();
@@ -42,15 +42,38 @@ macro_rules! qr_decomp_impl {
                 let mut tau: Vec<$scalar> =
                     vec![<$scalar as Zero>::zero(); std::cmp::min(shape.0, shape.1)];
 
-                let info = unsafe {
-                    lapacke::$lapack_qr(
-                        lapacke::Layout::ColumnMajor,
-                        m,
-                        n,
-                        copied.mat.data_mut(),
-                        lda,
-                        &mut tau,
-                    )
+                let mut jpvt = vec![0 as i32; shape.1];
+
+                let info = match pivoting {
+                    PivotMode::NoPivoting => {
+                        // Fill the pivoting array with the identity permutation.
+                        // Using 1-based indexing here. Lapack returns 1-based
+                        // indexing and fix this when converting to usize array.
+                        for (index, item) in jpvt.iter_mut().enumerate() {
+                            *item = 1 + index as i32;
+                        }
+                        unsafe {
+                            lapacke::$lapack_qr(
+                                lapacke::Layout::ColumnMajor,
+                                m,
+                                n,
+                                copied.mat.data_mut(),
+                                lda,
+                                &mut tau,
+                            )
+                        }
+                    }
+                    PivotMode::WithPivoting => unsafe {
+                        lapacke::$lapack_qr_pivoting(
+                            lapacke::Layout::ColumnMajor,
+                            m,
+                            n,
+                            copied.mat.data_mut(),
+                            lda,
+                            &mut jpvt,
+                            &mut tau,
+                        )
+                    },
                 };
 
                 if info == 0 {
@@ -59,7 +82,7 @@ macro_rules! qr_decomp_impl {
                         tau,
                         lda,
                         shape,
-                        stride,
+                        jpvt: jpvt.iter().map(|&item| item as usize - 1).collect(),
                     });
                 } else {
                     return Err(RlstError::LapackError(info));
@@ -163,15 +186,17 @@ macro_rules! qr_decomp_impl {
             type Q = MatrixD<Self::T>;
             type R = MatrixD<Self::T>;
 
-            fn q(&self, mode: Mode) -> RlstResult<MatrixD<Self::T>> {
+            fn q(&self, mode: QrMode) -> RlstResult<MatrixD<Self::T>> {
                 let q_dim = if self.shape.0 < self.shape.1 {
                     // Fewer rows than columns
                     (self.shape.0, self.shape.0)
                 } else {
                     // rows >= columns
                     match mode {
-                        Mode::Reduced => (self.shape.0, std::cmp::min(self.shape.0, self.shape.1)),
-                        Mode::Full => (self.shape.0, self.shape.0),
+                        QrMode::Reduced => {
+                            (self.shape.0, std::cmp::min(self.shape.0, self.shape.1))
+                        }
+                        QrMode::Full => (self.shape.0, self.shape.0),
                     }
                 };
 
@@ -212,14 +237,18 @@ macro_rules! qr_decomp_impl {
                 }
                 Ok(mat)
             }
+
+            fn permutation(&self) -> &Vec<usize> {
+                &self.jpvt
+            }
         }
     };
 }
 
-qr_decomp_impl!(f32, sgeqrf, sgels, sormqr);
-qr_decomp_impl!(f64, dgeqrf, dgels, dormqr);
-qr_decomp_impl!(c32, cgeqrf, cgels, cunmqr);
-qr_decomp_impl!(c64, zgeqrf, zgels, zunmqr);
+qr_decomp_impl!(f32, sgeqrf, sgeqp3, sgels, sormqr);
+qr_decomp_impl!(f64, dgeqrf, dgeqp3, dgels, dormqr);
+qr_decomp_impl!(c32, cgeqrf, cgeqp3, cgels, cunmqr);
+qr_decomp_impl!(c64, zgeqrf, zgeqp3, zgels, zunmqr);
 
 #[cfg(test)]
 mod test {
@@ -229,6 +258,7 @@ mod test {
     use crate::linalg::LinAlg;
     use crate::traits::lu_decomp::LU;
     use crate::traits::norm2::Norm2;
+    use paste::paste;
     use rlst_common::assert_matrix_abs_diff_eq;
     use rlst_common::assert_matrix_relative_eq;
     use rlst_common::traits::ConjTranspose;
@@ -238,163 +268,191 @@ mod test {
     use crate::traits::lu_decomp::LUDecomp;
     use rlst_dense::{rlst_col_vec, rlst_mat, rlst_rand_col_vec, rlst_rand_mat, Dot};
 
-    #[test]
-    fn test_thick_qr() {
-        // QR Decomposition of a thick matrix.
+    macro_rules! qr_tests {
+        ($ScalarType:ident, $PivotMode:expr, $trans:expr, $tol:expr) => {
+            paste! {
+                #[test]
+                fn [<test_thick_qr_ $ScalarType _ $PivotMode>]() {
+                    // QR Decomposition of a thick matrix.
 
-        let mat = rlst_rand_mat![c64, (3, 5)];
+                    let mut mat = rlst_mat![$ScalarType, (3, 5)];
+                    mat.fill_from_seed_equally_distributed(0);
 
-        let qr = mat.linalg().qr().unwrap();
+                    let pivot_mode;
+                    if $PivotMode == "nopivot" {
+                        pivot_mode = PivotMode::NoPivoting;
+                    } else {
+                        pivot_mode = PivotMode::WithPivoting;
+                    }
 
-        let q = qr.q(Mode::Reduced).unwrap();
-        let r = qr.r().unwrap();
+                    let qr = mat.linalg().qr(pivot_mode).unwrap();
 
-        // Test dimensions
+                    let q = qr.q(QrMode::Reduced).unwrap();
+                    let r = qr.r().unwrap();
+                    let jpvt = qr.permutation().iter().map(|&item| item as usize).collect::<Vec<usize>>();
 
-        assert_eq!(q.shape(), (3, 3));
-        assert_eq!(r.shape(), (3, 5));
+                    // Test dimensions
 
-        // Test orthogonality of Q
+                    assert_eq!(q.shape(), (3, 3));
+                    assert_eq!(r.shape(), (3, 5));
 
-        let actual = q.conj_transpose().dot(&q);
-        let expected = MatrixD::<c64>::identity((3, 3));
+                    // Test orthogonality of Q
 
-        assert_eq!(actual.shape(), (3, 3));
-        assert_matrix_abs_diff_eq!(actual, expected, 1E-12);
+                    let actual = q.conj_transpose().dot(&q);
+                    let expected = MatrixD::<$ScalarType>::identity((3, 3));
 
-        // Test that r is triangular
+                    assert_eq!(actual.shape(), (3, 3));
+                    assert_matrix_abs_diff_eq!(actual, expected, $tol);
 
-        for row_index in 0..r.shape().0 {
-            for col_index in 0..row_index {
-                assert_eq!(r[[row_index, col_index]], c64::zero());
+                    // Test that r is triangular
+
+                    for row_index in 0..r.shape().0 {
+                        for col_index in 0..row_index {
+                            assert_eq!(r[[row_index, col_index]], <$ScalarType>::zero());
+                        }
+                    }
+
+                    // Test backward error
+
+                    let actual = q.dot(&r);
+                    assert_matrix_relative_eq!(actual, mat.permute_columns(&jpvt), $tol);
+                }
+
+                #[test]
+                fn [<test_thin_qr_ $ScalarType _ $PivotMode>]() {
+                    // QR Decomposition of a thin matrix.
+
+                    let mat = rlst_rand_mat![$ScalarType, (5, 3)];
+
+                    let pivot_mode;
+                    if $PivotMode == "nopivot" {
+                        pivot_mode = PivotMode::NoPivoting;
+                    } else {
+                        pivot_mode = PivotMode::WithPivoting;
+                    }
+
+                    let qr = mat.linalg().qr(pivot_mode).unwrap();
+
+                    let q_thin = qr.q(QrMode::Reduced).unwrap();
+                    let q_thick = qr.q(QrMode::Full).unwrap();
+                    let r = qr.r().unwrap();
+                    let jpvt = qr.permutation().iter().map(|&item| item as usize).collect::<Vec<usize>>();
+
+
+                    // Test dimensions
+
+                    assert_eq!(q_thin.shape(), (5, 3));
+                    assert_eq!(q_thick.shape(), (5, 5));
+                    assert_eq!(r.shape(), (3, 3));
+
+                    // Test orthogonality of Q
+
+                    let actual_thin = q_thin.conj_transpose().dot(&q_thin);
+                    let expected_thin = MatrixD::<$ScalarType>::identity((3, 3));
+
+                    let actual_thick = q_thick.conj_transpose().dot(&q_thick);
+                    let expected_thick = MatrixD::<$ScalarType>::identity((5, 5));
+
+                    assert_eq!(actual_thin.shape(), (3, 3));
+                    assert_eq!(actual_thick.shape(), (5, 5));
+
+                    assert_matrix_abs_diff_eq!(actual_thin, expected_thin, $tol);
+                    assert_matrix_abs_diff_eq!(actual_thick, expected_thick, $tol);
+
+                    // Test that r is triangular
+
+                    for row_index in 0..r.shape().0 {
+                        for col_index in 0..row_index {
+                            assert_eq!(r[[row_index, col_index]], <$ScalarType>::zero());
+                        }
+                    }
+
+                    // Test backward error
+
+                    let actual = q_thin.dot(&r);
+                    assert_matrix_relative_eq!(actual, mat.permute_columns(&jpvt), $tol);
+                }
+
+                #[test]
+                fn [<test_least_squares_solve_thin_ $ScalarType _ $PivotMode>]() {
+                    // Test notrans
+
+                    let mat = rlst_rand_mat![$ScalarType, (5, 3)];
+
+                    let rhs = rlst_rand_mat![$ScalarType, (5, 2)];
+
+                    let normal_lhs = mat.conj_transpose().dot(&mat);
+                    let normal_rhs = mat.conj_transpose().dot(&rhs);
+
+                    let expected = normal_lhs
+                        .linalg()
+                        .lu()
+                        .unwrap()
+                        .solve(&normal_rhs, TransposeMode::NoTrans)
+                        .unwrap();
+
+                    let actual = mat
+                        .linalg()
+                        .solve_least_squares(&rhs, TransposeMode::NoTrans)
+                        .unwrap();
+
+                    assert_matrix_relative_eq!(expected, actual, $tol);
+
+                    let rhs = rlst_rand_col_vec![$ScalarType, 3];
+                    let sol = mat.linalg().solve_least_squares(&rhs, $trans).unwrap();
+
+                    let res_norm = (mat.conj_transpose().dot(&sol) - &rhs)
+                        .linalg()
+                        .norm2()
+                        .unwrap();
+
+                    assert!(res_norm / rhs.linalg().norm2().unwrap() < $tol);
+                }
+
+                #[test]
+                fn [<test_least_squares_solve_thick_no_conj_trans_ $ScalarType _ $PivotMode>]() {
+                    let mat = rlst_rand_mat![$ScalarType, (3, 5)];
+
+                    let rhs = rlst_rand_col_vec![$ScalarType, 3];
+
+                    let sol = mat
+                        .linalg()
+                        .solve_least_squares(&rhs, TransposeMode::NoTrans)
+                        .unwrap();
+
+                    let res_norm = (&rhs - &mat.dot(&sol)).linalg().norm2().unwrap();
+
+                    assert!(res_norm / rhs.linalg().norm2().unwrap() < $tol);
+
+                    // Test transpose mode
+
+                    let rhs = rlst_rand_col_vec![$ScalarType, 5];
+
+                    let normal_lhs = mat.dot(&mat.conj_transpose());
+                    let normal_rhs = mat.dot(&rhs);
+
+                    let expected = normal_lhs
+                        .linalg()
+                        .lu()
+                        .unwrap()
+                        .solve(&normal_rhs, TransposeMode::NoTrans)
+                        .unwrap();
+
+                    let actual = mat.linalg().solve_least_squares(&rhs, $trans).unwrap();
+
+                    assert_matrix_relative_eq!(expected, actual, $tol);
+                }
             }
-        }
-
-        // Test backward error
-
-        let actual = q.dot(&r);
-        assert_matrix_relative_eq!(actual, mat.eval(), 1E-14);
+        };
     }
 
-    #[test]
-    fn test_thin_qr() {
-        // QR Decomposition of a thin matrix.
+    qr_tests!(f32, "nopivot", TransposeMode::Trans, 1E-5);
+    qr_tests!(f64, "nopivot", TransposeMode::Trans, 1E-12);
+    qr_tests!(c32, "nopivot", TransposeMode::ConjugateTrans, 1E-5);
+    qr_tests!(c64, "nopivot", TransposeMode::ConjugateTrans, 1E-12);
 
-        let mat = rlst_rand_mat![c64, (5, 3)];
-
-        let qr = mat.linalg().qr().unwrap();
-
-        let q_thin = qr.q(Mode::Reduced).unwrap();
-        let q_thick = qr.q(Mode::Full).unwrap();
-        let r = qr.r().unwrap();
-
-        // Test dimensions
-
-        assert_eq!(q_thin.shape(), (5, 3));
-        assert_eq!(q_thick.shape(), (5, 5));
-        assert_eq!(r.shape(), (3, 3));
-
-        // Test orthogonality of Q
-
-        let actual_thin = q_thin.conj_transpose().dot(&q_thin);
-        let expected_thin = MatrixD::<c64>::identity((3, 3));
-
-        let actual_thick = q_thick.conj_transpose().dot(&q_thick);
-        let expected_thick = MatrixD::<c64>::identity((5, 5));
-
-        assert_eq!(actual_thin.shape(), (3, 3));
-        assert_eq!(actual_thick.shape(), (5, 5));
-
-        assert_matrix_abs_diff_eq!(actual_thin, expected_thin, 1E-12);
-        assert_matrix_abs_diff_eq!(actual_thick, expected_thick, 1E-12);
-
-        // Test that r is triangular
-
-        for row_index in 0..r.shape().0 {
-            for col_index in 0..row_index {
-                assert_eq!(r[[row_index, col_index]], c64::zero());
-            }
-        }
-
-        // Test backward error
-
-        let actual = q_thin.dot(&r);
-        assert_matrix_relative_eq!(actual, mat.eval(), 1E-14);
-    }
-
-    #[test]
-    fn test_least_squares_solve_thin() {
-        // Test notrans
-
-        let mat = rlst_rand_mat![c64, (5, 3)];
-
-        let rhs = rlst_rand_mat![c64, (5, 2)];
-
-        let normal_lhs = mat.conj_transpose().dot(&mat);
-        let normal_rhs = mat.conj_transpose().dot(&rhs);
-
-        let expected = normal_lhs
-            .linalg()
-            .lu()
-            .unwrap()
-            .solve(&normal_rhs, TransposeMode::NoTrans)
-            .unwrap();
-
-        let actual = mat
-            .linalg()
-            .solve_least_squares(&rhs, TransposeMode::NoTrans)
-            .unwrap();
-
-        assert_matrix_relative_eq!(expected, actual, 1E-12);
-
-        let rhs = rlst_rand_col_vec![c64, 3];
-        let sol = mat
-            .linalg()
-            .solve_least_squares(&rhs, TransposeMode::ConjugateTrans)
-            .unwrap();
-
-        let res_norm = (mat.conj_transpose().dot(&sol) - &rhs)
-            .linalg()
-            .norm2()
-            .unwrap();
-
-        assert!(res_norm / rhs.linalg().norm2().unwrap() < 1E-12);
-    }
-
-    #[test]
-    fn test_least_squares_solve_thick_no_conj_trans() {
-        let mat = rlst_rand_mat![c64, (3, 5)];
-
-        let rhs = rlst_rand_col_vec![c64, 3];
-
-        let sol = mat
-            .linalg()
-            .solve_least_squares(&rhs, TransposeMode::NoTrans)
-            .unwrap();
-
-        let res_norm = (&rhs - &mat.dot(&sol)).linalg().norm2().unwrap();
-
-        assert!(res_norm / rhs.linalg().norm2().unwrap() < 1E-12);
-
-        // Test transpose mode
-
-        let rhs = rlst_rand_col_vec![c64, 5];
-
-        let normal_lhs = mat.dot(&mat.conj_transpose());
-        let normal_rhs = mat.dot(&rhs);
-
-        let expected = normal_lhs
-            .linalg()
-            .lu()
-            .unwrap()
-            .solve(&normal_rhs, TransposeMode::NoTrans)
-            .unwrap();
-
-        let actual = mat
-            .linalg()
-            .solve_least_squares(&rhs, TransposeMode::ConjugateTrans)
-            .unwrap();
-
-        assert_matrix_relative_eq!(expected, actual, 1E-12);
-    }
+    qr_tests!(f32, "pivot", TransposeMode::Trans, 1E-6);
+    qr_tests!(f64, "pivot", TransposeMode::Trans, 1E-12);
+    qr_tests!(c32, "pivot", TransposeMode::ConjugateTrans, 1E-6);
+    qr_tests!(c64, "pivot", TransposeMode::ConjugateTrans, 1E-12);
 }

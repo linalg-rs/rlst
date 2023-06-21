@@ -2,7 +2,7 @@
 pub mod lu_decomp;
 pub mod qr_decomp;
 pub mod svd;
-pub mod trisolve;
+//pub mod triangular_solve;
 pub use crate::linalg::DenseMatrixLinAlgBuilder;
 pub use lapacke::Layout;
 use rlst_common::traits::*;
@@ -16,38 +16,6 @@ pub use rlst_common::types::{RlstError, RlstResult};
 // {
 // }
 
-/// Transposition mode for Lapack.
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(u8)]
-pub enum TransposeMode {
-    /// No transpose
-    NoTrans = b'N',
-    /// Transpose
-    Trans = b'T',
-    /// Conjugate Transpose
-    ConjugateTrans = b'C',
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(u8)]
-pub enum SideMode {
-    Left = b'L',
-    Right = b'R',
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(u8)]
-pub enum TriangularType {
-    Upper = b'U',
-    Lower = b'L',
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-pub enum TriangularDiagonal {
-    Unit = b'U',
-    NonUnit = b'N',
-}
 /// A simple container to take ownership of a matrix for Lapack operations.
 pub struct LapackDataOwned<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
     /// The matrix on which to perform a Lapack operation.

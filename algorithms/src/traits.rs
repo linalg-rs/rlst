@@ -5,4 +5,5 @@ pub mod lu_decomp;
 pub mod norm2;
 pub mod qr_decomp_trait;
 pub mod svd;
-pub mod trisolve_trait;
+pub mod triangular_solve;
+pub mod types;

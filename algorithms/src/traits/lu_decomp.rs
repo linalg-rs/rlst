@@ -1,7 +1,7 @@
 //! Trait for LU Decomposition and linear system solves with LU.
-use crate::lapack::TransposeMode;
+use super::types::*;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{MatrixD, RandomAccessByValue, Shape, Stride};
+use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 
 /// Defines the LU Decomposition of a matrix.
 ///

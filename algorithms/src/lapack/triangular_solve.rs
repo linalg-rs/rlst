@@ -1,7 +1,7 @@
 use rlst_common::types::{c32, c64, RlstError, RlstResult};
 use rlst_dense::{RawAccess, RawAccessMut, Shape, Stride};
 
-use crate::traits::trisolve_trait::Trisolve;
+use crate::traits::triangular_solve::TriangularSolve;
 use rlst_common::traits::Copy;
 
 use super::{
@@ -16,9 +16,9 @@ macro_rules! trisolve_impl {
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
             type T = $scalar;
-            fn trisolve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+            fn triangular_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
                 self,
-                mut rhs: Rhs,
+                &rhs: Rhs,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
@@ -63,6 +63,7 @@ trisolve_impl!(f64, dtrtrs);
 trisolve_impl!(c32, ctrtrs);
 trisolve_impl!(c64, ztrtrs);
 
+#[allow(unused_imports)]
 #[cfg(test)]
 mod test {
     use num::Zero;

@@ -77,3 +77,28 @@ pub trait ConjTranspose {
 
     fn conj_transpose(&self) -> Self::Out;
 }
+
+/// Permute the columns of an operator
+///
+/// `permutation` is a permutation vector such
+/// that if permutation[i] = k
+/// then the ith column of the output matrix
+/// is the kth column of the input matrix.
+pub trait PermuteColumns {
+    type Out;
+
+    fn permute_columns(&self, permutation: &[usize]) -> Self::Out;
+}
+
+/// Permute the rows of an operator
+///
+/// `permutation` is a permutation vector such
+/// that if permutation[i] = k
+/// then the ith row of the output matrix
+/// is the kth row of the input matrix.
+
+pub trait PermuteRows {
+    type Out;
+
+    fn permute_rows(&self, permutation: &[usize]) -> Self::Out;
+}

@@ -11,8 +11,8 @@ use rlst_common::traits::Copy;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
-use super::{check_lapack_stride, TransposeMode};
 use crate::linalg::DenseMatrixLinAlgBuilder;
+use crate::traits::types::*;
 use std::marker::PhantomData;
 
 pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {

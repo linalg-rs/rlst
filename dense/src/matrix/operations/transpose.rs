@@ -69,7 +69,7 @@ where
 mod test {
 
     use super::*;
-    use crate::{rlst_fixed_rand_mat, rlst_rand_col_vec, rlst_rand_mat, rlst_rand_row_vec};
+    use crate::{rlst_fixed_rand_mat, rlst_rand_mat};
     use rlst_common::types::c64;
 
     #[test]

@@ -18,7 +18,7 @@ use crate::matrix::GenericBaseMatrix;
 use crate::traits::*;
 use crate::types::*;
 
-use matrixmultiply::{cgemm, dgemm, sgemm, zgemm, CGemmOption};
+use matrixmultiply::*;
 use num;
 
 /// This trait provides a high-level interface for the multiplication of a matrix

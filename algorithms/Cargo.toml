@@ -20,7 +20,7 @@ lapack = "0.19.*"
 # lapack-src = { version = "0.9", features = ["accelerate"]}
 rand_chacha = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
-
+paste = "1"
 
 [dev-dependencies]
 cauchy = "0.4"
