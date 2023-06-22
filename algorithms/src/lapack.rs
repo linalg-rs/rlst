@@ -2,7 +2,7 @@
 pub mod lu_decomp;
 pub mod qr_decomp;
 pub mod svd;
-//pub mod triangular_solve;
+pub mod triangular_solve;
 pub use crate::linalg::DenseMatrixLinAlgBuilder;
 pub use lapacke::Layout;
 use rlst_common::traits::*;

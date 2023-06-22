@@ -40,6 +40,23 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<I
     }
 }
 
+impl<Item: Scalar> MatrixD<Item> {
+    /// Create a new matrix from another object that
+    /// provides [RandomAccessByValue](rlst_common::traits::RandomAccessByValue) and
+    /// [Shape](rlst_common::traits::Shape) traits.
+    pub fn from_other<Other: RandomAccessByValue<Item = Item> + Shape>(other: &Other) -> Self {
+        let mut mat = crate::rlst_mat![Item, other.shape()];
+
+        for col_index in 0..other.shape().1 {
+            for row_index in 0..other.shape().0 {
+                mat[[row_index, col_index]] = other.get_value(row_index, col_index).unwrap();
+            }
+        }
+
+        mat
+    }
+}
+
 impl<Item: Scalar> Identity for MatrixD<Item> {
     type Out = Self;
 

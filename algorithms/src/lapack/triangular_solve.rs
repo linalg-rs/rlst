@@ -1,57 +1,75 @@
+use rlst_common::traits::RandomAccessByValue;
 use rlst_common::types::{c32, c64, RlstError, RlstResult};
+use rlst_dense::MatrixD;
 use rlst_dense::{RawAccess, RawAccessMut, Shape, Stride};
+
+use lapacke;
 
 use crate::traits::triangular_solve::TriangularSolve;
 use rlst_common::traits::Copy;
 
-use super::{
-    check_lapack_stride, DenseMatrixLinAlgBuilder, TransposeMode, TriangularDiagonal,
-    TriangularType,
-};
+use super::DenseMatrixLinAlgBuilder;
+
+use crate::traits::types::{TransposeMode, TriangularDiagonal, TriangularType};
 
 macro_rules! trisolve_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
-        impl<'a, Mat: Copy> Trisolve for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
+        impl<'a, Mat: Copy> TriangularSolve for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
         where
             <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
         {
             type T = $scalar;
-            fn triangular_solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+            type Out = MatrixD<Self::T>;
+            fn triangular_solve<Rhs: RandomAccessByValue<Item = Self::T> + Shape>(
                 self,
-                &rhs: Rhs,
+                rhs: &Rhs,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
-            ) -> RlstResult<Rhs> {
-                if !check_lapack_stride(rhs.shape(), rhs.stride()) {
-                    return Err(RlstError::IncompatibleStride);
-                } else {
-                    let copied = self.into_lapack()?;
-                    // let m = self.mat.shape().0;
-                    let n = copied.mat.shape().1 as i32;
-                    let lda = copied.mat.stride().1 as i32;
-                    let nrhs = rhs.shape().1 as i32;
-                    let ldb = rhs.stride().1 as i32;
-                    let info = unsafe {
-                        lapacke::$lapack_trisolve(
-                            lapacke::Layout::ColumnMajor,
-                            tritype as u8,
-                            trans as u8,
-                            tridiag as u8,
-                            n,
-                            nrhs,
-                            copied.mat.data(),
-                            lda,
-                            rhs.data_mut(),
-                            ldb,
-                        )
-                    };
+            ) -> RlstResult<Self::Out> {
+                let copied = self.into_lapack()?;
 
-                    if info != 0 {
-                        return Err(RlstError::LapackError(info));
-                    } else {
-                        Ok(rhs)
-                    }
+                if rhs.shape().0 == 0 || rhs.shape().1 == 0 {
+                    return Err(RlstError::MatrixIsEmpty(rhs.shape()));
+                }
+
+                if rhs.shape().0 != copied.mat.shape().1 {
+                    return Err(RlstError::GeneralError(format!(
+                        "Incompatible rhs. Expected rows {}. Actual rows {}",
+                        rhs.shape().0,
+                        copied.mat.shape().1
+                    )));
+                }
+
+                if copied.mat.shape().0 != copied.mat.shape().1 {
+                    return Err(RlstError::GeneralError("Matrix is not square.".to_string()));
+                }
+
+                let n = copied.mat.shape().1 as i32;
+                let lda = copied.mat.stride().1 as i32;
+                let mut sol = MatrixD::<$scalar>::from_other(rhs);
+                let nrhs = sol.shape().1 as i32;
+                let ldb = sol.stride().1 as i32;
+
+                let info = unsafe {
+                    lapacke::$lapack_trisolve(
+                        lapacke::Layout::ColumnMajor,
+                        tritype as u8,
+                        trans as u8,
+                        tridiag as u8,
+                        n,
+                        nrhs,
+                        <<Mat as Copy>::Out as RawAccess>::data(&copied.mat),
+                        lda,
+                        sol.data_mut(),
+                        ldb,
+                    )
+                };
+
+                if info != 0 {
+                    return Err(RlstError::LapackError(info));
+                } else {
+                    Ok(sol)
                 }
             }
         }
@@ -71,41 +89,37 @@ mod test {
 
     use super::*;
     use crate::linalg::LinAlg;
-    use approx::{assert_abs_diff_eq, AbsDiffEq};
+    use rlst_common::assert_matrix_relative_eq;
 
-    // macro_rules! test_trisolve {
-    //     ($scalar:ty, $name:ident) => {
-    //         #[test]
-    //         fn $name() {
-    //             let mut mat_a = rlst_rand_mat![$scalar, (4, 4)];
-    //             for row in 0..mat_a.shape().0 {
-    //                 for col in 0..row {
-    //                     mat_a[[row, col]] = <$scalar as Zero>::zero();
-    //                 }
-    //             }
-    //             let exp_sol = rlst_rand_col_vec![$scalar, 4];
-    //             let mut actual_sol = mat_a.dot(&exp_sol);
-    //             actual_sol = mat_a
-    //                 .linalg()
-    //                 .trisolve(
-    //                     actual_sol,
-    //                     TriangularType::Upper,
-    //                     TriangularDiagonal::NonUnit,
-    //                     TransposeMode::NoTrans,
-    //                 )
-    //                 .unwrap();
+    macro_rules! test_trisolve {
+        ($scalar:ty, $name:ident, $tol:expr) => {
+            #[test]
+            fn $name() {
+                let mut mat_a = rlst_rand_mat![$scalar, (4, 4)];
+                for row in 0..mat_a.shape().0 {
+                    for col in 0..row {
+                        mat_a[[row, col]] = <$scalar as Zero>::zero();
+                    }
+                }
+                let exp_sol = rlst_rand_col_vec![$scalar, 4];
+                let rhs = mat_a.dot(&exp_sol);
+                let sol = mat_a
+                    .linalg()
+                    .triangular_solve(
+                        &rhs,
+                        TriangularType::Upper,
+                        TriangularDiagonal::NonUnit,
+                        TransposeMode::NoTrans,
+                    )
+                    .unwrap();
 
-    //             assert_approx_matrices!(
-    //                 &exp_sol,
-    //                 &actual_sol,
-    //                 1000. * <$scalar as AbsDiffEq>::default_epsilon()
-    //             );
-    //         }
-    //     };
-    // }
+                assert_matrix_relative_eq!(exp_sol, sol, $tol);
+            }
+        };
+    }
 
-    // test_trisolve!(f32, test_trisolve_f32);
-    // test_trisolve!(f64, test_trisolve_f64);
-    // test_trisolve!(c32, test_trisolve_c32);
-    // test_trisolve!(c64, test_trisolve_c64);
+    test_trisolve!(f32, test_trisolve_f32, 1E-6);
+    test_trisolve!(f64, test_trisolve_f64, 1E-12);
+    test_trisolve!(c32, test_trisolve_c32, 1E-5);
+    test_trisolve!(c64, test_trisolve_c64, 1E-12);
 }
