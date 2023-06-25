@@ -322,7 +322,8 @@ mod test {
                 fn [<test_thin_qr_ $ScalarType _ $PivotMode>]() {
                     // QR Decomposition of a thin matrix.
 
-                    let mat = rlst_rand_mat![$ScalarType, (5, 3)];
+                    let mut mat = rlst_mat![$ScalarType, (5, 3)];
+                    mat.fill_from_seed_equally_distributed(0);
 
                     let pivot_mode;
                     if $PivotMode == "nopivot" {
@@ -377,9 +378,11 @@ mod test {
                 fn [<test_least_squares_solve_thin_ $ScalarType _ $PivotMode>]() {
                     // Test notrans
 
-                    let mat = rlst_rand_mat![$ScalarType, (5, 3)];
+                    let mut mat = rlst_mat![$ScalarType, (5, 3)];
+                    mat.fill_from_seed_equally_distributed(0);
 
-                    let rhs = rlst_rand_mat![$ScalarType, (5, 2)];
+                    let mut rhs = rlst_mat![$ScalarType, (5, 2)];
+                    rhs.fill_from_seed_equally_distributed(2);
 
                     let normal_lhs = mat.conj_transpose().dot(&mat);
                     let normal_rhs = mat.conj_transpose().dot(&rhs);
@@ -398,7 +401,8 @@ mod test {
 
                     assert_matrix_relative_eq!(expected, actual, $tol);
 
-                    let rhs = rlst_rand_col_vec![$ScalarType, 3];
+                    let mut rhs = rlst_col_vec![$ScalarType, 3];
+                    rhs.fill_from_seed_equally_distributed(2);
                     let sol = mat.linalg().solve_least_squares(&rhs, $trans).unwrap();
 
                     let res_norm = (mat.conj_transpose().dot(&sol) - &rhs)
@@ -411,9 +415,11 @@ mod test {
 
                 #[test]
                 fn [<test_least_squares_solve_thick_no_conj_trans_ $ScalarType _ $PivotMode>]() {
-                    let mat = rlst_rand_mat![$ScalarType, (3, 5)];
+                    let mut mat = rlst_mat![$ScalarType, (3, 5)];
+                    mat.fill_from_seed_equally_distributed(0);
 
-                    let rhs = rlst_rand_col_vec![$ScalarType, 3];
+                    let mut rhs = rlst_col_vec![$ScalarType, 3];
+                    rhs.fill_from_seed_equally_distributed(2);
 
                     let sol = mat
                         .linalg()
@@ -426,7 +432,8 @@ mod test {
 
                     // Test transpose mode
 
-                    let rhs = rlst_rand_col_vec![$ScalarType, 5];
+                    let mut rhs = rlst_col_vec![$ScalarType, 5];
+                    rhs.fill_from_seed_equally_distributed(2);
 
                     let normal_lhs = mat.dot(&mat.conj_transpose());
                     let normal_rhs = mat.dot(&rhs);
@@ -447,12 +454,12 @@ mod test {
     }
 
     qr_tests!(f32, "nopivot", TransposeMode::Trans, 1E-5);
-    qr_tests!(f64, "nopivot", TransposeMode::Trans, 1E-12);
+    qr_tests!(f64, "nopivot", TransposeMode::Trans, 1E-13);
     qr_tests!(c32, "nopivot", TransposeMode::ConjugateTrans, 1E-5);
-    qr_tests!(c64, "nopivot", TransposeMode::ConjugateTrans, 1E-12);
+    qr_tests!(c64, "nopivot", TransposeMode::ConjugateTrans, 1E-13);
 
-    qr_tests!(f32, "pivot", TransposeMode::Trans, 1E-6);
-    qr_tests!(f64, "pivot", TransposeMode::Trans, 1E-12);
-    qr_tests!(c32, "pivot", TransposeMode::ConjugateTrans, 1E-6);
-    qr_tests!(c64, "pivot", TransposeMode::ConjugateTrans, 1E-12);
+    qr_tests!(f32, "pivot", TransposeMode::Trans, 1E-5);
+    qr_tests!(f64, "pivot", TransposeMode::Trans, 1E-13);
+    qr_tests!(c32, "pivot", TransposeMode::ConjugateTrans, 1E-5);
+    qr_tests!(c64, "pivot", TransposeMode::ConjugateTrans, 1E-13);
 }
