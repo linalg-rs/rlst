@@ -93,7 +93,7 @@ pub trait PermuteColumns {
 /// Permute the rows of an operator
 ///
 /// `permutation` is a permutation vector such
-/// that if permutation[i] = k
+/// that if permutation\[i\] = k
 /// then the ith row of the output matrix
 /// is the kth row of the input matrix.
 
