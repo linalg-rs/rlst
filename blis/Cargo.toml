@@ -10,7 +10,9 @@ edition = "2021"
 
 [dependencies]
 rlst-blis-src = { path = "../blis-src"}
+rlst-common = { path = "../common"}
 num_cpus = "1"
+num = "0.4"
 
 [lib]
 name = "rlst_blis"

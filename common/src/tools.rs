@@ -56,6 +56,57 @@ impl RandScalar for c64 {
     }
 }
 
+#[macro_export]
+macro_rules! assert_matrix_abs_diff_eq {
+    ($expected_matrix:expr, $actual_matrix:expr, $epsilon:expr) => {{
+        use approx::assert_abs_diff_eq;
+        assert_eq!($expected_matrix.shape(), $actual_matrix.shape());
+        for row in 0..$expected_matrix.shape().0 {
+            for col in 0..$expected_matrix.shape().1 {
+                assert_abs_diff_eq!(
+                    $actual_matrix[[row, col]],
+                    $expected_matrix[[row, col]],
+                    epsilon = $epsilon
+                );
+            }
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_matrix_relative_eq {
+    ($expected_matrix:expr, $actual_matrix:expr, $epsilon:expr) => {{
+        use approx::assert_relative_eq;
+        assert_eq!($expected_matrix.shape(), $actual_matrix.shape());
+        for row in 0..$expected_matrix.shape().0 {
+            for col in 0..$expected_matrix.shape().1 {
+                assert_relative_eq!(
+                    $actual_matrix[[row, col]],
+                    $expected_matrix[[row, col]],
+                    epsilon = $epsilon
+                );
+            }
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_matrix_ulps_eq {
+    ($expected_matrix:expr, $actual_matrix:expr, $ulps:expr) => {{
+        use approx::assert_abs_ulps_eq;
+        assert_eq!($expected_matrix.shape(), $actual_matrix.shape());
+        for row in 0..$expected_matrix.shape().0 {
+            for col in 0..$expected_matrix.shape().1 {
+                assert_abs_ulps_eq!(
+                    $actual_matrix[[row, col]],
+                    $expected_matrix[[row, col]],
+                    max_ulps = $ulps
+                );
+            }
+        }
+    }};
+}
+
 pub trait PrettyPrint<T: Scalar> {
     fn pretty_print(&self);
     fn pretty_print_with_dimension(&self, rows: usize, cols: usize);

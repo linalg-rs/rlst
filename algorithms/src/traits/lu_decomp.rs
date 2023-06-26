@@ -1,7 +1,7 @@
 //! Trait for LU Decomposition and linear system solves with LU.
-use crate::lapack::TransposeMode;
+use super::types::*;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{MatrixD, RawAccessMut, Shape, Stride};
+use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 
 /// Defines the LU Decomposition of a matrix.
 ///
@@ -14,6 +14,7 @@ use rlst_dense::{MatrixD, RawAccessMut, Shape, Stride};
 /// matrix `A`. To solve a linear system `Ax=b` the routine [`LUDecomp::solve`] is provided.
 pub trait LUDecomp {
     type T: Scalar;
+    type Sol;
 
     /// Raw pointer to the data.
     fn data(&self) -> &[Self::T];
@@ -31,11 +32,11 @@ pub trait LUDecomp {
     fn shape(&self) -> (usize, usize);
 
     /// Solve for a right-hand side.
-    fn solve<Rhs: RawAccessMut<T = Self::T> + Shape + Stride>(
+    fn solve<Rhs: RandomAccessByValue<Item = Self::T> + Shape>(
         &self,
-        rhs: &mut Rhs,
+        rhs: &Rhs,
         trans: TransposeMode,
-    ) -> RlstResult<()>;
+    ) -> RlstResult<Self::Sol>;
 }
 
 pub trait LU {

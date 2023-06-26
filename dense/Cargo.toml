@@ -20,20 +20,20 @@ name = "rlst_dense"
 [dependencies]
 num = "0.4"
 cauchy = "0.4"
-ndarray = "0.15"
 rand = "0.8"
 itertools = "0.10"
 rand_distr = "0.4"
-matrixmultiply = "0.3"
+rlst-blis = { path = "../blis"}
 approx = { version = "0.5", features=["num-complex"] }
 rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
 paste = "1"
+rand_chacha = "0.3"
+
 
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
-rand_chacha = "0.3"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

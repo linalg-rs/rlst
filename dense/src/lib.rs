@@ -19,8 +19,8 @@
 //! about the operation. Only when the user asks for the evaluation, all operations
 //! are executed in a single pass without creating temporaries.
 //!
-//! Matrix-matrix products are implemented through the [matrixmultiply](matrixmultiply)
-//! crate. We are in the process of implementing more advanced linear algebra routines
+//! Matrix-matrix products are implemented through interfaces to Blis.
+//! We are in the process of implementing more advanced linear algebra routines
 //! (e.g. LU, QR, etc.). But these are not yet available. The focus is on implementing
 //! modern blocked multi-threaded routines whose performance is competitive with Lapack.
 //!

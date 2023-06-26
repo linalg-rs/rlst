@@ -89,7 +89,7 @@
 //! the result of the right-hand side componentwise operation.
 //!
 //! Matrix/vector and matrix/matrix products are implemented via
-//! the [matrixmultiply] crate.
+//! interfaces to Blis.
 //! ```
 //! # use rlst_dense::*;
 //! let mat = rlst_rand_mat![f64, (3, 5)];

@@ -6,8 +6,9 @@ use crate::matrix::Matrix;
 use crate::matrix_ref::MatrixRef;
 use crate::traits::*;
 use crate::types::Scalar;
-use crate::{layouts::*, DataContainer};
-use rlst_common::traits::constructors::NewLikeSelf;
+use crate::{layouts::*, DataContainer, MatrixD};
+use rlst_common::traits::constructors::{NewLikeSelf, NewLikeTranspose};
+use rlst_common::traits::Identity;
 use std::marker::PhantomData;
 
 impl<
@@ -39,6 +40,37 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<I
     }
 }
 
+impl<Item: Scalar> MatrixD<Item> {
+    /// Create a new matrix from another object that
+    /// provides [RandomAccessByValue](rlst_common::traits::RandomAccessByValue) and
+    /// [Shape](rlst_common::traits::Shape) traits.
+    pub fn from_other<Other: RandomAccessByValue<Item = Item> + Shape>(other: &Other) -> Self {
+        let mut mat = crate::rlst_mat![Item, other.shape()];
+
+        for col_index in 0..other.shape().1 {
+            for row_index in 0..other.shape().0 {
+                mat[[row_index, col_index]] = other.get_value(row_index, col_index).unwrap();
+            }
+        }
+
+        mat
+    }
+}
+
+impl<Item: Scalar> Identity for MatrixD<Item> {
+    type Out = Self;
+
+    fn identity(shape: (usize, usize)) -> Self::Out {
+        let mut ident = crate::rlst_mat![Item, shape];
+
+        for index in 0..std::cmp::min(shape.0, shape.1) {
+            ident[[index, index]] = <Item as num::One>::one();
+        }
+
+        ident
+    }
+}
+
 impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
     for Matrix<Item, MatImpl, Dynamic, Dynamic>
 {
@@ -49,23 +81,14 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Fixed1, Dynamic>> NewLikeSelf
-    for Matrix<Item, MatImpl, Fixed1, Dynamic>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeTranspose
+    for Matrix<Item, MatImpl, Dynamic, Dynamic>
 {
-    type Out = crate::RowVectorD<Item>;
+    type Out = crate::MatrixD<Item>;
 
-    fn new_like_self(&self) -> Self::Out {
-        crate::rlst_row_vec![Item, self.layout().number_of_elements()]
-    }
-}
-
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Fixed1>> NewLikeSelf
-    for Matrix<Item, MatImpl, Dynamic, Fixed1>
-{
-    type Out = crate::ColumnVectorD<Item>;
-
-    fn new_like_self(&self) -> Self::Out {
-        crate::rlst_col_vec![Item, self.layout().number_of_elements()]
+    fn new_like_transpose(&self) -> Self::Out {
+        let dim = self.layout().dim();
+        crate::rlst_mat![Item, (dim.1, dim.0)]
     }
 }
 
@@ -84,6 +107,23 @@ macro_rules! implement_new_from_self_fixed {
                 <Self::Out>::from_data(
                     ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
                     DefaultLayout::from_dimension((<$RS>::N, <$CS>::N), (1, <$RS>::N)),
+                )
+            }
+        }
+
+        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeTranspose
+            for Matrix<Item, MatImpl, $RS, $CS>
+        {
+            type Out = Matrix<
+                Item,
+                BaseMatrix<Item, ArrayContainer<Item, { <$CS>::N * <$RS>::N }>, $CS, $RS>,
+                $CS,
+                $RS,
+            >;
+            fn new_like_transpose(&self) -> Self::Out {
+                <Self::Out>::from_data(
+                    ArrayContainer::<Item, { <$CS>::N * <$RS>::N }>::new(),
+                    DefaultLayout::from_dimension((<$CS>::N, <$RS>::N), (1, <$CS>::N)),
                 )
             }
         }

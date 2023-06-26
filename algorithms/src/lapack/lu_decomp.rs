@@ -3,7 +3,7 @@
 //! The Lapack LU interface uses the Lapack routines `_getrf` to compute an LU decomposition and
 //! `_getrs` to solve a linear system of equations.
 
-use crate::lapack::LapackData;
+use crate::lapack::LapackDataOwned;
 use crate::traits::lu_decomp::{LUDecomp, LU};
 use lapacke;
 use num::traits::One;
@@ -11,12 +11,12 @@ use rlst_common::traits::Copy;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 use rlst_dense::{rlst_mat, traits::*, MatrixD};
 
-use super::{check_lapack_stride, TransposeMode};
 use crate::linalg::DenseMatrixLinAlgBuilder;
+use crate::traits::types::*;
 use std::marker::PhantomData;
 
 pub struct LUDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
-    data: LapackData<<Mat as RawAccess>::T, Mat>,
+    data: LapackDataOwned<<Mat as RawAccess>::T, Mat>,
     ipiv: Vec<i32>,
     _marker: PhantomData<T>,
 }
@@ -72,6 +72,7 @@ macro_rules! lu_decomp_impl {
             > LUDecomp for LUDecompLapack<$scalar, Mat>
         {
             type T = $scalar;
+            type Sol = MatrixD<$scalar>;
 
             fn data(&self) -> &[Self::T] {
                 self.data.mat.data()
@@ -122,48 +123,60 @@ macro_rules! lu_decomp_impl {
                 mat
             }
 
-            fn solve<Rhs: RawAccessMut<T = $scalar> + Shape + Stride>(
+            fn solve<Rhs: RandomAccessByValue<Item = $scalar> + Shape>(
                 &self,
-                rhs: &mut Rhs,
+                rhs: &Rhs,
                 trans: TransposeMode,
-            ) -> RlstResult<()> {
-                if !check_lapack_stride(rhs.shape(), rhs.stride()) {
-                    return Err(RlstError::IncompatibleStride);
+            ) -> RlstResult<Self::Sol> {
+                let mat = &self.data.mat;
+
+                if mat.shape().0 != mat.shape().1 {
+                    return Err(RlstError::GeneralError(format!(
+                        "Matrix not square. Dimension is ({}, {}).",
+                        mat.shape().0,
+                        mat.shape().1
+                    )));
+                }
+
+                if mat.shape().0 != rhs.shape().0 {
+                    return Err(RlstError::SingleDimensionError {
+                        expected: mat.shape().0,
+                        actual: rhs.shape().0,
+                    });
+                }
+
+                if rhs.shape().1 == 0 {
+                    return Err(RlstError::MatrixIsEmpty(rhs.shape()));
+                }
+
+                let mut sol = rlst_mat![$scalar, rhs.shape()];
+
+                for col_index in 0..rhs.shape().1 {
+                    for row_index in 0..rhs.shape().0 {
+                        sol[[row_index, col_index]] = rhs.get_value(row_index, col_index).unwrap();
+                    }
+                }
+
+                let ldb = sol.stride().1;
+
+                let info = unsafe {
+                    lapacke::$lapack_getrs(
+                        lapacke::Layout::ColumnMajor,
+                        trans as u8,
+                        mat.shape().1 as i32,
+                        sol.shape().1 as i32,
+                        mat.data(),
+                        mat.stride().1 as i32,
+                        &self.ipiv,
+                        sol.data_mut(),
+                        ldb as i32,
+                    )
+                };
+
+                if info != 0 {
+                    return Err(RlstError::LapackError(info));
                 } else {
-                    let mat = &self.data.mat;
-
-                    if mat.shape().0 != rhs.shape().0 {
-                        return Err(RlstError::SingleDimensionError {
-                            expected: mat.shape().0,
-                            actual: rhs.shape().0,
-                        });
-                    }
-
-                    if rhs.shape().1 == 0 {
-                        return Err(RlstError::MatrixIsEmpty(rhs.shape()));
-                    }
-
-                    let ldb = rhs.stride().1;
-
-                    let info = unsafe {
-                        lapacke::$lapack_getrs(
-                            lapacke::Layout::ColumnMajor,
-                            trans as u8,
-                            mat.shape().1 as i32,
-                            rhs.shape().1 as i32,
-                            mat.data(),
-                            mat.stride().1 as i32,
-                            &self.ipiv,
-                            rhs.data_mut(),
-                            ldb as i32,
-                        )
-                    };
-
-                    if info != 0 {
-                        return Err(RlstError::LapackError(info));
-                    } else {
-                        Ok(())
-                    }
+                    Ok(sol)
                 }
             }
         }
@@ -200,18 +213,17 @@ mod test {
         rlst_vec[[0, 0]] = 2.3;
         rlst_vec[[1, 0]] = 7.1;
 
-        let mut rhs = rlst_mat.dot(&rlst_vec);
+        let rhs = rlst_mat.dot(&rlst_vec);
 
-        let _ = rlst_mat
+        let sol = rlst_mat
             .linalg()
             .lu()
             .unwrap()
-            .solve(&mut rhs, TransposeMode::NoTrans);
+            .solve(&rhs, TransposeMode::NoTrans)
+            .unwrap();
 
-        let x = rhs;
-
-        assert_ulps_eq![x[[0, 0]], 2.3, max_ulps = 10];
-        assert_ulps_eq![x[[1, 0]], 7.1, max_ulps = 10];
+        assert_ulps_eq![sol[[0, 0]], 2.3, max_ulps = 10];
+        assert_ulps_eq![sol[[1, 0]], 7.1, max_ulps = 10];
     }
 
     #[test]
