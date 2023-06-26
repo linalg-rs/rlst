@@ -81,7 +81,7 @@ pub trait ConjTranspose {
 /// Permute the columns of an operator
 ///
 /// `permutation` is a permutation vector such
-/// that if permutation[i] = k
+/// that if permutation\[i\] = k
 /// then the ith column of the output matrix
 /// is the kth column of the input matrix.
 pub trait PermuteColumns {
