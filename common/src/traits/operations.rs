@@ -78,6 +78,13 @@ pub trait Conjugate {
     fn conj(self) -> Self::Out;
 }
 
+/// Componentwise product with an other object.
+pub trait CmpWiseProduct<Other> {
+    type Out;
+
+    fn cmp_wise_product(self, other: Other) -> Self::Out;
+}
+
 /// Conjugate transpose of an operator
 pub trait ConjTranspose<Out> {
     fn conj_transpose(self) -> Out;

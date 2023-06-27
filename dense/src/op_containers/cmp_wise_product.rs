@@ -1,4 +1,4 @@
-//! Hadamard product of two matrices.
+//! Componentwise product of two matrices.
 //!
 //! This module implements the Hadamard product of two
 //! matrices. Instead of executing the Hadamard product immediately,
@@ -12,11 +12,11 @@ use crate::DefaultLayout;
 
 use std::marker::PhantomData;
 
-/// A type that represents the Hadamard product of two matrices.
-pub type HadamardMat<Item, MatImpl1, MatImpl2, RS, CS> =
-    Matrix<Item, Hadamard<Item, MatImpl1, MatImpl2, RS, CS>, RS, CS>;
+/// A type that represents the componentwise product of two matrices.
+pub type CmpWiseProductMat<Item, MatImpl1, MatImpl2, RS, CS> =
+    Matrix<Item, CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>, RS, CS>;
 
-pub struct Hadamard<Item, MatImpl1, MatImpl2, RS, CS>(
+pub struct CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>(
     Matrix<Item, MatImpl1, RS, CS>,
     Matrix<Item, MatImpl2, RS, CS>,
     DefaultLayout,
@@ -36,7 +36,7 @@ impl<
         MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > Hadamard<Item, MatImpl1, MatImpl2, RS, CS>
+    > CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
 {
     pub fn new(mat1: Matrix<Item, MatImpl1, RS, CS>, mat2: Matrix<Item, MatImpl2, RS, CS>) -> Self {
         assert_eq!(
@@ -63,7 +63,7 @@ impl<
         MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > Layout for Hadamard<Item, MatImpl1, MatImpl2, RS, CS>
+    > Layout for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
 {
     type Impl = DefaultLayout;
 
@@ -78,7 +78,7 @@ impl<
         MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > SizeType for Hadamard<Item, MatImpl1, MatImpl2, RS, CS>
+    > SizeType for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
 {
     type C = CS;
     type R = RS;
@@ -90,7 +90,7 @@ impl<
         MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for Hadamard<Item, MatImpl1, MatImpl2, RS, CS>
+    > UnsafeRandomAccessByValue for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
 {
     type Item = Item;
 
