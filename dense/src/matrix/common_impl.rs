@@ -3,8 +3,9 @@
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::matrix::Matrix;
 use crate::types::Scalar;
-use crate::GenericBaseMatrix;
+use crate::RefMat;
 use crate::{traits::*, DefaultLayout};
+use crate::{GenericBaseMatrix, RefMatMut};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
@@ -327,5 +328,29 @@ impl<
             }
         }
         result
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn view(&self) -> RefMat<Item, MatImpl, RS, CS> {
+        Matrix::from_ref(self)
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, RS, CS> {
+        Matrix::from_ref_mut(self)
     }
 }

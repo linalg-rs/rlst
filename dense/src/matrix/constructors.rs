@@ -3,7 +3,7 @@
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::ArrayContainer;
 use crate::matrix::Matrix;
-use crate::matrix_ref::MatrixRef;
+use crate::matrix_ref::{MatrixRef, MatrixRefMut};
 use crate::traits::*;
 use crate::types::Scalar;
 use crate::{layouts::*, DataContainer, MatrixD};
@@ -28,6 +28,21 @@ impl<
         mat: &Matrix<Item, MatImpl, RS, CS>,
     ) -> crate::RefMat<'_, Item, MatImpl, RS, CS> {
         crate::RefMat::new(MatrixRef::new(mat))
+    }
+}
+
+impl<
+        Item: Scalar,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    /// Create a new matrix from a reference to an existing matrix.
+    pub fn from_ref_mut(
+        mat: &mut Matrix<Item, MatImpl, RS, CS>,
+    ) -> crate::RefMatMut<'_, Item, MatImpl, RS, CS> {
+        crate::RefMatMut::new(MatrixRefMut::new(mat))
     }
 }
 
@@ -106,7 +121,7 @@ macro_rules! implement_new_from_self_fixed {
             fn new_like_self(&self) -> Self::Out {
                 <Self::Out>::from_data(
                     ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
-                    DefaultLayout::from_dimension((<$RS>::N, <$CS>::N), (1, <$RS>::N)),
+                    DefaultLayout::from_dimension((<$RS>::N, <$CS>::N)),
                 )
             }
         }
@@ -123,7 +138,7 @@ macro_rules! implement_new_from_self_fixed {
             fn new_like_transpose(&self) -> Self::Out {
                 <Self::Out>::from_data(
                     ArrayContainer::<Item, { <$CS>::N * <$RS>::N }>::new(),
-                    DefaultLayout::from_dimension((<$CS>::N, <$RS>::N), (1, <$CS>::N)),
+                    DefaultLayout::from_dimension((<$CS>::N, <$RS>::N)),
                 )
             }
         }

@@ -261,8 +261,7 @@ mod test {
     use paste::paste;
     use rlst_common::assert_matrix_abs_diff_eq;
     use rlst_common::assert_matrix_relative_eq;
-    use rlst_common::traits::ConjTranspose;
-    use rlst_common::traits::Eval;
+    use rlst_common::traits::*;
 
     use super::*;
     use crate::traits::lu_decomp::LUDecomp;
@@ -298,7 +297,7 @@ mod test {
 
                     // Test orthogonality of Q
 
-                    let actual = q.conj_transpose().dot(&q);
+                    let actual = q.view().conj().transpose().eval().dot(&q).eval();
                     let expected = MatrixD::<$ScalarType>::identity((3, 3));
 
                     assert_eq!(actual.shape(), (3, 3));
@@ -348,10 +347,10 @@ mod test {
 
                     // Test orthogonality of Q
 
-                    let actual_thin = q_thin.conj_transpose().dot(&q_thin);
+                    let actual_thin = q_thin.view().conj().transpose().eval().dot(&q_thin);
                     let expected_thin = MatrixD::<$ScalarType>::identity((3, 3));
 
-                    let actual_thick = q_thick.conj_transpose().dot(&q_thick);
+                    let actual_thick = q_thick.view().conj().transpose().eval().dot(&q_thick);
                     let expected_thick = MatrixD::<$ScalarType>::identity((5, 5));
 
                     assert_eq!(actual_thin.shape(), (3, 3));
@@ -384,8 +383,8 @@ mod test {
                     let mut rhs = rlst_mat![$ScalarType, (5, 2)];
                     rhs.fill_from_seed_equally_distributed(2);
 
-                    let normal_lhs = mat.conj_transpose().dot(&mat);
-                    let normal_rhs = mat.conj_transpose().dot(&rhs);
+                    let normal_lhs = mat.view().conj().transpose().eval().dot(&mat);
+                    let normal_rhs = mat.view().conj().transpose().eval().dot(&rhs);
 
                     let expected = normal_lhs
                         .linalg()
@@ -405,7 +404,7 @@ mod test {
                     rhs.fill_from_seed_equally_distributed(2);
                     let sol = mat.linalg().solve_least_squares(&rhs, $trans).unwrap();
 
-                    let res_norm = (mat.conj_transpose().dot(&sol) - &rhs)
+                    let res_norm = (mat.conj().transpose().eval().dot(&sol) - &rhs)
                         .linalg()
                         .norm2()
                         .unwrap();
@@ -435,7 +434,7 @@ mod test {
                     let mut rhs = rlst_col_vec![$ScalarType, 5];
                     rhs.fill_from_seed_equally_distributed(2);
 
-                    let normal_lhs = mat.dot(&mat.conj_transpose());
+                    let normal_lhs = mat.dot(&mat.view().conj().transpose().eval());
                     let normal_rhs = mat.dot(&rhs);
 
                     let expected = normal_lhs

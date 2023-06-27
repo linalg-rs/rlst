@@ -68,14 +68,19 @@ pub trait SquareSum {
 pub trait Transpose {
     type Out;
 
-    fn transpose(&self) -> Self::Out;
+    fn transpose(self) -> Self::Out;
+}
+
+/// Take the conjugate of a matrix.
+pub trait Conjugate {
+    type Out;
+
+    fn conj(self) -> Self::Out;
 }
 
 /// Conjugate transpose of an operator
-pub trait ConjTranspose {
-    type Out;
-
-    fn conj_transpose(&self) -> Self::Out;
+pub trait ConjTranspose<Out> {
+    fn conj_transpose(self) -> Out;
 }
 
 /// Permute the columns of an operator

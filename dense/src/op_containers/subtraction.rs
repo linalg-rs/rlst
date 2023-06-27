@@ -50,7 +50,7 @@ impl<
         Self(
             mat1,
             mat2,
-            DefaultLayout::from_dimension(dim, (1, dim.0)),
+            DefaultLayout::from_dimension(dim),
             PhantomData,
             PhantomData,
         )

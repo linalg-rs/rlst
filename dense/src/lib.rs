@@ -33,20 +33,17 @@
 //! - [Examples](crate::examples)
 #![cfg_attr(feature = "strict", deny(warnings))]
 
+pub mod base_matrix;
 pub mod data_container;
 pub mod examples;
+pub mod global;
 pub mod layouts;
 pub mod macros;
 pub mod matrix;
-pub mod traits;
-pub mod types;
-
-pub mod addition;
-pub mod base_matrix;
-pub mod global;
 pub mod matrix_multiply;
 pub mod matrix_ref;
-pub mod scalar_mult;
-pub mod subtraction;
+pub mod op_containers;
+pub mod traits;
+pub mod types;
 
 pub use global::*;
