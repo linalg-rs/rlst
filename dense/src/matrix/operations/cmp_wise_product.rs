@@ -38,6 +38,18 @@ impl<
     }
 }
 
+// pub fn test_simd() {
+//     use crate::rlst_rand_mat;
+//     use rlst_common::traits::*;
+
+//     let mat1 = rlst_rand_mat![f32, (10, 10)];
+//     let mat2 = rlst_rand_mat![f32, (10, 10)];
+
+//     let res = (&mat2 + mat1.view().cmp_wise_product(&mat2)).eval();
+
+//     assert_eq!(res[[0, 0]], mat2[[0, 0]] + mat1[[0, 0]] * mat2[[0, 0]]);
+// }
+
 #[cfg(test)]
 mod test {
     use rlst_common::traits::CmpWiseProduct;

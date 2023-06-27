@@ -170,12 +170,8 @@ where
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
         let shape = result.shape();
-        unsafe {
-            for col in 0..shape.1 {
-                for row in 0..shape.0 {
-                    *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
-                }
-            }
+        for index in 0..(shape.0 * shape.1) {
+            *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
         }
         result
     }
