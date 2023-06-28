@@ -1,9 +1,9 @@
-//! Implementation of matrix transpose
+//! Implementation of matrix conjugate
 
-use crate::op_containers::transpose::{TransposeContainer, TransposeMat};
+use crate::op_containers::conjugate::{ConjugateContainer, ConjugateMat};
 use crate::MatrixImplTrait;
 use crate::{Matrix, SizeIdentifier};
-use rlst_common::traits::Transpose;
+use rlst_common::traits::Conjugate;
 
 pub use rlst_common::types::Scalar;
 
@@ -12,12 +12,12 @@ impl<
         MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > Transpose for Matrix<Item, MatImpl, RS, CS>
+    > Conjugate for Matrix<Item, MatImpl, RS, CS>
 {
-    type Out = TransposeMat<Item, MatImpl, RS, CS>;
+    type Out = ConjugateMat<Item, MatImpl, RS, CS>;
 
-    fn transpose(self) -> Self::Out {
-        Matrix::new(TransposeContainer::new(self))
+    fn conj(self) -> Self::Out {
+        Matrix::new(ConjugateContainer::new(self))
     }
 }
 
@@ -30,18 +30,39 @@ mod test {
     use rlst_common::types::c64;
 
     #[test]
-    fn test_transpose() {
+    fn test_conj_transpose() {
         let mat = rlst_rand_mat![c64, (3, 4)];
 
-        let transpose_mat = mat.view().transpose().eval();
+        let conj_transpose_mat = mat.view().conj().transpose();
 
-        assert_eq!(transpose_mat.shape(), (4, 3));
+        assert_eq!(conj_transpose_mat.shape(), (4, 3));
 
         for col_index in 0..mat.shape().1 {
             for row_index in 0..mat.shape().0 {
                 assert_eq!(
                     mat[[row_index, col_index]],
-                    transpose_mat[[col_index, row_index]]
+                    conj_transpose_mat
+                        .get_value(col_index, row_index)
+                        .unwrap()
+                        .conj()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_conjugate() {
+        let mat = rlst_rand_mat![c64, (3, 4)];
+
+        let conjugate_mat = mat.view().transpose().eval();
+
+        assert_eq!(conjugate_mat.shape(), (4, 3));
+
+        for col_index in 0..mat.shape().1 {
+            for row_index in 0..mat.shape().0 {
+                assert_eq!(
+                    mat[[row_index, col_index]],
+                    conjugate_mat[[col_index, row_index]]
                 );
             }
         }
