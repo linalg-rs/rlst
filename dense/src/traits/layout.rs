@@ -89,7 +89,7 @@ pub trait LayoutType {
     fn convert_2d_raw(&self, row: usize, col: usize) -> usize;
 
     /// Create a new layout from providing the matrix dimension as `(rows, cols)` tuple.
-    fn from_dimension(dim: (usize, usize), stride: (usize, usize)) -> Self;
+    fn from_dimension(dim: (usize, usize)) -> Self;
 }
 
 /// This layout provides a method to return layout information.

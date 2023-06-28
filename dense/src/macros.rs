@@ -19,7 +19,7 @@ macro_rules! rlst_mat {
             $crate::Dynamic,
         >::from_data(
             $crate::VectorContainer::<$ScalarType>::new($dim.0 * $dim.1),
-            $crate::DefaultLayout::from_dimension(($dim.0, $dim.1), (1, $dim.0)),
+            $crate::DefaultLayout::from_dimension(($dim.0, $dim.1)),
         )
     }};
 }
@@ -119,7 +119,7 @@ macro_rules! rlst_fixed_mat {
             paste! {[<Fixed $dim2>]},
         >::from_data(
             $crate::ArrayContainer::<$ScalarType, { $dim1 * $dim2 }>::new(),
-            $crate::DefaultLayout::from_dimension(($dim1, $dim2), (1, $dim1)),
+            $crate::DefaultLayout::from_dimension(($dim1, $dim2)),
         )
     }};
 }

@@ -28,7 +28,7 @@ pub mod random;
 
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, VectorContainer};
-use crate::matrix_ref::MatrixRef;
+use crate::matrix_ref::{MatrixRef, MatrixRefMut};
 use crate::traits::*;
 use crate::types::Scalar;
 use std::marker::PhantomData;
@@ -38,6 +38,12 @@ use std::marker::PhantomData;
 /// is a reference to matrix.
 pub type RefMat<'a, Item, MatImpl, RS, CS> =
     Matrix<Item, MatrixRef<'a, Item, MatImpl, RS, CS>, RS, CS>;
+
+/// A [RefMatMut] is a matrix whose implementation is a reference to another matrix.
+/// This is used to convert a reference to a matrix to an owned matrix whose implementation
+/// is a reference to matrix.
+pub type RefMatMut<'a, Item, MatImpl, RS, CS> =
+    Matrix<Item, MatrixRefMut<'a, Item, MatImpl, RS, CS>, RS, CS>;
 
 /// This type represents a generic matrix that depends on a [BaseMatrix] type.
 pub type GenericBaseMatrix<Item, Data, RS, CS> =

@@ -3,8 +3,9 @@
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::matrix::Matrix;
 use crate::types::Scalar;
-use crate::GenericBaseMatrix;
+use crate::RefMat;
 use crate::{traits::*, DefaultLayout};
+use crate::{GenericBaseMatrix, RefMatMut};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
@@ -169,12 +170,8 @@ where
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
         let shape = result.shape();
-        unsafe {
-            for col in 0..shape.1 {
-                for row in 0..shape.0 {
-                    *result.get_unchecked_mut(row, col) = self.get_value_unchecked(row, col);
-                }
-            }
+        for index in 0..(shape.0 * shape.1) {
+            *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
         }
         result
     }
@@ -327,5 +324,29 @@ impl<
             }
         }
         result
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn view(&self) -> RefMat<Item, MatImpl, RS, CS> {
+        Matrix::from_ref(self)
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, RS, CS> {
+        Matrix::from_ref_mut(self)
     }
 }

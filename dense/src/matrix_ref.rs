@@ -57,12 +57,12 @@ where
     Item: Scalar,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
-    MatImpl: MatrixImplTrait<Item, RS, CS>;
+    MatImpl: MatrixImplTraitMut<Item, RS, CS>;
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > MatrixRefMut<'a, Item, MatImpl, RS, CS>
@@ -72,66 +72,108 @@ impl<
     }
 }
 
-macro_rules! matrix_ref_traits {
-    ($MatrixRefType:ident) => {
-        impl<
-                'a,
-                Item: Scalar,
-                MatImpl: MatrixImplTrait<Item, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > Layout for $MatrixRefType<'a, Item, MatImpl, RS, CS>
-        {
-            type Impl = DefaultLayout;
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Layout for MatrixRef<'a, Item, MatImpl, RS, CS>
+{
+    type Impl = DefaultLayout;
 
-            #[inline]
-            fn layout(&self) -> &Self::Impl {
-                self.0.layout()
-            }
-        }
-
-        impl<
-                'a,
-                Item: Scalar,
-                MatImpl: MatrixImplTrait<Item, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > SizeType for $MatrixRefType<'a, Item, MatImpl, RS, CS>
-        {
-            type R = RS;
-            type C = CS;
-        }
-
-        impl<
-                'a,
-                Item: Scalar,
-                MatImpl: MatrixImplTrait<Item, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > UnsafeRandomAccessByValue for $MatrixRefType<'a, Item, MatImpl, RS, CS>
-        {
-            type Item = Item;
-
-            #[inline]
-            unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
-                self.0.get_value_unchecked(row, col)
-            }
-
-            #[inline]
-            unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
-                self.0.get1d_value_unchecked(index)
-            }
-        }
-    };
+    #[inline]
+    fn layout(&self) -> &Self::Impl {
+        self.0.layout()
+    }
 }
-
-matrix_ref_traits!(MatrixRef);
-matrix_ref_traits!(MatrixRefMut);
 
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SizeType for MatrixRef<'a, Item, MatImpl, RS, CS>
+{
+    type R = RS;
+    type C = CS;
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByValue for MatrixRef<'a, Item, MatImpl, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
+        self.0.get_value_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
+        self.0.get1d_value_unchecked(index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Layout for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+{
+    type Impl = DefaultLayout;
+
+    #[inline]
+    fn layout(&self) -> &Self::Impl {
+        self.0.layout()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SizeType for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+{
+    type R = RS;
+    type C = CS;
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > UnsafeRandomAccessByValue for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
+        self.0.get_value_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
+        self.0.get1d_value_unchecked(index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS> + MatrixImplTraitAccessByRef<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
     > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, RS, CS>

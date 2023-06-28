@@ -15,6 +15,20 @@ impl DefaultLayout {
     pub fn new(dim: (usize, usize), stride: (usize, usize)) -> Self {
         Self { dim, stride }
     }
+
+    pub fn column_major(dim: (usize, usize)) -> Self {
+        Self {
+            dim,
+            stride: (1, dim.0),
+        }
+    }
+
+    pub fn row_major(dim: (usize, usize)) -> Self {
+        Self {
+            dim,
+            stride: (dim.1, 1),
+        }
+    }
 }
 
 impl LayoutType for DefaultLayout {
@@ -54,7 +68,7 @@ impl LayoutType for DefaultLayout {
         self.dim.0 * self.dim.1
     }
 
-    fn from_dimension(dim: (usize, usize), stride: (usize, usize)) -> Self {
-        Self { dim, stride }
+    fn from_dimension(dim: (usize, usize)) -> Self {
+        Self::column_major(dim)
     }
 }
