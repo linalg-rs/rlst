@@ -12,5 +12,6 @@ members = [
     "umfpack",
     "gfortran-src",
     "netlib-lapack-src",
-    "blis"
+    "blis",
+    "rlst",
 ]

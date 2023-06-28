@@ -1,0 +1,39 @@
+[features]
+strict = []
+
+[package]
+name = "rlst"
+version = "0.0.1"
+authors = ["The linalg-rs contributors"]
+edition = "2021"
+description = "A Rust native dense linear algebra library."
+license = "MIT + Apache 2.0"
+homepage = "https://github.com/linalg-rs"
+repository = "https://github.com/linalg-rs/rlst"
+readme = "README.md"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+
+[lib]
+name = "rlst"
+
+[dependencies]
+rlst-operator = {path = "../operator"}
+rlst-common = {path = "../common"}
+rlst-sparse = {path = "../sparse"}
+rlst-dense = { path = "../dense"}
+rlst-algorithms = { path = "../algorithms"}
+rlst-blis = { path = "../blis"}
+rlst-umfpack = { path = "../umfpack"}
+
+
+
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+
+
+
