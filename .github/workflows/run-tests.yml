@@ -41,7 +41,11 @@ jobs:
         run: sudo apt-get install -y cmake
 
       - name: Style checks
-        run: cargo fmt -- --check
+        run: |
+          cargo fmt -- --check
+          cargo clippy -- -D warnings
+          cargo clippy --tests -- -D warnings
+          cargo clippy --examples -- -D warnings
 
       - name: Run unit tests (debug)
         run: cargo test --lib --features "mpi,strict"
