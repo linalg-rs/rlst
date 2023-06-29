@@ -1,12 +1,8 @@
 name: 🧪 Test
 
 on:
-  push:
-    branches:
-      - "**"
-  pull_request:
-    branches:
-      - main
+  schedule:
+    - cron: "0 7 * * 1"
 
 jobs:
   run-tests:
@@ -14,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust-version: ["stable"]
+        rust-version: ["stable","beta","nightly"]
         mpi: ["mpich","openmpi"]
     steps:
       - name: Set up Rust
@@ -40,12 +36,10 @@ jobs:
       - name: Install CMake
         run: sudo apt-get install -y cmake
 
-      - name: Style checks
-        run: |
-          cargo fmt -- --check
-          cargo clippy -- -D warnings
-          cargo clippy --tests -- -D warnings
-          cargo clippy --examples -- -D warnings
+      - name: Build (debug)
+        run: cargo build --features "mpi,strict"
+      - name: Build (release)
+        run: cargo build --release --features "mpi,strict"
 
       - name: Run unit tests (debug)
         run: cargo test --lib --features "mpi,strict"
