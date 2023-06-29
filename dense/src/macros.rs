@@ -1,5 +1,7 @@
 //! The macros defined here make it easy to create new matrices and vectors.
 
+pub use rand;
+
 /// Create a new matrix.
 ///
 /// Example:
@@ -85,7 +87,7 @@ macro_rules! rlst_pointer_mat {
 #[macro_export]
 macro_rules! rlst_rand_mat {
     ($ScalarType:ty, $dim:expr) => {{
-        let mut rng = rand::thread_rng();
+        let mut rng = $crate::macros::rand::thread_rng();
         let mut mat = $crate::rlst_mat![$ScalarType, $dim];
         mat.fill_from_standard_normal(&mut rng);
         mat
@@ -140,7 +142,7 @@ macro_rules! rlst_fixed_mat {
 #[macro_export]
 macro_rules! rlst_fixed_rand_mat {
     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
-        let mut rng = rand::thread_rng();
+        let mut rng = $crate::macros::rand::thread_rng();
         let mut mat = $crate::rlst_fixed_mat![$ScalarType, $dim1, $dim2];
         mat.fill_from_standard_normal(&mut rng);
         mat
@@ -196,7 +198,7 @@ macro_rules! rlst_row_vec {
 #[macro_export]
 macro_rules! rlst_rand_col_vec {
     ($ScalarType:ty, $dim:expr) => {{
-        let mut rng = rand::thread_rng();
+        let mut rng = $crate::macros::rand::thread_rng();
         let mut vec = $crate::rlst_col_vec![$ScalarType, $dim];
         vec.fill_from_standard_normal(&mut rng);
         vec
@@ -216,7 +218,7 @@ macro_rules! rlst_rand_col_vec {
 #[macro_export]
 macro_rules! rlst_rand_row_vec {
     ($ScalarType:ty, $dim:expr) => {{
-        let mut rng = rand::thread_rng();
+        let mut rng = $crate::macros::rand::thread_rng();
         let mut vec = $crate::rlst_row_vec![$ScalarType, $dim];
         vec.fill_from_standard_normal(&mut rng);
         vec
