@@ -47,14 +47,9 @@ where
                 inner += T::real(vec.data()[i] * vec.data()[i]);
             }
 
-            let t;
-            if let Some(threshold) = threshold {
-                t = T::real(threshold)
-            } else {
-                t = T::real(T::epsilon());
-            }
+            let threshold = T::real(T::epsilon());
 
-            if inner > t {
+            if inner > threshold {
                 // Find transpose
                 let scaling = Some(vec![T::real(1.) / inner]);
                 let transpose = vec.copy().transpose().eval();
@@ -74,11 +69,16 @@ where
 
             // Compute a threshold based on the maximum singular value
             let max_s = s[0];
-            let threshold = T::real(4.).mul_real(T::real(T::epsilon())).mul_real(max_s);
+            let t;
+            if let Some(threshold) = threshold {
+                t = T::real(threshold)
+            } else {
+                t = T::real(4.).mul_real(T::real(T::epsilon())).mul_real(max_s);
+            }
 
             // Filter singular values below this threshold
             for s in s.iter_mut() {
-                if *s > threshold {
+                if *s > t {
                     *s = T::real(1.0) / *s;
                 } else {
                     *s = T::real(0.)
