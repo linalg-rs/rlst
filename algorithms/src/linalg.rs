@@ -20,6 +20,7 @@ pub struct DenseMatrixLinAlgBuilder<'a, T: Scalar, Mat> {
 }
 
 pub struct SparseMatrixLinalgBuilder<'a, T: Scalar, Mat> {
+    #[allow(dead_code)]
     pub(crate) mat: &'a Mat,
     _marker: std::marker::PhantomData<T>,
 }

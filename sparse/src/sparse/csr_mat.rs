@@ -259,7 +259,7 @@ mod test {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
 
         // This matrix has a zero row at the beginning one in between and several zero rows at the end.
-        let csr = CsrMatrix::from_aij((10, 2), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij((10, 3), &rows, &cols, &data).unwrap();
 
         let aij_data: Vec<(usize, usize, f64)> = csr.iter_aij().collect();
 

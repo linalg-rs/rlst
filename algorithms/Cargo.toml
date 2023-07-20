@@ -1,6 +1,3 @@
-[features]
-strict = []
-
 [package]
 name = "rlst-algorithms"
 version = "0.1.0"
@@ -14,7 +11,7 @@ rlst-dense = {path = "../dense"}
 rlst-blis-src = {path = "../blis-src"}
 rlst-netlib-lapack-src = {path = "../netlib-lapack-src"}
 rlst-sparse = { path = "../sparse"}
-rlst-umfpack = { path = "../umfpack"}
+rlst-umfpack = { path = "../umfpack", optional=true}
 num = "0.4"
 rand = "0.8"
 lapacke = { version = "0.5"}
@@ -23,6 +20,10 @@ lapack = "0.19.*"
 rand_chacha = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
 paste = "1"
+
+[features]
+strict = []
+suitesparse = ["dep:rlst-umfpack"]
 
 [dev-dependencies]
 cauchy = "0.4"
