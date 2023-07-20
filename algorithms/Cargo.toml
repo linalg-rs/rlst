@@ -13,6 +13,8 @@ rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
 rlst-blis-src = {path = "../blis-src"}
 rlst-netlib-lapack-src = {path = "../netlib-lapack-src"}
+rlst-sparse = { path = "../sparse"}
+rlst-umfpack = { path = "../umfpack"}
 num = "0.4"
 rand = "0.8"
 lapacke = { version = "0.5"}

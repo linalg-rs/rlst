@@ -9,3 +9,4 @@ pub mod iterative_solvers;
 pub mod lapack;
 pub mod linalg;
 pub mod traits;
+pub mod sparse;
