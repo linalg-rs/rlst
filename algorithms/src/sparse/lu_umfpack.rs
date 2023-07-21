@@ -1,12 +1,15 @@
 //! Interface for sparse matrix LU via UMFPACK
 
-use crate::traits::{
-    lu_decomp::{LUDecomp, LU},
-    types::TransposeMode,
+use crate::{
+    linalg::LinAlg,
+    traits::{
+        lu_decomp::{LUDecomp, LU},
+        types::TransposeMode,
+    },
 };
 use rlst_common::types::{c64, RlstError, Scalar};
 use rlst_dense::{rlst_mat, MatrixD, RawAccessMut, Shape};
-use rlst_sparse::sparse::csc_mat::CscMatrix;
+use rlst_sparse::sparse::{csc_mat::CscMatrix, csr_mat::CsrMatrix};
 use rlst_umfpack as umfpack;
 use std::ffi::c_void;
 
@@ -21,6 +24,20 @@ pub struct UmfpackLu<T: Scalar> {
 impl<T: Scalar> Drop for UmfpackLu<T> {
     fn drop(&mut self) {
         unsafe { umfpack::umfpack_di_free_numeric(&mut self.numeric) };
+    }
+}
+
+impl<'a, T: Scalar> LU for crate::linalg::SparseMatrixLinalgBuilder<'a, T, CsrMatrix<T>>
+where
+    for<'b> crate::linalg::SparseMatrixLinalgBuilder<'b, T, CscMatrix<T>>:
+        LU<Out = UmfpackLu<T>, T = T>,
+{
+    type Out = UmfpackLu<T>;
+    type T = T;
+
+    fn lu(self) -> rlst_common::types::RlstResult<Self::Out> {
+        let csc = self.mat.to_csc();
+        csc.linalg().lu()
     }
 }
 
@@ -333,7 +350,7 @@ mod test {
     };
 
     #[test]
-    fn test_umfpack_f64() {
+    fn test_csc_umfpack_f64() {
         let n = 5;
         let cols = 3;
 
@@ -368,7 +385,7 @@ mod test {
     }
 
     #[test]
-    fn test_umfpack_c64() {
+    fn test_csc_umfpack_c64() {
         let n = 5;
         let cols = 3;
 
@@ -391,6 +408,41 @@ mod test {
 
         let sparse_mat =
             rlst_sparse::sparse::csc_mat::CscMatrix::from_aij((n, n), &rows, &cols, &data).unwrap();
+
+        let x_actual = sparse_mat
+            .linalg()
+            .lu()
+            .unwrap()
+            .solve(&rhs, TransposeMode::NoTrans)
+            .unwrap();
+
+        assert_matrix_relative_eq!(x_actual, x_exact, 1E-12);
+    }
+
+    #[test]
+    fn test_csr_umfpack_c64() {
+        let n = 5;
+        let cols = 3;
+
+        let mat = rlst_rand_mat![c64, (n, n)];
+        let x_exact = rlst_rand_mat![c64, (n, cols)];
+
+        let rhs = mat.dot(&x_exact);
+
+        let mut rows = Vec::<usize>::with_capacity(n * n);
+        let mut cols = Vec::<usize>::with_capacity(n * n);
+        let mut data = Vec::<c64>::with_capacity(n * n);
+
+        for col_index in 0..n {
+            for row_index in 0..n {
+                rows.push(row_index);
+                cols.push(col_index);
+                data.push(mat[[row_index, col_index]]);
+            }
+        }
+
+        let sparse_mat =
+            rlst_sparse::sparse::csr_mat::CsrMatrix::from_aij((n, n), &rows, &cols, &data).unwrap();
 
         let x_actual = sparse_mat
             .linalg()
