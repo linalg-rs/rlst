@@ -61,7 +61,7 @@ fn write_mm_coordinate_file() {
 
     // This matrix has a zero row at the beginning one in between and several zero rows at the end.
     let csr =
-        rlst_sparse::sparse::csr_mat::CsrMatrix::from_aij((10, 3 ), &rows, &cols, &data).unwrap();
+        rlst_sparse::sparse::csr_mat::CsrMatrix::from_aij((10, 3), &rows, &cols, &data).unwrap();
 
     write_coordinate_mm(&csr, pathname).unwrap();
 
