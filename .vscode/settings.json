@@ -1,7 +1,0 @@
-{
-    "cmake.configureOnOpen": false,
-    "rust-analyzer.showUnlinkedFileNotification": false,
-    "rust-analyzer.cargo.features": [
-        "suitesparse",
-    ]
-}
