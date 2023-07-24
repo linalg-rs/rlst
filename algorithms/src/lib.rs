@@ -8,4 +8,5 @@ pub mod dense;
 pub mod iterative_solvers;
 pub mod lapack;
 pub mod linalg;
+pub mod sparse;
 pub mod traits;
