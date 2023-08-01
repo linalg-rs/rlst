@@ -170,7 +170,7 @@ where
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
         for index in 0..self.layout().number_of_elements() {
-            unsafe { *result.get1d_unchecked_mut(index) = self.get1d_value_unchecked(index) };
+            *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
         }
         result
     }
@@ -346,6 +346,6 @@ pub fn test_simd() {
     let mat1 = crate::rlst_mat![f32, (20, 20)];
     let mat2 = crate::rlst_mat![f32, (20, 20)];
 
-    let res = (5.0 * mat1).eval();
+    let res = (mat1.view() + mat2.view()).eval();
     println!("Res {}", res[[0, 0]]);
 }

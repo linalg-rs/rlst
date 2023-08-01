@@ -63,10 +63,8 @@ impl<T: Scalar> CsrMatrix<T> {
                     let mut acc = T::zero();
 
                     for index in c1..c2 {
-                        unsafe {
-                            let col = *self.indices().get_unchecked(index);
-                            acc += *self.data().get_unchecked(index) * *x.get_unchecked(col);
-                        }
+                        let col = self.indices()[index];
+                        acc += self.data()[index] * x[col];
                     }
                     acc
                 }
