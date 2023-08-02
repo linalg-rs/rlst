@@ -169,8 +169,7 @@ where
 
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
-        let shape = result.shape();
-        for index in 0..(shape.0 * shape.1) {
+        for index in 0..self.layout().number_of_elements() {
             *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
         }
         result
@@ -199,7 +198,7 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMu
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
         for index in 0..self.layout().number_of_elements() {
-            unsafe { f(self.get1d_unchecked_mut(index)) }
+            f(self.get1d_mut(index).unwrap())
         }
     }
 }
@@ -256,7 +255,7 @@ impl<
         RS: SizeIdentifier,
         CS: SizeIdentifier,
         Data: DataContainerMut<Item = Item>,
-        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+        Other: RandomAccessByValue<Item = Item> + Shape,
     > FillFrom<Other> for GenericBaseMatrix<Item, Data, RS, CS>
 {
     fn fill_from(&mut self, other: &Other) {
@@ -270,7 +269,7 @@ impl<
 
         for col in 0..self.shape().1 {
             for row in 0..self.shape().0 {
-                unsafe { *self.get_unchecked_mut(row, col) = other.get_value_unchecked(row, col) };
+                *self.get_mut(row, col).unwrap() = other.get_value(row, col).unwrap();
             }
         }
     }
@@ -281,7 +280,7 @@ impl<
         RS: SizeIdentifier,
         CS: SizeIdentifier,
         Data: DataContainerMut<Item = Item>,
-        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+        Other: RandomAccessByValue<Item = Item> + Shape,
     > SumInto<Other> for GenericBaseMatrix<Item, Data, RS, CS>
 {
     type T = Item;
@@ -295,12 +294,8 @@ impl<
             other.shape()
         );
 
-        for col in 0..self.shape().1 {
-            for row in 0..self.shape().0 {
-                unsafe {
-                    *self.get_unchecked_mut(row, col) += alpha * other.get_value_unchecked(row, col)
-                };
-            }
+        for elem in 0..self.number_of_elements() {
+            *self.get1d_mut(elem).unwrap() += alpha * other.get1d_value(elem).unwrap();
         }
     }
 }
@@ -314,14 +309,10 @@ impl<
 {
     type T = Item;
     fn square_sum(&self) -> <Self::T as Scalar>::Real {
-        let shape = self.shape();
-
         let mut result = <<Self::T as Scalar>::Real as Zero>::zero();
-        for col in 0..shape.1 {
-            for row in 0..shape.0 {
-                let value = unsafe { self.get_value_unchecked(row, col) };
-                result += value.square();
-            }
+        for index in 0..self.number_of_elements() {
+            let value = self.get1d_value(index).unwrap();
+            result += value.square();
         }
         result
     }
@@ -349,4 +340,12 @@ impl<
     pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, RS, CS> {
         Matrix::from_ref_mut(self)
     }
+}
+
+pub fn test_simd() {
+    let mat1 = crate::rlst_mat![f32, (20, 20)];
+    let mat2 = crate::rlst_mat![f32, (20, 20)];
+
+    let res = (mat1.view() + mat2.view()).eval();
+    println!("Res {}", res[[0, 0]]);
 }
