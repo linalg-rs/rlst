@@ -1,5 +1,5 @@
-use crate::traits::qr_decomp_trait::QRTrait;
-use crate::{lapack::LapackDataOwned, traits::qr_decomp_trait::QRDecomposableTrait};
+use crate::traits::qr_decomp::QRTrait;
+use crate::{lapack::LapackDataOwned, traits::qr_decomp::QRDecomposableTrait};
 use lapacke::{cunmqr, dormqr, sormqr, zunmqr};
 use num::Zero;
 #[allow(unused_imports)]

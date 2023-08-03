@@ -28,6 +28,8 @@ pub enum RlstError {
     IoError(String),
     #[error("Umfpack Error Code: {0}")]
     UmfpackError(i32),
+    #[error("Matrix is not square. Dimension: {0}x{1}")]
+    MatrixNotSquare(usize, usize),
 }
 
 /// Alias for an RLST Result type.
