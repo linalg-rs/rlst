@@ -8,6 +8,7 @@ pub use lapacke::Layout;
 use rlst_common::traits::*;
 pub use rlst_common::types::{RlstError, RlstResult};
 pub mod cholesky_decomp;
+pub mod evd;
 
 // pub trait LapackCompatible: RawAccessMut + Shape + Stride + Sized {}
 
