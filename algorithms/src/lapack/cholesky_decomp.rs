@@ -204,93 +204,101 @@ mod test {
     use crate::linalg::LinAlg;
 
     use super::*;
+    use rlst_dense::types::Scalar;
     use rlst_dense::Dot;
 
-    #[test]
-    fn test_cholesky_f64() {
-        let mut rlst_mat = rlst_dense::rlst_mat![f64, (2, 2)];
+    use paste::paste;
 
-        rlst_mat[[0, 0]] = 1.0;
-        rlst_mat[[0, 1]] = 0.5;
-        rlst_mat[[1, 0]] = 0.5;
-        rlst_mat[[1, 1]] = 2.0;
+    macro_rules! test_impl {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+                    #[test]
+                    fn [<test_cholesky_$scalar>]() {
+                        let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
 
-        let factor = rlst_mat
-            .linalg()
-            .cholesky(TriangularType::Lower)
-            .unwrap()
-            .get_u();
+                        rlst_mat.fill_from_seed_equally_distributed(0);
+                        rlst_mat[[1, 0]] = rlst_mat[[0, 1]].conj();
+                        rlst_mat[[0, 0]] = <$scalar as Scalar>::from_real(3.0);
+                        rlst_mat[[1, 1]] = <$scalar as Scalar>::from_real(5.0);
 
-        let actual = factor.view().conj().transpose().eval().dot(&factor);
-        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
+
+                        // Test lower
+
+                        let lower = rlst_mat
+                            .linalg()
+                            .cholesky(TriangularType::Lower)
+                            .unwrap()
+                            .get_l();
+
+                        let upper = rlst_mat
+                            .linalg()
+                            .cholesky(TriangularType::Lower)
+                            .unwrap()
+                            .get_u();
+
+                        let actual = lower.dot(&upper);
+                        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
+
+                        // Test upper
+
+                        let lower = rlst_mat
+                            .linalg()
+                            .cholesky(TriangularType::Upper)
+                            .unwrap()
+                            .get_l();
+
+                        let upper = rlst_mat
+                            .linalg()
+                            .cholesky(TriangularType::Upper)
+                            .unwrap()
+                            .get_u();
+
+                        let actual = lower.dot(&upper);
+                        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
+                    }
+
+                #[test]
+                fn [<test_cholesky_solve_$scalar>]() {
+                    let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
+                    let mut rlst_vec = rlst_dense::rlst_col_vec![$scalar, 2];
+
+                    rlst_mat.fill_from_seed_equally_distributed(0);
+                    rlst_mat[[1, 0]] = rlst_mat[[0, 1]].conj();
+                    rlst_mat[[0, 0]] = <$scalar as Scalar>::from_real(3.0);
+                    rlst_mat[[1, 1]] = <$scalar as Scalar>::from_real(5.0);
+
+                    rlst_vec.fill_from_seed_equally_distributed(1);
+
+                    let rhs = rlst_mat.dot(&rlst_vec);
+
+                    // Test Lower
+
+                    let sol = rlst_mat
+                        .linalg()
+                        .cholesky(TriangularType::Lower)
+                        .unwrap()
+                        .solve(&rhs)
+                        .unwrap();
+
+                    rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
+
+                    // Test Upper
+
+                    let sol = rlst_mat
+                        .linalg()
+                        .cholesky(TriangularType::Upper)
+                        .unwrap()
+                        .solve(&rhs)
+                        .unwrap();
+
+                    rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
+                }
+            }
+        };
     }
 
-    #[test]
-    fn test_cholesky_c32() {
-        let mut rlst_mat = rlst_dense::rlst_mat![c32, (2, 2)];
-
-        rlst_mat[[0, 0]] = c32::new(1.0, 0.0);
-        rlst_mat[[0, 1]] = c32::new(0.5, 0.1);
-        rlst_mat[[1, 0]] = c32::new(0.5, -0.1);
-        rlst_mat[[1, 1]] = c32::new(2.0, 0.0);
-
-        let factor = rlst_mat
-            .linalg()
-            .cholesky(TriangularType::Lower)
-            .unwrap()
-            .get_u();
-
-        let actual = factor.view().conj().transpose().eval().dot(&factor);
-        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-5);
-    }
-
-    #[test]
-    fn test_cholesky_solve_f64() {
-        let mut rlst_mat = rlst_dense::rlst_mat![f64, (2, 2)];
-        let mut rlst_vec = rlst_dense::rlst_col_vec![f64, 2];
-
-        rlst_mat[[0, 0]] = 1.0;
-        rlst_mat[[0, 1]] = 0.5;
-        rlst_mat[[1, 0]] = 0.5;
-        rlst_mat[[1, 1]] = 2.0;
-
-        rlst_vec[[0, 0]] = 2.3;
-        rlst_vec[[1, 0]] = 7.1;
-
-        let rhs = rlst_mat.dot(&rlst_vec);
-
-        let sol = rlst_mat
-            .linalg()
-            .cholesky(TriangularType::Upper)
-            .unwrap()
-            .solve(&rhs)
-            .unwrap();
-
-        rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
-    }
-
-    #[test]
-    fn test_cholesky_solve_c32() {
-        let mut rlst_mat = rlst_dense::rlst_mat![c32, (2, 2)];
-        let mut rlst_vec = rlst_dense::rlst_col_vec![c32, 2];
-
-        rlst_mat[[0, 0]] = c32::new(1.0, 0.0);
-        rlst_mat[[0, 1]] = c32::new(0.5, 0.1);
-        rlst_mat[[1, 0]] = c32::new(0.5, -0.1);
-        rlst_mat[[1, 1]] = c32::new(2.0, 0.0);
-
-        rlst_vec[[0, 0]] = c32::new(2.3, 0.2);
-        rlst_vec[[1, 0]] = c32::new(7.1, 0.9);
-
-        let rhs = rlst_mat.dot(&rlst_vec);
-
-        let sol = rlst_mat
-            .linalg()
-            .cholesky(TriangularType::Upper)
-            .unwrap()
-            .solve(&rhs)
-            .unwrap();
-
-        rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-5);
-    }
+    test_impl!(f32, 1E-5);
+    test_impl!(f64, 1E-12);
+    test_impl!(c32, 1E-5);
+    test_impl!(c64, 1E-12);
 }
