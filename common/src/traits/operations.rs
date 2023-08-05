@@ -90,6 +90,12 @@ pub trait ConjTranspose<Out> {
     fn conj_transpose(self) -> Out;
 }
 
+/// Convert operator to complex
+pub trait ToComplex {
+    type Out;
+    fn to_complex(self) -> Self::Out;
+}
+
 /// Permute the columns of an operator
 ///
 /// `permutation` is a permutation vector such

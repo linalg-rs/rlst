@@ -163,15 +163,14 @@ impl<
     > Eval for Matrix<Item, MatImpl, RS, CS>
 where
     Self: NewLikeSelf,
-    <Self as NewLikeSelf>::Out: Shape + RandomAccessMut<Item = Item>,
+    <Self as NewLikeSelf>::Out: ColumnMajorIteratorMut<T = Item>,
 {
     type Out = <Self as NewLikeSelf>::Out;
 
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
-        let shape = result.shape();
-        for index in 0..(shape.0 * shape.1) {
-            *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
+        for (res, value) in result.iter_col_major_mut().zip(self.iter_col_major()) {
+            *res = value;
         }
         result
     }
@@ -302,6 +301,32 @@ impl<
                 };
             }
         }
+    }
+}
+
+impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    SetDiag for GenericBaseMatrix<Item, Data, RS, CS>
+{
+    type T = Item;
+
+    fn set_diag_from_iter<I: Iterator<Item = Self::T>>(&mut self, iter: I) {
+        for (item, other) in self.iter_diag_mut().zip(iter) {
+            *item = other;
+        }
+    }
+
+    fn set_diag_from_slice(&mut self, diag: &[Self::T]) {
+        let k = std::cmp::min(self.shape().0, self.shape().1);
+
+        assert_eq!(
+            k,
+            diag.len(),
+            "Expected length of slice {} but actual length is {}",
+            k,
+            diag.len()
+        );
+
+        self.set_diag_from_iter(diag.iter().copied());
     }
 }
 
