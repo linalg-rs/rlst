@@ -1,5 +1,4 @@
 //! Trait for Cholesky decomposition.
-use super::types::*;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
 use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 
@@ -33,12 +32,9 @@ pub trait CholeskyDecomp {
 }
 
 /// Return the Cholesky decomposition of a Hermitican positive definite matrix.
-/// If `triangular_type` is [`TriangularType::Upper`] then only the upper triangular
-/// part of the matrix is used. If `triangular_type` is [`TriangularType::Lower`] then
-/// only the lower triangular part is used.
 pub trait Cholesky {
     type T: Scalar;
     type Out;
 
-    fn cholesky(self, triangular_type: TriangularType) -> RlstResult<Self::Out>;
+    fn cholesky(self) -> RlstResult<Self::Out>;
 }

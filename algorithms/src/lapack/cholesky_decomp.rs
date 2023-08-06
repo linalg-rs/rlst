@@ -29,29 +29,23 @@ macro_rules! cholesky_decomp_impl {
             <Mat as Copy>::Out: RawAccessMut<T = $scalar>
                 + Shape
                 + Stride
-                + std::ops::Index<[usize; 2], Output = $scalar>,
+                + std::ops::Index<[usize; 2], Output = $scalar>
+                + IsHermitian,
         {
             type T = $scalar;
             type Out = CholeskyDecompLapack<$scalar, <Mat as Copy>::Out>;
             /// Compute the LU decomposition.
-            fn cholesky(
-                self,
-                triangular_type: TriangularType,
-            ) -> RlstResult<CholeskyDecompLapack<$scalar, <Mat as Copy>::Out>> {
+            fn cholesky(self) -> RlstResult<CholeskyDecompLapack<$scalar, <Mat as Copy>::Out>> {
+                let triangular_type = TriangularType::Upper;
                 let mut copied = self.into_lapack()?;
                 let shape = copied.mat.shape();
                 let stride = copied.mat.stride();
 
                 let m = shape.0;
-                let n = shape.1;
                 let lda = stride.1 as i32;
 
-                if m != n {
-                    return Err(RlstError::MatrixNotSquare(m, n));
-                }
-
-                if m == 0 {
-                    return Err(RlstError::MatrixIsEmpty((m, n)));
+                if !copied.mat.is_hermitian() {
+                    return Err(RlstError::MatrixNotHermitian);
                 }
 
                 let info = unsafe {
@@ -222,39 +216,21 @@ mod test {
                         rlst_mat[[1, 1]] = <$scalar as Scalar>::from_real(5.0);
 
 
-                        // Test lower
-
                         let lower = rlst_mat
                             .linalg()
-                            .cholesky(TriangularType::Lower)
+                            .cholesky()
                             .unwrap()
                             .get_l();
 
                         let upper = rlst_mat
                             .linalg()
-                            .cholesky(TriangularType::Lower)
+                            .cholesky()
                             .unwrap()
                             .get_u();
 
                         let actual = lower.dot(&upper);
                         rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
 
-                        // Test upper
-
-                        let lower = rlst_mat
-                            .linalg()
-                            .cholesky(TriangularType::Upper)
-                            .unwrap()
-                            .get_l();
-
-                        let upper = rlst_mat
-                            .linalg()
-                            .cholesky(TriangularType::Upper)
-                            .unwrap()
-                            .get_u();
-
-                        let actual = lower.dot(&upper);
-                        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
                     }
 
                 #[test]
@@ -275,23 +251,13 @@ mod test {
 
                     let sol = rlst_mat
                         .linalg()
-                        .cholesky(TriangularType::Lower)
+                        .cholesky()
                         .unwrap()
                         .solve(&rhs)
                         .unwrap();
 
                     rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
 
-                    // Test Upper
-
-                    let sol = rlst_mat
-                        .linalg()
-                        .cholesky(TriangularType::Upper)
-                        .unwrap()
-                        .solve(&rhs)
-                        .unwrap();
-
-                    rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
                 }
             }
         };
