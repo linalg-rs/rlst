@@ -85,15 +85,25 @@ pub trait CmpWiseProduct<Other> {
     fn cmp_wise_product(self, other: Other) -> Self::Out;
 }
 
-/// Conjugate transpose of an operator
+/// Conjugate transpose of an operator.
 pub trait ConjTranspose<Out> {
     fn conj_transpose(self) -> Out;
 }
 
-/// Convert operator to complex
+/// Convert operator to complex.
 pub trait ToComplex {
     type Out;
     fn to_complex(self) -> Self::Out;
+}
+
+/// Check if operator is Hermititan.
+pub trait IsHermitian {
+    fn is_hermitian(&self) -> bool;
+}
+
+/// Check if operator is symmetric.
+pub trait IsSymmetric {
+    fn is_symmetric(&self) -> bool;
 }
 
 /// Permute the columns of an operator
@@ -114,7 +124,6 @@ pub trait PermuteColumns {
 /// that if permutation\[i\] = k
 /// then the ith row of the output matrix
 /// is the kth row of the input matrix.
-
 pub trait PermuteRows {
     type Out;
 

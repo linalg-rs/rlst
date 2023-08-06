@@ -273,10 +273,87 @@ macro_rules! implement_evd_complex {
     };
 }
 
+macro_rules! implement_sym_evd {
+    ($scalar:ty, $lapack_syev:ident) => {
+        impl<'a, Mat: Copy> SymEvd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
+        where
+            <Mat as Copy>::Out: RawAccessMut<T = $scalar>
+                + Shape
+                + Stride
+                + IsHermitian
+                + RandomAccessByValue<Item = $scalar>,
+        {
+            type T = $scalar;
+            fn sym_evd(
+                self,
+                mode: EigenvectorMode,
+            ) -> RlstResult<(Vec<<$scalar as Scalar>::Real>, Option<MatrixD<$scalar>>)> {
+                let mut copied = self.into_lapack()?;
+
+                let m = copied.mat.shape().0;
+                let n = copied.mat.shape().1;
+
+                if m != n {
+                    return Err(RlstError::MatrixNotSquare(m, n));
+                }
+
+                if !copied.mat.is_hermitian() {
+                    return Err(RlstError::MatrixNotHermitian);
+                }
+
+                let mut w = vec![<<$scalar as Scalar>::Real as Zero>::zero(); m];
+
+                let jobv = match mode {
+                    EigenvectorMode::All => b'V',
+                    EigenvectorMode::Left => b'V',
+                    EigenvectorMode::Right => b'V',
+                    EigenvectorMode::None => b'N',
+                };
+
+                let info = unsafe {
+                    lapacke::$lapack_syev(
+                        lapacke::Layout::ColumnMajor,
+                        jobv,
+                        b'U',
+                        n as i32,
+                        copied.mat.data_mut(),
+                        n as i32,
+                        w.as_mut_slice(),
+                    )
+                };
+
+                match info {
+                    0 => {
+                        let eigvec_opt;
+                        if jobv == b'V' {
+                            let mut eigvecs = rlst_dense::rlst_mat![$scalar, (m, m)];
+                            for col in 0..n {
+                                for row in 0..n {
+                                    eigvecs[[row, col]] = copied.mat.get_value(row, col).unwrap();
+                                }
+                            }
+                            eigvec_opt = Some(eigvecs);
+                        } else {
+                            eigvec_opt = None
+                        }
+                        Ok((w, eigvec_opt))
+                    }
+                    _ => Err(RlstError::LapackError(info)),
+                }
+            }
+        }
+    };
+}
+
 implement_evd_real!(f64, dgeev);
 implement_evd_real!(f32, sgeev);
 implement_evd_complex!(c32, cgeev);
 implement_evd_complex!(c64, zgeev);
+
+implement_sym_evd!(f64, dsyev);
+implement_sym_evd!(f32, ssyev);
+implement_sym_evd!(c32, cheev);
+implement_sym_evd!(c64, zheev);
 
 #[cfg(test)]
 mod test {
@@ -320,6 +397,31 @@ mod test {
                         .norm2()
                         .unwrap();
 
+                    assert!(res < $tol);
+                }
+                #[test]
+                pub fn [<test_sym_ev_$scalar>]() {
+                    let mut mat = rlst_dense::rlst_mat![$scalar, (3, 3)];
+
+                    mat.fill_from_seed_equally_distributed(0);
+                    let mat = (mat.view() + mat.view().conj().transpose()).eval();
+
+                    let (eigvals, eigvecs) = mat.linalg().sym_evd(EigenvectorMode::All).unwrap();
+                    let eigvecs = eigvecs.unwrap();
+
+                    let mut diag = rlst_dense::rlst_mat![<$scalar as Scalar>::Real, (3, 3)];
+                    diag.set_diag_from_iter(eigvals.iter().copied());
+
+                    // Convert all to complex as otherwise
+                    // cannot perform the multiplication with the diagonal
+                    // matrix if $scalar is a complex type as the
+                    // diagonal matrix is always real.
+
+                    let mat = mat.to_complex().eval();
+                    let eigvecs = eigvecs.to_complex().eval();
+                    let diag = diag.to_complex().eval();
+
+                    let res = (mat.dot(&eigvecs) - eigvecs.dot(&diag)).eval().linalg().norm2().unwrap();
                     assert!(res < $tol);
                 }
             }

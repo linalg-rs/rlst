@@ -30,6 +30,8 @@ pub enum RlstError {
     UmfpackError(i32),
     #[error("Matrix is not square. Dimension: {0}x{1}")]
     MatrixNotSquare(usize, usize),
+    #[error("Matrix is not Hermitian (complex conjugate symmetric).")]
+    MatrixNotHermitian,
 }
 
 /// Alias for an RLST Result type.

@@ -10,18 +10,18 @@ pub enum EigenvectorMode {
     None,
 }
 
-pub trait SymEvd {
+pub trait SymEvd: Sized {
     type T: Scalar;
 
     #[allow(clippy::type_complexity)]
     fn sym_evd(
         self,
         mode: EigenvectorMode,
-    ) -> RlstResult<(
-        Vec<<Self::T as Scalar>::Real>,
-        Option<MatrixD<Self::T>>,
-        Option<MatrixD<Self::T>>,
-    )>;
+    ) -> RlstResult<(Vec<<Self::T as Scalar>::Real>, Option<MatrixD<Self::T>>)>;
+    fn sym_eigenvalues(self) -> RlstResult<Vec<<Self::T as Scalar>::Real>> {
+        let (eigvals, _) = self.sym_evd(EigenvectorMode::None)?;
+        Ok(eigvals)
+    }
 }
 
 pub trait Evd: Sized {

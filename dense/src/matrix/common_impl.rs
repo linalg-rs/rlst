@@ -375,3 +375,55 @@ impl<
         Matrix::from_ref_mut(self)
     }
 }
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > IsHermitian for Matrix<Item, MatImpl, RS, CS>
+{
+    fn is_hermitian(&self) -> bool {
+        if self.shape().0 != self.shape().1 {
+            return false;
+        }
+
+        let mut hermitian = true;
+
+        'outer: for col in 0..self.shape().1 {
+            for row in col..self.shape().0 {
+                if self.get_value(row, col).unwrap() != self.get_value(col, row).unwrap().conj() {
+                    hermitian = false;
+                    break 'outer;
+                }
+            }
+        }
+        hermitian
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > IsSymmetric for Matrix<Item, MatImpl, RS, CS>
+{
+    fn is_symmetric(&self) -> bool {
+        if self.shape().0 != self.shape().1 {
+            return false;
+        }
+
+        let mut symmetric = true;
+
+        'outer: for col in 0..self.shape().1 {
+            for row in col..self.shape().0 {
+                if self.get_value(row, col).unwrap() != self.get_value(col, row).unwrap() {
+                    symmetric = false;
+                    break 'outer;
+                }
+            }
+        }
+        symmetric
+    }
+}
