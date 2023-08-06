@@ -1,7 +1,5 @@
 //! Various iterator implementations
 
-use std::marker::PhantomData;
-
 use crate::{matrix::GenericBaseMatrix, DataContainerMut, RandomAccessByValue, SizeIdentifier};
 use crate::{traits::*, Matrix};
 use rlst_common::types::Scalar;
