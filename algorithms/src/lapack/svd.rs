@@ -10,10 +10,7 @@ use rlst_dense::{rlst_mat, MatrixD};
 
 macro_rules! implement_svd {
     ($scalar:ty, $lapack_gesvd:ident) => {
-        impl<'a, Mat: Copy> Svd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
-        {
+        impl Svd for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
             fn svd(
                 self,
@@ -24,11 +21,12 @@ macro_rules! implement_svd {
                 Option<MatrixD<$scalar>>,
                 Option<MatrixD<$scalar>>,
             )> {
-                let mut copied = self.into_lapack()?;
-                let m = copied.mat.shape().0 as i32;
-                let n = copied.mat.shape().1 as i32;
+                let mut mat = self.mat;
+
+                let m = mat.shape().0 as i32;
+                let n = mat.shape().1 as i32;
                 let k = std::cmp::min(m, n);
-                let lda = copied.mat.stride().1 as i32;
+                let lda = mat.stride().1 as i32;
 
                 let mut s_values = vec![<<$scalar as Scalar>::Real as Zero>::zero(); k as usize];
                 let mut superb =
@@ -97,7 +95,7 @@ macro_rules! implement_svd {
                         jobvt,
                         m,
                         n,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         lda,
                         s_values.as_mut_slice(),
                         u_data,

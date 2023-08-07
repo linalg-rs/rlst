@@ -51,6 +51,15 @@ macro_rules! complex_container_impl {
                 MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
                 RS: SizeIdentifier,
                 CS: SizeIdentifier,
+            > MatrixImplIdentifier for ComplexContainer<$scalar, MatImpl, RS, CS>
+        {
+            const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
+        }
+
+        impl<
+                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
             > Layout for ComplexContainer<$scalar, MatImpl, RS, CS>
         {
             type Impl = DefaultLayout;
@@ -77,6 +86,52 @@ macro_rules! complex_container_impl {
             #[inline]
             unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
                 <$scalar>::from_real(self.0.get1d_value_unchecked(index))
+            }
+        }
+
+        impl<
+                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+            > RawAccess for ComplexContainer<$scalar, MatImpl, RS, CS>
+        {
+            type T = $scalar;
+
+            #[inline]
+            fn data(&self) -> &[Self::T] {
+                std::unimplemented!();
+            }
+
+            #[inline]
+            fn get_pointer(&self) -> *const Self::T {
+                std::unimplemented!();
+            }
+
+            #[inline]
+            fn get_slice(&self, _first: usize, _last: usize) -> &[Self::T] {
+                std::unimplemented!()
+            }
+        }
+
+        impl<
+                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+            > RawAccessMut for ComplexContainer<$scalar, MatImpl, RS, CS>
+        {
+            #[inline]
+            fn data_mut(&mut self) -> &mut [Self::T] {
+                std::unimplemented!();
+            }
+
+            #[inline]
+            fn get_pointer_mut(&mut self) -> *mut Self::T {
+                std::unimplemented!()
+            }
+
+            #[inline]
+            fn get_slice_mut(&mut self, _first: usize, _last: usize) -> &mut [Self::T] {
+                std::unimplemented!()
             }
         }
     };

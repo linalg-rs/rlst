@@ -45,30 +45,39 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
 }
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    BaseMatrix<Item, Data, RS, CS>
+    RawAccess for BaseMatrix<Item, Data, RS, CS>
 {
+    type T = Item;
+
     #[inline]
-    pub fn get_pointer(&self) -> *const Item {
+    fn get_pointer(&self) -> *const Item {
         self.data.get_pointer()
     }
 
     #[inline]
-    pub fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
         self.data.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.data.data()
     }
 }
 
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    BaseMatrix<Item, Data, RS, CS>
+    RawAccessMut for BaseMatrix<Item, Data, RS, CS>
 {
-    #[inline]
-    pub fn get_pointer_mut(&mut self) -> *mut Item {
+    fn get_pointer_mut(&mut self) -> *mut Item {
         self.data.get_pointer_mut()
     }
 
-    #[inline]
-    pub fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
         self.data.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.data.data_mut()
     }
 }
 
@@ -81,6 +90,12 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     fn layout(&self) -> &Self::Impl {
         &self.layout
     }
+}
+
+impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
+    MatrixImplIdentifier for BaseMatrix<Item, Data, RS, CS>
+{
+    const MAT_IMPL: MatrixImplType = MatrixImplType::Base;
 }
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>

@@ -1,11 +1,10 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::data_container::{DataContainer, DataContainerMut};
 use crate::matrix::Matrix;
 use crate::types::Scalar;
-use crate::RefMat;
+use crate::RefMatMut;
 use crate::{traits::*, DefaultLayout};
-use crate::{GenericBaseMatrix, RefMatMut};
+use crate::{MatrixD, RefMat};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
@@ -192,8 +191,12 @@ where
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > ForEach for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
@@ -203,8 +206,12 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMu
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    RawAccess for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS> + RawAccess<T = Item>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -220,12 +227,16 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
 
     #[inline]
     fn data(&self) -> &[Item] {
-        self.0.get_slice(0, self.layout().number_of_elements())
+        self.0.data()
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS> + RawAccessMut<T = Item>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccessMut for Matrix<Item, MatImpl, RS, CS>
 {
     fn get_pointer_mut(&mut self) -> *mut Item {
         self.0.get_pointer_mut()
@@ -236,12 +247,16 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
     }
 
     fn data_mut(&mut self) -> &mut [Item] {
-        self.0.get_slice_mut(0, self.layout().number_of_elements())
+        self.0.data_mut()
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    ScaleInPlace for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > ScaleInPlace for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -252,11 +267,11 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMu
 
 impl<
         Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
         Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
-    > FillFrom<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+    > FillFrom<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     fn fill_from(&mut self, other: &Other) {
         assert_eq!(
@@ -277,11 +292,11 @@ impl<
 
 impl<
         Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
         Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
-    > SumInto<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+    > SumInto<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -304,8 +319,12 @@ impl<
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    SetDiag for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SetDiag for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -425,5 +444,26 @@ impl<
             }
         }
         symmetric
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn get_mat_impl_type(&self) -> MatrixImplType {
+        MatImpl::MAT_IMPL
+    }
+
+    pub fn to_dyn_matrix(&self) -> MatrixD<Item> {
+        let mut mat = crate::rlst_mat![Item, self.shape()];
+
+        for (item, other) in mat.iter_col_major_mut().zip(self.iter_col_major()) {
+            *item = other;
+        }
+        mat
     }
 }

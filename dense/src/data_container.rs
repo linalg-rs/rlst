@@ -52,6 +52,11 @@ pub trait DataContainer {
 
     /// Return the number of elements in the container.
     fn number_of_elements(&self) -> usize;
+
+    /// Get slice to the whole data
+    fn data(&self) -> &[Self::Item] {
+        self.get_slice(0, self.number_of_elements())
+    }
 }
 
 pub trait DataContainerMut: DataContainer {
@@ -88,6 +93,11 @@ pub trait DataContainerMut: DataContainer {
         );
 
         unsafe { std::slice::from_raw_parts_mut(self.get_pointer_mut().add(first), last - first) }
+    }
+
+    /// Get mutable slice to the whole data.
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.get_slice_mut(0, self.number_of_elements())
     }
 }
 

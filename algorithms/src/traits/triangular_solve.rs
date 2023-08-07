@@ -1,17 +1,19 @@
 use super::types::*;
-use rlst_common::traits::RandomAccessByValue;
 use rlst_common::types::{RlstResult, Scalar};
-use rlst_dense::Shape;
+use rlst_dense::{Matrix, MatrixD, MatrixImplTrait, SizeIdentifier};
 
 pub trait TriangularSolve {
     type T: Scalar;
-    type Out;
 
-    fn triangular_solve<Rhs: RandomAccessByValue<Item = Self::T> + Shape>(
-        self,
-        rhs: &Rhs,
+    fn triangular_solve<
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+        MatImpl: MatrixImplTrait<Self::T, RS, CS>,
+    >(
+        &self,
+        rhs: &Matrix<Self::T, MatImpl, RS, CS>,
         tritype: TriangularType,
         tridiag: TriangularDiagonal,
         trans: TransposeMode,
-    ) -> RlstResult<Self::Out>;
+    ) -> RlstResult<MatrixD<Self::T>>;
 }

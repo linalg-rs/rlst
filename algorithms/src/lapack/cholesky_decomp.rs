@@ -3,48 +3,41 @@
 //! The Lapack Cholesky interface uses the Lapack routines `_potrf` to compute a Cholesky decomposition and
 //! `_ppsv` to solve a linear system of equations.
 
-use crate::lapack::LapackDataOwned;
 use crate::traits::cholesky_decomp::{Cholesky, CholeskyDecomp};
 use crate::traits::triangular_solve::TriangularSolve;
 use crate::traits::types::TriangularType;
 use lapacke;
 use rlst_common::traits::*;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::MatrixD;
+use rlst_dense::{Matrix, MatrixD, MatrixImplTrait, SizeIdentifier};
 
 use crate::linalg::{DenseMatrixLinAlgBuilder, LinAlg};
 use crate::traits::types::*;
 use std::marker::PhantomData;
 
-pub struct CholeskyDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
-    data: LapackDataOwned<<Mat as RawAccess>::T, Mat>,
+pub struct CholeskyDecompLapack<T: Scalar> {
+    mat: MatrixD<T>,
     triangular_type: TriangularType,
     _marker: PhantomData<T>,
 }
 
 macro_rules! cholesky_decomp_impl {
     ($scalar:ty, $lapack_potrf:ident, $lapack_ppsv:ident) => {
-        impl<'a, Mat: Copy> Cholesky for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar>
-                + Shape
-                + Stride
-                + std::ops::Index<[usize; 2], Output = $scalar>
-                + IsHermitian,
-        {
+        impl Cholesky for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            type Out = CholeskyDecompLapack<$scalar, <Mat as Copy>::Out>;
+            type Out = CholeskyDecompLapack<$scalar>;
             /// Compute the LU decomposition.
-            fn cholesky(self) -> RlstResult<CholeskyDecompLapack<$scalar, <Mat as Copy>::Out>> {
+            fn cholesky(self) -> RlstResult<CholeskyDecompLapack<$scalar>> {
                 let triangular_type = TriangularType::Upper;
-                let mut copied = self.into_lapack()?;
-                let shape = copied.mat.shape();
-                let stride = copied.mat.stride();
+
+                let mut mat = self.mat;
+                let shape = mat.shape();
+                let stride = mat.stride();
 
                 let m = shape.0;
                 let lda = stride.1 as i32;
 
-                if !copied.mat.is_hermitian() {
+                if !mat.is_hermitian() {
                     return Err(RlstError::MatrixNotHermitian);
                 }
 
@@ -53,13 +46,13 @@ macro_rules! cholesky_decomp_impl {
                         lapacke::Layout::ColumnMajor,
                         triangular_type as u8,
                         m as i32,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         lda,
                     )
                 };
                 if info == 0 {
                     return Ok(CholeskyDecompLapack {
-                        data: copied,
+                        mat,
                         triangular_type,
                         _marker: PhantomData,
                     });
@@ -76,27 +69,19 @@ cholesky_decomp_impl!(f32, spotrf, sppsv);
 cholesky_decomp_impl!(c32, cpotrf, cppsv);
 cholesky_decomp_impl!(c64, zpotrf, zppsv);
 
-impl<
-        T: Scalar,
-        Mat: RawAccessMut<T = T>
-            + Shape
-            + Stride
-            + std::ops::Index<[usize; 2], Output = T>
-            + std::ops::IndexMut<[usize; 2], Output = T>
-            + RawAccess<T = T>,
-    > CholeskyDecomp for CholeskyDecompLapack<T, Mat>
+impl<T: Scalar> CholeskyDecomp for CholeskyDecompLapack<T>
 where
-    for<'a> DenseMatrixLinAlgBuilder<'a, T, MatrixD<T>>: TriangularSolve<T = T, Out = MatrixD<T>>,
+    DenseMatrixLinAlgBuilder<T>: TriangularSolve<T = T>,
 {
     type T = T;
     type Sol = MatrixD<T>;
 
     fn data(&self) -> &[Self::T] {
-        self.data.mat.data()
+        self.mat.data()
     }
 
     fn shape(&self) -> (usize, usize) {
-        self.data.mat.shape()
+        self.mat.shape()
     }
 
     fn get_l(&self) -> MatrixD<Self::T> {
@@ -104,21 +89,21 @@ where
         match self.triangular_type {
             TriangularType::Upper => {
                 // We need to translate to lower triangular
-                let n = self.data.mat.shape().0;
+                let n = self.mat.shape().0;
                 result = rlst_dense::rlst_mat![Self::T, (n, n)];
                 for row in 0..n {
                     for col in row..n {
-                        result[[col, row]] = self.data.mat[[row, col]].conj();
+                        result[[col, row]] = self.mat[[row, col]].conj();
                     }
                 }
             }
             TriangularType::Lower => {
                 // Just copy over the result
-                let n = self.data.mat.shape().0;
+                let n = self.mat.shape().0;
                 result = rlst_dense::rlst_mat![Self::T, (n, n)];
                 for col in 0..n {
                     for row in col..n {
-                        result[[row, col]] = self.data.mat[[row, col]];
+                        result[[row, col]] = self.mat[[row, col]];
                     }
                 }
             }
@@ -131,21 +116,21 @@ where
         match self.triangular_type {
             TriangularType::Lower => {
                 // We need to translate to upper triangular
-                let n = self.data.mat.shape().0;
+                let n = self.mat.shape().0;
                 result = rlst_dense::rlst_mat![Self::T, (n, n)];
                 for col in 0..n {
                     for row in col..n {
-                        result[[col, row]] = self.data.mat[[row, col]].conj();
+                        result[[col, row]] = self.mat[[row, col]].conj();
                     }
                 }
             }
             TriangularType::Upper => {
                 // Just copy over the result
-                let n = self.data.mat.shape().0;
+                let n = self.mat.shape().0;
                 result = rlst_dense::rlst_mat![Self::T, (n, n)];
                 for row in 0..n {
                     for col in row..n {
-                        result[[row, col]] = self.data.mat[[row, col]];
+                        result[[row, col]] = self.mat[[row, col]];
                     }
                 }
             }
@@ -153,10 +138,13 @@ where
         result
     }
 
-    fn solve<Rhs: RandomAccessByValue<Item = T> + Shape>(
+    fn solve<MatImpl: MatrixImplTrait<Self::T, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>(
         &self,
-        rhs: &Rhs,
-    ) -> RlstResult<Self::Sol> {
+        rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+    ) -> RlstResult<Self::Sol>
+// where
+    //     Matrix<Self::T, MatImpl, RS, CS>: TriangularSolve<T = Self::T>,
+    {
         let sol = match self.triangular_type {
             TriangularType::Upper => {
                 let factor = self.get_u();

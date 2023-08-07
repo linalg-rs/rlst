@@ -106,6 +106,17 @@ impl<
         MatImpl: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
+    > MatrixImplIdentifier for MatrixRef<'a, Item, MatImpl, RS, CS>
+{
+    const MAT_IMPL: MatrixImplType = MatImpl::MAT_IMPL;
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
     > UnsafeRandomAccessByValue for MatrixRef<'a, Item, MatImpl, RS, CS>
 {
     type Item = Item;
@@ -135,6 +146,17 @@ impl<
     fn layout(&self) -> &Self::Impl {
         self.0.layout()
     }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > MatrixImplIdentifier for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+{
+    const MAT_IMPL: MatrixImplType = MatImpl::MAT_IMPL;
 }
 
 impl<
@@ -230,5 +252,84 @@ impl<
     #[inline]
     unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get1d_unchecked_mut(index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+where
+    Matrix<Item, MatImpl, RS, CS>: RawAccess<T = Item>,
+{
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.data()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for MatrixRef<'a, Item, MatImpl, RS, CS>
+where
+    Matrix<Item, MatImpl, RS, CS>: RawAccess<T = Item>,
+{
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.data()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccessMut for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+where
+    Matrix<Item, MatImpl, RS, CS>: RawAccessMut<T = Item>,
+{
+    fn get_pointer_mut(&mut self) -> *mut Item {
+        self.0.get_pointer_mut()
+    }
+
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+        self.0.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.0.data_mut()
     }
 }

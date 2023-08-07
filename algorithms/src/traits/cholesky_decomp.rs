@@ -1,6 +1,6 @@
 //! Trait for Cholesky decomposition.
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
+use rlst_dense::{Matrix, MatrixD, MatrixImplTrait, SizeIdentifier};
 
 /// Defines the Cholesky decomposition of a Hermitian positive definite matrix.
 ///
@@ -25,9 +25,9 @@ pub trait CholeskyDecomp {
     fn shape(&self) -> (usize, usize);
 
     /// Solve for a right-hand side.
-    fn solve<Rhs: RandomAccessByValue<Item = Self::T> + Shape>(
+    fn solve<MatImpl: MatrixImplTrait<Self::T, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>(
         &self,
-        rhs: &Rhs,
+        rhs: &Matrix<Self::T, MatImpl, RS, CS>,
     ) -> RlstResult<Self::Sol>;
 }
 

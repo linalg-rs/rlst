@@ -110,6 +110,67 @@ impl<
         MatImpl2: MatrixImplTrait<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
+    > MatrixImplIdentifier for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+{
+    const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
+}
+
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+{
+    type T = Item;
+
+    #[inline]
+    fn data(&self) -> &[Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer(&self) -> *const Self::T {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_slice(&self, _first: usize, _last: usize) -> &[Self::T] {
+        std::unimplemented!()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccessMut for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+{
+    #[inline]
+    fn data_mut(&mut self) -> &mut [Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer_mut(&mut self) -> *mut Self::T {
+        std::unimplemented!()
+    }
+
+    #[inline]
+    fn get_slice_mut(&mut self, _first: usize, _last: usize) -> &mut [Self::T] {
+        std::unimplemented!()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, RS, CS>,
+        MatImpl2: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
     > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
 {
     type Output = AdditionMat<Item, MatImpl1, MatImpl2, RS, CS>;

@@ -1,7 +1,7 @@
 //! Various iterator implementations
 
-use crate::{matrix::GenericBaseMatrix, DataContainerMut, RandomAccessByValue, SizeIdentifier};
 use crate::{traits::*, Matrix};
+use crate::{RandomAccessByValue, SizeIdentifier};
 use rlst_common::types::Scalar;
 
 pub struct MatrixColumnMajorIterator<
@@ -18,11 +18,11 @@ pub struct MatrixColumnMajorIterator<
 pub struct MatrixColumnMajorIteratorMut<
     'a,
     Item: Scalar,
-    Data: DataContainerMut<Item = Item>,
+    MatImpl: MatrixImplTraitMut<Item, RS, CS>,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
 > {
-    mat: &'a mut GenericBaseMatrix<Item, Data, RS, CS>,
+    mat: &'a mut Matrix<Item, MatImpl, RS, CS>,
     pos: usize,
 }
 
@@ -40,11 +40,11 @@ pub struct DiagonalIterator<
 pub struct DiagonalIteratorMut<
     'a,
     Item: Scalar,
-    Data: DataContainerMut<Item = Item>,
+    MatImpl: MatrixImplTraitMut<Item, RS, CS>,
     RS: SizeIdentifier,
     CS: SizeIdentifier,
 > {
-    mat: &'a mut GenericBaseMatrix<Item, Data, RS, CS>,
+    mat: &'a mut Matrix<Item, MatImpl, RS, CS>,
     pos: usize,
 }
 
@@ -64,12 +64,12 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > MatrixColumnMajorIteratorMut<'a, Item, Data, RS, CS>
+    > MatrixColumnMajorIteratorMut<'a, Item, MatImpl, RS, CS>
 {
-    pub fn new(mat: &'a mut GenericBaseMatrix<Item, Data, RS, CS>) -> Self {
+    pub fn new(mat: &'a mut Matrix<Item, MatImpl, RS, CS>) -> Self {
         Self { mat, pos: 0 }
     }
 }
@@ -90,12 +90,12 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > DiagonalIteratorMut<'a, Item, Data, RS, CS>
+    > DiagonalIteratorMut<'a, Item, MatImpl, RS, CS>
 {
-    pub fn new(mat: &'a mut GenericBaseMatrix<Item, Data, RS, CS>) -> Self {
+    pub fn new(mat: &'a mut Matrix<Item, MatImpl, RS, CS>) -> Self {
         Self { mat, pos: 0 }
     }
 }
@@ -142,10 +142,10 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::iter::Iterator for MatrixColumnMajorIteratorMut<'a, Item, Data, RS, CS>
+    > std::iter::Iterator for MatrixColumnMajorIteratorMut<'a, Item, MatImpl, RS, CS>
 {
     type Item = &'a mut Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -161,10 +161,10 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        Data: DataContainerMut<Item = Item>,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-    > std::iter::Iterator for DiagonalIteratorMut<'a, Item, Data, RS, CS>
+    > std::iter::Iterator for DiagonalIteratorMut<'a, Item, MatImpl, RS, CS>
 {
     type Item = &'a mut Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -192,12 +192,15 @@ impl<
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    rlst_common::traits::iterators::ColumnMajorIteratorMut
-    for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > rlst_common::traits::iterators::ColumnMajorIteratorMut for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
-    type IterMut<'a> = MatrixColumnMajorIteratorMut<'a, Item, Data, RS, CS> where Self: 'a;
+    type IterMut<'a> = MatrixColumnMajorIteratorMut<'a, Item, MatImpl, RS, CS> where Self: 'a;
 
     fn iter_col_major_mut(&mut self) -> Self::IterMut<'_> {
         MatrixColumnMajorIteratorMut::new(self)
@@ -219,11 +222,15 @@ impl<
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    rlst_common::traits::iterators::DiagonalIteratorMut for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > rlst_common::traits::iterators::DiagonalIteratorMut for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
-    type IterMut<'a> = DiagonalIteratorMut<'a, Item, Data, RS, CS> where Self: 'a;
+    type IterMut<'a> = DiagonalIteratorMut<'a, Item, MatImpl, RS, CS> where Self: 'a;
 
     fn iter_diag_mut(&mut self) -> Self::IterMut<'_> {
         DiagonalIteratorMut::new(self)

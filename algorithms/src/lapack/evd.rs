@@ -9,10 +9,7 @@ use rlst_dense::MatrixD;
 
 macro_rules! implement_evd_real {
     ($scalar:ty, $lapack_geev:ident) => {
-        impl<'a, Mat: Copy> Evd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
-        {
+        impl Evd for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
             fn evd(
                 self,
@@ -56,10 +53,10 @@ macro_rules! implement_evd_real {
                     }
                 }
 
-                let mut copied = self.into_lapack()?;
+                let mut mat = self.mat;
 
-                let m = copied.mat.shape().0;
-                let n = copied.mat.shape().1;
+                let m = mat.shape().0;
+                let n = mat.shape().1;
 
                 if m != n {
                     return Err(RlstError::MatrixNotSquare(m, n));
@@ -123,7 +120,7 @@ macro_rules! implement_evd_real {
                         jobvl,
                         jobvr,
                         n as i32,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         n as i32,
                         wr.as_mut_slice(),
                         wi.as_mut_slice(),
@@ -175,10 +172,7 @@ macro_rules! implement_evd_real {
 
 macro_rules! implement_evd_complex {
     ($scalar:ty, $lapack_geev:ident) => {
-        impl<'a, Mat: Copy> Evd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
-        {
+        impl Evd for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
             fn evd(
                 self,
@@ -188,10 +182,10 @@ macro_rules! implement_evd_complex {
                 Option<MatrixD<<$scalar as Scalar>::Complex>>,
                 Option<MatrixD<<$scalar as Scalar>::Complex>>,
             )> {
-                let mut copied = self.into_lapack()?;
+                let mut mat = self.mat;
 
-                let m = copied.mat.shape().0;
-                let n = copied.mat.shape().1;
+                let m = mat.shape().0;
+                let n = mat.shape().1;
 
                 if m != n {
                     return Err(RlstError::MatrixNotSquare(m, n));
@@ -254,7 +248,7 @@ macro_rules! implement_evd_complex {
                         jobvl,
                         jobvr,
                         n as i32,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         n as i32,
                         w.as_mut_slice(),
                         vl_data,
@@ -275,29 +269,22 @@ macro_rules! implement_evd_complex {
 
 macro_rules! implement_sym_evd {
     ($scalar:ty, $lapack_syev:ident) => {
-        impl<'a, Mat: Copy> SymEvd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar>
-                + Shape
-                + Stride
-                + IsHermitian
-                + RandomAccessByValue<Item = $scalar>,
-        {
+        impl SymEvd for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
             fn sym_evd(
                 self,
                 mode: EigenvectorMode,
             ) -> RlstResult<(Vec<<$scalar as Scalar>::Real>, Option<MatrixD<$scalar>>)> {
-                let mut copied = self.into_lapack()?;
+                let mut mat = self.mat;
 
-                let m = copied.mat.shape().0;
-                let n = copied.mat.shape().1;
+                let m = mat.shape().0;
+                let n = mat.shape().1;
 
                 if m != n {
                     return Err(RlstError::MatrixNotSquare(m, n));
                 }
 
-                if !copied.mat.is_hermitian() {
+                if !mat.is_hermitian() {
                     return Err(RlstError::MatrixNotHermitian);
                 }
 
@@ -316,7 +303,7 @@ macro_rules! implement_sym_evd {
                         jobv,
                         b'U',
                         n as i32,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         n as i32,
                         w.as_mut_slice(),
                     )
@@ -329,7 +316,7 @@ macro_rules! implement_sym_evd {
                             let mut eigvecs = rlst_dense::rlst_mat![$scalar, (m, m)];
                             for col in 0..n {
                                 for row in 0..n {
-                                    eigvecs[[row, col]] = copied.mat.get_value(row, col).unwrap();
+                                    eigvecs[[row, col]] = mat.get_value(row, col).unwrap();
                                 }
                             }
                             eigvec_opt = Some(eigvecs);
