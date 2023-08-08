@@ -1,5 +1,5 @@
-use crate::traits::qr_decomp_trait::QRTrait;
-use crate::{lapack::LapackDataOwned, traits::qr_decomp_trait::QRDecomposableTrait};
+use crate::traits::qr_decomp::QRDecomposableTrait;
+use crate::traits::qr_decomp::QRTrait;
 use lapacke::{cunmqr, dormqr, sormqr, zunmqr};
 use num::Zero;
 #[allow(unused_imports)]
@@ -11,8 +11,8 @@ use rlst_dense::{RandomAccessByValue, RawAccess, RawAccessMut, Shape, Stride};
 use super::DenseMatrixLinAlgBuilder;
 use crate::traits::types::*;
 
-pub struct QRDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> {
-    data: LapackDataOwned<T, Mat>,
+pub struct QRDecompLapack<T: Scalar> {
+    mat: MatrixD<T>,
     tau: Vec<T>,
     lda: i32,
     shape: (usize, usize),
@@ -21,20 +21,14 @@ pub struct QRDecompLapack<T: Scalar, Mat: RawAccessMut<T = T> + Shape + Stride> 
 
 macro_rules! qr_decomp_impl {
     ($scalar:ty, $lapack_qr:ident, $lapack_qr_pivoting:ident, $lapack_qr_solve:ident, $lapack_qmult:ident) => {
-        impl<'a, Mat: Copy> QRDecomposableTrait for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + RawAccess<T = $scalar> + Shape + Stride,
-        {
+        impl QRDecomposableTrait for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            type Out = QRDecompLapack<$scalar, <Mat as Copy>::Out>;
+            type Out = QRDecompLapack<$scalar>;
             /// Returns the QR decomposition of the input matrix assuming full rank and using LAPACK xGEQRF
-            fn qr(
-                self,
-                pivoting: PivotMode,
-            ) -> RlstResult<QRDecompLapack<$scalar, <Mat as Copy>::Out>> {
-                let mut copied = self.into_lapack()?;
-                let shape = copied.mat.shape();
-                let stride = copied.mat.stride();
+            fn qr(self, pivoting: PivotMode) -> RlstResult<QRDecompLapack<$scalar>> {
+                let mut mat = self.mat;
+                let shape = mat.shape();
+                let stride = mat.stride();
 
                 let m = shape.0 as i32;
                 let n = shape.1 as i32;
@@ -57,7 +51,7 @@ macro_rules! qr_decomp_impl {
                                 lapacke::Layout::ColumnMajor,
                                 m,
                                 n,
-                                copied.mat.data_mut(),
+                                mat.data_mut(),
                                 lda,
                                 &mut tau,
                             )
@@ -68,7 +62,7 @@ macro_rules! qr_decomp_impl {
                             lapacke::Layout::ColumnMajor,
                             m,
                             n,
-                            copied.mat.data_mut(),
+                            mat.data_mut(),
                             lda,
                             &mut jpvt,
                             &mut tau,
@@ -78,7 +72,7 @@ macro_rules! qr_decomp_impl {
 
                 if info == 0 {
                     return Ok(QRDecompLapack {
-                        data: copied,
+                        mat,
                         tau,
                         lda,
                         shape,
@@ -98,8 +92,8 @@ macro_rules! qr_decomp_impl {
                     return Err(RlstError::MatrixIsEmpty(rhs.shape()));
                 }
 
-                let mut copied = self.into_lapack()?;
-                let shape = copied.mat.shape();
+                let mut mat = self.mat;
+                let shape = mat.shape();
 
                 let expected_rhs_rows = match trans {
                     TransposeMode::NoTrans => shape.0,
@@ -114,7 +108,7 @@ macro_rules! qr_decomp_impl {
                     )));
                 }
 
-                let stride = copied.mat.stride();
+                let stride = mat.stride();
 
                 let ldb = std::cmp::max(shape.0, shape.1);
                 let m = shape.0 as i32;
@@ -141,7 +135,7 @@ macro_rules! qr_decomp_impl {
                         m,
                         n,
                         nrhs as i32,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         lda,
                         work_rhs.data_mut(),
                         ldb as i32,
@@ -174,14 +168,7 @@ macro_rules! qr_decomp_impl {
             }
         }
 
-        impl<
-                Mat: RawAccessMut<T = $scalar>
-                    + Shape
-                    + Stride
-                    + std::ops::Index<[usize; 2], Output = $scalar>
-                    + std::ops::IndexMut<[usize; 2], Output = $scalar>,
-            > QRTrait for QRDecompLapack<$scalar, Mat>
-        {
+        impl QRTrait for QRDecompLapack<$scalar> {
             type T = $scalar;
             type Q = MatrixD<Self::T>;
             type R = MatrixD<Self::T>;
@@ -210,7 +197,7 @@ macro_rules! qr_decomp_impl {
                         q_dim.0 as i32,
                         q_dim.1 as i32,
                         self.tau.len() as i32,
-                        self.data.mat.data(),
+                        self.mat.data(),
                         self.lda,
                         self.tau.as_slice(),
                         q.data_mut(),
@@ -226,13 +213,13 @@ macro_rules! qr_decomp_impl {
             }
 
             fn r(&self) -> RlstResult<MatrixD<Self::T>> {
-                let shape = self.data.mat.shape();
+                let shape = self.mat.shape();
                 let dim = std::cmp::min(shape.0, shape.1);
                 let mut mat = rlst_mat!(Self::T, (dim, shape.1));
 
                 for row in 0..dim {
                     for col in row..shape.1 {
-                        mat[[row, col]] = self.data.mat[[row, col]];
+                        mat[[row, col]] = self.mat[[row, col]];
                     }
                 }
                 Ok(mat)

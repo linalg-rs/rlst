@@ -1,11 +1,10 @@
 //! Implementation of common matrix traits and methods.
 
-use crate::data_container::{DataContainer, DataContainerMut};
 use crate::matrix::Matrix;
 use crate::types::Scalar;
-use crate::RefMat;
+use crate::RefMatMut;
 use crate::{traits::*, DefaultLayout};
-use crate::{GenericBaseMatrix, RefMatMut};
+use crate::{MatrixD, RefMat};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
@@ -163,14 +162,14 @@ impl<
     > Eval for Matrix<Item, MatImpl, RS, CS>
 where
     Self: NewLikeSelf,
-    <Self as NewLikeSelf>::Out: Shape + RandomAccessMut<Item = Item>,
+    <Self as NewLikeSelf>::Out: ColumnMajorIteratorMut<T = Item>,
 {
     type Out = <Self as NewLikeSelf>::Out;
 
     fn eval(&self) -> Self::Out {
         let mut result = self.new_like_self();
-        for index in 0..self.layout().number_of_elements() {
-            *result.get1d_mut(index).unwrap() = self.get1d_value(index).unwrap();
+        for (res, value) in result.iter_col_major_mut().zip(self.iter_col_major()) {
+            *res = value;
         }
         result
     }
@@ -192,8 +191,12 @@ where
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    ForEach for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > ForEach for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
@@ -203,8 +206,12 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMu
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    RawAccess for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS> + RawAccess<T = Item>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -220,12 +227,16 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
 
     #[inline]
     fn data(&self) -> &[Item] {
-        self.0.get_slice(0, self.layout().number_of_elements())
+        self.0.data()
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    RawAccessMut for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS> + RawAccessMut<T = Item>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccessMut for Matrix<Item, MatImpl, RS, CS>
 {
     fn get_pointer_mut(&mut self) -> *mut Item {
         self.0.get_pointer_mut()
@@ -236,12 +247,16 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: 
     }
 
     fn data_mut(&mut self) -> &mut [Item] {
-        self.0.get_slice_mut(0, self.layout().number_of_elements())
+        self.0.data_mut()
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMut<Item = Item>>
-    ScaleInPlace for GenericBaseMatrix<Item, Data, RS, CS>
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > ScaleInPlace for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -252,11 +267,11 @@ impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainerMu
 
 impl<
         Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
-        Other: RandomAccessByValue<Item = Item> + Shape,
-    > FillFrom<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+        Other: Shape + ColumnMajorIterator<T = Item>,
+    > FillFrom<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     fn fill_from(&mut self, other: &Other) {
         assert_eq!(
@@ -267,21 +282,19 @@ impl<
             other.shape()
         );
 
-        for col in 0..self.shape().1 {
-            for row in 0..self.shape().0 {
-                *self.get_mut(row, col).unwrap() = other.get_value(row, col).unwrap();
-            }
+        for (item, other_item) in self.iter_col_major_mut().zip(other.iter_col_major()) {
+            *item = other_item
         }
     }
 }
 
 impl<
         Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
-        Other: RandomAccessByValue<Item = Item> + Shape,
-    > SumInto<Other> for GenericBaseMatrix<Item, Data, RS, CS>
+        Other: Shape + ColumnMajorIterator<T = Item>,
+    > SumInto<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
 
@@ -294,9 +307,39 @@ impl<
             other.shape()
         );
 
-        for elem in 0..self.number_of_elements() {
-            *self.get1d_mut(elem).unwrap() += alpha * other.get1d_value(elem).unwrap();
+        for (item, other_item) in self.iter_col_major_mut().zip(other.iter_col_major()) {
+            *item += alpha * other_item
         }
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > SetDiag for Matrix<Item, MatImpl, RS, CS>
+{
+    type T = Item;
+
+    fn set_diag_from_iter<I: Iterator<Item = Self::T>>(&mut self, iter: I) {
+        for (item, other) in self.iter_diag_mut().zip(iter) {
+            *item = other;
+        }
+    }
+
+    fn set_diag_from_slice(&mut self, diag: &[Self::T]) {
+        let k = std::cmp::min(self.shape().0, self.shape().1);
+
+        assert_eq!(
+            k,
+            diag.len(),
+            "Expected length of slice {} but actual length is {}",
+            k,
+            diag.len()
+        );
+
+        self.set_diag_from_iter(diag.iter().copied());
     }
 }
 
@@ -342,10 +385,75 @@ impl<
     }
 }
 
-pub fn test_simd() {
-    let mat1 = crate::rlst_mat![f32, (20, 20)];
-    let mat2 = crate::rlst_mat![f32, (20, 20)];
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > IsHermitian for Matrix<Item, MatImpl, RS, CS>
+{
+    fn is_hermitian(&self) -> bool {
+        if self.shape().0 != self.shape().1 {
+            return false;
+        }
 
-    let res = (mat1.view() + mat2.view()).eval();
-    println!("Res {}", res[[0, 0]]);
+        let mut hermitian = true;
+
+        'outer: for col in 0..self.shape().1 {
+            for row in col..self.shape().0 {
+                if self.get_value(row, col).unwrap() != self.get_value(col, row).unwrap().conj() {
+                    hermitian = false;
+                    break 'outer;
+                }
+            }
+        }
+        hermitian
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > IsSymmetric for Matrix<Item, MatImpl, RS, CS>
+{
+    fn is_symmetric(&self) -> bool {
+        if self.shape().0 != self.shape().1 {
+            return false;
+        }
+
+        let mut symmetric = true;
+
+        'outer: for col in 0..self.shape().1 {
+            for row in col..self.shape().0 {
+                if self.get_value(row, col).unwrap() != self.get_value(col, row).unwrap() {
+                    symmetric = false;
+                    break 'outer;
+                }
+            }
+        }
+        symmetric
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn get_mat_impl_type(&self) -> MatrixImplType {
+        MatImpl::MAT_IMPL
+    }
+
+    pub fn to_dyn_matrix(&self) -> MatrixD<Item> {
+        let mut mat = crate::rlst_mat![Item, self.shape()];
+
+        for (item, other) in mat.iter_col_major_mut().zip(self.iter_col_major()) {
+            *item = other;
+        }
+        mat
+    }
 }

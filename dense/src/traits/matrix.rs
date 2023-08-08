@@ -17,10 +17,27 @@ use crate::traits::{
 use crate::types::Scalar;
 use crate::DefaultLayout;
 
+#[derive(Debug, PartialEq)]
+pub enum MatrixImplType {
+    Base,
+    Derived,
+}
+
+pub trait MatrixImplIdentifier {
+    const MAT_IMPL: MatrixImplType;
+
+    fn get_mat_impl_type(&self) -> MatrixImplType {
+        Self::MAT_IMPL
+    }
+}
+
 /// Combined trait for basic matrix properties. See [crate::traits::matrix]
 /// for details.
 pub trait MatrixImplTrait<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier>:
-    UnsafeRandomAccessByValue<Item = Item> + Layout<Impl = DefaultLayout> + SizeType<R = RS, C = CS>
+    UnsafeRandomAccessByValue<Item = Item>
+    + Layout<Impl = DefaultLayout>
+    + SizeType<R = RS, C = CS>
+    + MatrixImplIdentifier
 {
 }
 
@@ -42,7 +59,8 @@ impl<
         CS: SizeIdentifier,
         Mat: UnsafeRandomAccessByValue<Item = Item>
             + Layout<Impl = DefaultLayout>
-            + SizeType<R = RS, C = CS>,
+            + SizeType<R = RS, C = CS>
+            + MatrixImplIdentifier,
     > MatrixImplTrait<Item, RS, CS> for Mat
 {
 }

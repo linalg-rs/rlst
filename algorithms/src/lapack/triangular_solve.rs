@@ -1,55 +1,64 @@
-use rlst_common::traits::RandomAccessByValue;
 use rlst_common::types::{c32, c64, RlstError, RlstResult};
 use rlst_dense::MatrixD;
-use rlst_dense::{RawAccess, RawAccessMut, Shape, Stride};
+use rlst_dense::{Matrix, MatrixImplTrait, RawAccess, RawAccessMut, Shape, SizeIdentifier, Stride};
 
 use lapacke;
 
 use crate::traits::triangular_solve::TriangularSolve;
-use rlst_common::traits::Copy;
 
 use super::DenseMatrixLinAlgBuilder;
 
 use crate::traits::types::{TransposeMode, TriangularDiagonal, TriangularType};
 
-macro_rules! trisolve_impl {
+// Need to distinguish real and complex implementation
+// as for the real implementation we need to convert TransposeMode::ConjTrans
+// into TransposeMode::Trans.
+
+macro_rules! trisolve_real_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
-        impl<'a, Mat: Copy> TriangularSolve for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
-        {
+        impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            type Out = MatrixD<Self::T>;
-            fn triangular_solve<Rhs: RandomAccessByValue<Item = Self::T> + Shape>(
-                self,
-                rhs: &Rhs,
+            fn triangular_solve<
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
+            >(
+                &self,
+                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
-            ) -> RlstResult<Self::Out> {
-                let copied = self.into_lapack()?;
-
+            ) -> RlstResult<MatrixD<Self::T>> {
                 if rhs.shape().0 == 0 || rhs.shape().1 == 0 {
                     return Err(RlstError::MatrixIsEmpty(rhs.shape()));
                 }
 
-                if rhs.shape().0 != copied.mat.shape().1 {
+                if rhs.shape().0 != self.mat.shape().1 {
                     return Err(RlstError::GeneralError(format!(
                         "Incompatible rhs. Expected rows {}. Actual rows {}",
                         rhs.shape().0,
-                        copied.mat.shape().1
+                        self.mat.shape().1
                     )));
                 }
 
-                if copied.mat.shape().0 != copied.mat.shape().1 {
-                    return Err(RlstError::GeneralError("Matrix is not square.".to_string()));
-                }
+                let mat = &self.mat;
 
-                let n = copied.mat.shape().1 as i32;
-                let lda = copied.mat.stride().1 as i32;
+                //let mat = self.mat.to_dyn_matrix();
+
+                let n = mat.shape().1 as i32;
                 let mut sol = MatrixD::<$scalar>::from_other(rhs);
                 let nrhs = sol.shape().1 as i32;
                 let ldb = sol.stride().1 as i32;
+                let lda = n;
+
+                // Ensure that conjugate transpose is accepted also
+                // for real matrices.
+
+                let trans = match trans {
+                    TransposeMode::NoTrans => TransposeMode::NoTrans,
+                    TransposeMode::Trans => TransposeMode::Trans,
+                    TransposeMode::ConjugateTrans => TransposeMode::Trans,
+                };
 
                 let info = unsafe {
                     lapacke::$lapack_trisolve(
@@ -59,7 +68,7 @@ macro_rules! trisolve_impl {
                         tridiag as u8,
                         n,
                         nrhs,
-                        <<Mat as Copy>::Out as RawAccess>::data(&copied.mat),
+                        mat.data(),
                         lda,
                         sol.data_mut(),
                         ldb,
@@ -76,10 +85,77 @@ macro_rules! trisolve_impl {
     };
 }
 
-trisolve_impl!(f32, strtrs);
-trisolve_impl!(f64, dtrtrs);
-trisolve_impl!(c32, ctrtrs);
-trisolve_impl!(c64, ztrtrs);
+macro_rules! trisolve_complex_impl {
+    ($scalar:ty, $lapack_trisolve:ident) => {
+        impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
+            type T = $scalar;
+            fn triangular_solve<
+                RS: SizeIdentifier,
+                CS: SizeIdentifier,
+                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
+            >(
+                &self,
+                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+                tritype: TriangularType,
+                tridiag: TriangularDiagonal,
+                trans: TransposeMode,
+            ) -> RlstResult<MatrixD<Self::T>> {
+                if rhs.shape().0 == 0 || rhs.shape().1 == 0 {
+                    return Err(RlstError::MatrixIsEmpty(rhs.shape()));
+                }
+
+                if rhs.shape().0 != self.mat.shape().1 {
+                    return Err(RlstError::GeneralError(format!(
+                        "Incompatible rhs. Expected rows {}. Actual rows {}",
+                        rhs.shape().0,
+                        self.mat.shape().1
+                    )));
+                }
+
+                if self.mat.shape().0 != self.mat.shape().1 {
+                    return Err(RlstError::MatrixNotSquare(
+                        self.mat.shape().0,
+                        self.mat.shape().1,
+                    ));
+                }
+
+                let mat = &self.mat;
+
+                let n = mat.shape().1 as i32;
+                let mut sol = MatrixD::<$scalar>::from_other(rhs);
+                let nrhs = sol.shape().1 as i32;
+                let ldb = sol.stride().1 as i32;
+                let lda = n;
+
+                let info = unsafe {
+                    lapacke::$lapack_trisolve(
+                        lapacke::Layout::ColumnMajor,
+                        tritype as u8,
+                        trans as u8,
+                        tridiag as u8,
+                        n,
+                        nrhs,
+                        mat.data(),
+                        lda,
+                        sol.data_mut(),
+                        ldb,
+                    )
+                };
+
+                if info != 0 {
+                    return Err(RlstError::LapackError(info));
+                } else {
+                    Ok(sol)
+                }
+            }
+        }
+    };
+}
+
+trisolve_real_impl!(f32, strtrs);
+trisolve_real_impl!(f64, dtrtrs);
+trisolve_complex_impl!(c32, ctrtrs);
+trisolve_complex_impl!(c64, ztrtrs);
 
 #[allow(unused_imports)]
 #[cfg(test)]

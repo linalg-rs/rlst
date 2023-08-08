@@ -81,3 +81,61 @@ impl<
         self.0.get1d_value_unchecked(index).conj()
     }
 }
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > MatrixImplIdentifier for ConjugateContainer<Item, MatImpl, RS, CS>
+{
+    const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccess for ConjugateContainer<Item, MatImpl, RS, CS>
+{
+    type T = Item;
+
+    #[inline]
+    fn data(&self) -> &[Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer(&self) -> *const Self::T {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_slice(&self, _first: usize, _last: usize) -> &[Self::T] {
+        std::unimplemented!()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTrait<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > RawAccessMut for ConjugateContainer<Item, MatImpl, RS, CS>
+{
+    #[inline]
+    fn data_mut(&mut self) -> &mut [Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer_mut(&mut self) -> *mut Self::T {
+        std::unimplemented!()
+    }
+
+    #[inline]
+    fn get_slice_mut(&mut self, _first: usize, _last: usize) -> &mut [Self::T] {
+        std::unimplemented!()
+    }
+}

@@ -1,5 +1,5 @@
 //! Implementation of Norm2.
-use crate::lapack::DenseMatrixLinAlgBuilder;
+use crate::linalg::DenseMatrixLinAlgBuilder;
 use rlst_common::traits::{Scalar, Shape, SquareSum};
 use rlst_common::types::{RlstError, RlstResult};
 
@@ -8,7 +8,7 @@ use crate::{
     traits::svd::{Mode, Svd},
 };
 
-impl<'a, T: Scalar, Mat: Shape + SquareSum<T = T>> Norm2 for DenseMatrixLinAlgBuilder<'a, T, Mat>
+impl<T: Scalar> Norm2 for DenseMatrixLinAlgBuilder<T>
 where
     Self: Svd<T = T>,
 {
