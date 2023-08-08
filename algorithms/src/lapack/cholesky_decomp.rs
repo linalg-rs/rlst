@@ -217,7 +217,7 @@ mod test {
                             .get_u();
 
                         let actual = lower.dot(&upper);
-                        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, 1E-12);
+                        rlst_common::assert_matrix_relative_eq!(rlst_mat, actual, $tol);
 
                     }
 
@@ -244,7 +244,7 @@ mod test {
                         .solve(&rhs)
                         .unwrap();
 
-                    rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, 1E-12);
+                    rlst_common::assert_matrix_relative_eq!(rlst_vec, sol, $tol);
 
                 }
             }
