@@ -201,7 +201,7 @@ impl<
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
         for index in 0..self.layout().number_of_elements() {
-            unsafe { f(self.get1d_unchecked_mut(index)) }
+            f(self.get1d_mut(index).unwrap())
         }
     }
 }
@@ -270,7 +270,7 @@ impl<
         MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+        Other: Shape + ColumnMajorIterator<T = Item>,
     > FillFrom<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     fn fill_from(&mut self, other: &Other) {
@@ -282,10 +282,8 @@ impl<
             other.shape()
         );
 
-        for col in 0..self.shape().1 {
-            for row in 0..self.shape().0 {
-                unsafe { *self.get_unchecked_mut(row, col) = other.get_value_unchecked(row, col) };
-            }
+        for (item, other_item) in self.iter_col_major_mut().zip(other.iter_col_major()) {
+            *item = other_item
         }
     }
 }
@@ -295,7 +293,7 @@ impl<
         MatImpl: MatrixImplTraitMut<Item, RS, CS>,
         RS: SizeIdentifier,
         CS: SizeIdentifier,
-        Other: UnsafeRandomAccessByValue<Item = Item> + Shape,
+        Other: Shape + ColumnMajorIterator<T = Item>,
     > SumInto<Other> for Matrix<Item, MatImpl, RS, CS>
 {
     type T = Item;
@@ -309,12 +307,8 @@ impl<
             other.shape()
         );
 
-        for col in 0..self.shape().1 {
-            for row in 0..self.shape().0 {
-                unsafe {
-                    *self.get_unchecked_mut(row, col) += alpha * other.get_value_unchecked(row, col)
-                };
-            }
+        for (item, other_item) in self.iter_col_major_mut().zip(other.iter_col_major()) {
+            *item += alpha * other_item
         }
     }
 }
@@ -358,14 +352,10 @@ impl<
 {
     type T = Item;
     fn square_sum(&self) -> <Self::T as Scalar>::Real {
-        let shape = self.shape();
-
         let mut result = <<Self::T as Scalar>::Real as Zero>::zero();
-        for col in 0..shape.1 {
-            for row in 0..shape.0 {
-                let value = unsafe { self.get_value_unchecked(row, col) };
-                result += value.square();
-            }
+        for index in 0..self.number_of_elements() {
+            let value = self.get1d_value(index).unwrap();
+            result += value.square();
         }
         result
     }
