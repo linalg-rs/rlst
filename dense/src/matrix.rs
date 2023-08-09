@@ -29,6 +29,7 @@ pub mod random;
 use crate::base_matrix::BaseMatrix;
 use crate::data_container::{ArrayContainer, SliceContainer, SliceContainerMut, VectorContainer};
 use crate::matrix_ref::{MatrixRef, MatrixRefMut};
+use crate::matrix_view::{MatrixView, MatrixViewMut};
 use crate::traits::*;
 use crate::types::Scalar;
 use std::marker::PhantomData;
@@ -60,6 +61,14 @@ pub type SliceMatrixMut<'a, Item, RS, CS> =
 /// A dynamic matrix generic over the item type and the underlying layout.
 pub type MatrixD<Item> =
     Matrix<Item, BaseMatrix<Item, VectorContainer<Item>, Dynamic, Dynamic>, Dynamic, Dynamic>;
+
+/// A matrix that provides a view onto part of another matrix.
+pub type ViewMatrix<'a, Item, MatImpl, RS, CS> =
+    Matrix<Item, MatrixView<'a, Item, MatImpl, RS, CS>, RS, CS>;
+
+/// A matrix that provides a mutable view onto part of another matrix.
+pub type ViewMatrixMut<'a, Item, MatImpl, RS, CS> =
+    Matrix<Item, MatrixViewMut<'a, Item, MatImpl, RS, CS>, RS, CS>;
 
 /// A dynamic column vector. This means that the row dimension is dynamic and the column
 /// dimension is [Fixed1].
