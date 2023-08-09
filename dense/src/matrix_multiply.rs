@@ -13,12 +13,13 @@
 //! Implementations for fixed size matrices will be added in the future.
 
 use crate::data_container::{DataContainer, DataContainerMut, VectorContainer};
-use crate::matrix::GenericBaseMatrix;
-use crate::traits::*;
+use crate::matrix::{GenericBaseMatrix, Matrix};
 use crate::types::*;
+use crate::{traits::*, MatrixD};
 use num;
 use rlst_blis;
 use rlst_blis::interface::{gemm::Gemm, types::TransMode};
+use rlst_common::traits::FillFrom;
 
 /// This trait provides a high-level interface for the multiplication of a matrix
 /// with another matrix. The result is a new matrix, hence memory allocation takes place.
@@ -54,14 +55,20 @@ pub trait MultiplyAdd<
 }
 
 // Matrix x Matrix = Matrix
-impl<T: Scalar, Data1: DataContainer<Item = T>, Data2: DataContainer<Item = T>>
-    Dot<GenericBaseMatrix<T, Data2, Dynamic, Dynamic>>
-    for GenericBaseMatrix<T, Data1, Dynamic, Dynamic>
+impl<
+        T: Scalar,
+        MatImpl1: MatrixImplTrait<T, RS1, CS1>,
+        MatImpl2: MatrixImplTrait<T, RS2, CS2>,
+        RS1: SizeIdentifier,
+        CS1: SizeIdentifier,
+        RS2: SizeIdentifier,
+        CS2: SizeIdentifier,
+    > Dot<Matrix<T, MatImpl2, RS2, CS2>> for Matrix<T, MatImpl1, RS1, CS1>
 where
     T: MultiplyAdd<
         T,
-        Data1,
-        Data2,
+        VectorContainer<T>,
+        VectorContainer<T>,
         VectorContainer<T>,
         Dynamic,
         Dynamic,
@@ -71,14 +78,22 @@ where
         Dynamic,
     >,
 {
-    type Output = GenericBaseMatrix<T, VectorContainer<T>, Dynamic, Dynamic>;
+    type Output = MatrixD<T>;
 
-    fn dot(&self, rhs: &GenericBaseMatrix<T, Data2, Dynamic, Dynamic>) -> Self::Output {
-        let mut res = crate::rlst_mat!(T, (self.layout().dim().0, rhs.layout().dim().1));
+    fn dot(&self, rhs: &Matrix<T, MatImpl2, RS2, CS2>) -> Self::Output {
+        // We evaluate self and the other matrix and then perform the multiplication.
+        let mut left = crate::rlst_mat![T, self.shape()];
+        let mut right = crate::rlst_mat![T, rhs.shape()];
+
+        left.fill_from(self);
+        right.fill_from(rhs);
+
+        let mut res = crate::rlst_mat!(T, (self.shape().0, rhs.shape().1));
+
         T::multiply_add(
             num::cast::<f64, T>(1.0).unwrap(),
-            self,
-            rhs,
+            &left,
+            &right,
             num::cast::<f64, T>(0.0).unwrap(),
             &mut res,
         );
@@ -144,7 +159,9 @@ mod test {
     use super::*;
     use approx::assert_ulps_eq;
     use rand_distr::StandardNormal;
+    use rlst_common::assert_matrix_relative_eq;
     use rlst_common::tools::RandScalar;
+    use rlst_common::traits::Eval;
 
     use rand::prelude::*;
 
@@ -307,4 +324,32 @@ mod test {
     col_matvec_test!(f32, test_col_matvec_f32);
     col_matvec_test!(c32, test_col_matvec_c32);
     col_matvec_test!(c64, test_col_matvec_c64);
+
+    #[test]
+    fn test_dot_matvec() {
+        let mut mat1 = crate::rlst_mat![f64, (2, 2)];
+        let mut mat2 = crate::rlst_mat![f64, (2, 2)];
+
+        mat1.fill_from_seed_equally_distributed(0);
+        mat2.fill_from_seed_equally_distributed(1);
+
+        let mut mat3 = crate::rlst_mat![f64, (2, 3)];
+
+        mat3.fill_from_seed_equally_distributed(2);
+
+        let actual = (mat1.view() + mat2.view()).dot(&mat3);
+        let mut expect = crate::rlst_mat![f64, (2, 3)];
+
+        let mat_sum = (mat1.view() + mat2.view()).eval();
+
+        for row in 0..2 {
+            for col in 0..3 {
+                for k in 0..2 {
+                    expect[[row, col]] += mat_sum[[row, k]] * mat3[[k, col]];
+                }
+            }
+        }
+
+        assert_matrix_relative_eq!(expect, actual, 1E-14);
+    }
 }
