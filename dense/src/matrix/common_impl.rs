@@ -1,10 +1,11 @@
 //! Implementation of common matrix traits and methods.
 
 use crate::matrix::Matrix;
+use crate::matrix_view::{MatrixView, MatrixViewMut};
 use crate::types::Scalar;
-use crate::RefMatMut;
-use crate::{traits::*, DefaultLayout};
+use crate::{traits::*, DefaultLayout, ViewMatrixMut};
 use crate::{MatrixD, RefMat};
+use crate::{RefMatMut, ViewMatrix};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
@@ -368,8 +369,28 @@ impl<
         CS: SizeIdentifier,
     > Matrix<Item, MatImpl, RS, CS>
 {
+    /// Return a view to the whole matrix.
     pub fn view(&self) -> RefMat<Item, MatImpl, RS, CS> {
         Matrix::from_ref(self)
+    }
+
+    /// Return a view onto a subblock of the matrix.
+    pub fn subview(
+        &self,
+        offset: (usize, usize),
+        block_size: (usize, usize),
+    ) -> ViewMatrix<Item, MatImpl, RS, CS> {
+        Matrix::new(MatrixView::new(self, offset, block_size))
+    }
+
+    /// Return a single column of a matrix.
+    pub fn col(&self, col_index: usize) -> ViewMatrix<Item, MatImpl, RS, CS> {
+        self.subview((0, col_index), (self.shape().0, 1))
+    }
+
+    /// Return a single row of a matrix.
+    pub fn row(&self, row_index: usize) -> ViewMatrix<Item, MatImpl, RS, CS> {
+        self.subview((row_index, 0), (1, self.shape().1))
     }
 }
 
@@ -380,8 +401,28 @@ impl<
         CS: SizeIdentifier,
     > Matrix<Item, MatImpl, RS, CS>
 {
+    /// Return a mutable view to the whole matrix.
     pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, RS, CS> {
         Matrix::from_ref_mut(self)
+    }
+
+    /// Return a mutable view onto a subblock of the matrix.
+    pub fn subview_mut(
+        &mut self,
+        offset: (usize, usize),
+        block_size: (usize, usize),
+    ) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+        Matrix::new(MatrixViewMut::new(self, offset, block_size))
+    }
+
+    /// Return a mutable single column of a matrix.
+    pub fn col_mut(&mut self, col_index: usize) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+        self.subview_mut((0, col_index), (self.shape().0, 1))
+    }
+
+    /// Return a mutable single row of a matrix.
+    pub fn row_mut(&mut self, row_index: usize) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+        self.subview_mut((row_index, 0), (1, self.shape().1))
     }
 }
 
@@ -455,5 +496,25 @@ impl<
             *item = other;
         }
         mat
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+        RS: SizeIdentifier,
+        CS: SizeIdentifier,
+    > Matrix<Item, MatImpl, RS, CS>
+{
+    pub fn sum_into_block<
+        Other: RandomAccessByValue<Item = Item> + ColumnMajorIterator<T = Item> + Shape,
+    >(
+        &mut self,
+        alpha: Item,
+        top_left: (usize, usize),
+        other: &Other,
+    ) {
+        let mut subview = self.subview_mut(top_left, other.shape());
+        subview.sum_into(alpha, other);
     }
 }

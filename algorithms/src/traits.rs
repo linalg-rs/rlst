@@ -1,8 +1,10 @@
 //! Trait interfaces
 
 pub mod arnoldi;
+pub mod basis;
 pub mod cholesky_decomp;
 pub mod evd;
+pub mod gram_schmid;
 pub mod lu_decomp;
 pub mod norm2;
 pub mod qr_decomp;

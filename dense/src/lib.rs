@@ -42,6 +42,7 @@ pub mod macros;
 pub mod matrix;
 pub mod matrix_multiply;
 pub mod matrix_ref;
+pub mod matrix_view;
 pub mod op_containers;
 pub mod traits;
 pub mod types;
