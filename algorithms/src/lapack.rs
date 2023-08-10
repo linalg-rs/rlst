@@ -8,6 +8,7 @@ pub use lapacke::Layout;
 pub use rlst_common::types::{RlstError, RlstResult};
 pub mod cholesky_decomp;
 pub mod evd;
+pub mod inverse;
 pub use rlst_dense::traits::*;
 pub use rlst_dense::{
     DataContainer, GenericBaseMatrix, Matrix, MatrixD, MatrixImplTrait, SizeIdentifier,
