@@ -518,3 +518,71 @@ impl<
         subview.sum_into(alpha, other);
     }
 }
+
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>>
+    Matrix<Item, MatImpl, Dynamic, Dynamic>
+{
+    /// Pad with `ncolumns` columns at the right of the matrix.
+    pub fn pad_right(&self, ncolumns: usize) -> MatrixD<Item> {
+        let new_dim = (self.shape().0, self.shape().1 + ncolumns);
+
+        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        new_mat.subview_mut((0, 0), self.shape()).fill_from(self);
+        new_mat
+    }
+
+    /// Pad with `ncolumns` columns at the left of the matrix.
+    pub fn pad_left(&self, ncolumns: usize) -> MatrixD<Item> {
+        let new_dim = (self.shape().0, self.shape().1 + ncolumns);
+
+        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        new_mat
+            .subview_mut((0, ncolumns), self.shape())
+            .fill_from(self);
+        new_mat
+    }
+
+    /// Pad with `nrows` rows at the top of the matrix.
+    pub fn pad_above(&self, nrows: usize) -> MatrixD<Item> {
+        let new_dim = (self.shape().0 + nrows, self.shape().1);
+
+        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        new_mat
+            .subview_mut((nrows, 0), self.shape())
+            .fill_from(self);
+        new_mat
+    }
+
+    /// Pad with `nrows` rows at the bottom of the matrix.
+    pub fn pad_below(&self, nrows: usize) -> MatrixD<Item> {
+        let new_dim = (self.shape().0 + nrows, self.shape().1);
+
+        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        new_mat.subview_mut((0, 0), self.shape()).fill_from(self);
+        new_mat
+    }
+
+    /// Append `other` to the right of the current matrix.
+    pub fn append_right<MatImpl2: MatrixImplTrait<Item, Dynamic, Dynamic>>(
+        &self,
+        other: &Matrix<Item, MatImpl2, Dynamic, Dynamic>,
+    ) -> MatrixD<Item> {
+        let mut new_mat = self.pad_right(other.shape().1);
+        new_mat
+            .subview_mut((0, self.shape().1), other.shape())
+            .fill_from(other);
+        new_mat
+    }
+
+    /// Append `other` to the bottom of the current matrix.
+    pub fn append_below<MatImpl2: MatrixImplTrait<Item, Dynamic, Dynamic>>(
+        &self,
+        other: &Matrix<Item, MatImpl2, Dynamic, Dynamic>,
+    ) -> MatrixD<Item> {
+        let mut new_mat = self.pad_below(other.shape().0);
+        new_mat
+            .subview_mut((self.shape().0, 0), other.shape())
+            .fill_from(other);
+        new_mat
+    }
+}
