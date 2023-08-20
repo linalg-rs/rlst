@@ -1,5 +1,6 @@
 //! Interface to the rlst library
 
+pub mod docs;
 pub use rlst_algorithms as algorithms;
 pub use rlst_blis as blis;
 pub use rlst_common as common;
