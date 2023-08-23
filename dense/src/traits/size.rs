@@ -16,6 +16,8 @@
 //!             The corresponding constant [SizeIdentifier::N] is set to 0.
 //!
 
+use paste::paste;
+
 /// Fixed Dimension 1.
 pub struct Fixed1;
 
@@ -56,4 +58,28 @@ impl SizeIdentifier for Dynamic {
 pub trait SizeType {
     type R: SizeIdentifier;
     type C: SizeIdentifier;
+}
+
+pub enum SizeValue {
+    Dynamic,
+    Fixed(usize, usize),
+}
+
+pub trait ExperimentalSizeIdentifier {
+    const SIZE: SizeValue;
+}
+
+pub struct MyFixed;
+
+macro_rules! my_size_identifier {
+    ($name:ident, $m:expr, $n:expr) => {
+        paste! {
+
+            pub struct [<$name>];
+            impl ExperimentalSizeIdentifier for [<$name>] {
+                const SIZE: SizeValue = SizeValue::Fixed($m, $n);
+            }
+
+        }
+    };
 }
