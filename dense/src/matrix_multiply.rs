@@ -36,34 +36,29 @@ pub trait MultiplyAdd<
     Data1: DataContainer<Item = Item>,
     Data2: DataContainer<Item = Item>,
     Data3: DataContainerMut<Item = Item>,
-    RS1: SizeIdentifier,
-    CS1: SizeIdentifier,
-    RS2: SizeIdentifier,
-    CS2: SizeIdentifier,
-    RS3: SizeIdentifier,
-    CS3: SizeIdentifier,
+    S1: SizeIdentifier,
+    S2: SizeIdentifier,
+    S3: SizeIdentifier,
 >
 {
     /// Perform the operation `mat_c = alpha * mat_a * mat_b + beta * mat_c`.
     fn multiply_add(
         alpha: Item,
-        mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
-        mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
+        mat_a: &GenericBaseMatrix<Item, Data1, S1>,
+        mat_b: &GenericBaseMatrix<Item, Data2, S2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrix<Item, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrix<Item, Data3, S3>,
     );
 }
 
 // Matrix x Matrix = Matrix
 impl<
         T: Scalar,
-        MatImpl1: MatrixImplTrait<T, RS1, CS1>,
-        MatImpl2: MatrixImplTrait<T, RS2, CS2>,
-        RS1: SizeIdentifier,
-        CS1: SizeIdentifier,
-        RS2: SizeIdentifier,
-        CS2: SizeIdentifier,
-    > Dot<Matrix<T, MatImpl2, RS2, CS2>> for Matrix<T, MatImpl1, RS1, CS1>
+        MatImpl1: MatrixImplTrait<T, S1>,
+        MatImpl2: MatrixImplTrait<T, S2>,
+        S1: SizeIdentifier,
+        S2: SizeIdentifier,
+    > Dot<Matrix<T, MatImpl2, S2>> for Matrix<T, MatImpl1, S1>
 where
     T: MultiplyAdd<
         T,
@@ -73,14 +68,11 @@ where
         Dynamic,
         Dynamic,
         Dynamic,
-        Dynamic,
-        Dynamic,
-        Dynamic,
     >,
 {
     type Output = MatrixD<T>;
 
-    fn dot(&self, rhs: &Matrix<T, MatImpl2, RS2, CS2>) -> Self::Output {
+    fn dot(&self, rhs: &Matrix<T, MatImpl2, S2>) -> Self::Output {
         // We evaluate self and the other matrix and then perform the multiplication.
         let mut left = crate::rlst_mat![T, self.shape()];
         let mut right = crate::rlst_mat![T, rhs.shape()];
@@ -106,17 +98,16 @@ impl<
         Data1: DataContainer<Item = T>,
         Data2: DataContainer<Item = T>,
         Data3: DataContainerMut<Item = T>,
-    > MultiplyAdd<T, Data1, Data2, Data3, Dynamic, Dynamic, Dynamic, Dynamic, Dynamic, Dynamic>
-    for T
+    > MultiplyAdd<T, Data1, Data2, Data3, Dynamic, Dynamic, Dynamic> for T
 where
     T: Gemm,
 {
     fn multiply_add(
         alpha: T,
-        mat_a: &GenericBaseMatrix<T, Data1, Dynamic, Dynamic>,
-        mat_b: &GenericBaseMatrix<T, Data2, Dynamic, Dynamic>,
+        mat_a: &GenericBaseMatrix<T, Data1, Dynamic>,
+        mat_b: &GenericBaseMatrix<T, Data2, Dynamic>,
         beta: T,
-        mat_c: &mut GenericBaseMatrix<T, Data3, Dynamic, Dynamic>,
+        mat_c: &mut GenericBaseMatrix<T, Data3, Dynamic>,
     ) {
         let dim1 = mat_a.layout().dim();
         let dim2 = mat_b.layout().dim();
@@ -170,18 +161,15 @@ mod test {
         Data1: DataContainer<Item = Item>,
         Data2: DataContainer<Item = Item>,
         Data3: DataContainerMut<Item = Item>,
-        RS1: SizeIdentifier,
-        CS1: SizeIdentifier,
-        RS2: SizeIdentifier,
-        CS2: SizeIdentifier,
-        RS3: SizeIdentifier,
-        CS3: SizeIdentifier,
+        S1: SizeIdentifier,
+        S2: SizeIdentifier,
+        S3: SizeIdentifier,
     >(
         alpha: Item,
-        mat_a: &GenericBaseMatrix<Item, Data1, RS1, CS1>,
-        mat_b: &GenericBaseMatrix<Item, Data2, RS2, CS2>,
+        mat_a: &GenericBaseMatrix<Item, Data1, S1>,
+        mat_b: &GenericBaseMatrix<Item, Data2, S2>,
         beta: Item,
-        mat_c: &mut GenericBaseMatrix<Item, Data3, RS3, CS3>,
+        mat_c: &mut GenericBaseMatrix<Item, Data3, S3>,
     ) {
         let m = mat_a.layout().dim().0;
         let k = mat_a.layout().dim().1;

@@ -14,5 +14,5 @@ members = [
     "netlib-lapack-src",
     "blis",
     "rlst",
-    "dense-proc-macro",
+    "proc-macro",
 ]

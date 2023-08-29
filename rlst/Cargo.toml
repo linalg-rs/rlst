@@ -25,7 +25,7 @@ rlst-dense = { path = "../dense"}
 rlst-algorithms = { path = "../algorithms"}
 rlst-blis = { path = "../blis"}
 rlst-umfpack = { path = "../umfpack"}
-rlst-dense-proc-macro = { path = "../dense-proc-macro"}
+rlst-proc-macro = { path = "../proc-macro"}
 
 
 

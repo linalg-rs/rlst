@@ -10,30 +10,28 @@ pub use rlst_common::types::Scalar;
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > CmpWiseProduct<&'a Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > CmpWiseProduct<&'a Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
 {
-    type Out = CmpWiseProductMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, RS, CS>, RS, CS>;
+    type Out = CmpWiseProductMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, S>, S>;
 
-    fn cmp_wise_product(self, other: &'a Matrix<Item, MatImpl2, RS, CS>) -> Self::Out {
+    fn cmp_wise_product(self, other: &'a Matrix<Item, MatImpl2, S>) -> Self::Out {
         Matrix::new(CmpWiseProductContainer::new(self, other.view()))
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > CmpWiseProduct<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > CmpWiseProduct<Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
 {
-    type Out = CmpWiseProductMat<Item, MatImpl1, MatImpl2, RS, CS>;
+    type Out = CmpWiseProductMat<Item, MatImpl1, MatImpl2, S>;
 
-    fn cmp_wise_product(self, other: Matrix<Item, MatImpl2, RS, CS>) -> Self::Out {
+    fn cmp_wise_product(self, other: Matrix<Item, MatImpl2, S>) -> Self::Out {
         Matrix::new(CmpWiseProductContainer::new(self, other))
     }
 }

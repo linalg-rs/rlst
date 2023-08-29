@@ -11,11 +11,11 @@
 //! [UnsafeRandomAccessMut] are implemented.
 //!
 use crate::traits::{
-    Layout, SizeIdentifier, SizeType, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    Layout, Size, SizeIdentifier, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,
 };
 use crate::types::Scalar;
-use crate::DefaultLayout;
+use crate::{DataContainer, DefaultLayout};
 
 #[derive(Debug, PartialEq)]
 pub enum MatrixImplType {
@@ -31,54 +31,58 @@ pub trait MatrixImplIdentifier {
     }
 }
 
+pub trait MatrixBuilder<T: Scalar> {
+    type Data: DataContainer<Item = T>;
+    type S: SizeIdentifier;
+
+    fn new_matrix() -> crate::GenericBaseMatrix<T, Self::Data, Self::S>;
+}
+
 /// Combined trait for basic matrix properties. See [crate::traits::matrix]
 /// for details.
-pub trait MatrixImplTrait<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier>:
+pub trait MatrixImplTrait<Item: Scalar, S: SizeIdentifier>:
     UnsafeRandomAccessByValue<Item = Item>
     + Layout<Impl = DefaultLayout>
-    + SizeType<R = RS, C = CS>
     + MatrixImplIdentifier
+    + Size<S = S>
 {
 }
 
 /// Extended Matrix trait if access by reference is possible.
-pub trait MatrixImplTraitAccessByRef<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier>:
-    UnsafeRandomAccessByRef<Item = Item> + MatrixImplTrait<Item, RS, CS>
+pub trait MatrixImplTraitAccessByRef<Item: Scalar, S: SizeIdentifier>:
+    UnsafeRandomAccessByRef<Item = Item> + MatrixImplTrait<Item, S>
 {
 }
 
 /// Combined trait for mutable matrices. See [crate::traits::matrix] for details.
-pub trait MatrixImplTraitMut<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier>:
-    UnsafeRandomAccessMut<Item = Item> + MatrixImplTrait<Item, RS, CS>
+pub trait MatrixImplTraitMut<Item: Scalar, S: SizeIdentifier>:
+    UnsafeRandomAccessMut<Item = Item> + MatrixImplTrait<Item, S>
 {
 }
 
 impl<
         Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
+        S: SizeIdentifier,
         Mat: UnsafeRandomAccessByValue<Item = Item>
             + Layout<Impl = DefaultLayout>
-            + SizeType<R = RS, C = CS>
+            + Size<S = S>
             + MatrixImplIdentifier,
-    > MatrixImplTrait<Item, RS, CS> for Mat
+    > MatrixImplTrait<Item, S> for Mat
 {
 }
 
 impl<
         Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        Mat: UnsafeRandomAccessByRef<Item = Item> + MatrixImplTrait<Item, RS, CS>,
-    > MatrixImplTraitAccessByRef<Item, RS, CS> for Mat
+        S: SizeIdentifier,
+        Mat: UnsafeRandomAccessByRef<Item = Item> + MatrixImplTrait<Item, S>,
+    > MatrixImplTraitAccessByRef<Item, S> for Mat
 {
 }
 
 impl<
         Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        Mat: MatrixImplTrait<Item, RS, CS> + UnsafeRandomAccessMut<Item = Item>,
-    > MatrixImplTraitMut<Item, RS, CS> for Mat
+        S: SizeIdentifier,
+        Mat: MatrixImplTrait<Item, S> + UnsafeRandomAccessMut<Item = Item>,
+    > MatrixImplTraitMut<Item, S> for Mat
 {
 }

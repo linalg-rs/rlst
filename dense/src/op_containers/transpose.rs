@@ -6,65 +6,45 @@ use crate::{matrix::*, DefaultLayout};
 use std::marker::PhantomData;
 
 /// This type represents the conjugate of a matrix.
-pub type TransposeMat<Item, MatImpl, RS, CS> =
-    Matrix<Item, TransposeContainer<Item, MatImpl, RS, CS>, RS, CS>;
+pub type TransposeMat<Item, MatImpl, S> = Matrix<Item, TransposeContainer<Item, MatImpl, S>, S>;
 
 /// A structure holding a reference to the matrix.
 /// This struct implements [MatrixImplTrait] and acts like a matrix.
 /// However, random access returns the corresponding conjugate entries.
-pub struct TransposeContainer<Item, MatImpl, RS, CS>(
-    Matrix<Item, MatImpl, RS, CS>,
+pub struct TransposeContainer<Item, MatImpl, S>(
+    Matrix<Item, MatImpl, S>,
     DefaultLayout,
     PhantomData<Item>,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTrait<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTrait<Item, S>;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier>
+    TransposeContainer<Item, MatImpl, S>
 {
-    pub fn new(mat: Matrix<Item, MatImpl, RS, CS>) -> Self {
+    pub fn new(mat: Matrix<Item, MatImpl, S>) -> Self {
         let layout = DefaultLayout::from_dimension((mat.shape().1, mat.shape().0));
-        Self(mat, layout, PhantomData, PhantomData, PhantomData)
+        Self(mat, layout, PhantomData, PhantomData)
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Size
+    for TransposeContainer<Item, MatImpl, S>
 {
-    type R = RS;
-    type C = CS;
+    type S = S;
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixImplIdentifier for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> MatrixImplIdentifier
+    for TransposeContainer<Item, MatImpl, S>
 {
     const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccess for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> RawAccess
+    for TransposeContainer<Item, MatImpl, S>
 {
     type T = Item;
 
@@ -84,12 +64,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccessMut for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> RawAccessMut
+    for TransposeContainer<Item, MatImpl, S>
 {
     #[inline]
     fn data_mut(&mut self) -> &mut [Self::T] {
@@ -107,12 +83,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Layout
+    for TransposeContainer<Item, MatImpl, S>
 {
     type Impl = DefaultLayout;
 
@@ -122,12 +94,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for TransposeContainer<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> UnsafeRandomAccessByValue
+    for TransposeContainer<Item, MatImpl, S>
 {
     type Item = Item;
 

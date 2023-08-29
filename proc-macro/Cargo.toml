@@ -2,7 +2,7 @@
 strict = []
 
 [package]
-name = "rlst-dense-proc-macro"
+name = "rlst-proc-macro"
 version = "0.0.1"
 authors = ["The linalg-rs contributors"]
 edition = "2021"

@@ -7,14 +7,10 @@ use rlst_common::traits::Transpose;
 
 pub use rlst_common::types::Scalar;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Transpose for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Transpose
+    for Matrix<Item, MatImpl, S>
 {
-    type Out = TransposeMat<Item, MatImpl, RS, CS>;
+    type Out = TransposeMat<Item, MatImpl, S>;
 
     fn transpose(self) -> Self::Out {
         Matrix::new(TransposeContainer::new(self))

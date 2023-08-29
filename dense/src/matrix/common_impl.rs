@@ -9,12 +9,8 @@ use crate::{RefMatMut, ViewMatrix};
 use num::traits::Zero;
 use rlst_common::traits::*;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Layout
+    for Matrix<Item, MatImpl, S>
 {
     type Impl = DefaultLayout;
     fn layout(&self) -> &Self::Impl {
@@ -22,59 +18,38 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Shape for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Shape
+    for Matrix<Item, MatImpl, S>
 {
     fn shape(&self) -> (usize, usize) {
         self.layout().dim()
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Stride for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Stride
+    for Matrix<Item, MatImpl, S>
 {
     fn stride(&self) -> (usize, usize) {
         self.layout().stride()
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > NumberOfElements for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> NumberOfElements
+    for Matrix<Item, MatImpl, S>
 {
     fn number_of_elements(&self) -> usize {
         self.layout().number_of_elements()
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Size
+    for Matrix<Item, MatImpl, S>
 {
-    type R = RS;
-    type C = CS;
+    type S = S;
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> UnsafeRandomAccessByValue
+    for Matrix<Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -89,12 +64,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> UnsafeRandomAccessMut
+    for Matrix<Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -109,12 +80,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitAccessByRef<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByRef for Matrix<Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -129,12 +96,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Index<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitAccessByRef<Item, S>, S: SizeIdentifier>
+    std::ops::Index<[usize; 2]> for Matrix<Item, MatImpl, S>
 {
     type Output = Item;
 
@@ -145,22 +108,17 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS> + MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::IndexMut<[usize; 2]> for Matrix<Item, MatImpl, RS, CS>
+        MatImpl: MatrixImplTraitMut<Item, S> + MatrixImplTraitAccessByRef<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::IndexMut<[usize; 2]> for Matrix<Item, MatImpl, S>
 {
     fn index_mut(&mut self, index: [usize; 2]) -> &mut Self::Output {
         self.get_mut(index[0], index[1]).unwrap()
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Eval for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Eval
+    for Matrix<Item, MatImpl, S>
 where
     Self: NewLikeSelf,
     <Self as NewLikeSelf>::Out: ColumnMajorIteratorMut<T = Item>,
@@ -176,12 +134,8 @@ where
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Copy for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Copy
+    for Matrix<Item, MatImpl, S>
 where
     Self: Eval,
 {
@@ -192,12 +146,8 @@ where
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > ForEach for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> ForEach
+    for Matrix<Item, MatImpl, S>
 {
     type T = Item;
     fn for_each<F: FnMut(&mut Self::T)>(&mut self, mut f: F) {
@@ -207,12 +157,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS> + RawAccess<T = Item>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccess for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S> + RawAccess<T = Item>, S: SizeIdentifier>
+    RawAccess for Matrix<Item, MatImpl, S>
 {
     type T = Item;
 
@@ -234,10 +180,9 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS> + RawAccessMut<T = Item>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccessMut for Matrix<Item, MatImpl, RS, CS>
+        MatImpl: MatrixImplTraitMut<Item, S> + RawAccessMut<T = Item>,
+        S: SizeIdentifier,
+    > RawAccessMut for Matrix<Item, MatImpl, S>
 {
     fn get_pointer_mut(&mut self) -> *mut Item {
         self.0.get_pointer_mut()
@@ -252,12 +197,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > ScaleInPlace for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> ScaleInPlace
+    for Matrix<Item, MatImpl, S>
 {
     type T = Item;
 
@@ -268,11 +209,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
+        MatImpl: MatrixImplTraitMut<Item, S>,
+        S: SizeIdentifier,
         Other: Shape + ColumnMajorIterator<T = Item>,
-    > FillFrom<Other> for Matrix<Item, MatImpl, RS, CS>
+    > FillFrom<Other> for Matrix<Item, MatImpl, S>
 {
     fn fill_from(&mut self, other: &Other) {
         assert_eq!(
@@ -291,11 +231,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
+        MatImpl: MatrixImplTraitMut<Item, S>,
+        S: SizeIdentifier,
         Other: Shape + ColumnMajorIterator<T = Item>,
-    > SumInto<Other> for Matrix<Item, MatImpl, RS, CS>
+    > SumInto<Other> for Matrix<Item, MatImpl, S>
 {
     type T = Item;
 
@@ -314,12 +253,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SetDiag for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> SetDiag
+    for Matrix<Item, MatImpl, S>
 {
     type T = Item;
 
@@ -344,12 +279,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SquareSum for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> SquareSum
+    for Matrix<Item, MatImpl, S>
 {
     type T = Item;
     fn square_sum(&self) -> <Self::T as Scalar>::Real {
@@ -362,15 +293,9 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
-{
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Matrix<Item, MatImpl, S> {
     /// Return a view to the whole matrix.
-    pub fn view(&self) -> RefMat<Item, MatImpl, RS, CS> {
+    pub fn view(&self) -> RefMat<Item, MatImpl, S> {
         Matrix::from_ref(self)
     }
 
@@ -379,30 +304,26 @@ impl<
         &self,
         offset: (usize, usize),
         block_size: (usize, usize),
-    ) -> ViewMatrix<Item, MatImpl, RS, CS> {
+    ) -> ViewMatrix<Item, MatImpl, S> {
         Matrix::new(MatrixView::new(self, offset, block_size))
     }
 
     /// Return a single column of a matrix.
-    pub fn col(&self, col_index: usize) -> ViewMatrix<Item, MatImpl, RS, CS> {
+    pub fn col(&self, col_index: usize) -> ViewMatrix<Item, MatImpl, S> {
         self.subview((0, col_index), (self.shape().0, 1))
     }
 
     /// Return a single row of a matrix.
-    pub fn row(&self, row_index: usize) -> ViewMatrix<Item, MatImpl, RS, CS> {
+    pub fn row(&self, row_index: usize) -> ViewMatrix<Item, MatImpl, S> {
         self.subview((row_index, 0), (1, self.shape().1))
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    Matrix<Item, MatImpl, S>
 {
     /// Return a mutable view to the whole matrix.
-    pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, RS, CS> {
+    pub fn view_mut(&mut self) -> RefMatMut<Item, MatImpl, S> {
         Matrix::from_ref_mut(self)
     }
 
@@ -411,27 +332,23 @@ impl<
         &mut self,
         offset: (usize, usize),
         block_size: (usize, usize),
-    ) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+    ) -> ViewMatrixMut<Item, MatImpl, S> {
         Matrix::new(MatrixViewMut::new(self, offset, block_size))
     }
 
     /// Return a mutable single column of a matrix.
-    pub fn col_mut(&mut self, col_index: usize) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+    pub fn col_mut(&mut self, col_index: usize) -> ViewMatrixMut<Item, MatImpl, S> {
         self.subview_mut((0, col_index), (self.shape().0, 1))
     }
 
     /// Return a mutable single row of a matrix.
-    pub fn row_mut(&mut self, row_index: usize) -> ViewMatrixMut<Item, MatImpl, RS, CS> {
+    pub fn row_mut(&mut self, row_index: usize) -> ViewMatrixMut<Item, MatImpl, S> {
         self.subview_mut((row_index, 0), (1, self.shape().1))
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > IsHermitian for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> IsHermitian
+    for Matrix<Item, MatImpl, S>
 {
     fn is_hermitian(&self) -> bool {
         if self.shape().0 != self.shape().1 {
@@ -452,12 +369,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > IsSymmetric for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> IsSymmetric
+    for Matrix<Item, MatImpl, S>
 {
     fn is_symmetric(&self) -> bool {
         if self.shape().0 != self.shape().1 {
@@ -478,13 +391,7 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
-{
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Matrix<Item, MatImpl, S> {
     pub fn get_mat_impl_type(&self) -> MatrixImplType {
         MatImpl::MAT_IMPL
     }
@@ -499,12 +406,8 @@ impl<
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    Matrix<Item, MatImpl, S>
 {
     pub fn sum_into_block<
         Other: RandomAccessByValue<Item = Item> + ColumnMajorIterator<T = Item> + Shape,
@@ -519,9 +422,7 @@ impl<
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>>
-    Matrix<Item, MatImpl, Dynamic, Dynamic>
-{
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> Matrix<Item, MatImpl, Dynamic> {
     /// Pad with `ncolumns` columns at the right of the matrix.
     pub fn pad_right(&self, ncolumns: usize) -> MatrixD<Item> {
         let new_dim = (self.shape().0, self.shape().1 + ncolumns);
@@ -563,9 +464,9 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>>
     }
 
     /// Append `other` to the right of the current matrix.
-    pub fn append_right<MatImpl2: MatrixImplTrait<Item, Dynamic, Dynamic>>(
+    pub fn append_right<MatImpl2: MatrixImplTrait<Item, Dynamic>>(
         &self,
-        other: &Matrix<Item, MatImpl2, Dynamic, Dynamic>,
+        other: &Matrix<Item, MatImpl2, Dynamic>,
     ) -> MatrixD<Item> {
         let mut new_mat = self.pad_right(other.shape().1);
         new_mat
@@ -575,9 +476,9 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>>
     }
 
     /// Append `other` to the bottom of the current matrix.
-    pub fn append_below<MatImpl2: MatrixImplTrait<Item, Dynamic, Dynamic>>(
+    pub fn append_below<MatImpl2: MatrixImplTrait<Item, Dynamic>>(
         &self,
-        other: &Matrix<Item, MatImpl2, Dynamic, Dynamic>,
+        other: &Matrix<Item, MatImpl2, Dynamic>,
     ) -> MatrixD<Item> {
         let mut new_mat = self.pad_below(other.shape().0);
         new_mat

@@ -18,7 +18,6 @@ macro_rules! rlst_mat {
             $ScalarType,
             $crate::VectorContainer<$ScalarType>,
             $crate::Dynamic,
-            $crate::Dynamic,
         >::from_data(
             $crate::VectorContainer::<$ScalarType>::new($dim.0 * $dim.1),
             $crate::DefaultLayout::from_dimension(($dim.0, $dim.1)),
@@ -46,7 +45,7 @@ macro_rules! rlst_mut_pointer_mat {
         let slice = std::slice::from_raw_parts_mut($ptr, nindices);
         let data = $crate::SliceContainerMut::<$a, $ScalarType>::new(slice);
 
-        $crate::SliceMatrixMut::<$a, $ScalarType, Dynamic, Dynamic>::from_data(data, new_layout)
+        $crate::SliceMatrixMut::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)
     }};
 }
 
@@ -71,7 +70,7 @@ macro_rules! rlst_pointer_mat {
         let slice = std::slice::from_raw_parts($ptr, nindices);
         let data = $crate::SliceContainer::<$a, $ScalarType>::new(slice);
 
-        $crate::SliceMatrix::<$a, $ScalarType, Dynamic, Dynamic>::from_data(data, new_layout)
+        $crate::SliceMatrix::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)
     }};
 }
 
@@ -94,37 +93,37 @@ macro_rules! rlst_rand_mat {
     }};
 }
 
-/// Create a new matrix with compile-time known dimension parameters and stack allocated storage.
-///
-/// Currently only dimensions 1, 2, 3 are supported as
-/// dimension parameters.
-///
-/// Example:
-/// ```
-/// # use rlst_dense::*;
-/// # use rlst_common::traits::*;
-/// // Creates a (2, 3) .
-/// let mat = rlst_fixed_mat![f64, 2, 3];
-/// # assert_eq!(mat.shape(), (2, 3))
-/// ```
-#[macro_export]
-macro_rules! rlst_fixed_mat {
-    ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
-        use paste::paste;
-        use $crate::LayoutType;
-        #[allow(unused_imports)]
-        use $crate::{Fixed1, Fixed2, Fixed3};
-        $crate::GenericBaseMatrix::<
-            $ScalarType,
-            $crate::ArrayContainer<$ScalarType, { $dim1 * $dim2 }>,
-            paste! {[<Fixed $dim1>]},
-            paste! {[<Fixed $dim2>]},
-        >::from_data(
-            $crate::ArrayContainer::<$ScalarType, { $dim1 * $dim2 }>::new(),
-            $crate::DefaultLayout::from_dimension(($dim1, $dim2)),
-        )
-    }};
-}
+// / Create a new matrix with compile-time known dimension parameters and stack allocated storage.
+// /
+// / Currently only dimensions 1, 2, 3 are supported as
+// / dimension parameters.
+// /
+// / Example:
+// / ```
+// / # use rlst_dense::*;
+// / # use rlst_common::traits::*;
+// / // Creates a (2, 3) .
+// / let mat = rlst_fixed_mat![f64, 2, 3];
+// / # assert_eq!(mat.shape(), (2, 3))
+// / ```
+// #[macro_export]
+// macro_rules! rlst_fixed_mat {
+//     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
+//         use paste::paste;
+//         use $crate::LayoutType;
+//         #[allow(unused_imports)]
+//         use $crate::{Fixed2, Fixed3};
+//         $crate::GenericBaseMatrix::<
+//             $ScalarType,
+//             $crate::ArrayContainer<$ScalarType, { $dim1 * $dim2 }>,
+//             paste! {[<Fixed $dim1>]},
+//             paste! {[<Fixed $dim2>]},
+//         >::from_data(
+//             $crate::ArrayContainer::<$ScalarType, { $dim1 * $dim2 }>::new(),
+//             $crate::DefaultLayout::from_dimension(($dim1, $dim2)),
+//         )
+//     }};
+// }
 
 /// Create a new random matrix with compile-time known dimension parameters and stack allocated storage.
 ///
@@ -238,12 +237,12 @@ mod test {
         assert_eq!(mat.shape(), (2, 3));
     }
 
-    #[test]
-    fn create_fixed_matrix() {
-        let mat = rlst_fixed_mat![f64, 2, 3];
+    // #[test]
+    // fn create_fixed_matrix() {
+    //     let mat = rlst_fixed_mat![f64, 2, 3];
 
-        assert_eq!(mat.shape(), (2, 3));
-    }
+    //     assert_eq!(mat.shape(), (2, 3));
+    // }
 
     #[test]
     fn create_random_matrix() {

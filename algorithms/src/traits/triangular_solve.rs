@@ -5,13 +5,9 @@ use rlst_dense::{Matrix, MatrixD, MatrixImplTrait, SizeIdentifier};
 pub trait TriangularSolve {
     type T: Scalar;
 
-    fn triangular_solve<
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        MatImpl: MatrixImplTrait<Self::T, RS, CS>,
-    >(
+    fn triangular_solve<S: SizeIdentifier, MatImpl: MatrixImplTrait<Self::T, S>>(
         &self,
-        rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+        rhs: &Matrix<Self::T, MatImpl, S>,
         tritype: TriangularType,
         tridiag: TriangularDiagonal,
         trans: TransposeMode,

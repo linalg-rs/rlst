@@ -11,12 +11,8 @@ use rlst_common::traits::*;
 
 use super::GenericBaseMatrix;
 
-impl<
-        Item: Scalar + RandScalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        Data: DataContainerMut<Item = Item>,
-    > GenericBaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar + RandScalar, S: SizeIdentifier, Data: DataContainerMut<Item = Item>>
+    GenericBaseMatrix<Item, Data, S>
 where
     StandardNormal: Distribution<<Item as Scalar>::Real>,
     Standard: Distribution<<Item as Scalar>::Real>,

@@ -18,8 +18,7 @@
 
 use paste::paste;
 
-/// Fixed Dimension 1.
-pub struct Fixed1;
+use crate::{GenericBaseMatrix, Matrix};
 
 /// Fixed Dimension 2.
 pub struct Fixed2;
@@ -35,51 +34,30 @@ pub struct Dynamic;
 /// a compile time dimension. In the case `N` == 0 the dimension is
 /// a runtime parameter and not known at compile time.
 pub trait SizeIdentifier {
+    const SIZE: SizeIdentifierValue;
+}
+
+pub trait StaticMatrixBuilder: SizeIdentifier + Sized {
     const N: usize;
 }
 
-impl SizeIdentifier for Fixed1 {
-    const N: usize = 1;
+pub trait Size {
+    type S: SizeIdentifier;
 }
 
 impl SizeIdentifier for Fixed2 {
-    const N: usize = 2;
+    const SIZE: SizeIdentifierValue = SizeIdentifierValue::Static(2, 2);
 }
+
 impl SizeIdentifier for Fixed3 {
-    const N: usize = 3;
+    const SIZE: SizeIdentifierValue = SizeIdentifierValue::Static(3, 3);
 }
+
 impl SizeIdentifier for Dynamic {
-    const N: usize = 0;
+    const SIZE: SizeIdentifierValue = SizeIdentifierValue::Dynamic;
 }
 
-/// This trait provides information about the row
-/// dimension type [SizeType::R] and the column dimension
-/// type [SizeType::C].
-pub trait SizeType {
-    type R: SizeIdentifier;
-    type C: SizeIdentifier;
-}
-
-pub enum SizeValue {
+pub enum SizeIdentifierValue {
     Dynamic,
-    Fixed(usize, usize),
-}
-
-pub trait ExperimentalSizeIdentifier {
-    const SIZE: SizeValue;
-}
-
-pub struct MyFixed;
-
-macro_rules! my_size_identifier {
-    ($name:ident, $m:expr, $n:expr) => {
-        paste! {
-
-            pub struct [<$name>];
-            impl ExperimentalSizeIdentifier for [<$name>] {
-                const SIZE: SizeValue = SizeValue::Fixed($m, $n);
-            }
-
-        }
-    };
+    Static(usize, usize),
 }

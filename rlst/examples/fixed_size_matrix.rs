@@ -1,16 +1,15 @@
 //! Fixed size matrix example
 //!
-extern crate rlst_dense_proc_macro;
 
-use rlst_dense::ExperimentalSizeIdentifier;
-use rlst_dense_proc_macro::rlst_fixed_size;
+use rlst_dense::SizeIdentifier;
+use rlst_proc_macro::rlst_static_size;
 
-#[rlst_fixed_size(33, 4)]
+#[rlst_static_size(33, 4)]
 pub struct MySizeType;
 
 pub fn main() {
-    // match MySizeType::SIZE {
-    //     rlst_dense::SizeValue::Fixed(m, n) => println!("{:#?}", (m, n)),
-    //     rlst_dense::SizeValue::Dynamic => println!("Dynamic"),
-    // }
+    match MySizeType::SIZE {
+        rlst_dense::SizeIdentifierValue::Static(m, n) => println!("{:#?}", (m, n)),
+        rlst_dense::SizeIdentifierValue::Dynamic => println!("Dynamic"),
+    }
 }

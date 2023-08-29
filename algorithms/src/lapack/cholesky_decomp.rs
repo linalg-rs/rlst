@@ -138,9 +138,9 @@ where
         result
     }
 
-    fn solve<MatImpl: MatrixImplTrait<Self::T, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier>(
+    fn solve<MatImpl: MatrixImplTrait<Self::T, S>, S: SizeIdentifier>(
         &self,
-        rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+        rhs: &Matrix<Self::T, MatImpl, S>,
     ) -> RlstResult<Self::Sol>
 // where
     //     Matrix<Self::T, MatImpl, RS, CS>: TriangularSolve<T = Self::T>,

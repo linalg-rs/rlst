@@ -7,7 +7,7 @@ use crate::traits::*;
 use crate::types::Scalar;
 
 impl<Item: Scalar, Data: DataContainer<Item = Item>>
-    Matrix<Item, BaseMatrix<Item, Data, Dynamic, Dynamic>, Dynamic, Dynamic>
+    Matrix<Item, BaseMatrix<Item, Data, Dynamic>, Dynamic>
 {
     /// Return a new matrix that is a subblock of another matrix.
     ///
@@ -17,7 +17,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>>
         &'a self,
         top_left: (usize, usize),
         dim: (usize, usize),
-    ) -> SliceMatrix<'a, Item, Dynamic, Dynamic> {
+    ) -> SliceMatrix<'a, Item, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)
                 & (top_left.1 + dim.1 <= self.layout().dim().1),
@@ -32,7 +32,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>>
     }
 }
 impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
-    Matrix<Item, BaseMatrix<Item, Data, Dynamic, Dynamic>, Dynamic, Dynamic>
+    Matrix<Item, BaseMatrix<Item, Data, Dynamic>, Dynamic>
 {
     /// Return a new matrix that is a mutable subblock of another matrix.
     ///
@@ -42,7 +42,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
         &'a mut self,
         top_left: (usize, usize),
         dim: (usize, usize),
-    ) -> SliceMatrixMut<'a, Item, Dynamic, Dynamic> {
+    ) -> SliceMatrixMut<'a, Item, Dynamic> {
         assert!(
             (top_left.0 + dim.0 <= self.layout().dim().0)
                 & (top_left.1 + dim.1 <= self.layout().dim().1),
@@ -58,9 +58,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
-    GenericBaseMatrix<Item, Data, Dynamic, Dynamic>
-{
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>> GenericBaseMatrix<Item, Data, Dynamic> {
     #[allow(clippy::type_complexity)]
     /// Split a mutable matrix into four mutable subblocks.
     ///
@@ -76,10 +74,10 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>>
         &'a mut self,
         split_at: (usize, usize),
     ) -> (
-        SliceMatrixMut<'a, Item, Dynamic, Dynamic>,
-        SliceMatrixMut<'a, Item, Dynamic, Dynamic>,
-        SliceMatrixMut<'a, Item, Dynamic, Dynamic>,
-        SliceMatrixMut<'a, Item, Dynamic, Dynamic>,
+        SliceMatrixMut<'a, Item, Dynamic>,
+        SliceMatrixMut<'a, Item, Dynamic>,
+        SliceMatrixMut<'a, Item, Dynamic>,
+        SliceMatrixMut<'a, Item, Dynamic>,
     ) {
         let dim = self.layout().dim();
         let stride = self.layout().stride();

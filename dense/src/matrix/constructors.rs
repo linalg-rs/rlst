@@ -11,47 +11,35 @@ use rlst_common::traits::constructors::{NewLikeSelf, NewLikeTranspose};
 use rlst_common::traits::Identity;
 use std::marker::PhantomData;
 
-impl<
-        Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-    > Matrix<Item, MatImpl, RS, CS>
-{
+impl<Item: Scalar, S: SizeIdentifier, MatImpl: MatrixImplTrait<Item, S>> Matrix<Item, MatImpl, S> {
     /// Create a new matrix from a given implementation.
     pub fn new(mat: MatImpl) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData)
+        Self(mat, PhantomData, PhantomData)
     }
 
     /// Create a new matrix from a reference to an existing matrix.
-    pub fn from_ref(
-        mat: &Matrix<Item, MatImpl, RS, CS>,
-    ) -> crate::RefMat<'_, Item, MatImpl, RS, CS> {
+    pub fn from_ref(mat: &Matrix<Item, MatImpl, S>) -> crate::RefMat<'_, Item, MatImpl, S> {
         crate::RefMat::new(MatrixRef::new(mat))
     }
 }
 
-impl<
-        Item: Scalar,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-    > Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, S: SizeIdentifier, MatImpl: MatrixImplTraitMut<Item, S>>
+    Matrix<Item, MatImpl, S>
 {
     /// Create a new matrix from a reference to an existing matrix.
     pub fn from_ref_mut(
-        mat: &mut Matrix<Item, MatImpl, RS, CS>,
-    ) -> crate::RefMatMut<'_, Item, MatImpl, RS, CS> {
+        mat: &mut Matrix<Item, MatImpl, S>,
+    ) -> crate::RefMatMut<'_, Item, MatImpl, S> {
         crate::RefMatMut::new(MatrixRefMut::new(mat))
     }
 }
 
-impl<Item: Scalar, RS: SizeIdentifier, CS: SizeIdentifier, Data: DataContainer<Item = Item>>
-    Matrix<Item, BaseMatrix<Item, Data, RS, CS>, RS, CS>
+impl<Item: Scalar, S: SizeIdentifier, Data: DataContainer<Item = Item>>
+    Matrix<Item, BaseMatrix<Item, Data, S>, S>
 {
     /// Create a new matrix from a data container and a layout structure.
     pub fn from_data(data: Data, layout: DefaultLayout) -> Self {
-        Self::new(BaseMatrix::<Item, Data, RS, CS>::new(data, layout))
+        Self::new(BaseMatrix::<Item, Data, S>::new(data, layout))
     }
 }
 
@@ -86,8 +74,8 @@ impl<Item: Scalar> Identity for MatrixD<Item> {
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
-    for Matrix<Item, MatImpl, Dynamic, Dynamic>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> NewLikeSelf
+    for Matrix<Item, MatImpl, Dynamic>
 {
     type Out = crate::MatrixD<Item>;
 
@@ -96,8 +84,8 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeSelf
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeTranspose
-    for Matrix<Item, MatImpl, Dynamic, Dynamic>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> NewLikeTranspose
+    for Matrix<Item, MatImpl, Dynamic>
 {
     type Out = crate::MatrixD<Item>;
 
@@ -107,52 +95,52 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic, Dynamic>> NewLikeTran
     }
 }
 
-macro_rules! implement_new_from_self_fixed {
-    ($RS:ty, $CS:ty) => {
-        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeSelf
-            for Matrix<Item, MatImpl, $RS, $CS>
-        {
-            type Out = Matrix<
-                Item,
-                BaseMatrix<Item, ArrayContainer<Item, { <$RS>::N * <$CS>::N }>, $RS, $CS>,
-                $RS,
-                $CS,
-            >;
-            fn new_like_self(&self) -> Self::Out {
-                <Self::Out>::from_data(
-                    ArrayContainer::<Item, { <$RS>::N * <$CS>::N }>::new(),
-                    DefaultLayout::from_dimension((<$RS>::N, <$CS>::N)),
-                )
-            }
-        }
+// macro_rules! implement_new_from_self_fixed {
+//     ($S:ty) => {
+//         impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $S>> NewLikeSelf
+//             for Matrix<Item, MatImpl, RS>
+//         {
+//             type Out = Matrix<
+//                 Item,
+//                 BaseMatrix<Item, ArrayContainer<Item, { <$S>::N * <$S>::N }>, $S, $S>,
+//                 $S,
+//                 $S,
+//             >;
+//             fn new_like_self(&self) -> Self::Out {
+//                 <Self::Out>::from_data(
+//                     ArrayContainer::<Item, { <$S>::N * <$S>::N }>::new(),
+//                     DefaultLayout::from_dimension((<$S>::N, <$S>::N)),
+//                 )
+//             }
+//         }
 
-        impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeTranspose
-            for Matrix<Item, MatImpl, $RS, $CS>
-        {
-            type Out = Matrix<
-                Item,
-                BaseMatrix<Item, ArrayContainer<Item, { <$CS>::N * <$RS>::N }>, $CS, $RS>,
-                $CS,
-                $RS,
-            >;
-            fn new_like_transpose(&self) -> Self::Out {
-                <Self::Out>::from_data(
-                    ArrayContainer::<Item, { <$CS>::N * <$RS>::N }>::new(),
-                    DefaultLayout::from_dimension((<$CS>::N, <$RS>::N)),
-                )
-            }
-        }
-    };
-}
+//         impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, $RS, $CS>> NewLikeTranspose
+//             for Matrix<Item, MatImpl, $RS, $CS>
+//         {
+//             type Out = Matrix<
+//                 Item,
+//                 BaseMatrix<Item, ArrayContainer<Item, { <$CS>::N * <$RS>::N }>, $CS, $RS>,
+//                 $CS,
+//                 $RS,
+//             >;
+//             fn new_like_transpose(&self) -> Self::Out {
+//                 <Self::Out>::from_data(
+//                     ArrayContainer::<Item, { <$CS>::N * <$RS>::N }>::new(),
+//                     DefaultLayout::from_dimension((<$CS>::N, <$RS>::N)),
+//                 )
+//             }
+//         }
+//     };
+// }
 
-implement_new_from_self_fixed!(Fixed2, Fixed2);
-implement_new_from_self_fixed!(Fixed1, Fixed2);
+// implement_new_from_self_fixed!(Fixed2, Fixed2);
+// implement_new_from_self_fixed!(Fixed1, Fixed2);
 
-implement_new_from_self_fixed!(Fixed3, Fixed3);
-implement_new_from_self_fixed!(Fixed1, Fixed3);
+// implement_new_from_self_fixed!(Fixed3, Fixed3);
+// implement_new_from_self_fixed!(Fixed1, Fixed3);
 
-implement_new_from_self_fixed!(Fixed2, Fixed3);
-implement_new_from_self_fixed!(Fixed3, Fixed2);
+// implement_new_from_self_fixed!(Fixed2, Fixed3);
+// implement_new_from_self_fixed!(Fixed3, Fixed2);
 
-implement_new_from_self_fixed!(Fixed2, Fixed1);
-implement_new_from_self_fixed!(Fixed3, Fixed1);
+// implement_new_from_self_fixed!(Fixed2, Fixed1);
+// implement_new_from_self_fixed!(Fixed3, Fixed1);

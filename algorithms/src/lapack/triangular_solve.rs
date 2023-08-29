@@ -18,13 +18,9 @@ macro_rules! trisolve_real_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
         impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            fn triangular_solve<
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
-            >(
+            fn triangular_solve<S: SizeIdentifier, MatImpl: MatrixImplTrait<Self::T, S>>(
                 &self,
-                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+                rhs: &Matrix<Self::T, MatImpl, S>,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
@@ -89,13 +85,9 @@ macro_rules! trisolve_complex_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
         impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            fn triangular_solve<
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
-            >(
+            fn triangular_solve<S: SizeIdentifier, MatImpl: MatrixImplTrait<Self::T, S>>(
                 &self,
-                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+                rhs: &Matrix<Self::T, MatImpl, S>,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
