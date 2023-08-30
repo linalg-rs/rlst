@@ -15,7 +15,7 @@ pub fn main() {
     }
 
     let mat = rlst_dense::rlst_static_mat!(f64, MySizeType);
-    let mat_dynamic: rlst_dense::Matrix<f64, _, _> = rlst_dense::rlst_mat!(f64, (30, 40));
+    let mat_dynamic: rlst_dense::Matrix<f64, _, _> = rlst_dense::rlst_dynamic_mat!(f64, (30, 40));
 
     println!("{:#?}", mat.shape());
     println!("{:#?}", mat_dynamic.shape());

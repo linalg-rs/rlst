@@ -180,7 +180,7 @@ mod test {
 
     #[test]
     fn test_col_major_mut() {
-        let mut mat = crate::rlst_mat![f64, (2, 2)];
+        let mut mat = crate::rlst_dynamic_mat![f64, (2, 2)];
 
         for (index, item) in mat.iter_col_major_mut().enumerate() {
             *item = index as f64;

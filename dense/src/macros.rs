@@ -8,10 +8,10 @@ pub use rand;
 /// ```
 /// # use rlst_dense::*;
 /// // Creates a (3, 5) matrix with `f64` entries.
-/// let mat = rlst_mat![f64, (3, 5)];
+/// let mat = rlst_dynamic_mat![f64, (3, 5)];
 /// ```
 #[macro_export]
-macro_rules! rlst_mat {
+macro_rules! rlst_dynamic_mat {
     ($ScalarType:ty, $dim:expr) => {{
         use $crate::{Dynamic, MatrixBuilder};
         <Dynamic as MatrixBuilder<$ScalarType>>::new_matrix($dim)
@@ -91,7 +91,7 @@ macro_rules! rlst_pointer_mat {
 macro_rules! rlst_rand_mat {
     ($ScalarType:ty, $dim:expr) => {{
         let mut rng = $crate::macros::rand::thread_rng();
-        let mut mat = $crate::rlst_mat![$ScalarType, $dim];
+        let mut mat = $crate::rlst_dynamic_mat![$ScalarType, $dim];
         mat.fill_from_standard_normal(&mut rng);
         mat
     }};
@@ -129,28 +129,28 @@ macro_rules! rlst_rand_mat {
 //     }};
 // }
 
-/// Create a new random matrix with compile-time known dimension parameters and stack allocated storage.
-///
-/// Currently only dimensions 1, 2, 3 are supported as
-/// dimension parameters.
-///
-/// Example:
-/// ```
-/// # use rlst_dense::*;
-/// # use rlst_common::traits::*;
-/// // Creates a (2, 3) .
-/// let mat = rlst_fixed_rand_mat![f64, 2, 3];
-/// # assert_eq!(mat.shape(), (2, 3))
-/// ```
-#[macro_export]
-macro_rules! rlst_fixed_rand_mat {
-    ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
-        let mut rng = $crate::macros::rand::thread_rng();
-        let mut mat = $crate::rlst_fixed_mat![$ScalarType, $dim1, $dim2];
-        mat.fill_from_standard_normal(&mut rng);
-        mat
-    }};
-}
+// /// Create a new random matrix with compile-time known dimension parameters and stack allocated storage.
+// ///
+// /// Currently only dimensions 1, 2, 3 are supported as
+// /// dimension parameters.
+// ///
+// /// Example:
+// /// ```
+// /// # use rlst_dense::*;
+// /// # use rlst_common::traits::*;
+// /// // Creates a (2, 3) .
+// /// let mat = rlst_static_rand_mat![f64, 2, 3];
+// /// # assert_eq!(mat.shape(), (2, 3))
+// /// ```
+// #[macro_export]
+// macro_rules! rlst_static_rand_mat {
+//     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
+//         let mut rng = $crate::macros::rand::thread_rng();
+//         let mut mat = $crate::rlst_fixed_mat![$ScalarType, $dim1, $dim2];
+//         mat.fill_from_standard_normal(&mut rng);
+//         mat
+//     }};
+// }
 
 /// Create a new column vector.
 ///
@@ -166,7 +166,7 @@ macro_rules! rlst_fixed_rand_mat {
 #[macro_export]
 macro_rules! rlst_col_vec {
     ($ScalarType:ty, $len:expr) => {{
-        $crate::rlst_mat![$ScalarType, ($len, 1)]
+        $crate::rlst_dynamic_mat![$ScalarType, ($len, 1)]
     }};
 }
 
@@ -184,7 +184,7 @@ macro_rules! rlst_col_vec {
 #[macro_export]
 macro_rules! rlst_row_vec {
     ($ScalarType:ty, $len:expr) => {{
-        $crate::rlst_mat![$ScalarType, (1, $len)]
+        $crate::rlst_dynamic_mat![$ScalarType, (1, $len)]
     }};
 }
 
@@ -236,7 +236,7 @@ mod test {
     #[test]
     fn create_matrix() {
         let dim = (2, 3);
-        let mat = rlst_mat![f64, dim];
+        let mat = rlst_dynamic_mat![f64, dim];
 
         assert_eq!(mat.shape(), (2, 3));
     }

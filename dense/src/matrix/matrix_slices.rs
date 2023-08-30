@@ -116,7 +116,7 @@ mod test {
 
     #[test]
     fn test_simple_slice() {
-        let mut mat = crate::rlst_mat![f64, (3, 4)];
+        let mut mat = crate::rlst_dynamic_mat![f64, (3, 4)];
         *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice = mat.block((0, 1), (2, 2));
@@ -127,7 +127,7 @@ mod test {
 
     #[test]
     fn test_double_slice() {
-        let mut mat = crate::rlst_mat![f64, (3, 4)];
+        let mut mat = crate::rlst_dynamic_mat![f64, (3, 4)];
         *mat.get_mut(1, 2).unwrap() = 1.0;
 
         let slice1 = mat.block((0, 1), (3, 3));

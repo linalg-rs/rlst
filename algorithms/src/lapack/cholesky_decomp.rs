@@ -90,7 +90,7 @@ where
             TriangularType::Upper => {
                 // We need to translate to lower triangular
                 let n = self.mat.shape().0;
-                result = rlst_dense::rlst_mat![Self::T, (n, n)];
+                result = rlst_dense::rlst_dynamic_mat![Self::T, (n, n)];
                 for row in 0..n {
                     for col in row..n {
                         result[[col, row]] = self.mat[[row, col]].conj();
@@ -100,7 +100,7 @@ where
             TriangularType::Lower => {
                 // Just copy over the result
                 let n = self.mat.shape().0;
-                result = rlst_dense::rlst_mat![Self::T, (n, n)];
+                result = rlst_dense::rlst_dynamic_mat![Self::T, (n, n)];
                 for col in 0..n {
                     for row in col..n {
                         result[[row, col]] = self.mat[[row, col]];
@@ -117,7 +117,7 @@ where
             TriangularType::Lower => {
                 // We need to translate to upper triangular
                 let n = self.mat.shape().0;
-                result = rlst_dense::rlst_mat![Self::T, (n, n)];
+                result = rlst_dense::rlst_dynamic_mat![Self::T, (n, n)];
                 for col in 0..n {
                     for row in col..n {
                         result[[col, row]] = self.mat[[row, col]].conj();
@@ -127,7 +127,7 @@ where
             TriangularType::Upper => {
                 // Just copy over the result
                 let n = self.mat.shape().0;
-                result = rlst_dense::rlst_mat![Self::T, (n, n)];
+                result = rlst_dense::rlst_dynamic_mat![Self::T, (n, n)];
                 for row in 0..n {
                     for col in row..n {
                         result[[row, col]] = self.mat[[row, col]];
@@ -196,7 +196,7 @@ mod test {
             paste! {
                     #[test]
                     fn [<test_cholesky_$scalar>]() {
-                        let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
+                        let mut rlst_mat = rlst_dense::rlst_dynamic_mat![$scalar, (2, 2)];
 
                         rlst_mat.fill_from_seed_equally_distributed(0);
                         rlst_mat[[1, 0]] = rlst_mat[[0, 1]].conj();
@@ -223,7 +223,7 @@ mod test {
 
                 #[test]
                 fn [<test_cholesky_solve_$scalar>]() {
-                    let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
+                    let mut rlst_mat = rlst_dense::rlst_dynamic_mat![$scalar, (2, 2)];
                     let mut rlst_vec = rlst_dense::rlst_col_vec![$scalar, 2];
 
                     rlst_mat.fill_from_seed_equally_distributed(0);

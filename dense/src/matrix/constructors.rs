@@ -47,7 +47,7 @@ impl<Item: Scalar> MatrixD<Item> {
     /// provides [RandomAccessByValue](rlst_common::traits::RandomAccessByValue) and
     /// [Shape](rlst_common::traits::Shape) traits.
     pub fn from_other<Other: RandomAccessByValue<Item = Item> + Shape>(other: &Other) -> Self {
-        let mut mat = crate::rlst_mat![Item, other.shape()];
+        let mut mat = crate::rlst_dynamic_mat![Item, other.shape()];
 
         for col_index in 0..other.shape().1 {
             for row_index in 0..other.shape().0 {
@@ -63,7 +63,7 @@ impl<Item: Scalar> Identity for MatrixD<Item> {
     type Out = Self;
 
     fn identity(shape: (usize, usize)) -> Self::Out {
-        let mut ident = crate::rlst_mat![Item, shape];
+        let mut ident = crate::rlst_dynamic_mat![Item, shape];
 
         for index in 0..std::cmp::min(shape.0, shape.1) {
             ident[[index, index]] = <Item as num::One>::one();
@@ -100,7 +100,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> NewLikeTranspose
 
     fn new_like_transpose(&self) -> Self::Out {
         let dim = self.layout().dim();
-        crate::rlst_mat![Item, (dim.1, dim.0)]
+        crate::rlst_dynamic_mat![Item, (dim.1, dim.0)]
     }
 }
 

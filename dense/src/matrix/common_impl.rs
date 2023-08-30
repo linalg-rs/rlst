@@ -397,7 +397,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Matrix<
     }
 
     pub fn to_dyn_matrix(&self) -> MatrixD<Item> {
-        let mut mat = crate::rlst_mat![Item, self.shape()];
+        let mut mat = crate::rlst_dynamic_mat![Item, self.shape()];
 
         for (item, other) in mat.iter_col_major_mut().zip(self.iter_col_major()) {
             *item = other;
@@ -427,7 +427,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> Matrix<Item, MatImpl
     pub fn pad_right(&self, ncolumns: usize) -> MatrixD<Item> {
         let new_dim = (self.shape().0, self.shape().1 + ncolumns);
 
-        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        let mut new_mat = crate::rlst_dynamic_mat![Item, new_dim];
         new_mat.subview_mut((0, 0), self.shape()).fill_from(self);
         new_mat
     }
@@ -436,7 +436,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> Matrix<Item, MatImpl
     pub fn pad_left(&self, ncolumns: usize) -> MatrixD<Item> {
         let new_dim = (self.shape().0, self.shape().1 + ncolumns);
 
-        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        let mut new_mat = crate::rlst_dynamic_mat![Item, new_dim];
         new_mat
             .subview_mut((0, ncolumns), self.shape())
             .fill_from(self);
@@ -447,7 +447,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> Matrix<Item, MatImpl
     pub fn pad_above(&self, nrows: usize) -> MatrixD<Item> {
         let new_dim = (self.shape().0 + nrows, self.shape().1);
 
-        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        let mut new_mat = crate::rlst_dynamic_mat![Item, new_dim];
         new_mat
             .subview_mut((nrows, 0), self.shape())
             .fill_from(self);
@@ -458,7 +458,7 @@ impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> Matrix<Item, MatImpl
     pub fn pad_below(&self, nrows: usize) -> MatrixD<Item> {
         let new_dim = (self.shape().0 + nrows, self.shape().1);
 
-        let mut new_mat = crate::rlst_mat![Item, new_dim];
+        let mut new_mat = crate::rlst_dynamic_mat![Item, new_dim];
         new_mat.subview_mut((0, 0), self.shape()).fill_from(self);
         new_mat
     }

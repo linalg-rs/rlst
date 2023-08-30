@@ -221,8 +221,8 @@ mod test {
 
     #[test]
     fn scalar_mult() {
-        let mut mat1 = crate::rlst_mat![f64, (2, 3)];
-        let mut mat2 = crate::rlst_mat![f64, (2, 3)];
+        let mut mat1 = crate::rlst_dynamic_mat![f64, (2, 3)];
+        let mut mat2 = crate::rlst_dynamic_mat![f64, (2, 3)];
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;

@@ -194,7 +194,7 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
         }
     }
 
-    let mut mat = rlst_dense::rlst_mat!(T, (nrows, ncols));
+    let mut mat = rlst_dense::rlst_dynamic_mat!(T, (nrows, ncols));
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
     if let Err(e) = res {

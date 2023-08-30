@@ -7,7 +7,7 @@
 //!
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! ```
 //! The result is a column-major matrix.
 //! A new column vector can be created by
@@ -31,7 +31,7 @@
 //! ```
 //! # use rlst_dense::*;
 //! let mut rng = rand::thread_rng();
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! mat.fill_from_standard_normal(&mut rng);
 //! ```
 //! # Accessing entries
@@ -40,7 +40,7 @@
 //! with bounds checks in the following way.
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! mat[[2, 3]] = 4.0;
 //! assert_eq!(mat[[2, 3]], 4.0);
 //! ```
@@ -50,20 +50,20 @@
 //! an exception.
 //! ```should_panic
 //! # use rlst_dense::*;
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! mat[[3, 5]] = 4.0;
 //! ```
 //!
 //! ```should_panic
 //! # use rlst_dense::*;
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! println!("Print out of bounds entry: {}",mat[[3, 5]]);
 //! ```
 //! Bounds checks are not always desired. We therefore also provide
 //! unsafe access routines.
 //! ```
 //! # use rlst_dense::*;
-//! let mut mat = rlst_mat![f64, (3, 5)];
+//! let mut mat = rlst_dynamic_mat![f64, (3, 5)];
 //! unsafe {
 //!     *mat.get_unchecked_mut(2, 3) = 4.0;
 //!     assert_eq!(*mat.get_unchecked(2, 3), 4.0);

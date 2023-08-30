@@ -52,13 +52,13 @@ impl<
 mod test {
     use rlst_common::traits::CmpWiseProduct;
 
-    use crate::rlst_mat;
+    use crate::rlst_dynamic_mat;
     use rlst_common::traits::*;
 
     #[test]
     fn test_cmp_wise_prod() {
-        let mut mat1 = rlst_mat![f64, (4, 5)];
-        let mut mat2 = rlst_mat![f64, (4, 5)];
+        let mut mat1 = rlst_dynamic_mat![f64, (4, 5)];
+        let mut mat2 = rlst_dynamic_mat![f64, (4, 5)];
 
         mat1.fill_from_seed_equally_distributed(0);
         mat2.fill_from_seed_equally_distributed(1);

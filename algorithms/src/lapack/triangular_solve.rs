@@ -153,7 +153,7 @@ trisolve_complex_impl!(c64, ztrtrs);
 #[cfg(test)]
 mod test {
     use num::Zero;
-    use rlst_dense::{rlst_col_vec, rlst_mat, Dot};
+    use rlst_dense::{rlst_col_vec, rlst_dynamic_mat, Dot};
 
     use super::*;
     use crate::linalg::LinAlg;
@@ -163,7 +163,7 @@ mod test {
         ($scalar:ty, $name:ident, $tol:expr) => {
             #[test]
             fn $name() {
-                let mut mat_a = rlst_mat![$scalar, (4, 4)];
+                let mut mat_a = rlst_dynamic_mat![$scalar, (4, 4)];
                 mat_a.fill_from_seed_equally_distributed(0);
                 for row in 0..mat_a.shape().0 {
                     for col in 0..row {
