@@ -16,9 +16,12 @@
 //!             The corresponding constant [SizeIdentifier::N] is set to 0.
 //!
 
+use crate::{
+    base_matrix::BaseMatrix, ArrayContainer, DefaultLayout, GenericBaseMatrix, LayoutType, Matrix,
+    VectorContainer,
+};
 use paste::paste;
-
-use crate::{GenericBaseMatrix, Matrix};
+use rlst_common::types::Scalar;
 
 /// Fixed Dimension 2.
 pub struct Fixed2;
@@ -37,8 +40,10 @@ pub trait SizeIdentifier {
     const SIZE: SizeIdentifierValue;
 }
 
-pub trait StaticMatrixBuilder: SizeIdentifier + Sized {
-    const N: usize;
+pub trait MatrixBuilder<T: Scalar> {
+    type Out;
+
+    fn new_matrix(dim: (usize, usize)) -> Self::Out;
 }
 
 pub trait Size {
@@ -55,6 +60,17 @@ impl SizeIdentifier for Fixed3 {
 
 impl SizeIdentifier for Dynamic {
     const SIZE: SizeIdentifierValue = SizeIdentifierValue::Dynamic;
+}
+
+impl<T: Scalar> MatrixBuilder<T> for Dynamic {
+    type Out = crate::MatrixD<T>;
+
+    fn new_matrix(dim: (usize, usize)) -> Self::Out {
+        <crate::MatrixD<T>>::new(BaseMatrix::new(
+            VectorContainer::new(dim.0 * dim.1),
+            DefaultLayout::from_dimension(dim),
+        ))
+    }
 }
 
 pub enum SizeIdentifierValue {

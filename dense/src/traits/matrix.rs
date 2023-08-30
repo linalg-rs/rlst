@@ -31,13 +31,6 @@ pub trait MatrixImplIdentifier {
     }
 }
 
-pub trait MatrixBuilder<T: Scalar> {
-    type Data: DataContainer<Item = T>;
-    type S: SizeIdentifier;
-
-    fn new_matrix() -> crate::GenericBaseMatrix<T, Self::Data, Self::S>;
-}
-
 /// Combined trait for basic matrix properties. See [crate::traits::matrix]
 /// for details.
 pub trait MatrixImplTrait<Item: Scalar, S: SizeIdentifier>:

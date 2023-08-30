@@ -20,11 +20,17 @@ pub(crate) fn rlst_static_size_impl(args: TokenStream, input: TokenStream) -> To
         }
 
         impl<T: rlst_common::types::Scalar> rlst_dense::traits::MatrixBuilder<T> for #struct_name {
-            type Data = rlst_dense::ArrayContainer<T, {#m * #n}>;
-            type S = #struct_name;
+            type Out = rlst_dense::GenericBaseMatrix::<T, rlst_dense::ArrayContainer<T, {#m * #n}>, #struct_name>;
 
-            fn new_matrix() -> rlst_dense::GenericBaseMatrix<T, Self::Data, Self::S> {
-                std::unimplemented!();
+
+            fn new_matrix(dim: (usize, usize)) -> Self::Out {
+
+            assert_eq!(dim, (#m, #n), "Expected fixed dimension ({}, {}) for static matrix.", #m, #n);
+            use rlst_dense::LayoutType;
+            <Self::Out>::from_data(rlst_dense::ArrayContainer::<T, {#m * #n}>::new(),
+            rlst_dense::DefaultLayout::from_dimension((#m, #n)),
+        )
+
             }
         }
 

@@ -13,15 +13,19 @@ pub use rand;
 #[macro_export]
 macro_rules! rlst_mat {
     ($ScalarType:ty, $dim:expr) => {{
-        use $crate::LayoutType;
-        $crate::GenericBaseMatrix::<
-            $ScalarType,
-            $crate::VectorContainer<$ScalarType>,
-            $crate::Dynamic,
-        >::from_data(
-            $crate::VectorContainer::<$ScalarType>::new($dim.0 * $dim.1),
-            $crate::DefaultLayout::from_dimension(($dim.0, $dim.1)),
-        )
+        use $crate::{Dynamic, MatrixBuilder};
+        <Dynamic as MatrixBuilder<$ScalarType>>::new_matrix($dim)
+    }};
+}
+#[macro_export]
+macro_rules! rlst_static_mat {
+    ($ScalarType:ty, $SizeIdentifier:ty) => {{
+        use $crate::{MatrixBuilder};
+        use $crate::SizeIdentifierValue;
+        match <$SizeIdentifier>::SIZE {
+            SizeIdentifierValue::Static(m, n) => <$SizeIdentifier as MatrixBuilder<$ScalarType>>::new_matrix((m, n)),
+            _ => panic!("Macro `rlst_static_mat` can only be called with size identifiers representic static sizes."),
+        }
     }};
 }
 

@@ -117,7 +117,7 @@ impl<
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Eval
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier + MatrixBuilder<Item>> Eval
     for Matrix<Item, MatImpl, S>
 where
     Self: NewLikeSelf,

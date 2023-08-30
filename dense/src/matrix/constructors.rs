@@ -74,15 +74,25 @@ impl<Item: Scalar> Identity for MatrixD<Item> {
     }
 }
 
-impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> NewLikeSelf
-    for Matrix<Item, MatImpl, Dynamic>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier + MatrixBuilder<Item>>
+    NewLikeSelf for Matrix<Item, MatImpl, S>
 {
-    type Out = crate::MatrixD<Item>;
+    type Out = <S as MatrixBuilder<Item>>::Out;
 
     fn new_like_self(&self) -> Self::Out {
-        crate::rlst_mat![Item, self.layout().dim()]
+        <S as MatrixBuilder<Item>>::new_matrix(self.layout().dim())
     }
 }
+
+// impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>, S: StaticMatrixBuilder<Item>>
+//     NewLikeSelf for Matrix<Item, MatImpl, S>
+// {
+//     type Out = crate::MatrixD<Item>;
+
+//     fn new_like_self(&self) -> Self::Out {
+//         crate::rlst_mat![Item, self.layout().dim()]
+//     }
+// }
 
 impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, Dynamic>> NewLikeTranspose
     for Matrix<Item, MatImpl, Dynamic>
