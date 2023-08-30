@@ -15,7 +15,7 @@ use crate::traits::{
     UnsafeRandomAccessMut,
 };
 use crate::types::Scalar;
-use crate::{DataContainer, DefaultLayout};
+use crate::DefaultLayout;
 
 #[derive(Debug, PartialEq)]
 pub enum MatrixImplType {

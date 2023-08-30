@@ -16,11 +16,7 @@
 //!             The corresponding constant [SizeIdentifier::N] is set to 0.
 //!
 
-use crate::{
-    base_matrix::BaseMatrix, ArrayContainer, DefaultLayout, GenericBaseMatrix, LayoutType, Matrix,
-    VectorContainer,
-};
-use paste::paste;
+use crate::{base_matrix::BaseMatrix, DefaultLayout, LayoutType, VectorContainer};
 use rlst_common::types::Scalar;
 
 /// Fixed Dimension 2.
@@ -32,10 +28,6 @@ pub struct Fixed3;
 /// Dimension determined at runtime.
 pub struct Dynamic;
 
-/// This trait provides a constant [SizeIdentifier::N] from
-/// which returns a dimension parameter. For `N` > 0 it specifies
-/// a compile time dimension. In the case `N` == 0 the dimension is
-/// a runtime parameter and not known at compile time.
 pub trait SizeIdentifier {
     const SIZE: SizeIdentifierValue;
 }

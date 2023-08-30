@@ -1,7 +1,6 @@
 //! A collection of routines to construct matrix objects from scratch or existing data.
 
 use crate::base_matrix::BaseMatrix;
-use crate::data_container::ArrayContainer;
 use crate::matrix::Matrix;
 use crate::matrix_ref::{MatrixRef, MatrixRefMut};
 use crate::traits::*;
