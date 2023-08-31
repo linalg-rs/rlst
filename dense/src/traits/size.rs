@@ -4,7 +4,6 @@
 //! - [Fixed2]. This type specifies a row/column of fixed dimension 2.
 //! - [Fixed3]. This type specifies a row/column of fixed dimension 3.
 //! - [Dynamic]. This type specifies a row/column dimension defined at runtime.
-//!             The corresponding constant [SizeIdentifier::N] is set to 0.
 //!
 
 use crate::{base_matrix::BaseMatrix, DefaultLayout, LayoutType, VectorContainer};
