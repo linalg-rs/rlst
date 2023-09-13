@@ -2,7 +2,7 @@
 //!
 //! [MatrixImplTrait] and its mutable counterpart [MatrixImplTraitMut] are
 //! traits that define matrix implementations. The [MatrixImplTrait] is auto-implemented
-//! for any implementation that supports [UnsafeRandomAccessByValue], [Layout] and [SizeType].
+//! for any implementation that supports [UnsafeRandomAccessByValue] and [Layout].
 //! If the matrix elements are associated with a physical memory location one can implement
 //! [UnsafeRandomAccessByRef]. If also [MatrixImplTrait] is implemented the trait
 //! [MatrixImplTraitAccessByRef] is then auto-implemented. This marks matrix implementations

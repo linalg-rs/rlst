@@ -12,12 +12,8 @@
 //! - `MatImpl`. The actual implementation of the matrix. It must itself implement the
 //!              trait [MatrixImplTrait] or [MatrixImplTraitMut] depending on whether mutable access
 //!              is required.
-//! - `L`. A given type that implements the [LayoutType] trait and specifies the memory layout
-//!        of the matrix.
-//! - `RS`. A type that implements [SizeType] and specifies whether the row dimension is known
-//!         at compile time or dynamically at runtime.
-//! - `CS`. A type that implements [SizeType]  and specifies whether the column dimension is
-//!         known at compile time or dynamically at runtime.
+//! - `S`. A type that implements [SizeIdentifier] and specifies whether the dimensions are not at
+//!        compile time or dynamically at runtime.
 
 pub mod common_impl;
 pub mod constructors;
