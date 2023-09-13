@@ -8,40 +8,33 @@ use crate::types::Scalar;
 use crate::{traits::*, RefMat};
 use crate::{DefaultLayout, RefMatMut};
 
-pub struct MatrixView<'a, Item, MatImpl, RS, CS>
+pub struct MatrixView<'a, Item, MatImpl, S>
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTrait<Item, RS, CS>,
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTrait<Item, S>,
 {
-    mat: RefMat<'a, Item, MatImpl, RS, CS>,
+    mat: RefMat<'a, Item, MatImpl, S>,
     offset: (usize, usize),
     layout: DefaultLayout,
 }
 
-pub struct MatrixViewMut<'a, Item, MatImpl, RS, CS>
+pub struct MatrixViewMut<'a, Item, MatImpl, S>
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTraitMut<Item, RS, CS>,
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTraitMut<Item, S>,
 {
-    mat: RefMatMut<'a, Item, MatImpl, RS, CS>,
+    mat: RefMatMut<'a, Item, MatImpl, S>,
     offset: (usize, usize),
     layout: DefaultLayout,
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier>
+    MatrixView<'a, Item, MatImpl, S>
 {
     pub fn new(
-        mat: &'a Matrix<Item, MatImpl, RS, CS>,
+        mat: &'a Matrix<Item, MatImpl, S>,
         offset: (usize, usize),
         block_size: (usize, usize),
     ) -> Self {
@@ -62,16 +55,11 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    MatrixViewMut<'a, Item, MatImpl, S>
 {
     pub fn new(
-        mat: &'a mut Matrix<Item, MatImpl, RS, CS>,
+        mat: &'a mut Matrix<Item, MatImpl, S>,
         offset: (usize, usize),
         block_size: (usize, usize),
     ) -> Self {
@@ -92,13 +80,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Layout
+    for MatrixView<'a, Item, MatImpl, S>
 {
     type Impl = DefaultLayout;
 
@@ -108,13 +91,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> Layout
+    for MatrixViewMut<'a, Item, MatImpl, S>
 {
     type Impl = DefaultLayout;
 
@@ -124,59 +102,32 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Size
+    for MatrixView<'a, Item, MatImpl, S>
 {
-    type R = RS;
-    type C = CS;
+    type S = S;
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> Size
+    for MatrixViewMut<'a, Item, MatImpl, S>
 {
-    type R = RS;
-    type C = CS;
+    type S = S;
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixImplIdentifier for MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> MatrixImplIdentifier
+    for MatrixView<'a, Item, MatImpl, S>
 {
     const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixImplIdentifier for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> MatrixImplIdentifier
+    for MatrixViewMut<'a, Item, MatImpl, S>
 {
     const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByValue for MatrixView<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -193,13 +144,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByValue for MatrixViewMut<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -216,13 +162,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for MatrixView<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitAccessByRef<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByRef for MatrixView<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -242,10 +183,9 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS> + MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+        MatImpl: MatrixImplTraitAccessByRef<Item, S> + MatrixImplTraitMut<Item, S>,
+        S: SizeIdentifier,
+    > UnsafeRandomAccessByRef for MatrixViewMut<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -262,15 +202,10 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for MatrixViewMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessMut for MatrixViewMut<'a, Item, MatImpl, S>
 where
-    Matrix<Item, MatImpl, RS, CS>: UnsafeRandomAccessMut<Item = Item>,
+    Matrix<Item, MatImpl, S>: UnsafeRandomAccessMut<Item = Item>,
 {
     type Item = Item;
 

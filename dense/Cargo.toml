@@ -30,8 +30,6 @@ rlst-common = {path = "../common"}
 paste = "1"
 rand_chacha = "0.3"
 
-
-
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 

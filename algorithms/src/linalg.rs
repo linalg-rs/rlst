@@ -24,8 +24,8 @@ pub struct SparseMatrixLinalgBuilder<'a, T: Scalar, Mat> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: Scalar, MatImpl: MatrixImplTrait<T, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> LinAlg
-    for Matrix<T, MatImpl, RS, CS>
+impl<T: Scalar, MatImpl: MatrixImplTrait<T, S>, S: SizeIdentifier> LinAlg
+    for Matrix<T, MatImpl, S>
 {
     type T = T;
     type Out<'a> = DenseMatrixLinAlgBuilder<Self::T> where Self: 'a;

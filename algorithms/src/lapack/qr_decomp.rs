@@ -5,7 +5,7 @@ use num::Zero;
 #[allow(unused_imports)]
 use rlst_common::traits::{Copy, Identity, PermuteColumns};
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{rlst_mat, MatrixD};
+use rlst_dense::{rlst_dynamic_mat, MatrixD};
 use rlst_dense::{RandomAccessByValue, RawAccess, RawAccessMut, Shape, Stride};
 
 use super::DenseMatrixLinAlgBuilder;
@@ -118,7 +118,7 @@ macro_rules! qr_decomp_impl {
                 let nrhs = rhs.shape().1;
 
                 // Create the rhs with the right dimension for any case.
-                let mut work_rhs = rlst_mat![Self::T, (ldb, nrhs)];
+                let mut work_rhs = rlst_dynamic_mat![Self::T, (ldb, nrhs)];
 
                 // Copy rhs into work_rhs
                 for col_index in 0..nrhs {
@@ -153,7 +153,7 @@ macro_rules! qr_decomp_impl {
                         TransposeMode::ConjugateTrans => m,
                     } as usize;
 
-                    let mut sol = rlst_mat![Self::T, (x_rows, nrhs)];
+                    let mut sol = rlst_dynamic_mat![Self::T, (x_rows, nrhs)];
 
                     // Copy solution back
 
@@ -215,7 +215,7 @@ macro_rules! qr_decomp_impl {
             fn r(&self) -> RlstResult<MatrixD<Self::T>> {
                 let shape = self.mat.shape();
                 let dim = std::cmp::min(shape.0, shape.1);
-                let mut mat = rlst_mat!(Self::T, (dim, shape.1));
+                let mut mat = rlst_dynamic_mat!(Self::T, (dim, shape.1));
 
                 for row in 0..dim {
                     for col in row..shape.1 {
@@ -252,7 +252,7 @@ mod test {
 
     use super::*;
     use crate::traits::lu_decomp::LUDecomp;
-    use rlst_dense::{rlst_col_vec, rlst_mat, rlst_rand_col_vec, rlst_rand_mat, Dot};
+    use rlst_dense::{rlst_col_vec, rlst_dynamic_mat, rlst_rand_col_vec, rlst_rand_mat, Dot};
 
     macro_rules! qr_tests {
         ($ScalarType:ident, $PivotMode:expr, $trans:expr, $tol:expr) => {
@@ -261,7 +261,7 @@ mod test {
                 fn [<test_thick_qr_ $ScalarType _ $PivotMode>]() {
                     // QR Decomposition of a thick matrix.
 
-                    let mut mat = rlst_mat![$ScalarType, (3, 5)];
+                    let mut mat = rlst_dynamic_mat![$ScalarType, (3, 5)];
                     mat.fill_from_seed_equally_distributed(0);
 
                     let pivot_mode;
@@ -308,7 +308,7 @@ mod test {
                 fn [<test_thin_qr_ $ScalarType _ $PivotMode>]() {
                     // QR Decomposition of a thin matrix.
 
-                    let mut mat = rlst_mat![$ScalarType, (5, 3)];
+                    let mut mat = rlst_dynamic_mat![$ScalarType, (5, 3)];
                     mat.fill_from_seed_equally_distributed(0);
 
                     let pivot_mode;
@@ -364,10 +364,10 @@ mod test {
                 fn [<test_least_squares_solve_thin_ $ScalarType _ $PivotMode>]() {
                     // Test notrans
 
-                    let mut mat = rlst_mat![$ScalarType, (5, 3)];
+                    let mut mat = rlst_dynamic_mat![$ScalarType, (5, 3)];
                     mat.fill_from_seed_equally_distributed(0);
 
-                    let mut rhs = rlst_mat![$ScalarType, (5, 2)];
+                    let mut rhs = rlst_dynamic_mat![$ScalarType, (5, 2)];
                     rhs.fill_from_seed_equally_distributed(2);
 
                     let normal_lhs = mat.view().conj().transpose().eval().dot(&mat);
@@ -401,7 +401,7 @@ mod test {
 
                 #[test]
                 fn [<test_least_squares_solve_thick_no_conj_trans_ $ScalarType _ $PivotMode>]() {
-                    let mut mat = rlst_mat![$ScalarType, (3, 5)];
+                    let mut mat = rlst_dynamic_mat![$ScalarType, (3, 5)];
                     mat.fill_from_seed_equally_distributed(0);
 
                     let mut rhs = rlst_col_vec![$ScalarType, 3];

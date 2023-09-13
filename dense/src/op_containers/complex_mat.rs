@@ -6,19 +6,16 @@ use crate::{matrix::*, DefaultLayout};
 use std::marker::PhantomData;
 
 /// This type represents the Complex of a matrix.
-pub type ComplexMat<Item, MatImpl, RS, CS> =
-    Matrix<Item, ComplexContainer<Item, MatImpl, RS, CS>, RS, CS>;
+pub type ComplexMat<Item, MatImpl, S> = Matrix<Item, ComplexContainer<Item, MatImpl, S>, S>;
 
-pub struct ComplexContainer<Item, MatImpl, RS, CS>(
-    Matrix<<Item as Scalar>::Real, MatImpl, RS, CS>,
-    PhantomData<RS>,
-    PhantomData<CS>,
+pub struct ComplexContainer<Item, MatImpl, S>(
+    Matrix<<Item as Scalar>::Real, MatImpl, S>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTrait<<Item as Scalar>::Real, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTrait<<Item as Scalar>::Real, S>;
 
 macro_rules! complex_container_impl {
     ($scalar:ty) => {
@@ -26,41 +23,28 @@ macro_rules! complex_container_impl {
         /// This struct implements [MatrixImplTrait] and acts like a matrix.
         /// However, random access returns the corresponding complex entries.
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier>
+            ComplexContainer<$scalar, MatImpl, S>
         {
-            pub fn new(mat: Matrix<<$scalar as Scalar>::Real, MatImpl, RS, CS>) -> Self {
-                Self(mat, PhantomData, PhantomData)
+            pub fn new(mat: Matrix<<$scalar as Scalar>::Real, MatImpl, S>) -> Self {
+                Self(mat, PhantomData)
             }
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > SizeType for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier> Size
+            for ComplexContainer<$scalar, MatImpl, S>
         {
-            type R = RS;
-            type C = CS;
+            type S = S;
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > MatrixImplIdentifier for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier>
+            MatrixImplIdentifier for ComplexContainer<$scalar, MatImpl, S>
         {
             const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > Layout for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier> Layout
+            for ComplexContainer<$scalar, MatImpl, S>
         {
             type Impl = DefaultLayout;
 
@@ -70,11 +54,8 @@ macro_rules! complex_container_impl {
             }
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > UnsafeRandomAccessByValue for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier>
+            UnsafeRandomAccessByValue for ComplexContainer<$scalar, MatImpl, S>
         {
             type Item = $scalar;
 
@@ -89,11 +70,8 @@ macro_rules! complex_container_impl {
             }
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > RawAccess for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier> RawAccess
+            for ComplexContainer<$scalar, MatImpl, S>
         {
             type T = $scalar;
 
@@ -113,11 +91,8 @@ macro_rules! complex_container_impl {
             }
         }
 
-        impl<
-                MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, RS, CS>,
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-            > RawAccessMut for ComplexContainer<$scalar, MatImpl, RS, CS>
+        impl<MatImpl: MatrixImplTrait<<$scalar as Scalar>::Real, S>, S: SizeIdentifier> RawAccessMut
+            for ComplexContainer<$scalar, MatImpl, S>
         {
             #[inline]
             fn data_mut(&mut self) -> &mut [Self::T] {

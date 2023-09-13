@@ -76,7 +76,7 @@ mod test {
             paste! {
                     #[test]
                     fn [<test_inverse_$scalar>]() {
-                        let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
+                        let mut rlst_mat = rlst_dense::rlst_dynamic_mat![$scalar, (2, 2)];
 
                         rlst_mat.fill_from_seed_equally_distributed(0);
 

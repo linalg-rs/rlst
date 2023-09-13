@@ -1,0 +1,26 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-proc-macro"
+version = "0.0.1"
+authors = ["The linalg-rs contributors"]
+edition = "2021"
+description = "A Rust native dense linear algebra library."
+license = "MIT + Apache 2.0"
+homepage = "https://github.com/linalg-rs"
+repository = "https://github.com/linalg-rs/rlst"
+readme = "README.md"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full"]}
+quote = "1.0"
+
+
+
+

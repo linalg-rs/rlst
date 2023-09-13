@@ -18,13 +18,9 @@ macro_rules! trisolve_real_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
         impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            fn triangular_solve<
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
-            >(
+            fn triangular_solve<S: SizeIdentifier, MatImpl: MatrixImplTrait<Self::T, S>>(
                 &self,
-                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+                rhs: &Matrix<Self::T, MatImpl, S>,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
@@ -89,13 +85,9 @@ macro_rules! trisolve_complex_impl {
     ($scalar:ty, $lapack_trisolve:ident) => {
         impl TriangularSolve for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
-            fn triangular_solve<
-                RS: SizeIdentifier,
-                CS: SizeIdentifier,
-                MatImpl: MatrixImplTrait<Self::T, RS, CS>,
-            >(
+            fn triangular_solve<S: SizeIdentifier, MatImpl: MatrixImplTrait<Self::T, S>>(
                 &self,
-                rhs: &Matrix<Self::T, MatImpl, RS, CS>,
+                rhs: &Matrix<Self::T, MatImpl, S>,
                 tritype: TriangularType,
                 tridiag: TriangularDiagonal,
                 trans: TransposeMode,
@@ -161,7 +153,7 @@ trisolve_complex_impl!(c64, ztrtrs);
 #[cfg(test)]
 mod test {
     use num::Zero;
-    use rlst_dense::{rlst_col_vec, rlst_mat, Dot};
+    use rlst_dense::{rlst_col_vec, rlst_dynamic_mat, Dot};
 
     use super::*;
     use crate::linalg::LinAlg;
@@ -171,7 +163,7 @@ mod test {
         ($scalar:ty, $name:ident, $tol:expr) => {
             #[test]
             fn $name() {
-                let mut mat_a = rlst_mat![$scalar, (4, 4)];
+                let mut mat_a = rlst_dynamic_mat![$scalar, (4, 4)];
                 mat_a.fill_from_seed_equally_distributed(0);
                 for row in 0..mat_a.shape().0 {
                     for col in 0..row {

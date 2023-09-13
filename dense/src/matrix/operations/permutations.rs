@@ -6,12 +6,8 @@ use rlst_common::traits::{
 };
 pub use rlst_common::types::Scalar;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > PermuteColumns for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> PermuteColumns
+    for Matrix<Item, MatImpl, S>
 where
     Self: NewLikeSelf + RandomAccessByValue<Item = Item>,
     <Self as NewLikeSelf>::Out: RandomAccessMut<Item = Item>,
@@ -40,12 +36,8 @@ where
     }
 }
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > PermuteRows for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> PermuteRows
+    for Matrix<Item, MatImpl, S>
 where
     Self: NewLikeSelf + RandomAccessByValue<Item = Item>,
     <Self as NewLikeSelf>::Out: RandomAccessMut<Item = Item>,

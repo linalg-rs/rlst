@@ -82,15 +82,15 @@ macro_rules! implement_evd_real {
                 match mode {
                     EigenvectorMode::All => {
                         jobvr = b'V';
-                        vr_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vr_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vr_data = vr_matrix.as_mut().unwrap().data_mut();
                         jobvl = b'V';
-                        vl_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vl_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vl_data = vl_matrix.as_mut().unwrap().data_mut();
                     }
                     EigenvectorMode::Right => {
                         jobvr = b'V';
-                        vr_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vr_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vr_data = vr_matrix.as_mut().unwrap().data_mut();
                         jobvl = b'N';
                         vl_matrix = None;
@@ -98,7 +98,7 @@ macro_rules! implement_evd_real {
                     }
                     EigenvectorMode::Left => {
                         jobvl = b'V';
-                        vl_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vl_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vl_data = vl_matrix.as_mut().unwrap().data_mut();
                         jobvr = b'N';
                         vr_matrix = None;
@@ -141,8 +141,10 @@ macro_rules! implement_evd_real {
                             .map(|(&re, &im)| <<$scalar as Scalar>::Complex>::new(re, im))
                             .collect::<Vec<<$scalar as Scalar>::Complex>>();
                         if jobvl == b'V' {
-                            vl_complex =
-                                Some(rlst_dense::rlst_mat![<$scalar as Scalar>::Complex, (m, m)]);
+                            vl_complex = Some(rlst_dense::rlst_dynamic_mat![
+                                <$scalar as Scalar>::Complex,
+                                (m, m)
+                            ]);
                             convert_eigvecs_to_complex(
                                 n,
                                 &eigenvalues,
@@ -151,8 +153,10 @@ macro_rules! implement_evd_real {
                             );
                         }
                         if jobvr == b'V' {
-                            vr_complex =
-                                Some(rlst_dense::rlst_mat![<$scalar as Scalar>::Complex, (m, m)]);
+                            vr_complex = Some(rlst_dense::rlst_dynamic_mat![
+                                <$scalar as Scalar>::Complex,
+                                (m, m)
+                            ]);
                             convert_eigvecs_to_complex(
                                 n,
                                 &eigenvalues,
@@ -210,15 +214,15 @@ macro_rules! implement_evd_complex {
                 match mode {
                     EigenvectorMode::All => {
                         jobvr = b'V';
-                        vr_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vr_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vr_data = vr_matrix.as_mut().unwrap().data_mut();
                         jobvl = b'V';
-                        vl_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vl_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vl_data = vl_matrix.as_mut().unwrap().data_mut();
                     }
                     EigenvectorMode::Right => {
                         jobvr = b'V';
-                        vr_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vr_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vr_data = vr_matrix.as_mut().unwrap().data_mut();
                         jobvl = b'N';
                         vl_matrix = None;
@@ -226,7 +230,7 @@ macro_rules! implement_evd_complex {
                     }
                     EigenvectorMode::Left => {
                         jobvl = b'V';
-                        vl_matrix = Some(rlst_dense::rlst_mat![$scalar, (m, m)]);
+                        vl_matrix = Some(rlst_dense::rlst_dynamic_mat![$scalar, (m, m)]);
                         vl_data = vl_matrix.as_mut().unwrap().data_mut();
                         jobvr = b'N';
                         vr_matrix = None;
@@ -313,7 +317,7 @@ macro_rules! implement_sym_evd {
                     0 => {
                         let eigvec_opt;
                         if jobv == b'V' {
-                            let mut eigvecs = rlst_dense::rlst_mat![$scalar, (m, m)];
+                            let mut eigvecs = rlst_dense::rlst_dynamic_mat![$scalar, (m, m)];
                             for col in 0..n {
                                 for row in 0..n {
                                     eigvecs[[row, col]] = mat.get_value(row, col).unwrap();
@@ -357,7 +361,7 @@ mod test {
             paste! {
                 #[test]
                 pub fn [<test_ev_$scalar>]() {
-                    let mut rlst_mat = rlst_dense::rlst_mat![$scalar, (2, 2)];
+                    let mut rlst_mat = rlst_dense::rlst_dynamic_mat![$scalar, (2, 2)];
                     rlst_mat.fill_from_seed_equally_distributed(0);
 
                     let (eigvals, right, left) =
@@ -365,7 +369,7 @@ mod test {
                     let left = left.unwrap().conj().transpose().eval();
                     let right = right.unwrap();
 
-                    let mut diag = rlst_dense::rlst_mat![<$scalar as Scalar>::Complex, (2, 2)];
+                    let mut diag = rlst_dense::rlst_dynamic_mat![<$scalar as Scalar>::Complex, (2, 2)];
                     diag.set_diag_from_slice(eigvals.as_slice());
 
                     let rlst_mat = rlst_mat.to_complex().eval();
@@ -388,7 +392,7 @@ mod test {
                 }
                 #[test]
                 pub fn [<test_sym_ev_$scalar>]() {
-                    let mut mat = rlst_dense::rlst_mat![$scalar, (3, 3)];
+                    let mut mat = rlst_dense::rlst_dynamic_mat![$scalar, (3, 3)];
 
                     mat.fill_from_seed_equally_distributed(0);
                     let mat = (mat.view() + mat.view().conj().transpose()).eval();
@@ -396,7 +400,7 @@ mod test {
                     let (eigvals, eigvecs) = mat.linalg().sym_evd(EigenvectorMode::All).unwrap();
                     let eigvecs = eigvecs.unwrap();
 
-                    let mut diag = rlst_dense::rlst_mat![<$scalar as Scalar>::Real, (3, 3)];
+                    let mut diag = rlst_dense::rlst_dynamic_mat![<$scalar as Scalar>::Real, (3, 3)];
                     diag.set_diag_from_iter(eigvals.iter().copied());
 
                     // Convert all to complex as otherwise
@@ -417,7 +421,7 @@ mod test {
 
     #[test]
     fn test_complex_conjugate_pair() {
-        let mut mat = rlst_dense::rlst_mat![f64, (3, 3)];
+        let mut mat = rlst_dense::rlst_dynamic_mat![f64, (3, 3)];
 
         mat[[0, 0]] = 1.0;
         mat[[0, 1]] = 1.0;

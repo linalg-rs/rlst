@@ -7,7 +7,7 @@ use crate::traits::lu_decomp::{LUDecomp, LU};
 use lapacke;
 use num::traits::One;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{rlst_mat, traits::*, MatrixD};
+use rlst_dense::{rlst_dynamic_mat, traits::*, MatrixD};
 
 use crate::linalg::DenseMatrixLinAlgBuilder;
 use crate::traits::types::*;
@@ -72,7 +72,7 @@ macro_rules! lu_decomp_impl {
             fn get_l(&self) -> MatrixD<Self::T> {
                 let shape = self.shape();
                 let dim = std::cmp::min(shape.0, shape.1);
-                let mut mat = rlst_mat!(Self::T, (shape.0, dim));
+                let mut mat = rlst_dynamic_mat!(Self::T, (shape.0, dim));
 
                 for col in 0..dim {
                     for row in (1 + col)..shape.0 {
@@ -100,7 +100,7 @@ macro_rules! lu_decomp_impl {
             fn get_u(&self) -> MatrixD<Self::T> {
                 let shape = self.shape();
                 let dim = std::cmp::min(shape.0, shape.1);
-                let mut mat = rlst_mat!(Self::T, (dim, shape.1));
+                let mut mat = rlst_dynamic_mat!(Self::T, (dim, shape.1));
 
                 for row in 0..dim {
                     for col in row..shape.1 {
@@ -136,7 +136,7 @@ macro_rules! lu_decomp_impl {
                     return Err(RlstError::MatrixIsEmpty(rhs.shape()));
                 }
 
-                let mut sol = rlst_mat![$scalar, rhs.shape()];
+                let mut sol = rlst_dynamic_mat![$scalar, rhs.shape()];
 
                 for col_index in 0..rhs.shape().1 {
                     for row_index in 0..rhs.shape().0 {
@@ -190,7 +190,7 @@ mod test {
 
     #[test]
     fn test_lu_solve_f64() {
-        let mut rlst_mat = rlst_dense::rlst_mat![f64, (2, 2)];
+        let mut rlst_mat = rlst_dense::rlst_dynamic_mat![f64, (2, 2)];
         let mut rlst_vec = rlst_dense::rlst_col_vec![f64, 2];
 
         rlst_mat[[0, 0]] = 1.0;
@@ -218,7 +218,7 @@ mod test {
     fn test_thin_lu_decomp() {
         let mut rng = ChaCha8Rng::seed_from_u64(0);
 
-        let mut mat = rlst_mat!(f64, (10, 6));
+        let mut mat = rlst_dynamic_mat!(f64, (10, 6));
 
         mat.fill_from_standard_normal(&mut rng);
 
@@ -243,7 +243,7 @@ mod test {
     fn test_thick_lu_decomp() {
         let mut rng = ChaCha8Rng::seed_from_u64(0);
 
-        let mut mat = rlst_mat!(f64, (6, 10));
+        let mut mat = rlst_dynamic_mat!(f64, (6, 10));
 
         mat.fill_from_standard_normal(&mut rng);
 

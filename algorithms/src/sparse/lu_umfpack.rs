@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use rlst_common::types::{c64, RlstError, Scalar};
-use rlst_dense::{rlst_mat, MatrixD, RawAccessMut, Shape};
+use rlst_dense::{rlst_dynamic_mat, MatrixD, RawAccessMut, Shape};
 use rlst_sparse::sparse::{csc_mat::CscMatrix, csr_mat::CsrMatrix};
 use rlst_umfpack as umfpack;
 use std::ffi::c_void;
@@ -221,7 +221,7 @@ impl LUDecomp for UmfpackLu<f64> {
 
         let n = self.shape().0;
 
-        let mut sol = rlst_mat![f64, rhs.shape()];
+        let mut sol = rlst_dynamic_mat![f64, rhs.shape()];
         let mut b = vec![0.0; n];
 
         for col_index in 0..sol.shape().1 {
@@ -297,7 +297,7 @@ impl LUDecomp for UmfpackLu<c64> {
 
         let n = self.shape().0;
 
-        let mut sol = rlst_mat![c64, rhs.shape()];
+        let mut sol = rlst_dynamic_mat![c64, rhs.shape()];
         let mut b = vec![c64::new(0.0, 0.0); n];
 
         for col_index in 0..sol.shape().1 {

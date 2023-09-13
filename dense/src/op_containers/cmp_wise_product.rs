@@ -13,32 +13,29 @@ use crate::DefaultLayout;
 use std::marker::PhantomData;
 
 /// A type that represents the componentwise product of two matrices.
-pub type CmpWiseProductMat<Item, MatImpl1, MatImpl2, RS, CS> =
-    Matrix<Item, CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>, RS, CS>;
+pub type CmpWiseProductMat<Item, MatImpl1, MatImpl2, S> =
+    Matrix<Item, CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>, S>;
 
-pub struct CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>(
-    Matrix<Item, MatImpl1, RS, CS>,
-    Matrix<Item, MatImpl2, RS, CS>,
+pub struct CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>(
+    Matrix<Item, MatImpl1, S>,
+    Matrix<Item, MatImpl2, S>,
     DefaultLayout,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl1: MatrixImplTrait<Item, RS, CS>,
-    MatImpl2: MatrixImplTrait<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl1: MatrixImplTrait<Item, S>,
+    MatImpl2: MatrixImplTrait<Item, S>;
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
-    pub fn new(mat1: Matrix<Item, MatImpl1, RS, CS>, mat2: Matrix<Item, MatImpl2, RS, CS>) -> Self {
+    pub fn new(mat1: Matrix<Item, MatImpl1, S>, mat2: Matrix<Item, MatImpl2, S>) -> Self {
         assert_eq!(
             mat1.layout().dim(),
             mat2.layout().dim(),
@@ -47,23 +44,16 @@ impl<
             mat2.layout().dim()
         );
         let dim = mat1.layout().dim();
-        Self(
-            mat1,
-            mat2,
-            DefaultLayout::from_dimension(dim),
-            PhantomData,
-            PhantomData,
-        )
+        Self(mat1, mat2, DefaultLayout::from_dimension(dim), PhantomData)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Layout for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
     type Impl = DefaultLayout;
 
@@ -74,23 +64,20 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Size for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
-    type C = CS;
-    type R = RS;
+    type S = S;
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > UnsafeRandomAccessByValue for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
     type Item = Item;
 
@@ -107,22 +94,20 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixImplIdentifier for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > MatrixImplIdentifier for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
     const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccess for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccess for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
     type T = Item;
 
@@ -144,11 +129,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccessMut for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccessMut for CmpWiseProductContainer<Item, MatImpl1, MatImpl2, S>
 {
     #[inline]
     fn data_mut(&mut self) -> &mut [Self::T] {

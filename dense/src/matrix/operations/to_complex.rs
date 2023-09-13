@@ -7,29 +7,23 @@ use rlst_common::traits::ToComplex;
 
 pub use rlst_common::types::{c32, c64, Scalar};
 
-impl<MatImpl: MatrixImplTrait<f64, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> ToComplex
-    for Matrix<f64, MatImpl, RS, CS>
-{
-    type Out = ComplexMat<c64, MatImpl, RS, CS>;
+impl<MatImpl: MatrixImplTrait<f64, S>, S: SizeIdentifier> ToComplex for Matrix<f64, MatImpl, S> {
+    type Out = ComplexMat<c64, MatImpl, S>;
 
     fn to_complex(self) -> Self::Out {
-        Matrix::new(ComplexContainer::<c64, MatImpl, RS, CS>::new(self))
+        Matrix::new(ComplexContainer::<c64, MatImpl, S>::new(self))
     }
 }
 
-impl<MatImpl: MatrixImplTrait<f32, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> ToComplex
-    for Matrix<f32, MatImpl, RS, CS>
-{
-    type Out = ComplexMat<c32, MatImpl, RS, CS>;
+impl<MatImpl: MatrixImplTrait<f32, S>, S: SizeIdentifier> ToComplex for Matrix<f32, MatImpl, S> {
+    type Out = ComplexMat<c32, MatImpl, S>;
 
     fn to_complex(self) -> Self::Out {
-        Matrix::new(ComplexContainer::<c32, MatImpl, RS, CS>::new(self))
+        Matrix::new(ComplexContainer::<c32, MatImpl, S>::new(self))
     }
 }
 
-impl<MatImpl: MatrixImplTrait<c32, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> ToComplex
-    for Matrix<c32, MatImpl, RS, CS>
-{
+impl<MatImpl: MatrixImplTrait<c32, S>, S: SizeIdentifier> ToComplex for Matrix<c32, MatImpl, S> {
     type Out = Self;
 
     fn to_complex(self) -> Self::Out {
@@ -37,9 +31,7 @@ impl<MatImpl: MatrixImplTrait<c32, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifi
     }
 }
 
-impl<MatImpl: MatrixImplTrait<c64, RS, CS>, RS: SizeIdentifier, CS: SizeIdentifier> ToComplex
-    for Matrix<c64, MatImpl, RS, CS>
-{
+impl<MatImpl: MatrixImplTrait<c64, S>, S: SizeIdentifier> ToComplex for Matrix<c64, MatImpl, S> {
     type Out = Self;
 
     fn to_complex(self) -> Self::Out {

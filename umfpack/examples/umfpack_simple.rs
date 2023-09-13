@@ -6,10 +6,10 @@ use rlst_umfpack as umfpack;
 pub fn main() {
     let n = 5;
 
-    let ai = vec![0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];
-    let ap = vec![0, 2, 5, 9, 10, 12];
-    let ax = vec![2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
-    let b = vec![8.0, 45.0, -3.0, 3.0, 19.0];
+    let ai = [0, 1, 0, 2, 4, 1, 2, 3, 4, 2, 1, 4];
+    let ap = [0, 2, 5, 9, 10, 12];
+    let ax = [2.0, 3.0, 3.0, -1.0, 4.0, 4.0, -3.0, 1.0, 2.0, 2.0, 6.0, 1.0];
+    let b = [8.0, 45.0, -3.0, 3.0, 19.0];
     let mut symbolic = std::ptr::null_mut::<c_void>();
     let mut numeric = std::ptr::null_mut::<c_void>();
     let mut x = vec![0.0; 5];

@@ -13,32 +13,29 @@ use crate::DefaultLayout;
 use std::marker::PhantomData;
 
 /// A type that represents the sum of two matrices.
-pub type SubtractionMat<Item, MatImpl1, MatImpl2, RS, CS> =
-    Matrix<Item, Subtraction<Item, MatImpl1, MatImpl2, RS, CS>, RS, CS>;
+pub type SubtractionMat<Item, MatImpl1, MatImpl2, S> =
+    Matrix<Item, Subtraction<Item, MatImpl1, MatImpl2, S>, S>;
 
-pub struct Subtraction<Item, MatImpl1, MatImpl2, RS, CS>(
-    Matrix<Item, MatImpl1, RS, CS>,
-    Matrix<Item, MatImpl2, RS, CS>,
+pub struct Subtraction<Item, MatImpl1, MatImpl2, S>(
+    Matrix<Item, MatImpl1, S>,
+    Matrix<Item, MatImpl2, S>,
     DefaultLayout,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl1: MatrixImplTrait<Item, RS, CS>,
-    MatImpl2: MatrixImplTrait<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl1: MatrixImplTrait<Item, S>,
+    MatImpl2: MatrixImplTrait<Item, S>;
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Subtraction<Item, MatImpl1, MatImpl2, S>
 {
-    pub fn new(mat1: Matrix<Item, MatImpl1, RS, CS>, mat2: Matrix<Item, MatImpl2, RS, CS>) -> Self {
+    pub fn new(mat1: Matrix<Item, MatImpl1, S>, mat2: Matrix<Item, MatImpl2, S>) -> Self {
         assert_eq!(
             mat1.layout().dim(),
             mat2.layout().dim(),
@@ -47,23 +44,16 @@ impl<
             mat2.layout().dim()
         );
         let dim = mat1.layout().dim();
-        Self(
-            mat1,
-            mat2,
-            DefaultLayout::from_dimension(dim),
-            PhantomData,
-            PhantomData,
-        )
+        Self(mat1, mat2, DefaultLayout::from_dimension(dim), PhantomData)
     }
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Layout for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
     type Impl = DefaultLayout;
 
@@ -74,34 +64,30 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Size for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
-    type C = CS;
-    type R = RS;
+    type S = S;
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixImplIdentifier for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > MatrixImplIdentifier for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
     const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccess for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccess for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
     type T = Item;
 
@@ -123,11 +109,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > RawAccessMut for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccessMut for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
     #[inline]
     fn data_mut(&mut self) -> &mut [Self::T] {
@@ -147,11 +132,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for Subtraction<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > UnsafeRandomAccessByValue for Subtraction<Item, MatImpl1, MatImpl2, S>
 {
     type Item = Item;
 
@@ -168,15 +152,14 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Sub<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Sub<Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
 {
-    type Output = SubtractionMat<Item, MatImpl1, MatImpl2, RS, CS>;
+    type Output = SubtractionMat<Item, MatImpl1, MatImpl2, S>;
 
-    fn sub(self, rhs: Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn sub(self, rhs: Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Subtraction::new(self, rhs))
     }
 }
@@ -184,15 +167,14 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Sub<&'a Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Sub<&'a Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
 {
-    type Output = SubtractionMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, RS, CS>, RS, CS>;
+    type Output = SubtractionMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, S>, S>;
 
-    fn sub(self, rhs: &'a Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn sub(self, rhs: &'a Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Subtraction::new(self, Matrix::from_ref(rhs)))
     }
 }
@@ -200,15 +182,14 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Sub<Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Sub<Matrix<Item, MatImpl2, S>> for &'a Matrix<Item, MatImpl1, S>
 {
-    type Output = SubtractionMat<Item, MatrixRef<'a, Item, MatImpl1, RS, CS>, MatImpl2, RS, CS>;
+    type Output = SubtractionMat<Item, MatrixRef<'a, Item, MatImpl1, S>, MatImpl2, S>;
 
-    fn sub(self, rhs: Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn sub(self, rhs: Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Subtraction::new(Matrix::from_ref(self), rhs))
     }
 }
@@ -216,21 +197,15 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Sub<&'a Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Sub<&'a Matrix<Item, MatImpl2, S>> for &'a Matrix<Item, MatImpl1, S>
 {
-    type Output = SubtractionMat<
-        Item,
-        MatrixRef<'a, Item, MatImpl1, RS, CS>,
-        MatrixRef<'a, Item, MatImpl2, RS, CS>,
-        RS,
-        CS,
-    >;
+    type Output =
+        SubtractionMat<Item, MatrixRef<'a, Item, MatImpl1, S>, MatrixRef<'a, Item, MatImpl2, S>, S>;
 
-    fn sub(self, rhs: &'a Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn sub(self, rhs: &'a Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Subtraction::new(
             Matrix::from_ref(self),
             Matrix::from_ref(rhs),
@@ -246,8 +221,8 @@ mod test {
 
     #[test]
     fn scalar_mult() {
-        let mut mat1 = crate::rlst_mat![f64, (2, 3)];
-        let mut mat2 = crate::rlst_mat![f64, (2, 3)];
+        let mut mat1 = crate::rlst_dynamic_mat![f64, (2, 3)];
+        let mut mat2 = crate::rlst_dynamic_mat![f64, (2, 3)];
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;
