@@ -1,20 +1,24 @@
 //! Traits describing properties of objects.
 
 /// Return the shape of the object.
-pub trait Shape {
-    fn shape(&self) -> (usize, usize);
+pub trait Shape<const NDIM: usize> {
+    fn shape(&self) -> [usize; NDIM];
 
     /// Return true if a dimension is 0.
     fn is_empty(&self) -> bool {
         let shape = self.shape();
-
-        shape.0 == 0 || shape.1 == 0
+        for elem in shape {
+            if elem == 0 {
+                return true;
+            }
+        }
+        false
     }
 }
 
 /// Return the stride of the object.
-pub trait Stride {
-    fn stride(&self) -> (usize, usize);
+pub trait Stride<const NDIM: usize> {
+    fn stride(&self) -> [usize; NDIM];
 }
 
 /// Return the number of elements.

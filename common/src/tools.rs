@@ -122,7 +122,7 @@ pub trait PrettyPrint<T: Scalar> {
 
 macro_rules! pretty_print_impl {
     ($scalar:ty, $fmtfun:ident) => {
-        impl<Mat: RandomAccessByValue<Item = $scalar> + Shape> PrettyPrint<$scalar> for Mat {
+        impl<Mat: RandomAccessByValue<2, Item = $scalar> + Shape<2>> PrettyPrint<$scalar> for Mat {
             fn pretty_print(&self) {
                 self.pretty_print_advanced(10, 10, 11, 3, 2)
             }
@@ -140,8 +140,8 @@ macro_rules! pretty_print_impl {
                 exponent: usize,
             ) {
                 let shape = (
-                    std::cmp::min(self.shape().0, rows),
-                    std::cmp::min(self.shape().1, cols),
+                    std::cmp::min(self.shape()[0], rows),
+                    std::cmp::min(self.shape()[1], cols),
                 );
                 let mut content_str = String::new();
 
@@ -150,11 +150,11 @@ macro_rules! pretty_print_impl {
 
                 let num_outer_spaces = print_width - mantissa - exponent - 4;
 
-                let mut x_ij = self.get_value(0, 0).unwrap();
+                let mut x_ij = self.get_value([0, 0]).unwrap();
                 for row in 0..shape.0 {
                     content_str += "│";
                     for col in 0..shape.1 {
-                        x_ij = self.get_value(row, col).unwrap();
+                        x_ij = self.get_value([row, col]).unwrap();
 
                         content_str += &format!(
                             " {}",
@@ -180,8 +180,8 @@ macro_rules! pretty_print_impl {
                     "Printing the upper left {} x {} block of a matrix with dimensions {} x {}.",
                     shape.0,
                     shape.1,
-                    self.shape().0,
-                    self.shape().1
+                    self.shape()[0],
+                    self.shape()[1]
                 );
                 println!("{top_str}{content_str}{btm_str}");
             }

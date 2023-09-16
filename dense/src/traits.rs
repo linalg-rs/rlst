@@ -8,12 +8,11 @@
 //! - [Matrix storage layout.](layout)
 //! - [Summary trait defining a matrix.](matrix)
 
-pub mod layout;
-pub mod matrix;
-pub mod size;
+// pub mod layout;
+// pub mod matrix;
+// pub mod size;
 
-pub use layout::*;
-pub use matrix::*;
-pub use rlst_common::traits::accessors::*;
-pub use rlst_common::traits::properties::*;
-pub use size::*;
+// pub use matrix::*;
+// pub use rlst_common::traits::accessors::*;
+// pub use rlst_common::traits::properties::*;
+// pub use size::*;

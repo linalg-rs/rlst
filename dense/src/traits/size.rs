@@ -28,6 +28,12 @@ pub trait MatrixBuilder<T: Scalar> {
     fn new_matrix(dim: (usize, usize)) -> Self::Out;
 }
 
+pub trait ArrayBuilder<T: Scalar, const N: usize> {
+    type Out;
+
+    fn new_array(dim: [usize; N]) -> Self::Out;
+}
+
 pub trait Size {
     type S: SizeIdentifier;
 }
@@ -58,4 +64,9 @@ impl<T: Scalar> MatrixBuilder<T> for Dynamic {
 pub enum SizeIdentifierValue {
     Dynamic,
     Static(usize, usize),
+}
+
+pub enum ArraySizeValue<const N: usize> {
+    Dynamic,
+    Static([usize; N]),
 }

@@ -11,7 +11,7 @@
 //!
 //!
 
-use crate::types::Scalar;
+use rlst_common::types::Scalar;
 
 pub trait DataContainer {
     type Item: Scalar;
@@ -102,10 +102,12 @@ pub trait DataContainerMut: DataContainer {
 }
 
 /// A container that uses dynamic vectors.
+#[derive(Clone)]
 pub struct VectorContainer<Item: Scalar> {
     data: Vec<Item>,
 }
 
+#[derive(Clone)]
 pub struct ArrayContainer<Item: Scalar, const N: usize> {
     data: [Item; N],
 }

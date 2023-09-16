@@ -14,97 +14,63 @@
 //!
 //! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
-use crate::traits::properties::{NumberOfElements, Shape};
+use crate::traits::properties::Shape;
 use crate::types::Scalar;
 
 /// This trait provides unsafe access by value to the underlying data.
-pub trait UnsafeRandomAccessByValue {
+pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
     type Item: Scalar;
 
-    /// Return the element at position (`row`, `col`).
+    /// Return the element at position determined by `indices`.
     ///
     /// # Safety
-    /// `row` and `col` must not be out of bounds.
-    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item;
-
-    /// Return the element at position `index` in one-dimensional numbering.
-    ///
-    /// # Safety
-    /// `row` and `col` must not be out of bounds.
-    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item;
+    /// `indices` must not be out of bounds.
+    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item;
 }
 
 /// This trait provides unsafe access by reference to the underlying data.
-pub trait UnsafeRandomAccessByRef {
+pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
     type Item: Scalar;
 
-    /// Return a mutable reference to the element at position (`row`, `col`).
+    /// Return a mutable reference to the element at position determined by `indices`.
     ///
     /// # Safety
-    /// `row` and `col` must not be out of bounds.
-    unsafe fn get_unchecked(&self, row: usize, col: usize) -> &Self::Item;
-
-    /// Return a mutable reference at position `index` in one-dimensional numbering.
-    ///
-    /// # Safety
-    /// `row` and `col` must not be out of bounds.
-    unsafe fn get1d_unchecked(&self, index: usize) -> &Self::Item;
+    /// `indices` must not be out of bounds.
+    unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item;
 }
 
 /// This trait provides unsafe mutable access to the underlying data.
-pub trait UnsafeRandomAccessMut {
+pub trait UnsafeRandomAccessMut<const NDIM: usize> {
     type Item: Scalar;
 
-    /// Return a mutable reference to the element at position (`row`, `col`).
+    /// Return a mutable reference to the element at position determined by `indices`.
     ///
     /// # Safety
-    /// `row` and `col` must not be out of bounds.
-    unsafe fn get_unchecked_mut(&mut self, row: usize, col: usize) -> &mut Self::Item;
-
-    /// Return a mutable reference at position `index` in one-dimensional numbering.
-    ///
-    /// # Safety
-    /// `index` must not be out of bounds.
-    unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item;
+    /// `indices` must not be out of bounds.
+    unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item;
 }
 
 /// This trait provides bounds checked access to the underlying data by value.
-pub trait RandomAccessByValue: UnsafeRandomAccessByValue {
-    /// Return the element at position (`row`, `col`).
-    fn get_value(&self, row: usize, col: usize) -> Option<Self::Item>;
-
-    /// Return the element at position `index` in one-dimensional numbering.
-    fn get1d_value(&self, elem: usize) -> Option<Self::Item>;
+pub trait RandomAccessByValue<const NDIM: usize>: UnsafeRandomAccessByValue<NDIM> {
+    /// Return the element at position determined by `indices`.
+    fn get_value(&self, indices: [usize; NDIM]) -> Option<Self::Item>;
 }
 
 /// This trait provides bounds checked access to the underlying data by reference.
-pub trait RandomAccessByRef: UnsafeRandomAccessByRef {
-    /// Return a reference to the element at position (`row`, `col`).
-    fn get(&self, row: usize, col: usize) -> Option<&Self::Item>;
-
-    /// Return a reference at position `index` in one-dimensional numbering.
-    fn get1d(&self, elem: usize) -> Option<&Self::Item>;
+pub trait RandomAccessByRef<const NDIM: usize>: UnsafeRandomAccessByRef<NDIM> {
+    /// Return a reference to the element at position determined by `indices`.
+    fn get(&self, indices: [usize; NDIM]) -> Option<&Self::Item>;
 }
 
 /// This trait provides bounds checked mutable access to the underlying data.
-pub trait RandomAccessMut: UnsafeRandomAccessMut {
-    /// Return a mutable reference to the element at position (`row`, `col`).
-    fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut Self::Item>;
-
-    /// Return a mutable reference at position `index` in one-dimensional numbering.
-    fn get1d_mut(&mut self, elem: usize) -> Option<&mut Self::Item>;
+pub trait RandomAccessMut<const NDIM: usize>: UnsafeRandomAccessMut<NDIM> {
+    /// Return a mutable reference to the element at position determined by `indices`.
+    fn get_mut(&mut self, indices: [usize; NDIM]) -> Option<&mut Self::Item>;
 }
 
 /// Get raw access to the underlying data.
 pub trait RawAccess {
     type T: Scalar;
-
-    /// Get a raw pointer to the data.
-    fn get_pointer(&self) -> *const Self::T;
-
-    /// Get a data slice in the half-open interval `[first, last)`,
-    /// which includes `first` and excludes `last`.
-    fn get_slice(&self, first: usize, last: usize) -> &[Self::T];
 
     /// Get a slice of the whole data.
     fn data(&self) -> &[Self::T];
@@ -112,83 +78,58 @@ pub trait RawAccess {
 
 /// Get mutable raw access to the underlying data.
 pub trait RawAccessMut: RawAccess {
-    /// Get a mutable raw pointer to the data.
-    fn get_pointer_mut(&mut self) -> *mut Self::T;
-
-    /// Get a mutable data slice in the half-open interval `[first, last)`,
-    /// which includes `first` and excludes `last`.
-    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Self::T];
-
     /// Get a mutable slice of the whole data.
     fn data_mut(&mut self) -> &mut [Self::T];
 }
 
-/// Check if `row` and `col` are valid with respect to the shape `shape`.
+/// Check if `indices` not out of bounds with respect to `shape`.
 #[inline]
-fn check_dimension(row: usize, col: usize, shape: (usize, usize)) -> bool {
-    row < shape.0 && col < shape.1
+fn check_dimension<const NDIM: usize>(indices: [usize; NDIM], shape: [usize; NDIM]) -> bool {
+    indices
+        .iter()
+        .zip(shape.iter())
+        .fold(true, |acc, (ind, s)| acc && (ind < s))
 }
 
-/// Check if `elem` is smaller than `nelems`.
-#[inline]
-fn check_dimension1d(elem: usize, nelems: usize) -> bool {
-    elem < nelems
-}
-
-impl<Item: Scalar, Mat: UnsafeRandomAccessByValue<Item = Item> + Shape + NumberOfElements>
-    RandomAccessByValue for Mat
+impl<
+        Item: Scalar,
+        Mat: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > RandomAccessByValue<NDIM> for Mat
 {
-    fn get_value(&self, row: usize, col: usize) -> Option<Self::Item> {
-        if check_dimension(row, col, self.shape()) {
-            Some(unsafe { self.get_value_unchecked(row, col) })
-        } else {
-            None
-        }
-    }
-
-    fn get1d_value(&self, elem: usize) -> Option<Self::Item> {
-        if check_dimension1d(elem, self.number_of_elements()) {
-            Some(unsafe { self.get1d_value_unchecked(elem) })
+    fn get_value(&self, indices: [usize; NDIM]) -> Option<Self::Item> {
+        if check_dimension(indices, self.shape()) {
+            Some(unsafe { self.get_value_unchecked(indices) })
         } else {
             None
         }
     }
 }
 
-impl<Item: Scalar, Mat: UnsafeRandomAccessMut<Item = Item> + Shape + NumberOfElements>
-    RandomAccessMut for Mat
+impl<
+        Item: Scalar,
+        Mat: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > RandomAccessMut<NDIM> for Mat
 {
-    fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut Self::Item> {
-        if check_dimension(row, col, self.shape()) {
-            unsafe { Some(self.get_unchecked_mut(row, col)) }
-        } else {
-            None
-        }
-    }
-
-    fn get1d_mut(&mut self, elem: usize) -> Option<&mut Self::Item> {
-        if check_dimension1d(elem, self.number_of_elements()) {
-            unsafe { Some(self.get1d_unchecked_mut(elem)) }
+    fn get_mut(&mut self, indices: [usize; NDIM]) -> Option<&mut Self::Item> {
+        if check_dimension(indices, self.shape()) {
+            unsafe { Some(self.get_unchecked_mut(indices)) }
         } else {
             None
         }
     }
 }
 
-impl<Item: Scalar, Mat: UnsafeRandomAccessByRef<Item = Item> + Shape + NumberOfElements>
-    RandomAccessByRef for Mat
+impl<
+        Item: Scalar,
+        Mat: UnsafeRandomAccessByRef<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > RandomAccessByRef<NDIM> for Mat
 {
-    fn get(&self, row: usize, col: usize) -> Option<&Self::Item> {
-        if check_dimension(row, col, self.shape()) {
-            unsafe { Some(self.get_unchecked(row, col)) }
-        } else {
-            None
-        }
-    }
-
-    fn get1d(&self, elem: usize) -> Option<&Self::Item> {
-        if check_dimension1d(elem, self.number_of_elements()) {
-            unsafe { Some(self.get1d_unchecked(elem)) }
+    fn get(&self, indices: [usize; NDIM]) -> Option<&Self::Item> {
+        if check_dimension(indices, self.shape()) {
+            unsafe { Some(self.get_unchecked(indices)) }
         } else {
             None
         }
