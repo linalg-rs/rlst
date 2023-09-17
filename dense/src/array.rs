@@ -1,5 +1,9 @@
 //! Basic Array type
 
+use crate::base_array::BaseArray;
+use crate::data_container::VectorContainer;
+use rlst_common::traits::RandomAccessByRef;
+use rlst_common::traits::RandomAccessMut;
 use rlst_common::traits::Shape;
 use rlst_common::traits::UnsafeRandomAccessByRef;
 use rlst_common::traits::UnsafeRandomAccessByValue;
@@ -7,6 +11,10 @@ use rlst_common::traits::UnsafeRandomAccessMut;
 use rlst_common::types::Scalar;
 
 pub mod iterators;
+pub mod operations;
+
+pub type DynamicArray<Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
 pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
@@ -22,6 +30,17 @@ impl<
 {
     pub fn new(arr: ArrayImpl) -> Self {
         Self(arr)
+    }
+
+    pub fn new_dynamic_like_self(&self) -> DynamicArray<Item, NDIM> {
+        DynamicArray::<Item, NDIM>::from_shape(self.shape())
+    }
+}
+
+impl<Item: Scalar, const NDIM: usize> DynamicArray<Item, NDIM> {
+    pub fn from_shape(shape: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
 }
 
@@ -73,5 +92,33 @@ impl<
     type Item = Item;
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
         self.0.get_unchecked_mut(indices)
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
+        const NDIM: usize,
+    > std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
+{
+    type Output = Item;
+    fn index(&self, index: [usize; NDIM]) -> &Self::Output {
+        self.0.get(index).unwrap()
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > std::ops::IndexMut<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
+{
+    fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
+        self.0.get_mut(index).unwrap()
     }
 }

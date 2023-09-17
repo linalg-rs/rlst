@@ -6,8 +6,8 @@ use crate::types::Scalar;
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIterator {
-    type T: Scalar;
-    type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::T)>
+    type Item: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where
         Self: 'a;
 
@@ -16,8 +16,8 @@ pub trait AijIterator {
 
 /// Iterate through the elements in column-major ordering.
 pub trait ColumnMajorIterator {
-    type T: Scalar;
-    type Iter<'a>: std::iter::Iterator<Item = Self::T>
+    type Item: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
         Self: 'a;
 
@@ -26,8 +26,8 @@ pub trait ColumnMajorIterator {
 
 /// Default iterator.
 pub trait DefaultIterator {
-    type T: Scalar;
-    type Iter<'a>: std::iter::Iterator<Item = Self::T>
+    type Item: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
         Self: 'a;
 
@@ -36,8 +36,8 @@ pub trait DefaultIterator {
 
 /// Mutable iterator through the elements in column-major ordering.
 pub trait ColumnMajorIteratorMut {
-    type T: Scalar;
-    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::T>
+    type Item: Scalar;
+    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
@@ -46,8 +46,8 @@ pub trait ColumnMajorIteratorMut {
 
 /// Mutable default iterator.
 pub trait DefaultIteratorMut {
-    type T: Scalar;
-    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::T>
+    type Item: Scalar;
+    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
@@ -56,8 +56,8 @@ pub trait DefaultIteratorMut {
 
 /// Iterate through the diagonal.
 pub trait DiagonalIterator {
-    type T: Scalar;
-    type Iter<'a>: std::iter::Iterator<Item = Self::T>
+    type Item: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
         Self: 'a;
 
@@ -66,8 +66,8 @@ pub trait DiagonalIterator {
 
 /// Mutable iterator through the diagonal.
 pub trait DiagonalIteratorMut {
-    type T: Scalar;
-    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::T>
+    type Item: Scalar;
+    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
@@ -76,7 +76,7 @@ pub trait DiagonalIteratorMut {
 
 /// Apply an `FnMut` closure to each element.
 pub trait ForEach {
-    type T: Scalar;
+    type Item: Scalar;
 
-    fn for_each<F: FnMut(&mut Self::T)>(&mut self, f: F);
+    fn for_each<F: FnMut(&mut Self::Item)>(&mut self, f: F);
 }
