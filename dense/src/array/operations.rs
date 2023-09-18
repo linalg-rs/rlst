@@ -12,7 +12,7 @@ impl<
         const NDIM: usize,
     > FillFrom<Other> for Array<Item, ArrayImpl, NDIM>
 {
-    fn fill_from(&mut self, other: &Other) {
+    fn fill_from(&mut self, other: Other) {
         assert_eq!(self.shape(), other.shape());
 
         for (item, other_item) in self.iter_mut().zip(other.iter()) {
@@ -32,7 +32,7 @@ impl<
     > SumInto<Other> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    fn sum_into(&mut self, alpha: Self::Item, other: &Other) {
+    fn sum_into(&mut self, alpha: Self::Item, other: Other) {
         for (item, other_item) in self.iter_mut().zip(other.iter()) {
             *item += alpha * other_item;
         }

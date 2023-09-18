@@ -18,6 +18,13 @@ macro_rules! rlst_dynamic_array2 {
 }
 
 #[macro_export]
+macro_rules! rlst_dynamic_array1 {
+    ($ScalarType:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$ScalarType, 1>::from_shape($shape)
+    }};
+}
+
+#[macro_export]
 macro_rules! rlst_dynamic_array3 {
     ($ScalarType:ty, $shape:expr) => {{
         $crate::array::DynamicArray::<$ScalarType, 3>::from_shape($shape)

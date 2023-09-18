@@ -11,14 +11,14 @@ pub trait ScaleInPlace {
 
 /// Fill the object from `other`.
 pub trait FillFrom<Other> {
-    fn fill_from(&mut self, other: &Other);
+    fn fill_from(&mut self, other: Other);
 }
 
 /// Add `alpha * other` to `self`.
 pub trait SumInto<Other> {
     type Item: Scalar;
 
-    fn sum_into(&mut self, alpha: Self::Item, other: &Other);
+    fn sum_into(&mut self, alpha: Self::Item, other: Other);
 }
 
 /// Set the diagonal of an object from a given iterator.

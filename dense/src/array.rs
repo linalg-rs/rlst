@@ -2,6 +2,7 @@
 
 use crate::base_array::BaseArray;
 use crate::data_container::VectorContainer;
+use crate::layout::convert_1d_nd;
 use rlst_common::traits::RandomAccessByRef;
 use rlst_common::traits::RandomAccessMut;
 use rlst_common::traits::Shape;
@@ -12,6 +13,9 @@ use rlst_common::types::Scalar;
 
 pub mod iterators;
 pub mod operations;
+pub mod operators;
+pub mod random;
+pub mod views;
 
 pub type DynamicArray<Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
@@ -62,6 +66,7 @@ impl<
     > UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
+    #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
         self.0.get_value_unchecked(indices)
     }
@@ -76,6 +81,7 @@ impl<
     > UnsafeRandomAccessByRef<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
+    #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
         self.0.get_unchecked(indices)
     }
@@ -90,6 +96,7 @@ impl<
     > UnsafeRandomAccessMut<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
+    #[inline]
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
         self.0.get_unchecked_mut(indices)
     }
@@ -104,6 +111,7 @@ impl<
     > std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
     type Output = Item;
+    #[inline]
     fn index(&self, index: [usize; NDIM]) -> &Self::Output {
         self.0.get(index).unwrap()
     }
@@ -118,6 +126,7 @@ impl<
         const NDIM: usize,
     > std::ops::IndexMut<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
+    #[inline]
     fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
         self.0.get_mut(index).unwrap()
     }

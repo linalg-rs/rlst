@@ -19,10 +19,13 @@ pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDI
 /// Convert an n-d index into a 1d index.
 #[inline]
 pub fn convert_nd_1d<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; NDIM]) -> usize {
-    indices
-        .iter()
-        .zip(stride.iter())
-        .fold(0, |acc, (ind, s)| acc + ind * s)
+    let mut acc = 0;
+
+    for ind in 0..NDIM {
+        acc += indices[ind] * stride[ind];
+    }
+
+    acc
 }
 
 /// Convert a 1d index into a nd index.

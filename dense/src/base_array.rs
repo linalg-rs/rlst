@@ -46,6 +46,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 {
     type Item = Item;
 
+    #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
         let index = convert_nd_1d(indices, self.stride);
         self.data.get_unchecked(index)
@@ -57,6 +58,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 {
     type Item = Item;
 
+    #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
         let index = convert_nd_1d(indices, self.stride);
         self.data.get_unchecked_value(index)
@@ -68,6 +70,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
 {
     type Item = Item;
 
+    #[inline]
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
         let index = convert_nd_1d(indices, self.stride);
         self.data.get_unchecked_mut(index)
