@@ -1,5 +1,7 @@
 //! Views onto an array
 
+use crate::layout::{convert_1d_nd, stride_from_shape};
+
 use super::Array;
 use rlst_common::traits::*;
 
@@ -126,6 +128,42 @@ impl<
     }
 }
 
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        if self.offset == [0; NDIM] && self.shape() == self.arr.shape() {
+            // If the view is on the full array we can just pass on the chunk request
+            self.arr.get_chunk(chunk_index)
+        } else {
+            // If the view is on a subsection of the array have to recalcuate the chunk
+            let nelements = self.shape().iter().product();
+            let stride = stride_from_shape(self.shape());
+            if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
+                for count in 0..chunk.valid_entries {
+                    unsafe {
+                        chunk.data[count] = self
+                            .get_value_unchecked(convert_1d_nd(chunk.start_index + count, stride));
+                    }
+                }
+                Some(chunk)
+            } else {
+                None
+            }
+        }
+    }
+}
+
 // Basic traits for ArrayViewMut
 
 impl<
@@ -173,6 +211,46 @@ impl<
     #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
         self.arr.get_unchecked(offset_indices(indices, self.offset))
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        if self.offset == [0; NDIM] && self.shape() == self.arr.shape() {
+            // If the view is on the full array we can just pass on the chunk request
+            self.arr.get_chunk(chunk_index)
+        } else {
+            // If the view is on a subsection of the array have to recalcuate the chunk
+            let nelements = self.shape().iter().product();
+            let stride = stride_from_shape(self.shape());
+            if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
+                for count in 0..chunk.valid_entries {
+                    unsafe {
+                        chunk.data[count] = self
+                            .get_value_unchecked(convert_1d_nd(chunk.start_index + count, stride));
+                    }
+                }
+                Some(chunk)
+            } else {
+                None
+            }
+        }
     }
 }
 

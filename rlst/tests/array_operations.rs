@@ -15,7 +15,7 @@ fn test_addition() {
 
     let arr3 = arr1.view() + arr2.view();
 
-    res.fill_from(arr3.view());
+    res.fill_from_chunked::<_, 31>(arr3.view());
 
     for (res_item, (arr1_item, arr2_item)) in res.iter().zip(arr1.iter().zip(arr2.iter())) {
         assert_eq!(res_item, arr1_item + arr2_item)

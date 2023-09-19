@@ -53,6 +53,34 @@ impl<
 
 impl<
         Item: Scalar,
+        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        if let (Some(mut chunk1), Some(chunk2)) = (
+            self.operator1.get_chunk(chunk_index),
+            self.operator2.get_chunk(chunk_index),
+        ) {
+            for (elem1, &elem2) in chunk1.data.iter_mut().zip(chunk2.data.iter()) {
+                *elem1 += elem2;
+            }
+            Some(chunk1)
+        } else {
+            None
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,

@@ -15,7 +15,7 @@
 //! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
 use crate::traits::properties::Shape;
-use crate::types::Scalar;
+use crate::types::{DataChunk, Scalar};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
@@ -66,6 +66,12 @@ pub trait RandomAccessByRef<const NDIM: usize>: UnsafeRandomAccessByRef<NDIM> {
 pub trait RandomAccessMut<const NDIM: usize>: UnsafeRandomAccessMut<NDIM> {
     /// Return a mutable reference to the element at position determined by `indices`.
     fn get_mut(&mut self, indices: [usize; NDIM]) -> Option<&mut Self::Item>;
+}
+
+/// Return chunks of data of size N;
+pub trait ChunkedAccess<const N: usize> {
+    type Item: Scalar;
+    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>>;
 }
 
 /// Get raw access to the underlying data.

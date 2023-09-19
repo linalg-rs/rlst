@@ -1,6 +1,7 @@
+use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::layout::{convert_nd_1d, stride_from_shape};
-use rlst_common::traits::{UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use crate::layout::{convert_1d_nd, convert_nd_1d, stride_from_shape};
+use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use rlst_common::{
     traits::{Shape, UnsafeRandomAccessByRef},
     types::Scalar,
@@ -74,5 +75,30 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
         let index = convert_nd_1d(indices, self.stride);
         self.data.get_unchecked_mut(index)
+    }
+}
+
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
+    ChunkedAccess<N> for BaseArray<Item, Data, NDIM>
+{
+    type Item = Item;
+
+    #[inline]
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        let nelements = self.shape().iter().product();
+        if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
+            for count in 0..chunk.valid_entries {
+                unsafe {
+                    chunk.data[count] = self
+                        .get_value_unchecked(convert_1d_nd(chunk.start_index + count, self.stride));
+                }
+            }
+            Some(chunk)
+        } else {
+            None
+        }
     }
 }

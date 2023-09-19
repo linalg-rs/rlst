@@ -2,13 +2,14 @@
 
 use crate::base_array::BaseArray;
 use crate::data_container::VectorContainer;
-use crate::layout::convert_1d_nd;
+use rlst_common::traits::ChunkedAccess;
 use rlst_common::traits::RandomAccessByRef;
 use rlst_common::traits::RandomAccessMut;
 use rlst_common::traits::Shape;
 use rlst_common::traits::UnsafeRandomAccessByRef;
 use rlst_common::traits::UnsafeRandomAccessByValue;
 use rlst_common::traits::UnsafeRandomAccessMut;
+use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
 pub mod iterators;
@@ -74,6 +75,23 @@ impl<
 
 impl<
         Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        self.0.get_chunk(chunk_index)
+    }
+}
+
+impl<
+        Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -130,4 +148,25 @@ impl<
     fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
         self.0.get_mut(index).unwrap()
     }
+}
+
+pub(crate) fn empty_chunk<const N: usize, Item: Scalar>(
+    chunk_index: usize,
+    nelements: usize,
+) -> Option<DataChunk<Item, N>> {
+    let start_index = N * chunk_index;
+    if start_index >= nelements {
+        return None;
+    }
+    let end_index = (1 + N) * chunk_index;
+    let valid_entries = if end_index > nelements {
+        nelements - start_index
+    } else {
+        N
+    };
+    Some(DataChunk {
+        data: [<Item as num::Zero>::zero(); N],
+        start_index,
+        valid_entries,
+    })
 }

@@ -47,6 +47,27 @@ impl<
     }
 }
 
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayScalarMult<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>> {
+        if let Some(mut chunk) = self.operator.get_chunk(chunk_index) {
+            for item in &mut chunk.data {
+                *item *= self.scalar;
+            }
+            Some(chunk)
+        } else {
+            None
+        }
+    }
+}
+
 macro_rules! impl_scalar_mult {
     ($ScalarType:ty) => {
         impl<
