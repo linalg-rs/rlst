@@ -1,6 +1,6 @@
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::layout::{convert_1d_nd, convert_nd_1d, stride_from_shape};
+use crate::layout::{convert_1d_nd, convert_nd_raw, stride_from_shape};
 use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use rlst_common::{
     traits::{Shape, UnsafeRandomAccessByRef},
@@ -49,7 +49,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
-        let index = convert_nd_1d(indices, self.stride);
+        let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked(index)
     }
 }
@@ -61,7 +61,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
-        let index = convert_nd_1d(indices, self.stride);
+        let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked_value(index)
     }
 }
@@ -73,7 +73,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
-        let index = convert_nd_1d(indices, self.stride);
+        let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked_mut(index)
     }
 }

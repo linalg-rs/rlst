@@ -44,12 +44,11 @@ impl<
         let mut chunk_index = 0;
 
         while let Some(chunk) = other.get_chunk(chunk_index) {
-            let data_start = N * chunk_index;
-            let data_end = N * chunk_index + chunk.valid_entries;
+            let data_start = chunk.start_index;
 
-            for (data_index, arr_index) in (data_start..data_end).enumerate() {
+            for data_index in 0..chunk.valid_entries {
                 unsafe {
-                    *self.get_unchecked_mut(convert_1d_nd(arr_index, stride)) =
+                    *self.get_unchecked_mut(convert_1d_nd(data_start + data_index, stride)) =
                         chunk.data[data_index];
                 }
             }
@@ -73,6 +72,49 @@ impl<
     fn sum_into(&mut self, alpha: Self::Item, other: Other) {
         for (item, other_item) in self.iter_mut().zip(other.iter()) {
             *item += alpha * other_item;
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    pub fn sum_into_chunked<
+        Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const N: usize,
+    >(
+        &mut self,
+        other: Other,
+    ) where
+        Self: ChunkedAccess<N, Item = Item>,
+    {
+        assert_eq!(self.shape(), other.shape());
+        let stride = stride_from_shape(self.shape());
+
+        let mut chunk_index = 0;
+
+        while let (Some(mut my_chunk), Some(chunk)) =
+            (self.get_chunk(chunk_index), other.get_chunk(chunk_index))
+        {
+            let data_start = chunk.start_index;
+
+            for data_index in 0..chunk.valid_entries {
+                my_chunk.data[data_index] += chunk.data[data_index];
+            }
+
+            for data_index in 0..chunk.valid_entries {
+                unsafe {
+                    *self.get_unchecked_mut(convert_1d_nd(data_index + data_start, stride)) =
+                        my_chunk.data[data_index];
+                }
+            }
+
+            chunk_index += 1;
         }
     }
 }

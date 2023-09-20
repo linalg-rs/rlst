@@ -18,7 +18,7 @@ pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDI
 
 /// Convert an n-d index into a 1d index.
 #[inline]
-pub fn convert_nd_1d<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; NDIM]) -> usize {
+pub fn convert_nd_raw<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; NDIM]) -> usize {
     let mut acc = 0;
 
     for ind in 0..NDIM {
@@ -30,8 +30,12 @@ pub fn convert_nd_1d<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; 
 
 /// Convert a 1d index into a nd index.
 #[inline]
-pub fn convert_1d_nd<const NDIM: usize>(mut index: usize, stride: [usize; NDIM]) -> [usize; NDIM] {
+pub fn convert_1d_nd_from_shape<const NDIM: usize>(
+    mut index: usize,
+    shape: [usize; NDIM],
+) -> [usize; NDIM] {
     let mut res = [0; NDIM];
+    let stride = stride_from_shape(shape);
 
     for ind in (0..NDIM).rev() {
         res[ind] = index / stride[ind];
@@ -51,7 +55,7 @@ mod test {
         let shape: [usize; 4] = [4, 15, 17, 6];
         let stride = stride_from_shape(shape);
 
-        let index_1d = convert_nd_1d(indices, stride);
+        let index_1d = convert_nd_raw(indices, stride);
         let actual_nd = convert_1d_nd(index_1d, stride);
 
         for (&expected, actual) in indices.iter().zip(actual_nd) {

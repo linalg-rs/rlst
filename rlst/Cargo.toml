@@ -26,6 +26,8 @@ rlst-algorithms = { path = "../algorithms"}
 rlst-blis = { path = "../blis"}
 rlst-umfpack = { path = "../umfpack"}
 rlst-proc-macro = { path = "../proc-macro"}
+num = "0.4"
+approx = { version = "0.5", features=["num-complex"] }
 
 
 

@@ -158,7 +158,7 @@ pub(crate) fn empty_chunk<const N: usize, Item: Scalar>(
     if start_index >= nelements {
         return None;
     }
-    let end_index = (1 + N) * chunk_index;
+    let end_index = (1 + chunk_index) * N;
     let valid_entries = if end_index > nelements {
         nelements - start_index
     } else {
