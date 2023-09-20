@@ -2,7 +2,6 @@
 
 use crate::array::*;
 use crate::layout::convert_1d_nd_from_shape;
-use rlst_common::traits::{RandomAccessByValue, RandomAccessMut};
 use rlst_common::types::Scalar;
 
 pub struct ArrayDefaultIterator<
@@ -14,6 +13,7 @@ pub struct ArrayDefaultIterator<
     arr: &'a Array<Item, ArrayImpl, NDIM>,
     shape: [usize; NDIM],
     pos: usize,
+    nelements: usize,
 }
 
 pub struct ArrayDefaultIteratorMut<
@@ -27,6 +27,7 @@ pub struct ArrayDefaultIteratorMut<
     arr: &'a mut Array<Item, ArrayImpl, NDIM>,
     shape: [usize; NDIM],
     pos: usize,
+    nelements: usize,
 }
 
 impl<
@@ -41,6 +42,7 @@ impl<
             arr,
             shape: arr.shape(),
             pos: 0,
+            nelements: arr.shape().iter().product(),
         }
     }
 }
@@ -56,7 +58,12 @@ impl<
 {
     fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
         let shape = arr.shape();
-        Self { arr, shape, pos: 0 }
+        Self {
+            arr,
+            shape,
+            pos: 0,
+            nelements: shape.iter().product(),
+        }
     }
 }
 
@@ -69,10 +76,12 @@ impl<
 {
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {
-        let indices = convert_1d_nd_from_shape(self.pos, self.shape)?;
-        let elem = self.arr.get_value(indices);
+        if self.pos >= self.nelements {
+            return None;
+        }
+        let indices = convert_1d_nd_from_shape(self.pos, self.shape);
         self.pos += 1;
-        elem
+        unsafe { Some(self.arr.get_value_unchecked(indices)) }
     }
 }
 
@@ -94,12 +103,15 @@ impl<
 {
     type Item = &'a mut Item;
     fn next(&mut self) -> Option<Self::Item> {
-        let indices = convert_1d_nd_from_shape(self.pos, self.shape)?;
-        let elem = self.arr.get_mut(indices);
+        if self.pos >= self.nelements {
+            return None;
+        }
+        let indices = convert_1d_nd_from_shape(self.pos, self.shape);
         self.pos += 1;
-        match elem {
-            None => None,
-            Some(inner) => Some(unsafe { std::mem::transmute::<&mut Item, &'a mut Item>(inner) }),
+        unsafe {
+            Some(std::mem::transmute::<&mut Item, &'a mut Item>(
+                self.arr.get_unchecked_mut(indices),
+            ))
         }
     }
 }

@@ -1,9 +1,9 @@
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::layout::{convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape};
-use rlst_common::traits::{
-    ChunkedAccess, RandomAccessByValue, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+use crate::layout::{
+    check_indices_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
+use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use rlst_common::{
     traits::{Shape, UnsafeRandomAccessByRef},
     types::Scalar,
@@ -51,6 +51,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked(index)
     }
@@ -63,6 +64,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked_value(index)
     }
@@ -75,6 +77,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
 
     #[inline]
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         let index = convert_nd_raw(indices, self.stride);
         self.data.get_unchecked_mut(index)
     }
@@ -94,9 +97,10 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const ND
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {
                 unsafe {
-                    chunk.data[count] = self.get_value_unchecked(
-                        convert_1d_nd_from_shape(chunk.start_index + count, self.shape()).unwrap(),
-                    )
+                    chunk.data[count] = self.get_value_unchecked(convert_1d_nd_from_shape(
+                        chunk.start_index + count,
+                        self.shape(),
+                    ))
                 }
             }
             Some(chunk)

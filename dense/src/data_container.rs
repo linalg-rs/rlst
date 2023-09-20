@@ -165,10 +165,12 @@ impl<Item: Scalar> DataContainer for VectorContainer<Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
         *self.data.get_unchecked(index)
     }
 
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked(index)
     }
 
@@ -183,6 +185,7 @@ impl<Item: Scalar> DataContainer for VectorContainer<Item> {
 
 impl<Item: Scalar> DataContainerMut for VectorContainer<Item> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)
     }
 
@@ -195,10 +198,12 @@ impl<Item: Scalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
         *self.data.get_unchecked(index)
     }
 
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked(index)
     }
 
@@ -213,6 +218,7 @@ impl<Item: Scalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
 
 impl<Item: Scalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)
     }
 
@@ -225,10 +231,12 @@ impl<'a, Item: Scalar> DataContainer for SliceContainer<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
         *self.data.get_unchecked(index)
     }
 
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked(index)
     }
 
@@ -245,10 +253,12 @@ impl<'a, Item: Scalar> DataContainer for SliceContainerMut<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
         *self.data.get_unchecked(index)
     }
 
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked(index)
     }
 
@@ -263,6 +273,7 @@ impl<'a, Item: Scalar> DataContainer for SliceContainerMut<'a, Item> {
 
 impl<'a, Item: Scalar> DataContainerMut for SliceContainerMut<'a, Item> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)
     }
 

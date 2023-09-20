@@ -16,6 +16,16 @@ pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDI
     output
 }
 
+/// Return true if `indices` in bounds with respect to `shape`.
+pub fn check_indices_in_bounds<const N: usize>(indices: [usize; N], shape: [usize; N]) -> bool {
+    for (ind, s) in indices.iter().zip(shape.iter()) {
+        if ind >= s {
+            return false;
+        }
+    }
+    true
+}
+
 /// Convert an n-d index into a 1d index.
 #[inline]
 pub fn convert_nd_raw<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; NDIM]) -> usize {
@@ -33,19 +43,14 @@ pub fn convert_nd_raw<const NDIM: usize>(indices: [usize; NDIM], stride: [usize;
 pub fn convert_1d_nd_from_shape<const NDIM: usize>(
     mut index: usize,
     shape: [usize; NDIM],
-) -> Option<[usize; NDIM]> {
+) -> [usize; NDIM] {
     let mut res = [0; NDIM];
-    let nelements = shape.iter().product();
-    if index >= nelements {
-        None
-    } else {
-        for ind in 0..NDIM {
-            res[ind] = index % shape[ind];
-            index /= shape[ind];
-        }
-
-        Some(res)
+    debug_assert!(index < shape.iter().product());
+    for ind in 0..NDIM {
+        res[ind] = index % shape[ind];
+        index /= shape[ind];
     }
+    res
 }
 
 #[cfg(test)]
@@ -59,7 +64,7 @@ mod test {
         let stride = stride_from_shape(shape);
 
         let index_1d = convert_nd_raw(indices, stride);
-        let actual_nd = convert_1d_nd_from_shape(index_1d, shape).unwrap();
+        let actual_nd = convert_1d_nd_from_shape(index_1d, shape);
 
         println!("{}, {:#?}", index_1d, actual_nd);
 

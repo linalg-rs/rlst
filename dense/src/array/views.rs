@@ -1,6 +1,6 @@
 //! Views onto an array
 
-use crate::layout::convert_1d_nd_from_shape;
+use crate::layout::{check_indices_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
 use rlst_common::traits::*;
@@ -107,6 +107,7 @@ impl<
     type Item = Item;
     #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         self.arr
             .get_value_unchecked(offset_indices(indices, self.offset))
     }
@@ -124,6 +125,7 @@ impl<
     type Item = Item;
     #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         self.arr.get_unchecked(offset_indices(indices, self.offset))
     }
 }
@@ -151,10 +153,10 @@ impl<
             if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
                 for count in 0..chunk.valid_entries {
                     unsafe {
-                        chunk.data[count] = self.get_value_unchecked(
-                            convert_1d_nd_from_shape(chunk.start_index + count, self.shape())
-                                .unwrap(),
-                        )
+                        chunk.data[count] = self.get_value_unchecked(convert_1d_nd_from_shape(
+                            chunk.start_index + count,
+                            self.shape(),
+                        ))
                     }
                 }
                 Some(chunk)
@@ -193,6 +195,7 @@ impl<
     type Item = Item;
     #[inline]
     unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         self.arr
             .get_value_unchecked(offset_indices(indices, self.offset))
     }
@@ -211,6 +214,7 @@ impl<
     type Item = Item;
     #[inline]
     unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         self.arr.get_unchecked(offset_indices(indices, self.offset))
     }
 }
@@ -242,10 +246,10 @@ impl<
             if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
                 for count in 0..chunk.valid_entries {
                     unsafe {
-                        chunk.data[count] = self.get_value_unchecked(
-                            convert_1d_nd_from_shape(chunk.start_index + count, self.shape())
-                                .unwrap(),
-                        )
+                        chunk.data[count] = self.get_value_unchecked(convert_1d_nd_from_shape(
+                            chunk.start_index + count,
+                            self.shape(),
+                        ))
                     }
                 }
                 Some(chunk)
@@ -268,6 +272,7 @@ impl<
     type Item = Item;
     #[inline]
     unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
+        debug_assert!(check_indices_in_bounds(indices, self.shape()));
         self.arr
             .get_unchecked_mut(offset_indices(indices, self.offset))
     }

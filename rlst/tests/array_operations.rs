@@ -61,7 +61,7 @@ fn test_multiple_operations() {
     res.sum_into_chunked::<_, 64>(arr3.view());
 
     for index in 0..nelements {
-        let indices = convert_1d_nd_from_shape(index, res.shape()).unwrap();
+        let indices = convert_1d_nd_from_shape(index, res.shape());
 
         approx::assert_relative_eq!(
             res[indices],

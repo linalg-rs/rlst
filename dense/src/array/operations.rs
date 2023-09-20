@@ -47,9 +47,10 @@ impl<
 
             for data_index in 0..chunk.valid_entries {
                 unsafe {
-                    *self.get_unchecked_mut(
-                        convert_1d_nd_from_shape(data_start + data_index, self.shape()).unwrap(),
-                    ) = chunk.data[data_index];
+                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
+                        data_start + data_index,
+                        self.shape(),
+                    )) = chunk.data[data_index];
                 }
             }
             chunk_index += 1;
@@ -107,9 +108,10 @@ impl<
 
             for data_index in 0..chunk.valid_entries {
                 unsafe {
-                    *self.get_unchecked_mut(
-                        convert_1d_nd_from_shape(data_index + data_start, self.shape()).unwrap(),
-                    ) = my_chunk.data[data_index];
+                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
+                        data_index + data_start,
+                        self.shape(),
+                    )) = my_chunk.data[data_index];
                 }
             }
 
