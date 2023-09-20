@@ -1,7 +1,7 @@
 //! Various iterator implementations
 
 use crate::array::*;
-use crate::layout::{convert_1d_nd, stride_from_shape};
+use crate::layout::convert_1d_nd_from_shape;
 use rlst_common::traits::{RandomAccessByValue, RandomAccessMut};
 use rlst_common::types::Scalar;
 
@@ -12,7 +12,7 @@ pub struct ArrayDefaultIterator<
     const NDIM: usize,
 > {
     arr: &'a Array<Item, ArrayImpl, NDIM>,
-    stride: [usize; NDIM],
+    shape: [usize; NDIM],
     pos: usize,
 }
 
@@ -25,7 +25,7 @@ pub struct ArrayDefaultIteratorMut<
     const NDIM: usize,
 > {
     arr: &'a mut Array<Item, ArrayImpl, NDIM>,
-    stride: [usize; NDIM],
+    shape: [usize; NDIM],
     pos: usize,
 }
 
@@ -39,7 +39,7 @@ impl<
     fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
         Self {
             arr,
-            stride: stride_from_shape(arr.shape()),
+            shape: arr.shape(),
             pos: 0,
         }
     }
@@ -56,11 +56,7 @@ impl<
 {
     fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
         let shape = arr.shape();
-        Self {
-            arr,
-            stride: stride_from_shape(shape),
-            pos: 0,
-        }
+        Self { arr, shape, pos: 0 }
     }
 }
 
@@ -73,7 +69,8 @@ impl<
 {
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {
-        let elem = self.arr.get_value(convert_1d_nd(self.pos, self.stride));
+        let indices = convert_1d_nd_from_shape(self.pos, self.shape)?;
+        let elem = self.arr.get_value(indices);
         self.pos += 1;
         elem
     }
@@ -97,7 +94,8 @@ impl<
 {
     type Item = &'a mut Item;
     fn next(&mut self) -> Option<Self::Item> {
-        let elem = self.arr.get_mut(convert_1d_nd(self.pos, self.stride));
+        let indices = convert_1d_nd_from_shape(self.pos, self.shape)?;
+        let elem = self.arr.get_mut(indices);
         self.pos += 1;
         match elem {
             None => None,

@@ -1,6 +1,6 @@
 //! Views onto an array
 
-use crate::layout::{convert_1d_nd, stride_from_shape};
+use crate::layout::convert_1d_nd_from_shape;
 
 use super::Array;
 use rlst_common::traits::*;
@@ -148,12 +148,13 @@ impl<
         } else {
             // If the view is on a subsection of the array have to recalcuate the chunk
             let nelements = self.shape().iter().product();
-            let stride = stride_from_shape(self.shape());
             if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
                 for count in 0..chunk.valid_entries {
                     unsafe {
-                        chunk.data[count] = self
-                            .get_value_unchecked(convert_1d_nd(chunk.start_index + count, stride));
+                        chunk.data[count] = self.get_value_unchecked(
+                            convert_1d_nd_from_shape(chunk.start_index + count, self.shape())
+                                .unwrap(),
+                        )
                     }
                 }
                 Some(chunk)
@@ -238,12 +239,13 @@ impl<
         } else {
             // If the view is on a subsection of the array have to recalcuate the chunk
             let nelements = self.shape().iter().product();
-            let stride = stride_from_shape(self.shape());
             if let Some(mut chunk) = super::empty_chunk(chunk_index, nelements) {
                 for count in 0..chunk.valid_entries {
                     unsafe {
-                        chunk.data[count] = self
-                            .get_value_unchecked(convert_1d_nd(chunk.start_index + count, stride));
+                        chunk.data[count] = self.get_value_unchecked(
+                            convert_1d_nd_from_shape(chunk.start_index + count, self.shape())
+                                .unwrap(),
+                        )
                     }
                 }
                 Some(chunk)

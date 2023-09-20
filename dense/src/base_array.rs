@@ -1,7 +1,9 @@
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut};
-use crate::layout::{convert_1d_nd, convert_nd_raw, stride_from_shape};
-use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use crate::layout::{convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape};
+use rlst_common::traits::{
+    ChunkedAccess, RandomAccessByValue, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use rlst_common::{
     traits::{Shape, UnsafeRandomAccessByRef},
     types::Scalar,
@@ -92,8 +94,9 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const ND
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {
                 unsafe {
-                    chunk.data[count] = self
-                        .get_value_unchecked(convert_1d_nd(chunk.start_index + count, self.stride));
+                    chunk.data[count] = self.get_value_unchecked(
+                        convert_1d_nd_from_shape(chunk.start_index + count, self.shape()).unwrap(),
+                    )
                 }
             }
             Some(chunk)

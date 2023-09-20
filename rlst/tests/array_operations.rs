@@ -2,7 +2,7 @@
 
 use rlst::rlst_dynamic_array3;
 use rlst_common::traits::*;
-use rlst_dense::layout::{convert_1d_nd, stride_from_shape};
+use rlst_dense::layout::convert_1d_nd_from_shape;
 
 #[test]
 fn test_addition() {
@@ -61,7 +61,7 @@ fn test_multiple_operations() {
     res.sum_into_chunked::<_, 64>(arr3.view());
 
     for index in 0..nelements {
-        let indices = convert_1d_nd(index, stride_from_shape(shape));
+        let indices = convert_1d_nd_from_shape(index, res.shape()).unwrap();
 
         approx::assert_relative_eq!(
             res[indices],
