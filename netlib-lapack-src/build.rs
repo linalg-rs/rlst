@@ -10,6 +10,7 @@ fn main() {
         .define("CMAKE_PREFIX_PATH", blis_root.display().to_string())
         .define("USE_OPTIMIZED_BLAS", "ON")
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+        .define("TEST_FORTRAN_COMPILER", "ON")
         .build();
 
     println!("cargo:rustc-link-search={}", dst.join("lib").display());
