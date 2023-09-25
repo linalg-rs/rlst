@@ -20,7 +20,7 @@ We currently use the following dependencies by default:
 
 Optionally, [Suitesparse](https://people.engr.tamu.edu/davis/suitesparse.html) 
 dependencies can be enabled with the `suitesparse`
-feature flag. This enable AMD, CAMD, COLAMD, CCOLAMD, CHOLMOD, UMFPACK,
+feature flag. This enables AMD, CAMD, COLAMD, CCOLAMD, CHOLMOD, UMFPACK,
 which are used in the `rlst-algorithms` package to provide sparse direct solver
 capabilities. UMFPACK is licensed under the GPL 2+ license, which affects any
 code compiled against RLST with the `suitesparse` feature flag.
