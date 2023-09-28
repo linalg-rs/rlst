@@ -68,10 +68,9 @@ impl<
         const NDIM: usize,
     > SumInto<Other> for Array<Item, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    fn sum_into(&mut self, alpha: Self::Item, other: Other) {
+    fn sum_into(&mut self, other: Other) {
         for (item, other_item) in self.iter_mut().zip(other.iter()) {
-            *item += alpha * other_item;
+            *item += other_item;
         }
     }
 }

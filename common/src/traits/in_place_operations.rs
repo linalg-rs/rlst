@@ -16,9 +16,7 @@ pub trait FillFrom<Other> {
 
 /// Add `alpha * other` to `self`.
 pub trait SumInto<Other> {
-    type Item: Scalar;
-
-    fn sum_into(&mut self, alpha: Self::Item, other: Other);
+    fn sum_into(&mut self, other: Other);
 }
 
 /// Set the diagonal of an object from a given iterator.

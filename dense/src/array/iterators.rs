@@ -30,6 +30,35 @@ pub struct ArrayDefaultIteratorMut<
     nelements: usize,
 }
 
+pub struct MultiIndexIterator<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+    shape: [usize; NDIM],
+    iter: I,
+}
+
+impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> Iterator
+    for MultiIndexIterator<T, I, NDIM>
+{
+    type Item = ([usize; NDIM], T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((index, value)) = self.iter.next() {
+            Some((convert_1d_nd_from_shape(index, self.shape), value))
+        } else {
+            None
+        }
+    }
+}
+
+pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+    fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<T, I, NDIM>;
+}
+
+impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, NDIM> for I {
+    fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<T, I, NDIM> {
+        MultiIndexIterator::<T, I, NDIM> { shape, iter: self }
+    }
+}
+
 impl<
         'a,
         Item: Scalar,

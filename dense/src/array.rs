@@ -40,6 +40,10 @@ impl<
     pub fn new_dynamic_like_self(&self) -> DynamicArray<Item, NDIM> {
         DynamicArray::<Item, NDIM>::from_shape(self.shape())
     }
+
+    pub fn number_of_elements(&self) -> usize {
+        self.0.shape().iter().product()
+    }
 }
 
 impl<Item: Scalar, const NDIM: usize> DynamicArray<Item, NDIM> {

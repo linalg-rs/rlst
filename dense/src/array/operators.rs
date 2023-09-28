@@ -1,8 +1,13 @@
 //! Operators on arrays
 
 pub mod addition;
+pub mod cmp_wise_division;
+pub mod cmp_wise_product;
+pub mod conjugate;
 pub mod other;
 pub mod scalar_mult;
+pub mod to_complex;
+pub mod transpose;
 
 pub fn test_simd() {
     use crate::rlst_dynamic_array2;

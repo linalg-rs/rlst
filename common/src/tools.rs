@@ -91,6 +91,28 @@ macro_rules! assert_matrix_relative_eq {
 }
 
 #[macro_export]
+macro_rules! assert_array_abs_diff_eq {
+    ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
+        use approx::assert_abs_diff_eq;
+        assert_eq!($expected_array.shape(), $actual_array.shape());
+        for (actual, expected) in $actual_array.iter().zip($expected_array.iter()) {
+            assert_abs_diff_eq!(actual, expected, epsilon = $epsilon);
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_array_relative_eq {
+    ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
+        use approx::assert_relative_eq;
+        assert_eq!($expected_array.shape(), $actual_array.shape());
+        for (actual, expected) in $actual_array.iter().zip($expected_array.iter()) {
+            assert_relative_eq!(actual, expected, epsilon = $epsilon);
+        }
+    }};
+}
+
+#[macro_export]
 macro_rules! assert_matrix_ulps_eq {
     ($expected_matrix:expr, $actual_matrix:expr, $ulps:expr) => {{
         use approx::assert_abs_ulps_eq;
