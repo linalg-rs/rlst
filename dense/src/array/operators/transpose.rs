@@ -41,9 +41,9 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.operator
-            .get_value_unchecked(inverse_permute_indices(indices, self.permutation))
+            .get_value_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
     }
 }
 
@@ -109,14 +109,14 @@ impl<
     }
 }
 
-fn inverse_permute_indices<const NDIM: usize>(
-    indices: [usize; NDIM],
+fn inverse_permute_multi_index<const NDIM: usize>(
+    multi_index: [usize; NDIM],
     permutation: [usize; NDIM],
 ) -> [usize; NDIM] {
     let mut result = [0; NDIM];
 
     for (index, &p) in permutation.iter().enumerate() {
-        result[p] = indices[index];
+        result[p] = multi_index[index];
     }
 
     result

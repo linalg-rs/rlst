@@ -16,9 +16,12 @@ pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDI
     output
 }
 
-/// Return true if `indices` in bounds with respect to `shape`.
-pub fn check_indices_in_bounds<const N: usize>(indices: [usize; N], shape: [usize; N]) -> bool {
-    for (ind, s) in indices.iter().zip(shape.iter()) {
+/// Return true if `multi_index` in bounds with respect to `shape`.
+pub fn check_multi_index_in_bounds<const N: usize>(
+    multi_index: [usize; N],
+    shape: [usize; N],
+) -> bool {
+    for (ind, s) in multi_index.iter().zip(shape.iter()) {
         if ind >= s {
             return false;
         }
@@ -28,11 +31,14 @@ pub fn check_indices_in_bounds<const N: usize>(indices: [usize; N], shape: [usiz
 
 /// Convert an n-d index into a 1d index.
 #[inline]
-pub fn convert_nd_raw<const NDIM: usize>(indices: [usize; NDIM], stride: [usize; NDIM]) -> usize {
+pub fn convert_nd_raw<const NDIM: usize>(
+    multi_index: [usize; NDIM],
+    stride: [usize; NDIM],
+) -> usize {
     let mut acc = 0;
 
     for ind in 0..NDIM {
-        acc += indices[ind] * stride[ind];
+        acc += multi_index[ind] * stride[ind];
     }
 
     acc
@@ -59,16 +65,16 @@ mod test {
 
     #[test]
     fn test_convert_1d_nd() {
-        let indices: [usize; 3] = [2, 3, 7];
+        let multi_index: [usize; 3] = [2, 3, 7];
         let shape: [usize; 3] = [3, 4, 8];
         let stride = stride_from_shape(shape);
 
-        let index_1d = convert_nd_raw(indices, stride);
+        let index_1d = convert_nd_raw(multi_index, stride);
         let actual_nd = convert_1d_nd_from_shape(index_1d, shape);
 
         println!("{}, {:#?}", index_1d, actual_nd);
 
-        for (&expected, actual) in indices.iter().zip(actual_nd) {
+        for (&expected, actual) in multi_index.iter().zip(actual_nd) {
             assert_eq!(expected, actual)
         }
     }

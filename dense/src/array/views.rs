@@ -1,6 +1,6 @@
 //! Views onto an array
 
-use crate::layout::{check_indices_in_bounds, convert_1d_nd_from_shape};
+use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
 use rlst_common::traits::*;
@@ -106,10 +106,10 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.arr
-            .get_value_unchecked(offset_indices(indices, self.offset))
+            .get_value_unchecked(offset_multi_index(multi_index, self.offset))
     }
 }
 
@@ -124,9 +124,10 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
-        self.arr.get_unchecked(offset_indices(indices, self.offset))
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
+        self.arr
+            .get_unchecked(offset_multi_index(multi_index, self.offset))
     }
 }
 
@@ -194,10 +195,10 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.arr
-            .get_value_unchecked(offset_indices(indices, self.offset))
+            .get_value_unchecked(offset_multi_index(multi_index, self.offset))
     }
 }
 
@@ -213,9 +214,10 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
-        self.arr.get_unchecked(offset_indices(indices, self.offset))
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
+        self.arr
+            .get_unchecked(offset_multi_index(multi_index, self.offset))
     }
 }
 
@@ -271,10 +273,10 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
+    unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.arr
-            .get_unchecked_mut(offset_indices(indices, self.offset))
+            .get_unchecked_mut(offset_multi_index(multi_index, self.offset))
     }
 }
 
@@ -318,13 +320,13 @@ impl<
     }
 }
 
-fn offset_indices<const NDIM: usize>(
-    indices: [usize; NDIM],
+fn offset_multi_index<const NDIM: usize>(
+    multi_index: [usize; NDIM],
     offset: [usize; NDIM],
 ) -> [usize; NDIM] {
     let mut output = [0; NDIM];
     for (ind, elem) in output.iter_mut().enumerate() {
-        *elem = indices[ind] + offset[ind]
+        *elem = multi_index[ind] + offset[ind]
     }
     output
 }

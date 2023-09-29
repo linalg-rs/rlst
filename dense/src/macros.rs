@@ -66,8 +66,8 @@ macro_rules! rlst_dynamic_array4 {
 // macro_rules! rlst_mut_pointer_mat {
 //     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
 //         let new_layout = $crate::DefaultLayout::new($dim, $stride);
-//         let nindices = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
-//         let slice = std::slice::from_raw_parts_mut($ptr, nindices);
+//         let nmulti_index = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
+//         let slice = std::slice::from_raw_parts_mut($ptr, nmulti_index);
 //         let data = $crate::SliceContainerMut::<$a, $ScalarType>::new(slice);
 
 //         $crate::SliceMatrixMut::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)
@@ -91,8 +91,8 @@ macro_rules! rlst_dynamic_array4 {
 // macro_rules! rlst_pointer_mat {
 //     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
 //         let new_layout = $crate::DefaultLayout::new($dim, $stride);
-//         let nindices = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
-//         let slice = std::slice::from_raw_parts($ptr, nindices);
+//         let nmulti_index = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
+//         let slice = std::slice::from_raw_parts($ptr, nmulti_index);
 //         let data = $crate::SliceContainer::<$a, $ScalarType>::new(slice);
 
 //         $crate::SliceMatrix::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)

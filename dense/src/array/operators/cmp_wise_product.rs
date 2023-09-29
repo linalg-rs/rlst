@@ -46,8 +46,9 @@ impl<
 {
     type Item = Item;
     #[inline]
-    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
-        self.operator1.get_value_unchecked(indices) * self.operator2.get_value_unchecked(indices)
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        self.operator1.get_value_unchecked(multi_index)
+            * self.operator2.get_value_unchecked(multi_index)
     }
 }
 

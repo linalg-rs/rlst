@@ -108,9 +108,9 @@ impl<
         if self.pos >= self.nelements {
             return None;
         }
-        let indices = convert_1d_nd_from_shape(self.pos, self.shape);
+        let multi_index = convert_1d_nd_from_shape(self.pos, self.shape);
         self.pos += 1;
-        unsafe { Some(self.arr.get_value_unchecked(indices)) }
+        unsafe { Some(self.arr.get_value_unchecked(multi_index)) }
     }
 }
 
@@ -135,11 +135,11 @@ impl<
         if self.pos >= self.nelements {
             return None;
         }
-        let indices = convert_1d_nd_from_shape(self.pos, self.shape);
+        let multi_index = convert_1d_nd_from_shape(self.pos, self.shape);
         self.pos += 1;
         unsafe {
             Some(std::mem::transmute::<&mut Item, &'a mut Item>(
-                self.arr.get_unchecked_mut(indices),
+                self.arr.get_unchecked_mut(multi_index),
             ))
         }
     }

@@ -48,7 +48,7 @@
 //!
 //! The logical indexing is determined by the two methods [convert_1d_2d](crate::traits::LayoutType::convert_1d_2d)
 //! and [convert_2d_1d](crate::traits::LayoutType::convert_2d_1d). These methods map between
-//! logical `(row, col)` index tuples and one dimensional indices. The translation to the
+//! logical `(row, col)` index tuples and one dimensional multi_index. The translation to the
 //! underlying physical memory locations is handled by the routines [convert_1d_raw](crate::traits::LayoutType::convert_1d_raw)
 //! and [convert_2d_raw](crate::traits::LayoutType::convert_2d_raw), which convert either
 //! a two dimensional `(row, col)` index or a one-dimensional index to the raw physical location.

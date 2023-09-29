@@ -1,7 +1,7 @@
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut};
 use crate::layout::{
-    check_indices_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
+    check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
 use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use rlst_common::{
@@ -50,9 +50,9 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked(&self, indices: [usize; NDIM]) -> &Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
-        let index = convert_nd_raw(indices, self.stride);
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
+        let index = convert_nd_raw(multi_index, self.stride);
         self.data.get_unchecked(index)
     }
 }
@@ -63,9 +63,9 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     type Item = Item;
 
     #[inline]
-    unsafe fn get_value_unchecked(&self, indices: [usize; NDIM]) -> Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
-        let index = convert_nd_raw(indices, self.stride);
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
+        let index = convert_nd_raw(multi_index, self.stride);
         self.data.get_unchecked_value(index)
     }
 }
@@ -76,9 +76,9 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     type Item = Item;
 
     #[inline]
-    unsafe fn get_unchecked_mut(&mut self, indices: [usize; NDIM]) -> &mut Self::Item {
-        debug_assert!(check_indices_in_bounds(indices, self.shape()));
-        let index = convert_nd_raw(indices, self.stride);
+    unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
+        debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
+        let index = convert_nd_raw(multi_index, self.stride);
         self.data.get_unchecked_mut(index)
     }
 }
