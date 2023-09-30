@@ -76,16 +76,16 @@ pub trait ChunkedAccess<const N: usize> {
 
 /// Get raw access to the underlying data.
 pub trait RawAccess {
-    type T: Scalar;
+    type Item: Scalar;
 
     /// Get a slice of the whole data.
-    fn data(&self) -> &[Self::T];
+    fn data(&self) -> &[Self::Item];
 }
 
 /// Get mutable raw access to the underlying data.
 pub trait RawAccessMut: RawAccess {
     /// Get a mutable slice of the whole data.
-    fn data_mut(&mut self) -> &mut [Self::T];
+    fn data_mut(&mut self) -> &mut [Self::Item];
 }
 
 /// Check if `multi_index` not out of bounds with respect to `shape`.

@@ -3,7 +3,10 @@ use crate::data_container::{DataContainer, DataContainerMut};
 use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
-use rlst_common::traits::{ChunkedAccess, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use rlst_common::traits::{
+    ChunkedAccess, RawAccess, RawAccessMut, Stride, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
+};
 use rlst_common::{
     traits::{Shape, UnsafeRandomAccessByRef},
     types::Scalar,
@@ -107,5 +110,31 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const ND
         } else {
             None
         }
+    }
+}
+
+impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
+    for BaseArray<Item, Data, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
+        self.data.data()
+    }
+}
+
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
+    for BaseArray<Item, Data, NDIM>
+{
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.data.data_mut()
+    }
+}
+
+impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
+    for BaseArray<Item, Data, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.stride
     }
 }

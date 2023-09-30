@@ -3,9 +3,13 @@
 use crate::base_array::BaseArray;
 use crate::data_container::VectorContainer;
 use rlst_common::traits::ChunkedAccess;
+use rlst_common::traits::NumberOfElements;
 use rlst_common::traits::RandomAccessByRef;
 use rlst_common::traits::RandomAccessMut;
+use rlst_common::traits::RawAccess;
+use rlst_common::traits::RawAccessMut;
 use rlst_common::traits::Shape;
+use rlst_common::traits::Stride;
 use rlst_common::traits::UnsafeRandomAccessByRef;
 use rlst_common::traits::UnsafeRandomAccessByValue;
 use rlst_common::traits::UnsafeRandomAccessMut;
@@ -13,6 +17,7 @@ use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
 pub mod iterators;
+pub mod multiply;
 pub mod operations;
 pub mod operators;
 pub mod random;
@@ -173,4 +178,50 @@ pub(crate) fn empty_chunk<const N: usize, Item: Scalar>(
         start_index,
         valid_entries,
     })
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccess<Item = Item>,
+        const NDIM: usize,
+    > RawAccess for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
+        self.0.data()
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccessMut<Item = Item>,
+        const NDIM: usize,
+    > RawAccessMut for Array<Item, ArrayImpl, NDIM>
+{
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.0.data_mut()
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > NumberOfElements for Array<Item, ArrayImpl, NDIM>
+{
+    fn number_of_elements(&self) -> usize {
+        self.shape().iter().product()
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
+        const NDIM: usize,
+    > Stride<NDIM> for Array<Item, ArrayImpl, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.0.stride()
+    }
 }
