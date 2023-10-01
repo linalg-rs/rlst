@@ -16,11 +16,12 @@ use rlst_common::traits::UnsafeRandomAccessMut;
 use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
+pub mod dot;
 pub mod iterators;
-pub mod multiply;
 pub mod operations;
 pub mod operators;
 pub mod random;
+pub mod slice;
 pub mod views;
 
 pub type DynamicArray<Item, const NDIM: usize> =

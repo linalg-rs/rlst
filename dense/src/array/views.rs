@@ -100,6 +100,38 @@ impl<
 impl<
         'a,
         Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
+        const NDIM: usize,
+    > Stride<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.arr.stride()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + RawAccess<Item = Item>
+            + Stride<NDIM>,
+        const NDIM: usize,
+    > RawAccess for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
+        assert!(!self.is_empty());
+        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
+
+        &self.arr.data()[start_raw..end_raw]
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
@@ -181,6 +213,60 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + Stride<NDIM>,
+        const NDIM: usize,
+    > Stride<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.arr.stride()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + RawAccess<Item = Item>
+            + Stride<NDIM>,
+        const NDIM: usize,
+    > RawAccess for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
+        assert!(!self.is_empty());
+        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
+        &self.arr.data()[start_raw..end_raw]
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + RawAccessMut<Item = Item>
+            + Stride<NDIM>,
+        const NDIM: usize,
+    > RawAccessMut for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        assert!(!self.is_empty());
+        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
+
+        &mut self.arr.data_mut()[start_raw..end_raw]
     }
 }
 
@@ -329,4 +415,24 @@ fn offset_multi_index<const NDIM: usize>(
         *elem = multi_index[ind] + offset[ind]
     }
     output
+}
+
+fn compute_raw_range<const NDIM: usize>(
+    offset: [usize; NDIM],
+    stride: [usize; NDIM],
+    shape: [usize; NDIM],
+) -> (usize, usize) {
+    use crate::layout::convert_nd_raw;
+    let shape = shape;
+    let start_multi_index = offset;
+    let mut end_multi_index = [0; NDIM];
+    for (index, value) in end_multi_index.iter_mut().enumerate() {
+        let sum = start_multi_index[index] + shape[index];
+        assert!(sum > 0);
+        *value = sum - 1;
+    }
+
+    let start_raw = convert_nd_raw(start_multi_index, stride);
+    let end_raw = 1 + convert_nd_raw(end_multi_index, stride);
+    (start_raw, 1 + end_raw)
 }
