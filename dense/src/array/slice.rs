@@ -1,7 +1,5 @@
 //! Explicit casts to arrays with specific number of dimensions.
 
-use std::convert;
-
 use crate::{
     layout::convert_1d_nd_from_shape,
     number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
@@ -10,7 +8,6 @@ use crate::{
 use super::*;
 
 pub struct ArraySlice<
-    'a,
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
     const ADIM: usize,
@@ -19,25 +16,7 @@ pub struct ArraySlice<
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
-    arr: &'a Array<Item, ArrayImpl, ADIM>,
-    // The first entry is the axis, the second is the index in the axis.
-    slice: [usize; 2],
-    mask: [usize; NDIM],
-}
-
-pub struct ArraySliceMut<
-    'a,
-    Item: Scalar,
-    ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-        + Shape<ADIM>
-        + UnsafeRandomAccessMut<ADIM, Item = Item>,
-    const ADIM: usize,
-    const NDIM: usize,
-> where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    arr: &'a mut Array<Item, ArrayImpl, ADIM>,
+    arr: Array<Item, ArrayImpl, ADIM>,
     // The first entry is the axis, the second is the index in the axis.
     slice: [usize; 2],
     mask: [usize; NDIM],
@@ -46,17 +25,18 @@ pub struct ArraySliceMut<
 // Implementation of ArraySlice
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
-    > ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
-    pub fn new(arr: &'a Array<Item, ArrayImpl, ADIM>, slice: [usize; 2]) -> Self {
+    pub fn new(arr: Array<Item, ArrayImpl, ADIM>, slice: [usize; 2]) -> Self {
+        // The mask is zero for all entries before the sliced out one and
+        // one for all entries after.
         let mut mask = [1; NDIM];
         mask.iter_mut().take(slice[0]).for_each(|val| *val = 0);
         Self { arr, slice, mask }
@@ -64,12 +44,11 @@ where
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -84,14 +63,13 @@ where
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > UnsafeRandomAccessByRef<NDIM> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -106,12 +84,11 @@ where
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
-    > Shape<NDIM> for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > Shape<NDIM> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -129,7 +106,6 @@ where
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
@@ -137,7 +113,7 @@ impl<
             + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
-    > RawAccess for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > RawAccess for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -153,12 +129,11 @@ where
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
-    > Stride<NDIM> for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > Stride<NDIM> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -182,10 +157,10 @@ impl<
     > Array<Item, ArrayImpl, ADIM>
 {
     pub fn slice<const NDIM: usize>(
-        &self,
+        self,
         axis: usize,
         index: usize,
-    ) -> Array<Item, ArraySlice<'_, Item, ArrayImpl, ADIM, NDIM>, NDIM>
+    ) -> Array<Item, ArraySlice<Item, ArrayImpl, ADIM, NDIM>, NDIM>
     where
         NumberType<ADIM>: IsGreaterByOne<NDIM>,
         NumberType<NDIM>: IsGreaterZero,
@@ -195,13 +170,12 @@ impl<
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArraySlice<'a, Item, ArrayImpl, ADIM, NDIM>
+    > ChunkedAccess<N> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -230,53 +204,7 @@ where
     }
 }
 
-//////////////////////////////////
-// Implementation of ArraySliceMut
-
 impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    pub fn new(arr: &'a mut Array<Item, ArrayImpl, ADIM>, slice: [usize; 2]) -> Self {
-        let mut mask = [1; NDIM];
-        mask.iter_mut().take(slice[0]).for_each(|val| *val = 0);
-        Self { arr, slice, mask }
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    type Item = Item;
-
-    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        let mut orig_index = multi_index_to_orig(multi_index, self.mask);
-        orig_index[self.slice[0]] = self.slice[1];
-        self.arr.get_value_unchecked(orig_index)
-    }
-}
-
-impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
@@ -284,30 +212,7 @@ impl<
             + UnsafeRandomAccessMut<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    type Item = Item;
-
-    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        let mut orig_index = multi_index_to_orig(multi_index, self.mask);
-        orig_index[self.slice[0]] = self.slice[1];
-        self.arr.get_unchecked(orig_index)
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + UnsafeRandomAccessByRef<ADIM, Item = Item>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
+    > UnsafeRandomAccessMut<NDIM> for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -322,57 +227,6 @@ where
 }
 
 impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > Shape<NDIM> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    fn shape(&self) -> [usize; NDIM] {
-        let mut result = [0; NDIM];
-        let orig_shape = self.arr.shape();
-
-        for (index, value) in result.iter_mut().enumerate() {
-            *value = orig_shape[index + self.mask[index]];
-        }
-
-        result
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + RawAccess<Item = Item>
-            + Stride<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > RawAccess for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    type Item = Item;
-    fn data(&self) -> &[Self::Item] {
-        assert!(!self.is_empty());
-        let (start_raw, end_raw) =
-            compute_raw_range(self.slice, self.arr.stride(), self.arr.shape());
-
-        &self.arr.data()[start_raw..end_raw]
-    }
-}
-
-impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
@@ -381,7 +235,7 @@ impl<
             + UnsafeRandomAccessMut<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,
-    > RawAccessMut for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
+    > RawAccessMut for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
@@ -394,93 +248,7 @@ where
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + Stride<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > Stride<NDIM> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    fn stride(&self) -> [usize; NDIM] {
-        let mut result = [0; NDIM];
-        let orig_stride: [usize; ADIM] = self.arr.stride();
-
-        for (index, value) in result.iter_mut().enumerate() {
-            *value = orig_stride[index + self.mask[index]];
-        }
-
-        result
-    }
-}
-
-impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-    > Array<Item, ArrayImpl, ADIM>
-{
-    pub fn slice_mut<const NDIM: usize>(
-        &mut self,
-        axis: usize,
-        index: usize,
-    ) -> Array<Item, ArraySliceMut<'_, Item, ArrayImpl, ADIM, NDIM>, NDIM>
-    where
-        NumberType<ADIM>: IsGreaterByOne<NDIM>,
-        NumberType<NDIM>: IsGreaterZero,
-    {
-        Array::new(ArraySliceMut::new(self, [axis, index]))
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + Stride<ADIM>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArraySliceMut<'a, Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    type Item = Item;
-
-    #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
-        let nelements = self.shape().iter().product();
-        if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
-            for count in 0..chunk.valid_entries {
-                unsafe {
-                    chunk.data[count] = self.get_value_unchecked(convert_1d_nd_from_shape(
-                        chunk.start_index + count,
-                        self.shape(),
-                    ))
-                }
-            }
-            Some(chunk)
-        } else {
-            None
-        }
-    }
-}
-
-////////////////////
+// ////////////////////
 
 fn multi_index_to_orig<const ADIM: usize, const NDIM: usize>(
     multi_index: [usize; NDIM],
@@ -536,7 +304,7 @@ mod test {
 
         arr.fill_from_seed_equally_distributed(0);
 
-        let slice = arr.slice(1, 2);
+        let slice = arr.view().slice(1, 2);
 
         assert_eq!(slice[[1, 5]], arr[[1, 2, 5]]);
 
@@ -561,18 +329,16 @@ mod test {
     }
 
     #[test]
-    fn test_create_slice_mut() {
+    fn test_multiple_slices() {
         let shape = [3, 7, 6];
         let mut arr = rlst_dynamic_array3!(f64, shape);
         arr.fill_from_seed_equally_distributed(0);
 
-        let cmp = arr[[1, 2, 5]];
+        let mut slice = arr.view_mut().slice(1, 3).slice(1, 1);
 
-        let slice = arr.slice_mut(1, 2);
-        let slice_shape = slice.shape();
+        slice[[2]] = 5.0;
 
-        assert_eq!(slice[[1, 5]], cmp);
-
-        assert_eq!(slice_shape, [3, 6]);
+        assert_eq!(slice.shape(), [3]);
+        assert_eq!(arr[[2, 3, 1]], 5.0);
     }
 }

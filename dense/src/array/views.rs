@@ -433,6 +433,6 @@ fn compute_raw_range<const NDIM: usize>(
     }
 
     let start_raw = convert_nd_raw(start_multi_index, stride);
-    let end_raw = 1 + convert_nd_raw(end_multi_index, stride);
+    let end_raw = convert_nd_raw(end_multi_index, stride);
     (start_raw, 1 + end_raw)
 }
