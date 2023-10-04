@@ -38,6 +38,19 @@ where
         // The mask is zero for all entries before the sliced out one and
         // one for all entries after.
         let mut mask = [1; NDIM];
+        assert!(
+            slice[0] < ADIM,
+            "Axis {} out of bounds. Array has {} axes.",
+            slice[0],
+            ADIM
+        );
+        assert!(
+            slice[1] < arr.shape()[slice[0]],
+            "Index {} in axis {} out of bounds. Dimension of axis is {}.",
+            slice[1],
+            slice[0],
+            arr.shape()[slice[0]]
+        );
         mask.iter_mut().take(slice[0]).for_each(|val| *val = 0);
         Self { arr, slice, mask }
     }
@@ -340,5 +353,26 @@ mod test {
 
         assert_eq!(slice.shape(), [3]);
         assert_eq!(arr[[2, 3, 1]], 5.0);
+    }
+
+    #[test]
+    fn test_slice_of_subview() {
+        let shape = [3, 7, 6];
+        let mut arr = rlst_dynamic_array3!(f64, shape);
+        arr.fill_from_seed_equally_distributed(0);
+
+        let slice = arr.subview([1, 2, 4], [2, 3, 2]).slice(1, 2);
+
+        assert_eq!(slice.shape(), [2, 2]);
+
+        assert_eq!(slice[[1, 0]], arr[[2, 4, 4]]);
+
+        let slice_data = slice.data();
+        let arr_data = arr.data();
+
+        let slice_index = convert_nd_raw([1, 0], slice.stride());
+        let array_index = convert_nd_raw([2, 4, 4], arr.stride());
+
+        assert_eq!(slice_data[slice_index], arr_data[array_index]);
     }
 }

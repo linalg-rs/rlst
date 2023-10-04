@@ -49,6 +49,38 @@ impl<
 
 impl<
         Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessByRef<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        self.operator
+            .get_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessMut<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
+        self.operator
+            .get_unchecked_mut(inverse_permute_multi_index(multi_index, self.permutation))
+    }
+}
+
+impl<
+        Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
