@@ -17,6 +17,7 @@ use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
 pub mod dot;
+pub mod empty_axis;
 pub mod iterators;
 pub mod operations;
 pub mod operators;
