@@ -135,6 +135,23 @@ where
 
 impl<
         Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + RawAccessMut<Item = Item>
+            + Stride<ADIM>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > RawAccessMut for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsSmallerByOne<NDIM>,
+{
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.arr.data_mut()
+    }
+}
+
+impl<
+        Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,

@@ -1,64 +1,102 @@
 //! Multiplication of Arrays
 
-use rlst_blis::interface::gemm::Gemm;
+use rlst_blis::interface::{gemm::Gemm, types::TransMode};
 
-use super::*;
+use super::{empty_axis::AxisPosition, *};
 
 impl<
         Item: Scalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>
-            + Shape<NDIM>
-            + Stride<NDIM>
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + Shape<2>
+            + Stride<2>
             + RawAccessMut<Item = Item>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+    > Array<Item, ArrayImpl, 2>
 {
-    // pub fn multiply_into<
-    //     ArrayImplA: UnsafeRandomAccessByValue<NDIMA, Item = Item>
-    //         + Shape<NDIMA>
-    //         + Stride<NDIMA>
-    //         + RawAccess<Item = Item>,
-    //     ArrayImplB: UnsafeRandomAccessByValue<NDIMB, Item = Item>
-    //         + Shape<NDIMB>
-    //         + Stride<NDIMB>
-    //         + RawAccess<Item = Item>,
-    //     const NDIMA: usize,
-    //     const NDIMB: usize,
-    // >(
-    //     &mut self,
-    //     alpha: Item,
-    //     mat_a: &Array<Item, ArrayImplA, NDIMA>,
-    //     mat_b: &Array<Item, ArrayImplB, NDIMB>,
-    //     beta: Item,
-    // ) {
-    //     if NDIMA == 1 && NDIMB == 1 {
-    //         // Inner Product
-    //         assert_eq!(NDIM, 1);
-    //         assert_eq!(self.shape()[0], 1);
+    pub fn matmul_into<
+        ArrayImplA: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplB: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    >(
+        &mut self,
+        alpha: Item,
+        arr_a: Array<Item, ArrayImplA, 2>,
+        arr_b: Array<Item, ArrayImplB, 2>,
+        beta: Item,
+    ) {
+        let transa = TransMode::NoTrans;
+        let transb = TransMode::NoTrans;
+        crate::matrix_multiply::matrix_multiply(transa, transb, alpha, &arr_a, &arr_b, beta, self)
+    }
+}
 
-    //         let multi_index = [0; NDIM];
-    //         self[multi_index] *= beta;
+impl<
+        Item: Scalar + Gemm,
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + Shape<1>
+            + Stride<1>
+            + RawAccessMut<Item = Item>,
+    > Array<Item, ArrayImpl, 1>
+{
+    pub fn matvec_into<
+        ArrayImplA: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplB: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
+    >(
+        &mut self,
+        alpha: Item,
+        arr_a: Array<Item, ArrayImplA, 2>,
+        arr_b: Array<Item, ArrayImplB, 1>,
+        beta: Item,
+    ) {
+        let transa = TransMode::NoTrans;
+        let transb = TransMode::NoTrans;
 
-    //         self[multi_index] = alpha * mat_a.iter().zip(mat_b.iter()).map(|(a, b)| a * b).sum();
-    //     } else if NDIMA == 2 && NDIMB == 1 {
-    //         // Matvec
-    //         crate::matrix_multiply::matrix_multiply(
-    //             TransMode::NoTrans,
-    //             TransMode::NoTrans,
-    //             alpha,
-    //             mat_a,
-    //             mat_b,
-    //             beta,
-    //             self,
-    //         );
-    //     } else if NDIMB == 1 {
-    //         // Corresponding Numpy tensor product
-    //         std::unimplemented!()
-    //     } else if NDIMB > 1 {
-    //         // Corresponding Numpy tensor product
-    //         std::unimplemented!()
-    //     }
-    // }
+        let mut arr_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Back);
+
+        crate::matrix_multiply::matrix_multiply(
+            transa,
+            transb,
+            alpha,
+            &arr_a,
+            &arr_b.view().insert_empty_axis(AxisPosition::Back),
+            beta,
+            &mut arr_with_padded_dim,
+        )
+    }
+}
+
+impl<
+        Item: Scalar + Gemm,
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + Shape<1>
+            + Stride<1>
+            + RawAccessMut<Item = Item>,
+    > Array<Item, ArrayImpl, 1>
+{
+    pub fn row_matvec_into<
+        ArrayImplA: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
+        ArrayImplB: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    >(
+        &mut self,
+        alpha: Item,
+        arr_a: Array<Item, ArrayImplA, 1>,
+        arr_b: Array<Item, ArrayImplB, 2>,
+        beta: Item,
+    ) {
+        let transa = TransMode::NoTrans;
+        let transb = TransMode::NoTrans;
+
+        let mut arr_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Front);
+
+        crate::matrix_multiply::matrix_multiply(
+            transa,
+            transb,
+            alpha,
+            &arr_a.view().insert_empty_axis(AxisPosition::Front),
+            &arr_b,
+            beta,
+            &mut arr_with_padded_dim,
+        )
+    }
 }
