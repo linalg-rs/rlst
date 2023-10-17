@@ -45,7 +45,7 @@ pub mod number_types;
 pub mod array;
 pub mod layout;
 pub mod macros;
-pub mod traits;
+//pub mod traits;
 // pub mod matrix;
 pub mod matrix_multiply;
 // pub mod matrix_ref;
