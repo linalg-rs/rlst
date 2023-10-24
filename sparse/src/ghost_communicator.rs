@@ -114,7 +114,7 @@ impl GhostCommunicator {
                 &mut raw_comm,
             );
 
-            mpi::topology::SimpleCommunicator::from_raw(raw_comm).unwrap()
+            mpi::topology::SimpleCommunicator::from_raw(raw_comm)
         };
 
         // We now communicate the global indices back from the receivers to the senders.
