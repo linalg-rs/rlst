@@ -3,7 +3,7 @@
 use std::os::raw::c_void;
 
 use mpi::topology::SimpleCommunicator;
-use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence};
+use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence, FromRaw};
 use mpi_sys;
 use rlst_common::types::Scalar;
 
@@ -114,7 +114,7 @@ impl GhostCommunicator {
                 &mut raw_comm,
             );
 
-            mpi::topology::SimpleCommunicator::try_from_raw(raw_comm).unwrap()
+            mpi::topology::SimpleCommunicator::from_raw(raw_comm).unwrap()
         };
 
         // We now communicate the global indices back from the receivers to the senders.
