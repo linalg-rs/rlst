@@ -2,7 +2,7 @@
 
 use std::os::raw::c_void;
 
-use mpi::topology::UserCommunicator;
+use mpi::topology::SimpleCommunicator;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence};
 use mpi_sys;
 use rlst_common::types::Scalar;
@@ -18,7 +18,7 @@ pub struct GhostCommunicator {
     pub neighborhood_receive_displacements: Vec<i32>,
     pub total_send_count: usize,
     pub total_receive_count: usize,
-    neighbor_comm: UserCommunicator,
+    neighbor_comm: SimpleCommunicator,
 }
 
 impl GhostCommunicator {
@@ -114,7 +114,7 @@ impl GhostCommunicator {
                 &mut raw_comm,
             );
 
-            mpi::topology::UserCommunicator::from_raw(raw_comm).unwrap()
+            mpi::topology::SimpleCommunicator::from_raw(raw_comm).unwrap()
         };
 
         // We now communicate the global indices back from the receivers to the senders.
