@@ -57,8 +57,8 @@
 //! are typical identical. But for more complex types (e.g. with arbitrary stride vectors) they
 //! are typically different from each other.
 //!
-//! The main trait in this module is the [LayoutType](crate::traits::LayoutType) trait.
-//! If this is implemented for a matrix the [Layout](crate::traits::Layout) is auto-implemented.
+//! The main trait in this module is the [LayoutType] trait.
+//! If this is implemented for a matrix the [Layout] is auto-implemented.
 //! This latter trait only provides a method to return the [LayoutType] implementation.
 //! This crate also provides a number of other traits.
 //!

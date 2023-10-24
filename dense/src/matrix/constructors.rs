@@ -44,8 +44,7 @@ impl<Item: Scalar, S: SizeIdentifier, Data: DataContainer<Item = Item>>
 
 impl<Item: Scalar> MatrixD<Item> {
     /// Create a new matrix from another object that
-    /// provides [RandomAccessByValue](rlst_common::traits::RandomAccessByValue) and
-    /// [Shape](rlst_common::traits::Shape) traits.
+    /// provides [RandomAccessByValue] and [Shape] traits.
     pub fn from_other<Other: RandomAccessByValue<Item = Item> + Shape>(other: &Other) -> Self {
         let mut mat = crate::rlst_dynamic_mat![Item, other.shape()];
 

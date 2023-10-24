@@ -13,3 +13,5 @@ examples.sh
 
 .vscode
 .*.swp
+
+*.pyc

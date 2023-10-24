@@ -12,7 +12,7 @@ edition = "2021"
 rlst-common = {path = "../common"}
 num = "0.4"
 cauchy = "0.4"
-thiserror = "1"
+thiserror = "1.0.40"
 
 [lib]
 name = "rlst_operator"
