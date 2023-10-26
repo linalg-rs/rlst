@@ -26,6 +26,12 @@ pub enum RlstError {
     GeneralError(String),
     #[error("I/O Error: {0}")]
     IoError(String),
+    #[error("Umfpack Error Code: {0}")]
+    UmfpackError(i32),
+    #[error("Matrix is not square. Dimension: {0}x{1}")]
+    MatrixNotSquare(usize, usize),
+    #[error("Matrix is not Hermitian (complex conjugate symmetric).")]
+    MatrixNotHermitian,
 }
 
 /// Alias for an RLST Result type.

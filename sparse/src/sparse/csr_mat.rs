@@ -1,10 +1,14 @@
 //! Definition of CSR matrices.
 
 use crate::sparse::SparseMatType;
+use rlst_common::traits::AijIterator;
 use rlst_common::types::RlstResult;
 
+use crate::sparse::tools::normalize_aij;
 use rlst_common::traits::properties::Shape;
 use rlst_common::types::Scalar;
+
+use super::csc_mat::CscMatrix;
 
 pub struct CsrMatrix<T: Scalar> {
     mat_type: SparseMatType,
@@ -28,6 +32,10 @@ impl<T: Scalar> CsrMatrix<T> {
             indptr,
             data,
         }
+    }
+
+    pub fn nelems(&self) -> usize {
+        self.data.len()
     }
 
     pub fn mat_type(&self) -> &SparseMatType {
@@ -55,14 +63,26 @@ impl<T: Scalar> CsrMatrix<T> {
                     let mut acc = T::zero();
 
                     for index in c1..c2 {
-                        unsafe {
-                            let col = *self.indices().get_unchecked(index);
-                            acc += *self.data().get_unchecked(index) * *x.get_unchecked(col);
-                        }
+                        let col = self.indices()[index];
+                        acc += self.data()[index] * x[col];
                     }
                     acc
                 }
         }
+    }
+
+    pub fn to_csc(&self) -> CscMatrix<T> {
+        let mut rows = Vec::<usize>::with_capacity(self.nelems());
+        let mut cols = Vec::<usize>::with_capacity(self.nelems());
+        let mut data = Vec::<T>::with_capacity(self.nelems());
+
+        for (row, col, elem) in self.iter_aij() {
+            rows.push(row);
+            cols.push(col);
+            data.push(elem);
+        }
+
+        CscMatrix::from_aij(self.shape(), &rows, &cols, &data).unwrap()
     }
 
     pub fn from_aij(
@@ -71,59 +91,39 @@ impl<T: Scalar> CsrMatrix<T> {
         cols: &[usize],
         data: &[T],
     ) -> RlstResult<Self> {
+        let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
+
+        let max_col = cols.iter().max().unwrap();
+        let max_row = rows.last().unwrap();
+
+        assert!(
+            *max_col < shape.1,
+            "Maximum column {} must be smaller than `shape.1` {}",
+            max_col,
+            shape.1
+        );
+
+        assert!(
+            *max_row < shape.0,
+            "Maximum row {} must be smaller than `shape.0` {}",
+            max_row,
+            shape.0
+        );
+
         let nelems = data.len();
-        let mut sorted: Vec<usize> = (0..nelems).collect();
-        // Sorts first by column, then by row. Ensures that
-        // elements with consecutive columns are next to each other.
-        sorted.sort_by_key(|&idx| cols[idx]);
-        sorted.sort_by_key(|&idx| rows[idx]);
-
-        // Now merge consecutive elements together and filter out zeros
-
-        let mut rows_t = Vec::<usize>::with_capacity(nelems);
-        let mut cols_t = Vec::<usize>::with_capacity(nelems);
-        let mut data_t = Vec::<T>::with_capacity(nelems);
-
-        let mut count: usize = 0;
-        while count < nelems {
-            let current_row = rows[sorted[count]];
-            let current_col = cols[sorted[count]];
-            let mut current_data = T::zero();
-            while count < nelems
-                && rows[sorted[count]] == current_row
-                && cols[sorted[count]] == current_col
-            {
-                current_data += data[sorted[count]];
-                count += 1;
-            }
-            if current_data != T::zero() {
-                rows_t.push(current_row);
-                cols_t.push(current_col);
-                data_t.push(current_data);
-            }
-        }
-
-        let nelems = data_t.len();
 
         let mut indptr = Vec::<usize>::with_capacity(1 + shape.0);
-        let mut indices = Vec::<usize>::with_capacity(nelems);
-        let mut new_data = Vec::<T>::with_capacity(nelems);
 
         let mut count: usize = 0;
         for row in 0..(shape.0) {
             indptr.push(count);
-            while count < nelems && row == rows[sorted[count]] {
+            while count < nelems && row == rows[count] {
                 count += 1;
             }
         }
         indptr.push(count);
 
-        for index in 0..nelems {
-            indices.push(cols_t[index]);
-            new_data.push(data_t[index]);
-        }
-
-        Ok(Self::new(shape, indices, indptr, new_data))
+        Ok(Self::new(shape, cols, indptr, data))
     }
 }
 
@@ -257,7 +257,7 @@ mod test {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
 
         // This matrix has a zero row at the beginning one in between and several zero rows at the end.
-        let csr = CsrMatrix::from_aij((10, 2), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij((10, 3), &rows, &cols, &data).unwrap();
 
         let aij_data: Vec<(usize, usize, f64)> = csr.iter_aij().collect();
 

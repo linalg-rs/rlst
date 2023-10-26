@@ -22,63 +22,44 @@ use std::marker::PhantomData;
 
 /// A struct that implements [MatrixImplTrait] by holding a reference
 /// to a matrix and forwarding all matrix operations to the held reference.
-pub struct MatrixRef<'a, Item, MatImpl, RS, CS>(
-    &'a Matrix<Item, MatImpl, RS, CS>,
+pub struct MatrixRef<'a, Item, MatImpl, S>(
+    &'a Matrix<Item, MatImpl, S>,
     PhantomData<Item>,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTrait<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTrait<Item, S>;
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixRef<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier>
+    MatrixRef<'a, Item, MatImpl, S>
 {
-    pub fn new(mat: &'a Matrix<Item, MatImpl, RS, CS>) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData)
+    pub fn new(mat: &'a Matrix<Item, MatImpl, S>) -> Self {
+        Self(mat, PhantomData, PhantomData)
     }
 }
 
-pub struct MatrixRefMut<'a, Item, MatImpl, RS, CS>(
-    &'a mut Matrix<Item, MatImpl, RS, CS>,
+pub struct MatrixRefMut<'a, Item, MatImpl, S>(
+    &'a mut Matrix<Item, MatImpl, S>,
     PhantomData<Item>,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl: MatrixImplTraitMut<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl: MatrixImplTraitMut<Item, S>;
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > MatrixRefMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    MatrixRefMut<'a, Item, MatImpl, S>
 {
-    pub fn new(mat: &'a mut Matrix<Item, MatImpl, RS, CS>) -> Self {
-        Self(mat, PhantomData, PhantomData, PhantomData)
+    pub fn new(mat: &'a mut Matrix<Item, MatImpl, S>) -> Self {
+        Self(mat, PhantomData, PhantomData)
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for MatrixRef<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Layout
+    for MatrixRef<'a, Item, MatImpl, S>
 {
     type Impl = DefaultLayout;
 
@@ -88,25 +69,59 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for MatrixRef<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Size
+    for MatrixRef<'a, Item, MatImpl, S>
 {
-    type R = RS;
-    type C = CS;
+    type S = S;
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for MatrixRef<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> MatrixImplIdentifier
+    for MatrixRef<'a, Item, MatImpl, S>
+{
+    const MAT_IMPL: MatrixImplType = MatImpl::MAT_IMPL;
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByValue for MatrixRef<'a, Item, MatImpl, S>
+{
+    type Item = Item;
+
+    #[inline]
+    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
+        self.0.get_value_unchecked(row, col)
+    }
+
+    #[inline]
+    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
+        self.0.get1d_value_unchecked(index)
+    }
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> Layout
+    for MatrixRefMut<'a, Item, MatImpl, S>
+{
+    type Impl = DefaultLayout;
+
+    #[inline]
+    fn layout(&self) -> &Self::Impl {
+        self.0.layout()
+    }
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> MatrixImplIdentifier
+    for MatrixRefMut<'a, Item, MatImpl, S>
+{
+    const MAT_IMPL: MatrixImplType = MatImpl::MAT_IMPL;
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> Size
+    for MatrixRefMut<'a, Item, MatImpl, S>
+{
+    type S = S;
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByValue for MatrixRefMut<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -124,59 +139,9 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for MatrixRefMut<'a, Item, MatImpl, RS, CS>
-{
-    type Impl = DefaultLayout;
-
-    #[inline]
-    fn layout(&self) -> &Self::Impl {
-        self.0.layout()
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for MatrixRefMut<'a, Item, MatImpl, RS, CS>
-{
-    type R = RS;
-    type C = CS;
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for MatrixRefMut<'a, Item, MatImpl, RS, CS>
-{
-    type Item = Item;
-
-    #[inline]
-    unsafe fn get_value_unchecked(&self, row: usize, col: usize) -> Self::Item {
-        self.0.get_value_unchecked(row, col)
-    }
-
-    #[inline]
-    unsafe fn get1d_value_unchecked(&self, index: usize) -> Self::Item {
-        self.0.get1d_value_unchecked(index)
-    }
-}
-
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS> + MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+        MatImpl: MatrixImplTraitMut<Item, S> + MatrixImplTraitAccessByRef<Item, S>,
+        S: SizeIdentifier,
+    > UnsafeRandomAccessByRef for MatrixRefMut<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -191,13 +156,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitAccessByRef<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByRef for MatrixRef<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitAccessByRef<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessByRef for MatrixRef<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -212,13 +172,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Item: Scalar,
-        MatImpl: MatrixImplTraitMut<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessMut for MatrixRefMut<'a, Item, MatImpl, RS, CS>
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier>
+    UnsafeRandomAccessMut for MatrixRefMut<'a, Item, MatImpl, S>
 {
     type Item = Item;
 
@@ -230,5 +185,69 @@ impl<
     #[inline]
     unsafe fn get1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get1d_unchecked_mut(index)
+    }
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> RawAccess
+    for MatrixRefMut<'a, Item, MatImpl, S>
+where
+    Matrix<Item, MatImpl, S>: RawAccess<T = Item>,
+{
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.data()
+    }
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> RawAccess
+    for MatrixRef<'a, Item, MatImpl, S>
+where
+    Matrix<Item, MatImpl, S>: RawAccess<T = Item>,
+{
+    type T = Item;
+
+    #[inline]
+    fn get_pointer(&self) -> *const Item {
+        self.0.get_pointer()
+    }
+
+    #[inline]
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+        self.0.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.0.data()
+    }
+}
+
+impl<'a, Item: Scalar, MatImpl: MatrixImplTraitMut<Item, S>, S: SizeIdentifier> RawAccessMut
+    for MatrixRefMut<'a, Item, MatImpl, S>
+where
+    Matrix<Item, MatImpl, S>: RawAccessMut<T = Item>,
+{
+    fn get_pointer_mut(&mut self) -> *mut Item {
+        self.0.get_pointer_mut()
+    }
+
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+        self.0.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.0.data_mut()
     }
 }

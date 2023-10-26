@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 
 members = [
     "dense",
@@ -14,4 +15,5 @@ members = [
     "netlib-lapack-src",
     "blis",
     "rlst",
+    "proc-macro",
 ]

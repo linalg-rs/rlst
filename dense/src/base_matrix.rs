@@ -13,21 +13,13 @@ use crate::types::Scalar;
 use crate::{traits::*, DefaultLayout};
 use std::marker::PhantomData;
 
-pub struct BaseMatrix<
-    Item: Scalar,
-    Data: DataContainer<Item = Item>,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-> {
+pub struct BaseMatrix<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> {
     data: Data,
     layout: DefaultLayout,
-    phantom_r: PhantomData<RS>,
-    phantom_c: PhantomData<CS>,
+    phantom_s: PhantomData<S>,
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    BaseMatrix<Item, Data, RS, CS>
-{
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> BaseMatrix<Item, Data, S> {
     pub fn new(data: Data, layout: DefaultLayout) -> Self {
         assert!(
             layout.number_of_elements() <= data.number_of_elements(),
@@ -35,45 +27,53 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
             data.number_of_elements(),
             layout.number_of_elements(),
         );
-        BaseMatrix::<Item, Data, RS, CS> {
+        BaseMatrix::<Item, Data, S> {
             data,
             layout,
-            phantom_r: PhantomData,
-            phantom_c: PhantomData,
+            phantom_s: PhantomData,
         }
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> RawAccess
+    for BaseMatrix<Item, Data, S>
 {
+    type T = Item;
+
     #[inline]
-    pub fn get_pointer(&self) -> *const Item {
+    fn get_pointer(&self) -> *const Item {
         self.data.get_pointer()
     }
 
     #[inline]
-    pub fn get_slice(&self, first: usize, last: usize) -> &[Item] {
+    fn get_slice(&self, first: usize, last: usize) -> &[Item] {
         self.data.get_slice(first, last)
+    }
+
+    #[inline]
+    fn data(&self) -> &[Item] {
+        self.data.data()
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, S: SizeIdentifier> RawAccessMut
+    for BaseMatrix<Item, Data, S>
 {
-    #[inline]
-    pub fn get_pointer_mut(&mut self) -> *mut Item {
+    fn get_pointer_mut(&mut self) -> *mut Item {
         self.data.get_pointer_mut()
     }
 
-    #[inline]
-    pub fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
+    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Item] {
         self.data.get_slice_mut(first, last)
+    }
+
+    fn data_mut(&mut self) -> &mut [Item] {
+        self.data.data_mut()
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier> Layout
-    for BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> Layout
+    for BaseMatrix<Item, Data, S>
 {
     type Impl = DefaultLayout;
 
@@ -83,15 +83,20 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    SizeType for BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> MatrixImplIdentifier
+    for BaseMatrix<Item, Data, S>
 {
-    type R = RS;
-    type C = CS;
+    const MAT_IMPL: MatrixImplType = MatrixImplType::Base;
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessByValue for BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> Size
+    for BaseMatrix<Item, Data, S>
+{
+    type S = S;
+}
+
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> UnsafeRandomAccessByValue
+    for BaseMatrix<Item, Data, S>
 {
     type Item = Item;
 
@@ -108,8 +113,8 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessByRef for BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainer<Item = Item>, S: SizeIdentifier> UnsafeRandomAccessByRef
+    for BaseMatrix<Item, Data, S>
 {
     type Item = Item;
 
@@ -125,8 +130,8 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, RS: SizeIdentifier, CS: Siz
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, RS: SizeIdentifier, CS: SizeIdentifier>
-    UnsafeRandomAccessMut for BaseMatrix<Item, Data, RS, CS>
+impl<Item: Scalar, Data: DataContainerMut<Item = Item>, S: SizeIdentifier> UnsafeRandomAccessMut
+    for BaseMatrix<Item, Data, S>
 {
     type Item = Item;
 

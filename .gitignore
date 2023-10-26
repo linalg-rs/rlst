@@ -10,3 +10,8 @@ Cargo.lock
 **/*.rs.bk
 
 examples.sh
+
+.vscode
+.*.swp
+
+*.pyc

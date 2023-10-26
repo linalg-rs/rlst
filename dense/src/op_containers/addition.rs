@@ -12,32 +12,30 @@ use crate::DefaultLayout;
 use std::marker::PhantomData;
 
 /// A type that represents the sum of two matrices.
-pub type AdditionMat<Item, MatImpl1, MatImpl2, RS, CS> =
-    Matrix<Item, Addition<Item, MatImpl1, MatImpl2, RS, CS>, RS, CS>;
+pub type AdditionMat<Item, MatImpl1, MatImpl2, S> =
+    Matrix<Item, Addition<Item, MatImpl1, MatImpl2, S>, S>;
 
-pub struct Addition<Item, MatImpl1, MatImpl2, RS, CS>(
-    Matrix<Item, MatImpl1, RS, CS>,
-    Matrix<Item, MatImpl2, RS, CS>,
+pub struct Addition<Item, MatImpl1, MatImpl2, S>(
+    Matrix<Item, MatImpl1, S>,
+    Matrix<Item, MatImpl2, S>,
     DefaultLayout,
-    PhantomData<RS>,
-    PhantomData<CS>,
+    PhantomData<S>,
+    PhantomData<S>,
 )
 where
     Item: Scalar,
-    RS: SizeIdentifier,
-    CS: SizeIdentifier,
-    MatImpl1: MatrixImplTrait<Item, RS, CS>,
-    MatImpl2: MatrixImplTrait<Item, RS, CS>;
+    S: SizeIdentifier,
+    MatImpl1: MatrixImplTrait<Item, S>,
+    MatImpl2: MatrixImplTrait<Item, S>;
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Addition<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Addition<Item, MatImpl1, MatImpl2, S>
 {
-    pub fn new(mat1: Matrix<Item, MatImpl1, RS, CS>, mat2: Matrix<Item, MatImpl2, RS, CS>) -> Self {
+    pub fn new(mat1: Matrix<Item, MatImpl1, S>, mat2: Matrix<Item, MatImpl2, S>) -> Self {
         assert_eq!(
             mat1.layout().dim(),
             mat2.layout().dim(),
@@ -58,11 +56,10 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Layout for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Layout for Addition<Item, MatImpl1, MatImpl2, S>
 {
     type Impl = DefaultLayout;
 
@@ -73,23 +70,20 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > SizeType for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > Size for Addition<Item, MatImpl1, MatImpl2, S>
 {
-    type C = CS;
-    type R = RS;
+    type S = S;
 }
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > UnsafeRandomAccessByValue for Addition<Item, MatImpl1, MatImpl2, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > UnsafeRandomAccessByValue for Addition<Item, MatImpl1, MatImpl2, S>
 {
     type Item = Item;
 
@@ -106,15 +100,72 @@ impl<
 
 impl<
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > MatrixImplIdentifier for Addition<Item, MatImpl1, MatImpl2, S>
 {
-    type Output = AdditionMat<Item, MatImpl1, MatImpl2, RS, CS>;
+    const MAT_IMPL: MatrixImplType = MatrixImplType::Derived;
+}
 
-    fn add(self, rhs: Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccess for Addition<Item, MatImpl1, MatImpl2, S>
+{
+    type T = Item;
+
+    #[inline]
+    fn data(&self) -> &[Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer(&self) -> *const Self::T {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_slice(&self, _first: usize, _last: usize) -> &[Self::T] {
+        std::unimplemented!()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > RawAccessMut for Addition<Item, MatImpl1, MatImpl2, S>
+{
+    #[inline]
+    fn data_mut(&mut self) -> &mut [Self::T] {
+        std::unimplemented!();
+    }
+
+    #[inline]
+    fn get_pointer_mut(&mut self) -> *mut Self::T {
+        std::unimplemented!()
+    }
+
+    #[inline]
+    fn get_slice_mut(&mut self, _first: usize, _last: usize) -> &mut [Self::T] {
+        std::unimplemented!()
+    }
+}
+
+impl<
+        Item: Scalar,
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Add<Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
+{
+    type Output = AdditionMat<Item, MatImpl1, MatImpl2, S>;
+
+    fn add(self, rhs: Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Addition::new(self, rhs))
     }
 }
@@ -122,15 +173,14 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Add<&'a Matrix<Item, MatImpl2, S>> for Matrix<Item, MatImpl1, S>
 {
-    type Output = AdditionMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, RS, CS>, RS, CS>;
+    type Output = AdditionMat<Item, MatImpl1, MatrixRef<'a, Item, MatImpl2, S>, S>;
 
-    fn add(self, rhs: &'a Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn add(self, rhs: &'a Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Addition::new(self, Matrix::from_ref(rhs)))
     }
 }
@@ -138,15 +188,14 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Add<Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Add<Matrix<Item, MatImpl2, S>> for &'a Matrix<Item, MatImpl1, S>
 {
-    type Output = AdditionMat<Item, MatrixRef<'a, Item, MatImpl1, RS, CS>, MatImpl2, RS, CS>;
+    type Output = AdditionMat<Item, MatrixRef<'a, Item, MatImpl1, S>, MatImpl2, S>;
 
-    fn add(self, rhs: Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn add(self, rhs: Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Addition::new(Matrix::from_ref(self), rhs))
     }
 }
@@ -154,21 +203,15 @@ impl<
 impl<
         'a,
         Item: Scalar,
-        MatImpl1: MatrixImplTrait<Item, RS, CS>,
-        MatImpl2: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > std::ops::Add<&'a Matrix<Item, MatImpl2, RS, CS>> for &'a Matrix<Item, MatImpl1, RS, CS>
+        MatImpl1: MatrixImplTrait<Item, S>,
+        MatImpl2: MatrixImplTrait<Item, S>,
+        S: SizeIdentifier,
+    > std::ops::Add<&'a Matrix<Item, MatImpl2, S>> for &'a Matrix<Item, MatImpl1, S>
 {
-    type Output = AdditionMat<
-        Item,
-        MatrixRef<'a, Item, MatImpl1, RS, CS>,
-        MatrixRef<'a, Item, MatImpl2, RS, CS>,
-        RS,
-        CS,
-    >;
+    type Output =
+        AdditionMat<Item, MatrixRef<'a, Item, MatImpl1, S>, MatrixRef<'a, Item, MatImpl2, S>, S>;
 
-    fn add(self, rhs: &'a Matrix<Item, MatImpl2, RS, CS>) -> Self::Output {
+    fn add(self, rhs: &'a Matrix<Item, MatImpl2, S>) -> Self::Output {
         Matrix::new(Addition::new(Matrix::from_ref(self), Matrix::from_ref(rhs)))
     }
 }
@@ -181,8 +224,8 @@ mod test {
 
     #[test]
     fn scalar_mult() {
-        let mut mat1 = crate::rlst_mat!(f64, (2, 3));
-        let mut mat2 = crate::rlst_mat!(f64, (2, 3));
+        let mut mat1 = crate::rlst_dynamic_mat!(f64, (2, 3));
+        let mut mat2 = crate::rlst_dynamic_mat!(f64, (2, 3));
 
         mat1[[1, 2]] = 5.0;
         mat2[[1, 2]] = 6.0;

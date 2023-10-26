@@ -1,5 +1,5 @@
 //! Implementation of Norm2.
-use crate::lapack::DenseMatrixLinAlgBuilder;
+use crate::linalg::DenseMatrixLinAlgBuilder;
 use rlst_common::traits::{Scalar, Shape, SquareSum};
 use rlst_common::types::{RlstError, RlstResult};
 
@@ -8,7 +8,7 @@ use crate::{
     traits::svd::{Mode, Svd},
 };
 
-impl<'a, T: Scalar, Mat: Shape + SquareSum<T = T>> Norm2 for DenseMatrixLinAlgBuilder<'a, T, Mat>
+impl<T: Scalar> Norm2 for DenseMatrixLinAlgBuilder<T>
 where
     Self: Svd<T = T>,
 {
@@ -41,7 +41,7 @@ mod test {
     use rand::prelude::*;
     use rand_chacha::ChaCha8Rng;
     use rlst_dense::rlst_col_vec;
-    use rlst_dense::rlst_mat;
+    use rlst_dense::rlst_dynamic_mat;
 
     #[test]
     fn test_vector_norm() {
@@ -57,7 +57,7 @@ mod test {
 
     #[test]
     fn test_matrix_norm() {
-        let mut mat = rlst_mat![f64, (2, 2)];
+        let mut mat = rlst_dynamic_mat![f64, (2, 2)];
 
         mat[[0, 0]] = -1.0;
         mat[[1, 1]] = 0.5;

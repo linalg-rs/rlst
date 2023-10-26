@@ -6,14 +6,11 @@ use lapacke;
 use num::traits::Zero;
 use rlst_common::traits::*;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{rlst_mat, MatrixD};
+use rlst_dense::{rlst_dynamic_mat, MatrixD};
 
 macro_rules! implement_svd {
     ($scalar:ty, $lapack_gesvd:ident) => {
-        impl<'a, Mat: Copy> Svd for DenseMatrixLinAlgBuilder<'a, $scalar, Mat>
-        where
-            <Mat as Copy>::Out: RawAccessMut<T = $scalar> + Shape + Stride,
-        {
+        impl Svd for DenseMatrixLinAlgBuilder<$scalar> {
             type T = $scalar;
             fn svd(
                 self,
@@ -24,11 +21,12 @@ macro_rules! implement_svd {
                 Option<MatrixD<$scalar>>,
                 Option<MatrixD<$scalar>>,
             )> {
-                let mut copied = self.into_lapack()?;
-                let m = copied.mat.shape().0 as i32;
-                let n = copied.mat.shape().1 as i32;
+                let mut mat = self.mat;
+
+                let m = mat.shape().0 as i32;
+                let n = mat.shape().1 as i32;
                 let k = std::cmp::min(m, n);
-                let lda = copied.mat.stride().1 as i32;
+                let lda = mat.stride().1 as i32;
 
                 let mut s_values = vec![<<$scalar as Scalar>::Real as Zero>::zero(); k as usize];
                 let mut superb =
@@ -51,13 +49,13 @@ macro_rules! implement_svd {
                 match u_mode {
                     Mode::All => {
                         jobu = b'A';
-                        u_matrix = Some(rlst_mat![$scalar, (m as usize, m as usize)]);
+                        u_matrix = Some(rlst_dynamic_mat![$scalar, (m as usize, m as usize)]);
                         u_data = u_matrix.as_mut().unwrap().data_mut();
                         ldu = m as i32;
                     }
                     Mode::Slim => {
                         jobu = b'S';
-                        u_matrix = Some(rlst_mat![$scalar, (m as usize, k as usize)]);
+                        u_matrix = Some(rlst_dynamic_mat![$scalar, (m as usize, k as usize)]);
                         u_data = u_matrix.as_mut().unwrap().data_mut();
                         ldu = m as i32;
                     }
@@ -72,13 +70,13 @@ macro_rules! implement_svd {
                 match vt_mode {
                     Mode::All => {
                         jobvt = b'A';
-                        vt_matrix = Some(rlst_mat![$scalar, (n as usize, n as usize)]);
+                        vt_matrix = Some(rlst_dynamic_mat![$scalar, (n as usize, n as usize)]);
                         vt_data = vt_matrix.as_mut().unwrap().data_mut();
                         ldvt = n as i32;
                     }
                     Mode::Slim => {
                         jobvt = b'S';
-                        vt_matrix = Some(rlst_mat![$scalar, (k as usize, n as usize)]);
+                        vt_matrix = Some(rlst_dynamic_mat![$scalar, (k as usize, n as usize)]);
                         vt_data = vt_matrix.as_mut().unwrap().data_mut();
                         ldvt = k as i32;
                     }
@@ -97,7 +95,7 @@ macro_rules! implement_svd {
                         jobvt,
                         m,
                         n,
-                        copied.mat.data_mut(),
+                        mat.data_mut(),
                         lda,
                         s_values.as_mut_slice(),
                         u_data,
@@ -139,7 +137,7 @@ mod test {
         let m = 3;
         let n = 4;
         let k = std::cmp::min(m, n);
-        let mut mat = rlst_mat!(f64, (m, n));
+        let mut mat = rlst_dynamic_mat!(f64, (m, n));
 
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
@@ -150,7 +148,7 @@ mod test {
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();
 
-        let mut sigma = rlst_mat!(f64, (k, k));
+        let mut sigma = rlst_dynamic_mat!(f64, (k, k));
         for index in 0..k {
             sigma[[index, index]] = singular_values[index];
         }
@@ -171,7 +169,7 @@ mod test {
         let m = 4;
         let n = 3;
         let k = std::cmp::min(m, n);
-        let mut mat = rlst_mat!(f64, (m, n));
+        let mut mat = rlst_dynamic_mat!(f64, (m, n));
 
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
@@ -182,7 +180,7 @@ mod test {
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();
 
-        let mut sigma = rlst_mat!(f64, (k, k));
+        let mut sigma = rlst_dynamic_mat!(f64, (k, k));
         for index in 0..k {
             sigma[[index, index]] = singular_values[index];
         }
@@ -203,7 +201,7 @@ mod test {
         let m = 5;
         let n = 5;
         let k = std::cmp::min(m, n);
-        let mut mat = rlst_mat!(f64, (m, n));
+        let mut mat = rlst_dynamic_mat!(f64, (m, n));
 
         mat.fill_from_equally_distributed(&mut rng);
         let expected = mat.copy();
@@ -214,7 +212,7 @@ mod test {
         let u_matrix = u_matrix.unwrap();
         let vt_matrix = vt_matrix.unwrap();
 
-        let mut sigma = rlst_mat!(f64, (k, k));
+        let mut sigma = rlst_dynamic_mat!(f64, (k, k));
         for index in 0..k {
             sigma[[index, index]] = singular_values[index];
         }

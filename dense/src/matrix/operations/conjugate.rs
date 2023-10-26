@@ -7,14 +7,10 @@ use rlst_common::traits::Conjugate;
 
 pub use rlst_common::types::Scalar;
 
-impl<
-        Item: Scalar,
-        MatImpl: MatrixImplTrait<Item, RS, CS>,
-        RS: SizeIdentifier,
-        CS: SizeIdentifier,
-    > Conjugate for Matrix<Item, MatImpl, RS, CS>
+impl<Item: Scalar, MatImpl: MatrixImplTrait<Item, S>, S: SizeIdentifier> Conjugate
+    for Matrix<Item, MatImpl, S>
 {
-    type Out = ConjugateMat<Item, MatImpl, RS, CS>;
+    type Out = ConjugateMat<Item, MatImpl, S>;
 
     fn conj(self) -> Self::Out {
         Matrix::new(ConjugateContainer::new(self))

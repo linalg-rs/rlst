@@ -1,0 +1,55 @@
+name: 🧪 Test
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  run-tests:
+    name: Run tests (Rust)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust-version: ["stable","beta","nightly"]
+        mpi: ["mpich","openmpi"]
+    steps:
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt
+
+      - name: Set up MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: ${{ matrix.mpi }}
+      - name: Install cargo-mpirun
+        run: cargo install cargo-mpirun
+
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+
+      - name: Install Clang
+        run: sudo apt-get install -y libclang-dev
+
+      - name: Install CMake
+        run: sudo apt-get install -y cmake
+
+      - name: Build (debug)
+        run: cargo build --features "mpi,strict"
+      - name: Build (release)
+        run: cargo build --release --features "mpi,strict"
+
+      - name: Run unit tests (debug)
+        run: cargo test --lib --features "mpi,strict"
+      - name: Run tests (release)
+        run: cargo test --examples --release --features "mpi,strict"
+      - name: Run examples
+        run: |
+          python3 find_examples.py --features "strict"
+          chmod +x examples.sh
+          ./examples.sh
+
+      - name: Build docs
+        run: cargo doc --features "mpi,strict"

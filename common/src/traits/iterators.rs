@@ -24,6 +24,36 @@ pub trait ColumnMajorIterator {
     fn iter_col_major(&self) -> Self::Iter<'_>;
 }
 
+/// Mutable iterator through the elements in column-major ordering.
+pub trait ColumnMajorIteratorMut {
+    type T: Scalar;
+    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::T>
+    where
+        Self: 'a;
+
+    fn iter_col_major_mut(&mut self) -> Self::IterMut<'_>;
+}
+
+/// Iterate through the diagonal.
+pub trait DiagonalIterator {
+    type T: Scalar;
+    type Iter<'a>: std::iter::Iterator<Item = Self::T>
+    where
+        Self: 'a;
+
+    fn iter_diag(&self) -> Self::Iter<'_>;
+}
+
+/// Mutable iterator through the diagonal.
+pub trait DiagonalIteratorMut {
+    type T: Scalar;
+    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::T>
+    where
+        Self: 'a;
+
+    fn iter_diag_mut(&mut self) -> Self::IterMut<'_>;
+}
+
 /// Apply an `FnMut` closure to each element.
 pub trait ForEach {
     type T: Scalar;

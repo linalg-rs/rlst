@@ -7,8 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: "0 7 * * 1"
 
 jobs:
   run-tests:
@@ -17,14 +15,8 @@ jobs:
     strategy:
       matrix:
         rust-version: ["stable"]
-        mpi: ["mpich"]
+        mpi: ["mpich","openmpi"]
     steps:
-      - uses: kenchan0130/actions-system-info@master
-        id: system-info
-      - name: Get processor type
-        run: echo "type=${{ steps.system-info.outputs.cpu-model }}" >> $GITHUB_OUTPUT
-        id: processor
-        
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -47,9 +39,17 @@ jobs:
 
       - name: Install CMake
         run: sudo apt-get install -y cmake
-  
+
       - name: Style checks
-        run: cargo fmt -- --check
+        run: |
+          cargo fmt -- --check
+          cargo clippy -- -D warnings
+          cargo clippy --tests -- -D warnings
+          cargo clippy --examples -- -D warnings
+      - name: Check dependency versions
+        run: |
+          python3 -m pip install pytest
+          python3 -m pytest _test
 
       - name: Run unit tests (debug)
         run: cargo test --lib --features "mpi,strict"
