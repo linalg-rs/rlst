@@ -12,8 +12,6 @@ pub struct ArrayView<
     const NDIM: usize,
 > {
     arr: &'a Array<Item, ArrayImpl, NDIM>,
-    offset: [usize; NDIM],
-    shape: [usize; NDIM],
 }
 
 pub struct ArrayViewMut<
@@ -25,8 +23,6 @@ pub struct ArrayViewMut<
     const NDIM: usize,
 > {
     arr: &'a mut Array<Item, ArrayImpl, NDIM>,
-    offset: [usize; NDIM],
-    shape: [usize; NDIM],
 }
 
 impl<
@@ -36,22 +32,8 @@ impl<
         const NDIM: usize,
     > ArrayView<'a, Item, ArrayImpl, NDIM>
 {
-    pub fn new(
-        arr: &'a Array<Item, ArrayImpl, NDIM>,
-        offset: [usize; NDIM],
-        shape: [usize; NDIM],
-    ) -> Self {
-        let arr_shape = arr.shape();
-        for index in 0..NDIM {
-            assert!(
-                offset[index] + shape[index] <= arr_shape[index],
-                "View out of bounds for dimension {}. {} > {}",
-                index,
-                offset[index] + shape[index],
-                arr_shape[index]
-            )
-        }
-        Self { arr, offset, shape }
+    pub fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
+        Self { arr }
     }
 }
 
@@ -64,26 +46,13 @@ impl<
         const NDIM: usize,
     > ArrayViewMut<'a, Item, ArrayImpl, NDIM>
 {
-    pub fn new(
-        arr: &'a mut Array<Item, ArrayImpl, NDIM>,
-        offset: [usize; NDIM],
-        shape: [usize; NDIM],
-    ) -> Self {
-        let arr_shape = arr.shape();
-        for index in 0..NDIM {
-            assert!(
-                offset[index] + shape[index] <= arr_shape[index],
-                "View out of bounds for dimension {}. {} > {}",
-                index,
-                offset[index] + shape[index],
-                arr_shape[index]
-            )
-        }
-        Self { arr, offset, shape }
+    pub fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
+        Self { arr }
     }
 }
 
-// Basic traits for ArrayView
+/////////////////
+/// Basic traits for ArrayView
 
 impl<
         'a,
@@ -93,7 +62,7 @@ impl<
     > Shape<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
-        self.shape
+        self.arr.shape()
     }
 }
 
@@ -122,6 +91,329 @@ impl<
     type Item = Item;
 
     fn data(&self) -> &[Self::Item] {
+        self.arr.data()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > UnsafeRandomAccessByValue<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        self.arr.get_value_unchecked(multi_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessByRef<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        self.arr.get_unchecked(multi_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        self.arr.get_chunk(chunk_index)
+    }
+}
+
+////////////////
+/// Basic traits for ArrayViewMut
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Shape<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    fn shape(&self) -> [usize; NDIM] {
+        self.arr.shape()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + Stride<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Stride<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.arr.stride()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + RawAccess<Item = Item>
+            + Stride<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > RawAccess for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
+        self.arr.data()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + RawAccess<Item = Item>
+            + Stride<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + RawAccessMut<Item = Item>,
+        const NDIM: usize,
+    > RawAccessMut for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.arr.data_mut()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessByValue<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        self.arr.get_value_unchecked(multi_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessByRef<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
+        self.arr.get_unchecked(multi_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + ChunkedAccess<N, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+        const N: usize,
+    > ChunkedAccess<N> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+        self.arr.get_chunk(chunk_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandomAccessMut<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    #[inline]
+    unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
+        self.arr.get_unchecked_mut(multi_index)
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + ResizeInPlace<NDIM>,
+        const NDIM: usize,
+    > ResizeInPlace<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    #[inline]
+    fn resize_in_place(&mut self, shape: [usize; NDIM]) {
+        self.arr.resize_in_place(shape)
+    }
+}
+
+////////////////////////////////////////////
+pub struct ArraySubView<
+    'a,
+    Item: Scalar,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    const NDIM: usize,
+> {
+    arr: &'a Array<Item, ArrayImpl, NDIM>,
+    offset: [usize; NDIM],
+    shape: [usize; NDIM],
+}
+
+pub struct ArraySubViewMut<
+    'a,
+    Item: Scalar,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+        + Shape<NDIM>
+        + UnsafeRandomAccessMut<NDIM, Item = Item>,
+    const NDIM: usize,
+> {
+    arr: &'a mut Array<Item, ArrayImpl, NDIM>,
+    offset: [usize; NDIM],
+    shape: [usize; NDIM],
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > ArraySubView<'a, Item, ArrayImpl, NDIM>
+{
+    pub fn new(
+        arr: &'a Array<Item, ArrayImpl, NDIM>,
+        offset: [usize; NDIM],
+        shape: [usize; NDIM],
+    ) -> Self {
+        let arr_shape = arr.shape();
+        for index in 0..NDIM {
+            assert!(
+                offset[index] + shape[index] <= arr_shape[index],
+                "View out of bounds for dimension {}. {} > {}",
+                index,
+                offset[index] + shape[index],
+                arr_shape[index]
+            )
+        }
+        Self { arr, offset, shape }
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
+{
+    pub fn new(
+        arr: &'a mut Array<Item, ArrayImpl, NDIM>,
+        offset: [usize; NDIM],
+        shape: [usize; NDIM],
+    ) -> Self {
+        let arr_shape = arr.shape();
+        for index in 0..NDIM {
+            assert!(
+                offset[index] + shape[index] <= arr_shape[index],
+                "View out of bounds for dimension {}. {} > {}",
+                index,
+                offset[index] + shape[index],
+                arr_shape[index]
+            )
+        }
+        Self { arr, offset, shape }
+    }
+}
+
+// Basic traits for ArraySubView
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Shape<NDIM> for ArraySubView<'a, Item, ArrayImpl, NDIM>
+{
+    fn shape(&self) -> [usize; NDIM] {
+        self.shape
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
+        const NDIM: usize,
+    > Stride<NDIM> for ArraySubView<'a, Item, ArrayImpl, NDIM>
+{
+    fn stride(&self) -> [usize; NDIM] {
+        self.arr.stride()
+    }
+}
+
+impl<
+        'a,
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + RawAccess<Item = Item>
+            + Stride<NDIM>,
+        const NDIM: usize,
+    > RawAccess for ArraySubView<'a, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    fn data(&self) -> &[Self::Item] {
         assert!(!self.is_empty());
         let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
 
@@ -134,7 +426,7 @@ impl<
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArraySubView<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -152,7 +444,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<NDIM> for ArraySubView<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -169,7 +461,7 @@ impl<
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayView<'a, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArraySubView<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -209,7 +501,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > Shape<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > Shape<NDIM> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
@@ -224,7 +516,7 @@ impl<
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + Stride<NDIM>,
         const NDIM: usize,
-    > Stride<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > Stride<NDIM> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
@@ -240,7 +532,7 @@ impl<
             + RawAccess<Item = Item>
             + Stride<NDIM>,
         const NDIM: usize,
-    > RawAccess for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > RawAccess for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -260,7 +552,7 @@ impl<
             + RawAccessMut<Item = Item>
             + Stride<NDIM>,
         const NDIM: usize,
-    > RawAccessMut for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > RawAccessMut for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         assert!(!self.is_empty());
@@ -277,7 +569,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -296,7 +588,7 @@ impl<
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<NDIM> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -317,7 +609,7 @@ impl<
             + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -355,7 +647,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessMut<NDIM> for ArraySubViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -376,12 +668,19 @@ impl<
         &self,
         offset: [usize; NDIM],
         shape: [usize; NDIM],
-    ) -> Array<Item, ArrayView<'_, Item, ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArrayView::new(self, offset, shape))
+    ) -> Array<Item, ArraySubView<'_, Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArraySubView::new(self, offset, shape))
     }
+}
 
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
     pub fn view(&self) -> Array<Item, ArrayView<'_, Item, ArrayImpl, NDIM>, NDIM> {
-        self.subview([0; NDIM], self.shape())
+        Array::new(ArrayView::new(self))
     }
 }
 
@@ -397,12 +696,21 @@ impl<
         &mut self,
         offset: [usize; NDIM],
         shape: [usize; NDIM],
-    ) -> Array<Item, ArrayViewMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArrayViewMut::new(self, offset, shape))
+    ) -> Array<Item, ArraySubViewMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArraySubViewMut::new(self, offset, shape))
     }
+}
 
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
     pub fn view_mut(&mut self) -> Array<Item, ArrayViewMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
-        self.subview_mut([0; NDIM], self.shape())
+        Array::new(ArrayViewMut::new(self))
     }
 }
 
