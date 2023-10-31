@@ -11,6 +11,7 @@
 //!
 //!
 
+use num::Zero;
 use rlst_common::types::Scalar;
 
 pub trait DataContainer {
@@ -99,6 +100,11 @@ pub trait DataContainerMut: DataContainer {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.get_slice_mut(0, self.number_of_elements())
     }
+}
+
+pub trait ResizeableDataContainerMut: DataContainerMut {
+    /// Reshape the data container
+    fn resize(&mut self, new_len: usize);
 }
 
 /// A container that uses dynamic vectors.
@@ -191,6 +197,12 @@ impl<Item: Scalar> DataContainerMut for VectorContainer<Item> {
 
     fn get_pointer_mut(&mut self) -> *mut Self::Item {
         self.data.as_mut_ptr()
+    }
+}
+
+impl<Item: Scalar> ResizeableDataContainerMut for VectorContainer<Item> {
+    fn resize(&mut self, new_len: usize) {
+        self.data.resize(new_len, <Item as Zero>::zero());
     }
 }
 

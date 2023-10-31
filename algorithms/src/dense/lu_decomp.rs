@@ -3,20 +3,32 @@
 //! The Lapack LU interface uses the Lapack routines `_getrf` to compute an LU decomposition and
 //! `_getrs` to solve a linear system of equations.
 
-use crate::traits::lu_decomp::{LUDecomp, LU};
+use crate::array::Array;
 use lapacke;
 use num::traits::One;
-use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
-use rlst_dense::{rlst_dynamic_mat, traits::*, MatrixD};
-
-use crate::linalg::DenseMatrixLinAlgBuilder;
-use crate::traits::types::*;
+use rlst_common::{
+    traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue},
+    types::{c32, c64, RlstError, RlstResult, Scalar},
+};
 use std::marker::PhantomData;
 
-pub struct LUDecompLapack<T: Scalar> {
-    mat: MatrixD<T>,
+pub struct LUDecompLapack<
+    Item: Scalar,
+    ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccessMut<Item = Item>,
+> {
+    mat: Array<Item, ArrayImpl, 2>,
     ipiv: Vec<i32>,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<Item>,
+}
+
+pub trait LU {
+    type Item: Scalar;
+    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
+        + Shape<2>
+        + Stride<2>
+        + RawAccessMut<Item = Self::Item>;
+
+    fn into_lu(self) -> LUDecompLapack<Self::Item, Self::ArrayImpl>;
 }
 
 macro_rules! lu_decomp_impl {

@@ -1,7 +1,6 @@
 //! Trait for LU Decomposition and linear system solves with LU.
 use super::types::*;
 pub use rlst_common::types::{RlstError, RlstResult, Scalar};
-use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 
 /// Defines the LU Decomposition of a matrix.
 ///
@@ -14,10 +13,6 @@ use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
 /// matrix `A`. To solve a linear system `Ax=b` the routine [`LUDecomp::solve`] is provided.
 pub trait LUDecomp {
     type T: Scalar;
-    type Sol;
-
-    /// Raw pointer to the data.
-    fn data(&self) -> &[Self::T];
 
     /// Return the L matrix.
     fn get_l(&self) -> MatrixD<Self::T>;

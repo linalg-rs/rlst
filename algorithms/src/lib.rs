@@ -4,9 +4,11 @@
 extern crate rlst_blis_src;
 extern crate rlst_netlib_lapack_src;
 
-// pub mod dense;
+//pub mod dense;
 // pub mod iterative_solvers;
 // pub mod lapack;
 // pub mod linalg;
 // pub mod sparse;
+// pub mod traits;
+
 // pub mod traits;

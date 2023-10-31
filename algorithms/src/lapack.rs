@@ -1,18 +1,18 @@
 //! Interface to Lapack routines.
-pub mod lu_decomp;
-pub mod qr_decomp;
-pub mod svd;
-pub mod triangular_solve;
-pub use crate::linalg::DenseMatrixLinAlgBuilder;
-pub use lapacke::Layout;
-pub use rlst_common::types::{RlstError, RlstResult};
-pub mod cholesky_decomp;
-pub mod evd;
-pub mod inverse;
-pub use rlst_dense::traits::*;
-pub use rlst_dense::{
-    DataContainer, GenericBaseMatrix, Matrix, MatrixD, MatrixImplTrait, SizeIdentifier,
-};
+// pub mod lu_decomp;
+// pub mod qr_decomp;
+// pub mod svd;
+// pub mod triangular_solve;
+// pub use crate::linalg::DenseMatrixLinAlgBuilder;
+// pub use lapacke::Layout;
+// pub use rlst_common::types::{RlstError, RlstResult};
+// pub mod cholesky_decomp;
+// pub mod evd;
+// pub mod inverse;
+// pub use rlst_dense::traits::*;
+// pub use rlst_dense::{
+//     DataContainer, GenericBaseMatrix, Matrix, MatrixD, MatrixImplTrait, SizeIdentifier,
+// };
 
 // // pub trait LapackCompatible: RawAccessMut + Shape + Stride + Sized {}
 

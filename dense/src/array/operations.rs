@@ -118,3 +118,24 @@ impl<
         }
     }
 }
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    pub fn set_zero(&mut self) {
+        for elem in self.iter_mut() {
+            *elem = <Item as num::Zero>::zero();
+        }
+    }
+
+    pub fn set_one(&mut self) {
+        for elem in self.iter_mut() {
+            *elem = <Item as num::One>::one();
+        }
+    }
+}

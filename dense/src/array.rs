@@ -8,6 +8,7 @@ use rlst_common::traits::RandomAccessByRef;
 use rlst_common::traits::RandomAccessMut;
 use rlst_common::traits::RawAccess;
 use rlst_common::traits::RawAccessMut;
+use rlst_common::traits::ResizeInPlace;
 use rlst_common::traits::Shape;
 use rlst_common::traits::Stride;
 use rlst_common::traits::UnsafeRandomAccessByRef;
@@ -16,9 +17,9 @@ use rlst_common::traits::UnsafeRandomAccessMut;
 use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
-pub mod dot;
 pub mod empty_axis;
 pub mod iterators;
+pub mod mult_into;
 pub mod operations;
 pub mod operators;
 pub mod random;
@@ -225,5 +226,16 @@ impl<
 {
     fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ResizeInPlace<NDIM>,
+        const NDIM: usize,
+    > ResizeInPlace<NDIM> for Array<Item, ArrayImpl, NDIM>
+{
+    fn resize_in_place(&mut self, shape: [usize; NDIM]) {
+        self.0.resize_in_place(shape)
     }
 }

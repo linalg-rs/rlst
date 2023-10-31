@@ -35,6 +35,7 @@
 
 pub mod base_array;
 pub mod data_container;
+pub mod linalg;
 pub mod number_types;
 
 // pub mod base_array;

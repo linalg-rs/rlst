@@ -16,4 +16,5 @@ members = [
     "blis",
     "rlst",
     "proc-macro",
+    "lapack"
 ]

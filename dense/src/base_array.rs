@@ -1,10 +1,10 @@
 use crate::array::empty_chunk;
-use crate::data_container::{DataContainer, DataContainerMut};
+use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataContainerMut};
 use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
 use rlst_common::traits::{
-    ChunkedAccess, RawAccess, RawAccessMut, Stride, UnsafeRandomAccessByValue,
+    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Stride, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,
 };
 use rlst_common::{
@@ -136,5 +136,16 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<N
 {
     fn stride(&self) -> [usize; NDIM] {
         self.stride
+    }
+}
+
+impl<Item: Scalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
+    ResizeInPlace<NDIM> for BaseArray<Item, Data, NDIM>
+{
+    fn resize_in_place(&mut self, shape: [usize; NDIM]) {
+        let new_len = shape.iter().product();
+        self.data.resize(new_len);
+        self.stride = stride_from_shape(shape);
+        self.shape = shape;
     }
 }
