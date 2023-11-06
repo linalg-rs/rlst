@@ -29,15 +29,18 @@ impl<
     type Item = Item;
 
     fn mult_into(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 2>,
         arr_b: Array<Item, ArrayImplSecond, 2>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
-        crate::matrix_multiply::matrix_multiply(transa, transb, alpha, &arr_a, &arr_b, beta, self)
+        crate::matrix_multiply::matrix_multiply(
+            transa, transb, alpha, &arr_a, &arr_b, beta, &mut self,
+        );
+        self
     }
 }
 
@@ -64,12 +67,12 @@ impl<
     type Item = Item;
 
     fn mult_into(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 2>,
         arr_b: Array<Item, ArrayImplSecond, 1>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
 
@@ -84,7 +87,8 @@ impl<
             &arr_with_padded_dim,
             beta,
             &mut self_with_padded_dim,
-        )
+        );
+        self
     }
 }
 
@@ -111,12 +115,12 @@ impl<
     type Item = Item;
 
     fn mult_into(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 1>,
         arr_b: Array<Item, ArrayImplSecond, 2>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
 
@@ -131,7 +135,8 @@ impl<
             &arr_b,
             beta,
             &mut self_with_padded_dim,
-        )
+        );
+        self
     }
 }
 
@@ -161,12 +166,12 @@ impl<
     type Item = Item;
 
     fn mult_into_resize(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 2>,
         arr_b: Array<Item, ArrayImplSecond, 2>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
 
@@ -175,7 +180,10 @@ impl<
             self.resize_in_place(expected_shape);
         }
 
-        crate::matrix_multiply::matrix_multiply(transa, transb, alpha, &arr_a, &arr_b, beta, self)
+        crate::matrix_multiply::matrix_multiply(
+            transa, transb, alpha, &arr_a, &arr_b, beta, &mut self,
+        );
+        self
     }
 }
 
@@ -203,12 +211,12 @@ impl<
     type Item = Item;
 
     fn mult_into_resize(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 2>,
         arr_b: Array<Item, ArrayImplSecond, 1>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
 
@@ -229,7 +237,8 @@ impl<
             &arr_with_padded_dim,
             beta,
             &mut self_with_padded_dim,
-        )
+        );
+        self
     }
 }
 
@@ -257,12 +266,12 @@ impl<
     type Item = Item;
 
     fn mult_into_resize(
-        &mut self,
+        mut self,
         alpha: Item,
         arr_a: Array<Item, ArrayImplFirst, 1>,
         arr_b: Array<Item, ArrayImplSecond, 2>,
         beta: Item,
-    ) {
+    ) -> Self {
         let transa = TransMode::NoTrans;
         let transb = TransMode::NoTrans;
 
@@ -283,6 +292,7 @@ impl<
             &arr_b,
             beta,
             &mut self_with_padded_dim,
-        )
+        );
+        self
     }
 }

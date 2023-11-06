@@ -239,3 +239,10 @@ impl<
         self.0.resize_in_place(shape)
     }
 }
+
+/// Create an empty array of given type and dimension.
+pub fn empty_array<Item: Scalar, const NDIM: usize>() -> DynamicArray<Item, NDIM> {
+    let shape = [0; NDIM];
+    let container = VectorContainer::new(0);
+    Array::new(BaseArray::new(container, shape))
+}
