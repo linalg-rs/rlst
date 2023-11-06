@@ -346,7 +346,6 @@ impl<
 }
 
 impl<
-        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
