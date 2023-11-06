@@ -264,7 +264,7 @@ impl<
 #[cfg(test)]
 mod test {
 
-    use rlst_common::{assert_array_relative_eq, tools::PrettyPrint};
+    use rlst_common::assert_array_relative_eq;
 
     use crate::rlst_dynamic_array2;
 
@@ -282,10 +282,6 @@ mod test {
 
         let lu = arr2.into_lu().unwrap();
 
-        for (index, elem) in lu.get_perm().iter().enumerate() {
-            println!("Ipiv[{}] = {}", index, elem)
-        }
-
         let mut l_mat = empty_array::<f64, 2>();
         let mut r_mat = empty_array::<f64, 2>();
         let mut p_mat = empty_array::<f64, 2>();
@@ -296,12 +292,8 @@ mod test {
 
         let res = crate::array::empty_array::<f64, 2>();
 
-        let res = res.mult_into_resize(
-            1.0,
-            empty_array().mult_into_resize(1.0, p_mat, l_mat, 0.0),
-            r_mat,
-            0.0,
-        );
+        let res =
+            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
 
         assert_array_relative_eq!(res, arr, 1E-12)
     }
@@ -320,10 +312,6 @@ mod test {
 
         let lu = arr2.into_lu().unwrap();
 
-        for (index, elem) in lu.get_perm().iter().enumerate() {
-            println!("Ipiv[{}] = {}", index, elem)
-        }
-
         let mut l_mat = empty_array::<f64, 2>();
         let mut r_mat = empty_array::<f64, 2>();
         let mut p_mat = empty_array::<f64, 2>();
@@ -332,18 +320,10 @@ mod test {
         lu.get_r_resize(r_mat.view_mut());
         lu.get_p_resize(p_mat.view_mut());
 
-        l_mat.pretty_print();
-        r_mat.pretty_print();
-        p_mat.pretty_print();
-
         let res = crate::array::empty_array::<f64, 2>();
 
-        let res = res.mult_into_resize(
-            1.0,
-            empty_array().mult_into_resize(1.0, p_mat, l_mat, 0.0),
-            r_mat,
-            0.0,
-        );
+        let res =
+            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
 
         assert_array_relative_eq!(res, arr, 1E-12)
     }
@@ -362,10 +342,6 @@ mod test {
 
         let lu = arr2.into_lu().unwrap();
 
-        for (index, elem) in lu.get_perm().iter().enumerate() {
-            println!("Ipiv[{}] = {}", index, elem)
-        }
-
         let mut l_mat = empty_array::<f64, 2>();
         let mut r_mat = empty_array::<f64, 2>();
         let mut p_mat = empty_array::<f64, 2>();
@@ -374,18 +350,10 @@ mod test {
         lu.get_r_resize(r_mat.view_mut());
         lu.get_p_resize(p_mat.view_mut());
 
-        l_mat.pretty_print();
-        r_mat.pretty_print();
-        p_mat.pretty_print();
-
         let res = crate::array::empty_array::<f64, 2>();
 
-        let res = res.mult_into_resize(
-            1.0,
-            empty_array().mult_into_resize(1.0, p_mat, l_mat, 0.0),
-            r_mat,
-            0.0,
-        );
+        let res =
+            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
 
         assert_array_relative_eq!(res, arr, 1E-12)
     }

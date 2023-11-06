@@ -360,18 +360,20 @@ mod test {
         let shape = [3, 7, 6];
         let mut arr = rlst_dynamic_array3!(f64, shape);
         arr.fill_from_seed_equally_distributed(0);
+        let mut arr2 = rlst_dynamic_array3!(f64, shape);
+        arr2.fill_from(arr.view());
 
-        let slice = arr.subview([1, 2, 4], [2, 3, 2]).slice(1, 2);
+        let slice = arr.into_subview([1, 2, 4], [2, 3, 2]).slice(1, 2);
 
         assert_eq!(slice.shape(), [2, 2]);
 
-        assert_eq!(slice[[1, 0]], arr[[2, 4, 4]]);
+        assert_eq!(slice[[1, 0]], arr2[[2, 4, 4]]);
 
         let slice_data = slice.data();
-        let arr_data = arr.data();
+        let arr_data = arr2.data();
 
         let slice_index = convert_nd_raw([1, 0], slice.stride());
-        let array_index = convert_nd_raw([2, 4, 4], arr.stride());
+        let array_index = convert_nd_raw([2, 4, 4], arr2.stride());
 
         assert_eq!(slice_data[slice_index], arr_data[array_index]);
     }

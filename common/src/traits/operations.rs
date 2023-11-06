@@ -133,12 +133,34 @@ pub trait PermuteRows {
 /// Multiply First * Second and sum into Self
 pub trait MultInto<First, Second> {
     type Item: Scalar;
+    fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
+    where
+        Self: Sized,
+    {
+        self.mult_into(
+            <Self::Item as num::One>::one(),
+            arr_a,
+            arr_b,
+            <Self::Item as num::Zero>::zero(),
+        )
+    }
     fn mult_into(self, alpha: Self::Item, arr_a: First, arr_b: Second, beta: Self::Item) -> Self;
 }
 
 /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
 pub trait MultIntoResize<First, Second> {
     type Item: Scalar;
+    fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
+    where
+        Self: Sized,
+    {
+        self.mult_into_resize(
+            <Self::Item as num::One>::one(),
+            arr_a,
+            arr_b,
+            <Self::Item as num::Zero>::zero(),
+        )
+    }
     fn mult_into_resize(
         self,
         alpha: Self::Item,
