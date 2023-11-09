@@ -1,11 +1,10 @@
 //! Getrf
-use crate::Trans;
 use lapack::{cgetrs, dgetrs, sgetrs, zgetrs};
 use rlst_common::types::*;
 
 pub trait Getrs: Scalar {
     fn getrs(
-        trans: Trans,
+        trans: u8,
         n: i32,
         nrhs: i32,
         a: &[Self],
@@ -20,7 +19,7 @@ macro_rules! impl_getrs {
     ($scalar:ty, $getrs:expr) => {
         impl Getrs for $scalar {
             fn getrs(
-                trans: Trans,
+                trans: u8,
                 n: i32,
                 nrhs: i32,
                 a: &[Self],
@@ -36,6 +35,7 @@ macro_rules! impl_getrs {
                 assert_eq!(ipiv.len() as i32, n);
                 assert_eq!(b.len() as i32, ldb * nrhs);
                 assert!(ldb >= std::cmp::max(1, n));
+                assert!(trans == b'N' || trans == b'T' || trans == b'C');
 
                 for &elem in ipiv {
                     assert!(elem >= 1);
@@ -44,7 +44,7 @@ macro_rules! impl_getrs {
 
                 let mut info = 0;
 
-                unsafe { $getrs(trans as u8, n, nrhs, a, lda, ipiv, b, ldb, &mut info) }
+                unsafe { $getrs(trans, n, nrhs, a, lda, ipiv, b, ldb, &mut info) }
 
                 info
             }

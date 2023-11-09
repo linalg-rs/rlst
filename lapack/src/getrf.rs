@@ -11,7 +11,7 @@ macro_rules! impl_getrf {
         impl Getrf for $scalar {
             fn getrf(m: i32, n: i32, a: &mut [Self], lda: i32, ipiv: &mut [i32]) -> i32 {
                 assert!(m >= 0);
-                assert!(m >= 0);
+                assert!(n >= 0);
                 assert!(lda >= std::cmp::max(m, 1));
                 assert_eq!(a.len() as i32, lda * n);
                 assert_eq!(ipiv.len() as i32, std::cmp::min(m, n));

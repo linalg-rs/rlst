@@ -1,265 +1,285 @@
 //! LU Decomposition and linear system solves
 use super::assert_lapack_stride;
+use super::Trans;
 use crate::array::Array;
+use lapack::{dgetrf, dgetrs};
 use num::One;
 use rlst_common::traits::*;
 use rlst_common::types::*;
-use rlst_lapack::Lapack;
-use rlst_lapack::Trans;
-use rlst_lapack::{Getrf, Getrs};
 
 pub struct LuDecomposition<
-    Item: Scalar + Lapack,
+    Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,
     ipiv: Vec<i32>,
 }
 
-impl<
-        Item: Scalar + Lapack,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Stride<2>
-            + Shape<2>
-            + RawAccessMut<Item = Item>,
-    > LuDecomposition<Item, ArrayImpl>
-{
-    pub fn new(mut arr: Array<Item, ArrayImpl, 2>) -> RlstResult<Self> {
-        let shape = arr.shape();
-        let stride = arr.stride();
+macro_rules! impl_lu {
+    ($scalar:ty, $getrf:expr, $getrs:expr) => {
+        impl<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = $scalar>,
+            > LuDecomposition<$scalar, ArrayImpl>
+        {
+            pub fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
+                let shape = arr.shape();
+                let stride = arr.stride();
 
-        assert_lapack_stride(stride);
+                assert_lapack_stride(stride);
 
-        let dim = std::cmp::min(shape[0], shape[1]);
-        let mut ipiv = vec![0; dim];
-        let info = <Item as Getrf>::getrf(
-            shape[0] as i32,
-            shape[1] as i32,
-            arr.data_mut(),
-            stride[1] as i32,
-            ipiv.as_mut_slice(),
-        );
+                let dim = std::cmp::min(shape[0], shape[1]);
+                if dim == 0 {
+                    return Err(RlstError::MatrixIsEmpty((shape[0], shape[1])));
+                }
+                let mut ipiv = vec![0; dim];
+                let mut info = 0;
+                unsafe {
+                    $getrf(
+                        shape[0] as i32,
+                        shape[1] as i32,
+                        arr.data_mut(),
+                        stride[1] as i32,
+                        &mut ipiv,
+                        &mut info,
+                    );
+                }
 
-        match info {
-            0 => Ok(Self { arr, ipiv }),
-            _ => Err(RlstError::LapackError(info)),
-        }
-    }
+                match info {
+                    0 => Ok(Self { arr, ipiv }),
+                    _ => Err(RlstError::LapackError(info)),
+                }
+            }
 
-    pub fn solve_into<
-        ArrayImplMut: RawAccessMut<Item = Item>
-            + UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        &self,
-        trans: Trans,
-        mut rhs: Array<Item, ArrayImplMut, 2>,
-    ) -> RlstResult<Array<Item, ArrayImplMut, 2>> {
-        assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
-        let n = self.arr.shape()[0];
-        assert_eq!(rhs.shape()[0], n);
+            pub fn solve<
+                ArrayImplMut: RawAccessMut<Item = $scalar>
+                    + UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + Stride<2>,
+            >(
+                &self,
+                trans: Trans,
+                mut rhs: Array<$scalar, ArrayImplMut, 2>,
+            ) -> RlstResult<Array<$scalar, ArrayImplMut, 2>> {
+                assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
+                let n = self.arr.shape()[0];
+                assert_eq!(rhs.shape()[0], n);
 
-        let nrhs = rhs.shape()[1];
+                let nrhs = rhs.shape()[1];
 
-        let arr_stride = self.arr.stride();
-        let rhs_stride = rhs.stride();
+                let arr_stride = self.arr.stride();
+                let rhs_stride = rhs.stride();
 
-        let lda = self.arr.stride()[1];
-        let ldb = rhs.stride()[1];
+                let lda = self.arr.stride()[1];
+                let ldb = rhs.stride()[1];
 
-        assert_lapack_stride(arr_stride);
-        assert_lapack_stride(rhs_stride);
+                assert_lapack_stride(arr_stride);
+                assert_lapack_stride(rhs_stride);
 
-        let info = <Item as Getrs>::getrs(
-            trans,
-            n as i32,
-            nrhs as i32,
-            self.arr.data(),
-            lda as i32,
-            self.ipiv.as_slice(),
-            rhs.data_mut(),
-            ldb as i32,
-        );
+                let trans_param = match trans {
+                    Trans::NoTrans => b'N',
+                    Trans::Trans => b'T',
+                    Trans::ConjTrans => b'C',
+                };
 
-        match info {
-            0 => Ok(rhs),
-            _ => Err(RlstError::LapackError(info)),
-        }
-    }
+                let mut info = 0;
+                unsafe {
+                    $getrs(
+                        trans_param,
+                        n as i32,
+                        nrhs as i32,
+                        self.arr.data(),
+                        lda as i32,
+                        self.ipiv.as_slice(),
+                        rhs.data_mut(),
+                        ldb as i32,
+                        &mut info,
+                    )
+                };
 
-    pub fn get_l_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>
-            + ResizeInPlace<2>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-        let n = self.arr.shape()[1];
-        let k = std::cmp::min(m, n);
+                match info {
+                    0 => Ok(rhs),
+                    _ => Err(RlstError::LapackError(info)),
+                }
+            }
 
-        arr.resize_in_place([m, k]);
-        self.get_l(arr);
-    }
+            pub fn get_l_resize<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + ResizeInPlace<2>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+                let n = self.arr.shape()[1];
+                let k = std::cmp::min(m, n);
 
-    pub fn get_l<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-        let n = self.arr.shape()[1];
-        let k = std::cmp::min(m, n);
-        assert_eq!(
-            arr.shape(),
-            [m, k],
-            "Require matrix with shape {} x {}. Given shape is {} x {}",
-            m,
-            k,
-            arr.shape()[0],
-            arr.shape()[1]
-        );
+                arr.resize_in_place([m, k]);
+                self.get_l(arr);
+            }
 
-        arr.set_zero();
-        for col in 0..k {
-            for row in col..m {
-                if col == row {
-                    arr[[row, col]] = <Item as One>::one();
-                } else {
-                    arr[[row, col]] = self.arr.get_value([row, col]).unwrap();
+            pub fn get_l<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+                let n = self.arr.shape()[1];
+                let k = std::cmp::min(m, n);
+                assert_eq!(
+                    arr.shape(),
+                    [m, k],
+                    "Require matrix with shape {} x {}. Given shape is {} x {}",
+                    m,
+                    k,
+                    arr.shape()[0],
+                    arr.shape()[1]
+                );
+
+                arr.set_zero();
+                for col in 0..k {
+                    for row in col..m {
+                        if col == row {
+                            arr[[row, col]] = <$scalar as One>::one();
+                        } else {
+                            arr[[row, col]] = self.arr.get_value([row, col]).unwrap();
+                        }
+                    }
+                }
+            }
+
+            pub fn get_r_resize<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + ResizeInPlace<2>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+                let n = self.arr.shape()[1];
+                let k = std::cmp::min(m, n);
+
+                arr.resize_in_place([k, n]);
+                self.get_r(arr);
+            }
+
+            pub fn get_r<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+                let n = self.arr.shape()[1];
+                let k = std::cmp::min(m, n);
+                assert_eq!(
+                    arr.shape(),
+                    [k, n],
+                    "Require matrix with shape {} x {}. Given shape is {} x {}",
+                    k,
+                    n,
+                    arr.shape()[0],
+                    arr.shape()[1]
+                );
+
+                arr.set_zero();
+                for col in 0..n {
+                    for row in 0..=std::cmp::min(col, k - 1) {
+                        arr[[row, col]] = self.arr.get_value([row, col]).unwrap();
+                    }
+                }
+            }
+
+            pub fn get_p_resize<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + ResizeInPlace<2>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+
+                arr.resize_in_place([m, m]);
+                self.get_p(arr);
+            }
+
+            fn get_perm(&self) -> Vec<usize> {
+                let m = self.arr.shape()[0];
+                // let n = self.arr.shape()[1];
+                // let k = std::cmp::min(m, n);
+                let ipiv: Vec<usize> = self.ipiv.iter().map(|&elem| (elem as usize) - 1).collect();
+
+                let mut perm = (0..m).collect::<Vec<_>>();
+
+                for (index, &elem) in ipiv.iter().enumerate() {
+                    perm.swap(index, elem);
+                }
+
+                perm
+            }
+
+            pub fn get_p<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+            >(
+                &self,
+                mut arr: Array<$scalar, ArrayImplMut, 2>,
+            ) {
+                let m = self.arr.shape()[0];
+                assert_eq!(
+                    arr.shape(),
+                    [m, m],
+                    "Require matrix with shape {} x {}. Given shape is {} x {}",
+                    m,
+                    m,
+                    arr.shape()[0],
+                    arr.shape()[1]
+                );
+
+                let perm = self.get_perm();
+
+                arr.set_zero();
+                for col in 0..m {
+                    arr[[perm[col], col]] = <$scalar as One>::one();
                 }
             }
         }
-    }
 
-    pub fn get_r_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>
-            + ResizeInPlace<2>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-        let n = self.arr.shape()[1];
-        let k = std::cmp::min(m, n);
-
-        arr.resize_in_place([k, n]);
-        self.get_r(arr);
-    }
-
-    pub fn get_r<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-        let n = self.arr.shape()[1];
-        let k = std::cmp::min(m, n);
-        assert_eq!(
-            arr.shape(),
-            [k, n],
-            "Require matrix with shape {} x {}. Given shape is {} x {}",
-            k,
-            n,
-            arr.shape()[0],
-            arr.shape()[1]
-        );
-
-        arr.set_zero();
-        for col in 0..n {
-            for row in 0..=std::cmp::min(col, k - 1) {
-                arr[[row, col]] = self.arr.get_value([row, col]).unwrap();
+        impl<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Stride<2>
+                    + RawAccessMut<Item = $scalar>
+                    + Shape<2>,
+            > Array<$scalar, ArrayImpl, 2>
+        {
+            pub fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
+                LuDecomposition::new(self)
             }
         }
-    }
-
-    pub fn get_p_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>
-            + ResizeInPlace<2>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-
-        arr.resize_in_place([m, m]);
-        self.get_p(arr);
-    }
-
-    fn get_perm(&self) -> Vec<usize> {
-        let m = self.arr.shape()[0];
-        // let n = self.arr.shape()[1];
-        // let k = std::cmp::min(m, n);
-        let ipiv: Vec<usize> = self.ipiv.iter().map(|&elem| (elem as usize) - 1).collect();
-
-        let mut perm = (0..m).collect::<Vec<_>>();
-
-        for (index, &elem) in ipiv.iter().enumerate() {
-            perm.swap(index, elem);
-        }
-
-        perm
-    }
-
-    pub fn get_p<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + UnsafeRandomAccessByRef<2, Item = Item>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImplMut, 2>,
-    ) {
-        let m = self.arr.shape()[0];
-        assert_eq!(
-            arr.shape(),
-            [m, m],
-            "Require matrix with shape {} x {}. Given shape is {} x {}",
-            m,
-            m,
-            arr.shape()[0],
-            arr.shape()[1]
-        );
-
-        let perm = self.get_perm();
-
-        arr.set_zero();
-        for col in 0..m {
-            arr[[perm[col], col]] = <Item as One>::one();
-        }
-    }
+    };
 }
 
-impl<
-        Item: Scalar + Lapack,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Stride<2>
-            + RawAccessMut<Item = Item>
-            + Shape<2>,
-    > Array<Item, ArrayImpl, 2>
-{
-    pub fn into_lu(self) -> RlstResult<LuDecomposition<Item, ArrayImpl>> {
-        LuDecomposition::new(self)
-    }
-}
+impl_lu!(f64, dgetrf, dgetrs);
 
 #[cfg(test)]
 mod test {

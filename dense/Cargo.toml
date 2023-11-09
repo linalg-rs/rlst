@@ -27,11 +27,11 @@ rlst-blis = { path = "../blis" }
 approx = { version = "0.5", features = ["num-complex"] }
 rlst-operator = { path = "../operator" }
 rlst-common = { path = "../common" }
-rlst-lapack = { path = "../lapack" }
 paste = "1"
 rand_chacha = "0.3"
 rlst-blis-src = { path = "../blis-src" }
 rlst-netlib-lapack-src = { path = "../netlib-lapack-src" }
+lapack = "0.19.*"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

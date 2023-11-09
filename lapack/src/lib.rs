@@ -4,21 +4,19 @@
 
 use rlst_common::types::Scalar;
 
+pub mod geqp3;
 pub mod getrf;
 pub mod getrs;
+pub mod ormqr;
+pub mod unmqr;
 
+pub use geqp3::Geqp3;
 pub use getrf::Getrf;
 pub use getrs::Getrs;
+pub use ormqr::Ormqr;
+pub use unmqr::Unmqr;
 
-#[derive(Clone, Copy)]
-#[repr(u8)]
-pub enum Trans {
-    NoTranspose = b'N',
-    Transpose = b'T',
-    ConjugateTranspose = b'C',
-}
+// // Collective Lapack wrapper trait
+// pub trait Lapack: Scalar + Getrf + Getrs + Unmqr + Ormqr {}
 
-// Collective Lapack wrapper trait
-pub trait Lapack: Scalar + Getrf + Getrs {}
-
-impl<T: Scalar + Getrf + Getrs> Lapack for T {}
+// impl<T: Scalar + Getrf + Getrs + Unmqr + Ormqr> Lapack for T {}
