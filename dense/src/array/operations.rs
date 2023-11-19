@@ -138,4 +138,12 @@ impl<
             *elem = <Item as num::One>::one();
         }
     }
+
+    pub fn set_identity(&mut self) {
+        self.set_zero();
+
+        for index in 0..self.shape().iter().copied().min().unwrap() {
+            *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
+        }
+    }
 }

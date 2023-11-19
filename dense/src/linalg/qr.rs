@@ -45,6 +45,8 @@ impl<
             return Err(RlstError::MatrixIsEmpty((shape[0], shape[1])));
         }
 
+        assert_lapack_stride(stride);
+
         let m = shape[0] as i32;
         let n = shape[1] as i32;
         let lda = stride[1] as i32;
@@ -104,6 +106,65 @@ impl<
             .iter()
             .map(|&elem| elem as usize - 1)
             .collect_vec()
+    }
+
+    pub fn get_r<
+        ArrayImplR: UnsafeRandomAccessByValue<2, Item = f64>
+            + UnsafeRandomAccessMut<2, Item = f64>
+            + RawAccessMut<Item = f64>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        &self,
+        mut arr: Array<f64, ArrayImplR, 2>,
+    ) {
+        let k = *self.arr.shape().iter().min().unwrap();
+
+        let r_shape = [k, self.arr.shape()[1]];
+
+        assert_eq!(r_shape, arr.shape());
+
+        arr.set_zero();
+
+        for col in 0..r_shape[1] {
+            for row in 0..=std::cmp::min(col, k - 1) {
+                *arr.get_mut([row, col]).unwrap() = self.arr.get_value([row, col]).unwrap();
+            }
+        }
+    }
+
+    pub fn get_p<
+        ArrayImplQ: UnsafeRandomAccessByValue<2, Item = f64>
+            + UnsafeRandomAccessMut<2, Item = f64>
+            + RawAccessMut<Item = f64>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        &self,
+        mut arr: Array<f64, ArrayImplQ, 2>,
+    ) {
+        assert_eq!(arr.shape()[0], arr.shape()[1]);
+        assert_eq!(arr.shape()[0], self.arr.shape()[1]);
+
+        for (index, &elem) in self.get_perm().iter().enumerate() {
+            *arr.get_mut([elem, index]).unwrap() = <f64 as num::One>::one();
+        }
+    }
+
+    pub fn get_q<
+        ArrayImplQ: UnsafeRandomAccessByValue<2, Item = f64>
+            + UnsafeRandomAccessMut<2, Item = f64>
+            + RawAccessMut<Item = f64>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        &self,
+        mut arr: Array<f64, ArrayImplQ, 2>,
+    ) -> RlstResult<()> {
+        assert_eq!(arr.shape()[0], self.arr.shape()[0]);
+        arr.set_identity();
+
+        self.apply_q(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
     }
 
     pub fn apply_q<
@@ -197,5 +258,81 @@ impl<
             0 => Ok(()),
             _ => return Err(RlstError::LapackError(info)),
         }
+    }
+}
+
+impl<
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = f64> + Stride<2> + RawAccessMut<Item = f64> + Shape<2>,
+    > Array<f64, ArrayImpl, 2>
+{
+    pub fn into_qr(self) -> RlstResult<QRDecomposition<f64, ArrayImpl>> {
+        QRDecomposition::new(self)
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use rlst_common::{assert_array_relative_eq, traits::*};
+
+    use crate::array::empty_array;
+    use crate::rlst_dynamic_array2;
+
+    #[test]
+    pub fn test_thin_qr() {
+        let shape = [8, 5];
+        let mut mat = rlst_dynamic_array2!(f64, shape);
+        let mut mat2 = rlst_dynamic_array2!(f64, shape);
+
+        mat.fill_from_seed_equally_distributed(0);
+        mat2.fill_from(mat.view());
+
+        let mut r_mat = rlst_dynamic_array2!(f64, [5, 5]);
+        let mut q_mat = rlst_dynamic_array2!(f64, [8, 5]);
+        let mut p_mat = rlst_dynamic_array2!(f64, [5, 5]);
+        let mut p_trans = rlst_dynamic_array2!(f64, [5, 5]);
+        let actual = rlst_dynamic_array2!(f64, [8, 5]);
+
+        let qr = mat.into_qr().unwrap();
+
+        let _ = qr.get_r(r_mat.view_mut());
+        let _ = qr.get_q(q_mat.view_mut());
+        let _ = qr.get_p(p_mat.view_mut());
+
+        p_trans.fill_from(p_mat.transpose());
+
+        let actual = empty_array::<f64, 2>()
+            .simple_mult_into_resize(actual.simple_mult_into(q_mat, r_mat), p_trans);
+
+        assert_array_relative_eq!(actual, mat2, 1E-13);
+    }
+
+    #[test]
+    pub fn test_thick_qr() {
+        let shape = [5, 8];
+        let mut mat = rlst_dynamic_array2!(f64, shape);
+        let mut mat2 = rlst_dynamic_array2!(f64, shape);
+
+        mat.fill_from_seed_equally_distributed(0);
+        mat2.fill_from(mat.view());
+
+        let mut r_mat = rlst_dynamic_array2!(f64, [5, 8]);
+        let mut q_mat = rlst_dynamic_array2!(f64, [5, 5]);
+        let mut p_mat = rlst_dynamic_array2!(f64, [8, 8]);
+        let mut p_trans = rlst_dynamic_array2!(f64, [8, 8]);
+        let actual = rlst_dynamic_array2!(f64, [5, 8]);
+
+        let qr = mat.into_qr().unwrap();
+
+        let _ = qr.get_r(r_mat.view_mut());
+        let _ = qr.get_q(q_mat.view_mut());
+        let _ = qr.get_p(p_mat.view_mut());
+
+        p_trans.fill_from(p_mat.transpose());
+
+        let actual = empty_array::<f64, 2>()
+            .simple_mult_into_resize(actual.simple_mult_into(q_mat, r_mat), p_trans);
+
+        assert_array_relative_eq!(actual, mat2, 1E-13);
     }
 }
