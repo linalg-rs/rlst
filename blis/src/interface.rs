@@ -1,7 +1,7 @@
 pub mod gemm;
 pub mod types;
 
-use rlst_common::types::Scalar;
+use cauchy::Scalar;
 
 /// Compute expected size of a data slice from stride and shape.
 pub fn get_expected_data_size(stride: [usize; 2], shape: [usize; 2]) -> usize {

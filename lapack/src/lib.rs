@@ -2,8 +2,6 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use rlst_common::types::Scalar;
-
 pub mod geqp3;
 pub mod getrf;
 pub mod getrs;

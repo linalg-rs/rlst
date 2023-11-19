@@ -273,7 +273,7 @@ impl<
 #[cfg(test)]
 mod test {
 
-    use rlst_common::{assert_array_relative_eq, traits::*};
+    use rlst_common::{assert_array_abs_diff_eq, assert_array_relative_eq, traits::*};
 
     use crate::array::empty_array;
     use crate::rlst_dynamic_array2;
@@ -292,6 +292,8 @@ mod test {
         let mut p_mat = rlst_dynamic_array2!(f64, [5, 5]);
         let mut p_trans = rlst_dynamic_array2!(f64, [5, 5]);
         let actual = rlst_dynamic_array2!(f64, [8, 5]);
+        let mut ident = rlst_dynamic_array2!(f64, [5, 5]);
+        ident.set_identity();
 
         let qr = mat.into_qr().unwrap();
 
@@ -302,9 +304,20 @@ mod test {
         p_trans.fill_from(p_mat.transpose());
 
         let actual = empty_array::<f64, 2>()
-            .simple_mult_into_resize(actual.simple_mult_into(q_mat, r_mat), p_trans);
+            .simple_mult_into_resize(actual.simple_mult_into(q_mat.view(), r_mat.view()), p_trans);
 
         assert_array_relative_eq!(actual, mat2, 1E-13);
+
+        let qtq = empty_array::<f64, 2>().mult_into_resize(
+            rlst_blis::interface::types::TransMode::Trans,
+            rlst_blis::interface::types::TransMode::NoTrans,
+            1.0,
+            q_mat.view(),
+            q_mat.view(),
+            1.0,
+        );
+
+        assert_array_abs_diff_eq!(qtq, ident, 1E-13);
     }
 
     #[test]
@@ -321,6 +334,8 @@ mod test {
         let mut p_mat = rlst_dynamic_array2!(f64, [8, 8]);
         let mut p_trans = rlst_dynamic_array2!(f64, [8, 8]);
         let actual = rlst_dynamic_array2!(f64, [5, 8]);
+        let mut ident = rlst_dynamic_array2!(f64, [5, 5]);
+        ident.set_identity();
 
         let qr = mat.into_qr().unwrap();
 
@@ -331,8 +346,19 @@ mod test {
         p_trans.fill_from(p_mat.transpose());
 
         let actual = empty_array::<f64, 2>()
-            .simple_mult_into_resize(actual.simple_mult_into(q_mat, r_mat), p_trans);
+            .simple_mult_into_resize(actual.simple_mult_into(q_mat.view(), r_mat), p_trans);
 
         assert_array_relative_eq!(actual, mat2, 1E-13);
+
+        let qtq = empty_array::<f64, 2>().mult_into_resize(
+            rlst_blis::interface::types::TransMode::Trans,
+            rlst_blis::interface::types::TransMode::NoTrans,
+            1.0,
+            q_mat.view(),
+            q_mat.view(),
+            1.0,
+        );
+
+        assert_array_abs_diff_eq!(qtq, ident, 1E-13);
     }
 }

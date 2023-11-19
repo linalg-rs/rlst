@@ -2,7 +2,7 @@
 use super::types::TransMode;
 use crate::interface::assert_data_size;
 use crate::raw;
-use rlst_common::types::{c32, c64, Scalar};
+use cauchy::{c32, c64, Scalar};
 
 pub trait Gemm: Scalar {
     #[allow(clippy::too_many_arguments)]

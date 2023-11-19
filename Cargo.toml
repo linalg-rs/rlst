@@ -2,19 +2,18 @@
 resolver = "2"
 
 members = [
-    "dense",
-    "operator",
-    "sparse",
-    "common",
-    "algorithms",
-    "io",
-    "suitesparse-src",
-    "blis-src",
-    "umfpack",
-    "gfortran-src",
-    "netlib-lapack-src",
-    "blis",
-    "rlst",
-    "proc-macro",
-    "lapack"
+  "dense",
+  "operator",
+  "sparse",
+  "common",
+  "algorithms",
+  "io",
+  "suitesparse-src",
+  "blis-src",
+  "umfpack",
+  "gfortran-src",
+  "netlib-lapack-src",
+  "blis",
+  "rlst",
+  "proc-macro",
 ]

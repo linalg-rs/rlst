@@ -1,6 +1,7 @@
 //! Traits for operations that do not change `self`.
 
 use crate::types::Scalar;
+use rlst_blis::interface::types::TransMode;
 
 /// Take the sum with `other`.
 pub trait Sum<Other> {
@@ -138,13 +139,23 @@ pub trait MultInto<First, Second> {
         Self: Sized,
     {
         self.mult_into(
+            TransMode::NoTrans,
+            TransMode::NoTrans,
             <Self::Item as num::One>::one(),
             arr_a,
             arr_b,
             <Self::Item as num::Zero>::zero(),
         )
     }
-    fn mult_into(self, alpha: Self::Item, arr_a: First, arr_b: Second, beta: Self::Item) -> Self;
+    fn mult_into(
+        self,
+        transa: TransMode,
+        transb: TransMode,
+        alpha: Self::Item,
+        arr_a: First,
+        arr_b: Second,
+        beta: Self::Item,
+    ) -> Self;
 }
 
 /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
@@ -155,6 +166,8 @@ pub trait MultIntoResize<First, Second> {
         Self: Sized,
     {
         self.mult_into_resize(
+            TransMode::NoTrans,
+            TransMode::NoTrans,
             <Self::Item as num::One>::one(),
             arr_a,
             arr_b,
@@ -163,6 +176,8 @@ pub trait MultIntoResize<First, Second> {
     }
     fn mult_into_resize(
         self,
+        transa: TransMode,
+        transb: TransMode,
         alpha: Self::Item,
         arr_a: First,
         arr_b: Second,
