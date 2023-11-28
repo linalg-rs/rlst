@@ -1,6 +1,7 @@
 //! Linear algebra routines
 pub mod lu;
 pub mod qr;
+pub mod svd;
 
 pub fn assert_lapack_stride(stride: [usize; 2]) {
     assert_eq!(
