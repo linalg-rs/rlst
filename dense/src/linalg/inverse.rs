@@ -1,8 +1,8 @@
 //! Implement the Inverse
 use crate::array::Array;
+use crate::traits::*;
 use lapack::{cgetrf, cgetri, dgetrf, dgetri, sgetrf, sgetri, zgetrf, zgetri};
 use num::traits::Zero;
-use rlst_common::traits::*;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
@@ -72,8 +72,8 @@ mod test {
 
     use super::*;
 
+    use crate::assert_array_abs_diff_eq;
     use paste::paste;
-    use rlst_common::assert_array_abs_diff_eq;
 
     use crate::array::empty_array;
     use crate::rlst_dynamic_array2;

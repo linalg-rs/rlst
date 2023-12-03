@@ -233,7 +233,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use rlst_common::traits::{Shape, Stride};
+    use crate::traits::{Shape, Stride};
 
     use crate::{array::empty_axis::AxisPosition, rlst_dynamic_array3};
 

@@ -2,6 +2,7 @@
 
 use super::assert_lapack_stride;
 use crate::array::Array;
+use crate::traits::*;
 use itertools::Itertools;
 use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 
@@ -551,8 +552,8 @@ implement_qr_complex!(c32, cgeqp3, cunmqr);
 #[cfg(test)]
 mod test {
 
+    use crate::{assert_array_abs_diff_eq, assert_array_relative_eq, traits::*};
     use rlst_common::types::*;
-    use rlst_common::{assert_array_abs_diff_eq, assert_array_relative_eq, traits::*};
 
     use crate::array::empty_array;
     use crate::rlst_dynamic_array2;

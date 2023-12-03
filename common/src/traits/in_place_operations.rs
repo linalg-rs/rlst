@@ -35,8 +35,3 @@ pub trait SetDiag {
     /// the length of the diagonal.
     fn set_diag_from_slice(&mut self, diag: &[Self::Item]);
 }
-
-/// Resize an operator in place
-pub trait ResizeInPlace<const NDIM: usize> {
-    fn resize_in_place(&mut self, shape: [usize; NDIM]);
-}

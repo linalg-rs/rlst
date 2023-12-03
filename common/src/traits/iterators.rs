@@ -24,16 +24,6 @@ pub trait ColumnMajorIterator {
     fn iter_col_major(&self) -> Self::Iter<'_>;
 }
 
-/// Default iterator.
-pub trait DefaultIterator {
-    type Item: Scalar;
-    type Iter<'a>: std::iter::Iterator<Item = Self::Item>
-    where
-        Self: 'a;
-
-    fn iter(&self) -> Self::Iter<'_>;
-}
-
 /// Mutable iterator through the elements in column-major ordering.
 pub trait ColumnMajorIteratorMut {
     type Item: Scalar;
@@ -42,16 +32,6 @@ pub trait ColumnMajorIteratorMut {
         Self: 'a;
 
     fn iter_col_major_mut(&mut self) -> Self::IterMut<'_>;
-}
-
-/// Mutable default iterator.
-pub trait DefaultIteratorMut {
-    type Item: Scalar;
-    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
-    where
-        Self: 'a;
-
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
 /// Iterate through the diagonal.

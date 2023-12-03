@@ -307,8 +307,8 @@ fn compute_raw_range<const NDIM: usize>(
 #[cfg(test)]
 mod test {
 
+    use crate::traits::*;
     use crate::{layout::convert_nd_raw, rlst_dynamic_array3};
-    use rlst_common::traits::*;
 
     #[test]
     fn test_create_slice() {

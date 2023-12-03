@@ -1,8 +1,8 @@
 //! Implement the SVD
 use crate::array::Array;
+use crate::traits::*;
 use lapack::{cgesvd, dgesvd, sgesvd, zgesvd};
 use num::traits::Zero;
-use rlst_common::traits::*;
 use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
@@ -410,9 +410,9 @@ mod test {
 
     use super::*;
 
+    use crate::assert_array_relative_eq;
     use approx::assert_relative_eq;
     use paste::paste;
-    use rlst_common::assert_array_relative_eq;
 
     use crate::array::empty_array;
     use crate::{rlst_dynamic_array1, rlst_dynamic_array2};

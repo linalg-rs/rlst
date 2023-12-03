@@ -3,7 +3,8 @@
 use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
-use rlst_common::traits::*;
+use crate::traits::*;
+use rlst_common::types::*;
 
 pub struct ArrayView<
     'a,

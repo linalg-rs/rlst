@@ -2,6 +2,7 @@
 use super::assert_lapack_stride;
 use super::Trans;
 use crate::array::Array;
+use crate::traits::*;
 use lapack::{dgetrf, dgetrs};
 use num::One;
 use rlst_common::traits::*;
@@ -285,7 +286,7 @@ impl_lu!(f64, dgetrf, dgetrs);
 #[cfg(test)]
 mod test {
 
-    use rlst_common::assert_array_relative_eq;
+    use crate::assert_array_relative_eq;
 
     use crate::rlst_dynamic_array2;
 

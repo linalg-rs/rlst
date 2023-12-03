@@ -1,6 +1,7 @@
 //! Implement the Pseudo-Inverse
 use crate::array::Array;
 use crate::rlst_dynamic_array2;
+use crate::traits::*;
 use itertools::Itertools;
 use num::traits::{One, Zero};
 use rlst_common::traits::*;
@@ -105,8 +106,8 @@ mod test {
     use super::*;
 
     use crate::array::empty_array;
+    use crate::assert_array_abs_diff_eq;
     use paste::paste;
-    use rlst_common::assert_array_abs_diff_eq;
 
     use crate::rlst_dynamic_array2;
 

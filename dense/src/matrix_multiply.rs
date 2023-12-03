@@ -3,10 +3,11 @@
 //! This module implements the matrix multiplication. The current implementation
 //! uses the [rlst-blis] crate.
 
+use crate::traits::*;
+use crate::traits::*;
 use rlst_blis::interface::gemm::Gemm;
 use rlst_blis::interface::types::TransMode;
-use rlst_common::traits::*;
-use rlst_common::{traits::RawAccess, types::Scalar};
+use rlst_common::types::Scalar;
 
 pub fn matrix_multiply<
     Item: Scalar + Gemm,
@@ -74,7 +75,7 @@ pub fn matrix_multiply<
 #[cfg(test)]
 mod test {
 
-    use rlst_common::assert_array_relative_eq;
+    use crate::assert_array_relative_eq;
     use rlst_common::types::{c32, c64};
 
     use super::*;

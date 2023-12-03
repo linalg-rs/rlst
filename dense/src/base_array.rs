@@ -3,14 +3,8 @@ use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataConta
 use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
-use rlst_common::traits::{
-    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Stride, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
-};
-use rlst_common::{
-    traits::{Shape, UnsafeRandomAccessByRef},
-    types::Scalar,
-};
+use crate::traits::*;
+use rlst_common::types::Scalar;
 
 pub struct BaseArray<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
     data: Data,

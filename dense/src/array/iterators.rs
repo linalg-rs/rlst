@@ -149,7 +149,7 @@ impl<
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > rlst_common::traits::iterators::DefaultIterator for Array<Item, ArrayImpl, NDIM>
+    > crate::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     type Iter<'a> = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM> where Self: 'a;
@@ -165,7 +165,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > rlst_common::traits::iterators::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
+    > crate::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     type IterMut<'a> = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM> where Self: 'a;
@@ -178,7 +178,7 @@ impl<
 #[cfg(test)]
 mod test {
 
-    use rlst_common::traits::*;
+    use crate::traits::*;
 
     #[test]
     fn test_iter() {

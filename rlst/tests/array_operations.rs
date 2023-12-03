@@ -3,8 +3,8 @@
 use approx::assert_relative_eq;
 use rlst::rlst_dynamic_array3;
 use rlst_common::types::*;
-use rlst_common::{assert_array_relative_eq, traits::*};
 use rlst_dense::{array::iterators::AsMultiIndex, layout::convert_1d_nd_from_shape};
+use rlst_dense::{assert_array_relative_eq, traits::*};
 
 #[test]
 fn test_addition() {

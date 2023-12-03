@@ -1,9 +1,9 @@
 //! Multiplication of Arrays
 
+use crate::traits::MultInto;
+use crate::traits::MultIntoResize;
 use rlst_blis::interface::gemm::Gemm;
 pub use rlst_blis::interface::types::TransMode;
-use rlst_common::traits::MultInto;
-use rlst_common::traits::MultIntoResize;
 
 use super::{empty_axis::AxisPosition, *};
 

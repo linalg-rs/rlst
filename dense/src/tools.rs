@@ -1,11 +1,10 @@
 //! Useful library tools.
 
-use crate::{
-    traits::{RandomAccessByValue, Shape},
-    types::*,
-};
+use crate::traits::*;
+use crate::traits::*;
 use rand::prelude::*;
 use rand_distr::Distribution;
+use rlst_common::types::*;
 
 /// This trait implements a simple convenient function to return random scalars
 /// from a given random number generator and distribution. For complex types the

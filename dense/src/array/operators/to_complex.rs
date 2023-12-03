@@ -82,41 +82,33 @@ impl<
 }
 
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM>, const NDIM: usize>
-    rlst_common::traits::ToComplex for Array<f32, ArrayImpl, NDIM>
+    Array<f32, ArrayImpl, NDIM>
 {
-    type Out = Array<c32, ArrayToComplex<c32, ArrayImpl, NDIM>, NDIM>;
-
-    fn to_complex(self) -> Self::Out {
+    pub fn to_complex(self) -> Array<c32, ArrayToComplex<c32, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
 }
 
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f64> + Shape<NDIM>, const NDIM: usize>
-    rlst_common::traits::ToComplex for Array<f64, ArrayImpl, NDIM>
+    Array<f64, ArrayImpl, NDIM>
 {
-    type Out = Array<c64, ArrayToComplex<c64, ArrayImpl, NDIM>, NDIM>;
-
-    fn to_complex(self) -> Self::Out {
+    pub fn to_complex(self) -> Array<c64, ArrayToComplex<c64, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
 }
 
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c64> + Shape<NDIM>, const NDIM: usize>
-    rlst_common::traits::ToComplex for Array<c64, ArrayImpl, NDIM>
+    Array<c64, ArrayImpl, NDIM>
 {
-    type Out = Self;
-
-    fn to_complex(self) -> Self::Out {
+    pub fn to_complex(self) -> Self {
         self
     }
 }
 
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c32> + Shape<NDIM>, const NDIM: usize>
-    rlst_common::traits::ToComplex for Array<c32, ArrayImpl, NDIM>
+    Array<c32, ArrayImpl, NDIM>
 {
-    type Out = Self;
-
-    fn to_complex(self) -> Self::Out {
+    pub fn to_complex(self) -> Self {
         self
     }
 }

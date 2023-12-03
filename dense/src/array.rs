@@ -2,18 +2,7 @@
 
 use crate::base_array::BaseArray;
 use crate::data_container::VectorContainer;
-use rlst_common::traits::ChunkedAccess;
-use rlst_common::traits::NumberOfElements;
-use rlst_common::traits::RandomAccessByRef;
-use rlst_common::traits::RandomAccessMut;
-use rlst_common::traits::RawAccess;
-use rlst_common::traits::RawAccessMut;
-use rlst_common::traits::ResizeInPlace;
-use rlst_common::traits::Shape;
-use rlst_common::traits::Stride;
-use rlst_common::traits::UnsafeRandomAccessByRef;
-use rlst_common::traits::UnsafeRandomAccessByValue;
-use rlst_common::traits::UnsafeRandomAccessMut;
+use crate::traits::*;
 use rlst_common::types::DataChunk;
 use rlst_common::types::Scalar;
 
