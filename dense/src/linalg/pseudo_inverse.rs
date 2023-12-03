@@ -54,7 +54,7 @@ macro_rules! impl_pinv {
 
                 let index = match singvals
                     .iter()
-                    .find_position(|&&elem| elem < tol * singvals[0])
+                    .find_position(|&&elem| elem <= tol * singvals[0])
                 {
                     Some((index, _)) => index,
                     None => k,
