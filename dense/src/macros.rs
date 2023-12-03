@@ -8,7 +8,7 @@
 /// ```
 /// # use rlst_dense::*;
 /// // Creates a (3, 5) matrix with `f64` entries.
-/// let mat = rlst_dynamic_mat![f64, (3, 5)];
+/// let mat = rlst_dynamic_array2!(f64, [3, 5]);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array2 {
