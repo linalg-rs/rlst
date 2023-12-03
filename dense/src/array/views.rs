@@ -537,7 +537,6 @@ fn compute_raw_range<const NDIM: usize>(
     shape: [usize; NDIM],
 ) -> (usize, usize) {
     use crate::layout::convert_nd_raw;
-    let shape = shape;
     let start_multi_index = offset;
     let mut end_multi_index = [0; NDIM];
     for (index, value) in end_multi_index.iter_mut().enumerate() {
