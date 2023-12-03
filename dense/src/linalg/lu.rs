@@ -273,6 +273,7 @@ macro_rules! impl_lu {
             > Array<$scalar, ArrayImpl, 2>
         {
             pub fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
+                assert!(!self.is_empty(), "Matrix is empty.");
                 LuDecomposition::new(self)
             }
         }

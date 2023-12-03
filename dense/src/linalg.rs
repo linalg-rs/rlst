@@ -1,5 +1,7 @@
 //! Linear algebra routines
+pub mod inverse;
 pub mod lu;
+pub mod pseudo_inverse;
 pub mod qr;
 pub mod svd;
 

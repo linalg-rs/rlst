@@ -1,6 +1,7 @@
 //! Multiplication of Arrays
 
-use rlst_blis::interface::{gemm::Gemm, types::TransMode};
+use rlst_blis::interface::gemm::Gemm;
+pub use rlst_blis::interface::types::TransMode;
 use rlst_common::traits::MultInto;
 use rlst_common::traits::MultIntoResize;
 

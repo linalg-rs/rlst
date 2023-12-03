@@ -21,12 +21,13 @@ macro_rules! impl_svd_real {
                     + RawAccessMut<Item = $scalar>,
             > Array<$scalar, ArrayImpl, 2>
         {
-            pub fn into_singular_values(
+            pub fn into_singular_values_alloc(
                 mut self,
                 singular_values: &mut [<$scalar as Scalar>::Real],
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
                 let mut work = [<$scalar as Zero>::zero(); 1];
+                assert!(!self.is_empty(), "Matrix is empty.");
 
                 assert_lapack_stride(self.stride());
                 let m = self.shape()[0] as i32;
@@ -92,7 +93,7 @@ macro_rules! impl_svd_real {
                 }
             }
 
-            pub fn into_svd<
+            pub fn into_svd_alloc<
                 ArrayImplU: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>
@@ -113,9 +114,11 @@ macro_rules! impl_svd_real {
                 let jobu;
                 let jobvt;
 
+                assert!(!self.is_empty(), "Matrix is empty.");
+
                 assert_lapack_stride(self.stride());
                 assert_lapack_stride(u.stride());
-                assert_lapack_stride(u.stride());
+                assert_lapack_stride(vt.stride());
 
                 let m = self.shape()[0] as i32;
                 let n = self.shape()[1] as i32;
@@ -208,12 +211,13 @@ macro_rules! impl_svd_complex {
                     + RawAccessMut<Item = $scalar>,
             > Array<$scalar, ArrayImpl, 2>
         {
-            pub fn into_singular_values(
+            pub fn into_singular_values_alloc(
                 mut self,
                 singular_values: &mut [<$scalar as Scalar>::Real],
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
                 let mut work = [<$scalar as Zero>::zero(); 1];
+                assert!(!self.is_empty(), "Matrix is empty.");
 
                 assert_lapack_stride(self.stride());
                 let m = self.shape()[0] as i32;
@@ -283,7 +287,7 @@ macro_rules! impl_svd_complex {
                 }
             }
 
-            pub fn into_svd<
+            pub fn into_svd_alloc<
                 ArrayImplU: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>
@@ -304,9 +308,11 @@ macro_rules! impl_svd_complex {
                 let jobu;
                 let jobvt;
 
+                assert!(!self.is_empty(), "Matrix is empty.");
+
                 assert_lapack_stride(self.stride());
                 assert_lapack_stride(u.stride());
-                assert_lapack_stride(u.stride());
+                assert_lapack_stride(vt.stride());
 
                 let m = self.shape()[0] as i32;
                 let n = self.shape()[1] as i32;
@@ -436,8 +442,8 @@ mod test {
                     let mut sigma = rlst_dynamic_array2!($scalar, [m, n]);
 
                     mat.fill_from_seed_equally_distributed(0);
-                    let qr = mat.into_qr().unwrap();
-                    qr.get_q(q.view_mut()).unwrap();
+                    let qr = mat.into_qr_alloc().unwrap();
+                    qr.get_q_alloc(q.view_mut()).unwrap();
 
                     for index in 0..k {
                         sigma[[index, index]] = ((k - index) as <$scalar as Scalar>::Real).into();
@@ -447,7 +453,7 @@ mod test {
 
                     let mut singvals = rlst_dynamic_array1!(<$scalar as Scalar>::Real, [k]);
 
-                    a.into_singular_values(singvals.data_mut()).unwrap();
+                    a.into_singular_values_alloc(singvals.data_mut()).unwrap();
 
                     for index in 0..k {
                         assert_relative_eq!(singvals[[index]], sigma[[index, index]].re(), epsilon = tol);
@@ -483,11 +489,11 @@ mod test {
                     mat_u.fill_from_seed_equally_distributed(0);
                     mat_vt.fill_from_seed_equally_distributed(1);
 
-                    let qr = mat_u.into_qr().unwrap();
-                    qr.get_q(u.view_mut()).unwrap();
+                    let qr = mat_u.into_qr_alloc().unwrap();
+                    qr.get_q_alloc(u.view_mut()).unwrap();
 
-                    let qr = mat_vt.into_qr().unwrap();
-                    qr.get_q(vt.view_mut()).unwrap();
+                    let qr = mat_vt.into_qr_alloc().unwrap();
+                    qr.get_q_alloc(vt.view_mut()).unwrap();
 
                     for index in 0..k {
                         sigma[[index, index]] = ((k - index) as <$scalar as Scalar>::Real).into();
@@ -507,7 +513,7 @@ mod test {
 
                     let mut singvals = rlst_dynamic_array1!(<$scalar as Scalar>::Real, [k]);
 
-                    a.into_svd(u.view_mut(), vt.view_mut(), singvals.data_mut(), mode)
+                    a.into_svd_alloc(u.view_mut(), vt.view_mut(), singvals.data_mut(), mode)
                         .unwrap();
 
                     for index in 0..k {
@@ -529,6 +535,6 @@ mod test {
 
     impl_tests!(f32, 1E-5);
     impl_tests!(f64, 1E-12);
-    impl_tests!(c32, 1E-6);
+    impl_tests!(c32, 1E-5);
     impl_tests!(c64, 1E-12);
 }

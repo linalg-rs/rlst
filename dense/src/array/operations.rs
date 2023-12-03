@@ -146,4 +146,21 @@ impl<
             *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
         }
     }
+
+    pub fn scale_in_place(&mut self, alpha: Item) {
+        for elem in self.iter_mut() {
+            *elem *= alpha;
+        }
+    }
+}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    pub fn is_empty(&self) -> bool {
+        self.shape().iter().copied().min().unwrap() == 0
+    }
 }

@@ -155,7 +155,7 @@ macro_rules! implement_qr_real {
                 }
             }
 
-            pub fn get_q<
+            pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -168,10 +168,10 @@ macro_rules! implement_qr_real {
                 assert_eq!(arr.shape()[0], self.arr.shape()[0]);
                 arr.set_identity();
 
-                self.apply_q(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
+                self.apply_q_alloc(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
             }
 
-            pub fn apply_q<
+            pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -277,7 +277,8 @@ macro_rules! implement_qr_real {
                     + Shape<2>,
             > Array<$scalar, ArrayImpl, 2>
         {
-            pub fn into_qr(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+            pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+                assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)
             }
         }
@@ -412,7 +413,7 @@ macro_rules! implement_qr_complex {
                 }
             }
 
-            pub fn get_q<
+            pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -425,10 +426,10 @@ macro_rules! implement_qr_complex {
                 assert_eq!(arr.shape()[0], self.arr.shape()[0]);
                 arr.set_identity();
 
-                self.apply_q(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
+                self.apply_q_alloc(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
             }
 
-            pub fn apply_q<
+            pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -534,7 +535,8 @@ macro_rules! implement_qr_complex {
                     + Shape<2>,
             > Array<$scalar, ArrayImpl, 2>
         {
-            pub fn into_qr(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+            pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+                assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)
             }
         }
@@ -577,10 +579,10 @@ mod test {
                 let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
                 ident.set_identity();
 
-                let qr = mat.into_qr().unwrap();
+                let qr = mat.into_qr_alloc().unwrap();
 
                 let _ = qr.get_r(r_mat.view_mut());
-                let _ = qr.get_q(q_mat.view_mut());
+                let _ = qr.get_q_alloc(q_mat.view_mut());
                 let _ = qr.get_p(p_mat.view_mut());
 
                 p_trans.fill_from(p_mat.transpose());
@@ -619,10 +621,10 @@ mod test {
                 let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
                 ident.set_identity();
 
-                let qr = mat.into_qr().unwrap();
+                let qr = mat.into_qr_alloc().unwrap();
 
                 let _ = qr.get_r(r_mat.view_mut());
-                let _ = qr.get_q(q_mat.view_mut());
+                let _ = qr.get_q_alloc(q_mat.view_mut());
                 let _ = qr.get_p(p_mat.view_mut());
 
                 p_trans.fill_from(p_mat.transpose());
