@@ -5,10 +5,10 @@
 //! files must use the `general` property. To write out matrices the functions [write_array_mm] and
 //! [write_coordinate_mm] are provided.
 
-use rlst_common::traits::RawAccessMut;
 use rlst_common::types::Scalar;
 use rlst_common::types::{RlstError, RlstResult};
-use rlst_dense::matrix::MatrixD;
+use rlst_dense::array::DynamicArray;
+use rlst_dense::traits::RawAccessMut;
 use rlst_sparse::sparse::csr_mat::CsrMatrix;
 use std::fs::File;
 use std::io::Write;
@@ -87,7 +87,7 @@ pub struct MatrixMarketInfo {
 /// out with this function.
 pub fn write_coordinate_mm<
     T: Scalar + MmIdentifier,
-    Mat: rlst_common::traits::AijIterator<T = T> + rlst_common::traits::Shape,
+    Mat: rlst_dense::traits::AijIterator<Item = T> + rlst_dense::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -104,7 +104,7 @@ pub fn write_coordinate_mm<
         )
         .unwrap();
         writeln!(output, "%").unwrap();
-        writeln!(output, "{} {} {}", mat.shape().0, mat.shape().1, count).unwrap();
+        writeln!(output, "{} {} {}", mat.shape()[0], mat.shape()[1], count).unwrap();
         for (row, col, data) in mat.iter_aij() {
             writeln!(output, "{} {} {} ", 1 + row, 1 + col, data).unwrap();
         }
@@ -122,7 +122,7 @@ pub fn write_coordinate_mm<
 /// out with this function.
 pub fn write_array_mm<
     T: Scalar + MmIdentifier,
-    Mat: rlst_common::traits::ColumnMajorIterator<T = T> + rlst_common::traits::Shape,
+    Mat: rlst_dense::traits::DefaultIterator<Item = T> + rlst_dense::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -132,8 +132,8 @@ pub fn write_array_mm<
     if let Ok(mut output) = output {
         writeln!(output, "%%MatrixMarket matrix array {} general", T::MMTYPE).unwrap();
         writeln!(output, "%").unwrap();
-        writeln!(output, "{} {}", mat.shape().0, mat.shape().1).unwrap();
-        for value in mat.iter_col_major() {
+        writeln!(output, "{} {}", mat.shape()[0], mat.shape()[1]).unwrap();
+        for value in mat.iter() {
             writeln!(output, "{}", value).unwrap();
         }
 
@@ -147,7 +147,7 @@ pub fn write_array_mm<
 ///
 /// The function returns a [MatrixD] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
+pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -194,7 +194,7 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<MatrixD<T>> {
         }
     }
 
-    let mut mat = rlst_dense::rlst_dynamic_mat!(T, (nrows, ncols));
+    let mut mat = rlst_dense::rlst_dynamic_array2!(T, [nrows, ncols]);
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
     if let Err(e) = res {
@@ -268,7 +268,7 @@ pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     } else {
         rows.iter_mut().for_each(|elem| *elem -= 1);
         cols.iter_mut().for_each(|elem| *elem -= 1);
-        Ok(CsrMatrix::from_aij((nrows, ncols), &rows, &cols, &data).unwrap())
+        Ok(CsrMatrix::from_aij([nrows, ncols], &rows, &cols, &data).unwrap())
     }
 }
 
