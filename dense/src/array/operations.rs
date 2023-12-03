@@ -2,7 +2,6 @@
 use crate::layout::convert_1d_nd_from_shape;
 
 use super::*;
-use rlst_common::traits::*;
 
 impl<
         Item: Scalar,

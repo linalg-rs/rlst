@@ -4,7 +4,6 @@
 //! uses the [rlst-blis] crate.
 
 use crate::traits::*;
-use crate::traits::*;
 use rlst_blis::interface::gemm::Gemm;
 use rlst_blis::interface::types::TransMode;
 use rlst_common::types::Scalar;

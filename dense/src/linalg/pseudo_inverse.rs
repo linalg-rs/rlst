@@ -4,7 +4,6 @@ use crate::rlst_dynamic_array2;
 use crate::traits::*;
 use itertools::Itertools;
 use num::traits::{One, Zero};
-use rlst_common::traits::*;
 use rlst_common::types::{c32, c64, RlstResult, Scalar};
 
 macro_rules! impl_pinv {

@@ -1,7 +1,6 @@
 //! Useful library tools.
 
 use crate::traits::*;
-use crate::traits::*;
 use rand::prelude::*;
 use rand_distr::Distribution;
 use rlst_common::types::*;
