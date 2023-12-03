@@ -7,7 +7,7 @@
 //! The library is early stage. The core data structures are implemented
 //! and functionality is continuously being added.
 //!
-//! The core of `householder` is the [Matrix](crate::matrix::Matrix) type,
+//! The core of `householder` is the [Matrix] type,
 //! which supports fixed size implementations, dynamic size implementations,
 //! and specialises also to vectors. It is agnostic to underlying storage
 //! layouts (i.e. row or column major) and also supports layouts with
