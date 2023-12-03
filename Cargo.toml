@@ -6,7 +6,6 @@ members = [
   "operator",
   "sparse",
   "common",
-  "algorithms",
   "io",
   "suitesparse-src",
   "blis-src",
