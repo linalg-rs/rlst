@@ -1,8 +1,7 @@
 //! Column major layout with arbitrary stride.
 //!
 //! This layout uses an arbitrary stride in memory with 1d indexing
-//! in column major order. For further information on memory layouts
-//! see [crate::traits::layout].
+//! in column major order.
 
 /// Compute stride from a shape
 pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {

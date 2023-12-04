@@ -82,8 +82,8 @@ pub struct MatrixMarketInfo {
 
 /// Export a matrix in coordinate format.
 ///
-/// This function requires objects to implement the [rlst_common::traits::AijIterator] and
-/// [rlst_common::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [rlst_dense::traits::AijIterator] and
+/// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
     T: Scalar + MmIdentifier,
@@ -117,8 +117,8 @@ pub fn write_coordinate_mm<
 
 /// Export a matrix in array format.
 ///
-/// This function requires objects to implement the [rlst_common::traits::ColumnMajorIterator] and
-/// [rlst_common::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [rlst_dense::traits::DefaultIterator] and
+/// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
     T: Scalar + MmIdentifier,
@@ -145,7 +145,7 @@ pub fn write_array_mm<
 
 /// Read an array in matrix market format.
 ///
-/// The function returns a [MatrixD] object representing the data in the file.
+/// The function returns a [DynamicArray] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
 pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();

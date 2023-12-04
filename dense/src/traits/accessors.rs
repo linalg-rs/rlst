@@ -8,8 +8,8 @@
 //! matrix element. The one-dimensional access takes a single `index` parameter that
 //! iterates through the matrix elements.
 //!
-//! If the [`crate::traits::properties::Shape`] and [`crate::traits::properties::NumberOfElements`]
-//! traits are implemented on top of [`UnsafeRandomAccessByValue`], [`UnsafeRandomAccessByRef`]
+//! If the [`crate::traits::Shape`]
+//! trait is implemented on top of [`UnsafeRandomAccessByValue`], [`UnsafeRandomAccessByRef`]
 //! and [`UnsafeRandomAccessMut`] then the
 //! corresponding bounds-checked traits [`RandomAccessByValue`], [`RandomAccessByRef`] and
 //! [`RandomAccessMut`] are auto-implemented.
