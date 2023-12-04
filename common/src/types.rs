@@ -36,3 +36,12 @@ pub enum RlstError {
 
 /// Alias for an RLST Result type.
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
+
+/// Data chunk of fixed size N.
+/// The field `valid_entries` stores how many entries of the chunk
+/// contain valid data.
+pub struct DataChunk<Item: Scalar, const N: usize> {
+    pub data: [Item; N],
+    pub start_index: usize,
+    pub valid_entries: usize,
+}

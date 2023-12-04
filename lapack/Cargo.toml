@@ -1,0 +1,42 @@
+[features]
+strict = []
+
+[package]
+name = "rlst-lapack"
+version = "0.0.1"
+authors = ["The linalg-rs contributors"]
+edition = "2021"
+description = "Safe Lapack wrappers."
+license = "MIT + Apache 2.0"
+homepage = "https://github.com/linalg-rs"
+repository = "https://github.com/linalg-rs/rlst"
+readme = "README.md"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+
+[lib]
+name = "rlst_lapack"
+
+[dependencies]
+num = "0.4"
+cauchy = "0.4"
+rand = "0.8"
+itertools = "0.12"
+rand_distr = "0.4"
+rlst-blis = { path = "../blis"}
+approx = { version = "0.5", features=["num-complex"] }
+rlst-common = {path = "../common"}
+paste = "1"
+rand_chacha = "0.3"
+rlst-netlib-lapack-src = {path = "../netlib-lapack-src"}
+lapack = "0.19.*"
+
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex-header.html" ]
+
+
+

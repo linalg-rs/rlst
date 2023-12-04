@@ -11,13 +11,13 @@ use crate::traits::index_layout::IndexLayout;
 use crate::distributed_vector::DistributedVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
-use rlst_common::traits::Shape;
 use rlst_common::types::Scalar;
-use rlst_dense::{RawAccess, RawAccessMut};
+use rlst_dense::traits::Shape;
+use rlst_dense::traits::{RawAccess, RawAccessMut};
 
 pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
-    shape: (usize, usize),
+    shape: [usize; 2],
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
@@ -28,7 +28,7 @@ pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
 
 impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     pub fn new(
-        shape: (usize, usize),
+        shape: [usize; 2],
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
@@ -76,7 +76,12 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         Self {
             mat_type: SparseMatType::Csr,
             shape,
-            local_matrix: CsrMatrix::new((indptr.len() - 1, shape.1), mapped_indices, indptr, data),
+            local_matrix: CsrMatrix::new(
+                [indptr.len() - 1, shape[1]],
+                mapped_indices,
+                indptr,
+                data,
+            ),
             global_indices: indices,
             local_dof_count,
             domain_layout,
@@ -89,7 +94,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         &self.mat_type
     }
 
-    pub fn local_shape(&self) -> (usize, usize) {
+    pub fn local_shape(&self) -> [usize; 2] {
         self.local_matrix.shape()
     }
 
@@ -170,7 +175,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
             csr_data = vec![T::zero(); my_data_count as usize];
             csr_indices = vec![0; my_data_count as usize];
             csr_indptr = vec![0; 1 + my_number_of_rows];
-            shape = vec![csr_mat.shape().0, csr_mat.shape().1];
+            shape = vec![csr_mat.shape()[0], csr_mat.shape()[1]];
 
             // The following code computes the counts and displacements for the indexptr vector.
 
@@ -244,7 +249,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         // Once everything is received we can finally create the matrix object.
 
         Self::new(
-            (shape[0], shape[1]),
+            [shape[0], shape[1]],
             csr_indices,
             csr_indptr,
             csr_data,
@@ -278,8 +283,8 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     }
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> Shape for MpiCsrMatrix<'a, T, C> {
-    fn shape(&self) -> (usize, usize) {
+impl<'a, T: Scalar + Equivalence, C: Communicator> Shape<2> for MpiCsrMatrix<'a, T, C> {
+    fn shape(&self) -> [usize; 2] {
         self.shape
     }
 }

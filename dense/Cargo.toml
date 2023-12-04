@@ -21,20 +21,20 @@ name = "rlst_dense"
 num = "0.4"
 cauchy = "0.4"
 rand = "0.8"
-itertools = "0.11"
+itertools = "0.12"
 rand_distr = "0.4"
-rlst-blis = { path = "../blis"}
-approx = { version = "0.5", features=["num-complex"] }
-rlst-operator = {path = "../operator"}
-rlst-common = {path = "../common"}
+rlst-blis = { path = "../blis" }
+approx = { version = "0.5", features = ["num-complex"] }
+rlst-operator = { path = "../operator" }
+rlst-common = { path = "../common" }
 paste = "1"
 rand_chacha = "0.3"
+rlst-blis-src = { path = "../blis-src" }
+rlst-netlib-lapack-src = { path = "../netlib-lapack-src" }
+lapack = "0.19.*"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 
 [package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "katex-header.html" ]
-
-
-
+rustdoc-args = ["--html-in-header", "katex-header.html"]

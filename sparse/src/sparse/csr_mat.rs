@@ -1,29 +1,30 @@
 //! Definition of CSR matrices.
 
 use crate::sparse::SparseMatType;
-use rlst_common::traits::AijIterator;
 use rlst_common::types::RlstResult;
+use rlst_dense::traits::AijIterator;
 
 use crate::sparse::tools::normalize_aij;
-use rlst_common::traits::properties::Shape;
 use rlst_common::types::Scalar;
+use rlst_dense::traits::Shape;
 
 use super::csc_mat::CscMatrix;
 
+#[derive(Clone)]
 pub struct CsrMatrix<T: Scalar> {
     mat_type: SparseMatType,
-    shape: (usize, usize),
+    shape: [usize; 2],
     indices: Vec<usize>,
     indptr: Vec<usize>,
     data: Vec<T>,
 }
 
-impl<T: Scalar> CsrMatrix<T> {
+impl<Item: Scalar> CsrMatrix<Item> {
     pub fn new(
-        shape: (usize, usize),
+        shape: [usize; 2],
         indices: Vec<usize>,
         indptr: Vec<usize>,
-        data: Vec<T>,
+        data: Vec<Item>,
     ) -> Self {
         Self {
             mat_type: SparseMatType::Csr,
@@ -50,17 +51,17 @@ impl<T: Scalar> CsrMatrix<T> {
         &self.indptr
     }
 
-    pub fn data(&self) -> &[T] {
+    pub fn data(&self) -> &[Item] {
         &self.data
     }
 
-    pub fn matmul(&self, alpha: T, x: &[T], beta: T, y: &mut [T]) {
+    pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
         for (row, out) in y.iter_mut().enumerate() {
             *out = beta * *out
                 + alpha * {
                     let c1 = self.indptr()[row];
                     let c2 = self.indptr()[1 + row];
-                    let mut acc = T::zero();
+                    let mut acc = Item::zero();
 
                     for index in c1..c2 {
                         let col = self.indices()[index];
@@ -71,10 +72,10 @@ impl<T: Scalar> CsrMatrix<T> {
         }
     }
 
-    pub fn to_csc(&self) -> CscMatrix<T> {
+    pub fn into_csc(self) -> CscMatrix<Item> {
         let mut rows = Vec::<usize>::with_capacity(self.nelems());
         let mut cols = Vec::<usize>::with_capacity(self.nelems());
-        let mut data = Vec::<T>::with_capacity(self.nelems());
+        let mut data = Vec::<Item>::with_capacity(self.nelems());
 
         for (row, col, elem) in self.iter_aij() {
             rows.push(row);
@@ -86,10 +87,10 @@ impl<T: Scalar> CsrMatrix<T> {
     }
 
     pub fn from_aij(
-        shape: (usize, usize),
+        shape: [usize; 2],
         rows: &[usize],
         cols: &[usize],
-        data: &[T],
+        data: &[Item],
     ) -> RlstResult<Self> {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
@@ -97,25 +98,25 @@ impl<T: Scalar> CsrMatrix<T> {
         let max_row = rows.last().unwrap();
 
         assert!(
-            *max_col < shape.1,
+            *max_col < shape[1],
             "Maximum column {} must be smaller than `shape.1` {}",
             max_col,
-            shape.1
+            shape[1]
         );
 
         assert!(
-            *max_row < shape.0,
+            *max_row < shape[0],
             "Maximum row {} must be smaller than `shape.0` {}",
             max_row,
-            shape.0
+            shape[0]
         );
 
         let nelems = data.len();
 
-        let mut indptr = Vec::<usize>::with_capacity(1 + shape.0);
+        let mut indptr = Vec::<usize>::with_capacity(1 + shape[0]);
 
         let mut count: usize = 0;
-        for row in 0..(shape.0) {
+        for row in 0..(shape[0]) {
             indptr.push(count);
             while count < nelems && row == rows[count] {
                 count += 1;
@@ -127,19 +128,19 @@ impl<T: Scalar> CsrMatrix<T> {
     }
 }
 
-pub struct CsrAijIterator<'a, T: Scalar> {
-    mat: &'a CsrMatrix<T>,
+pub struct CsrAijIterator<'a, Item: Scalar> {
+    mat: &'a CsrMatrix<Item>,
     row: usize,
     pos: usize,
 }
 
-impl<'a, T: Scalar> CsrAijIterator<'a, T> {
-    pub fn new(mat: &'a CsrMatrix<T>) -> Self {
+impl<'a, Item: Scalar> CsrAijIterator<'a, Item> {
+    pub fn new(mat: &'a CsrMatrix<Item>) -> Self {
         // We need to move the row pointer to the first row that has at least one element.
 
         let mut row: usize = 0;
 
-        while row < mat.shape().0 && mat.indptr[row] == mat.indptr[1 + row] {
+        while row < mat.shape()[0] && mat.indptr[row] == mat.indptr[1 + row] {
             row += 1;
         }
 
@@ -147,8 +148,8 @@ impl<'a, T: Scalar> CsrAijIterator<'a, T> {
     }
 }
 
-impl<'a, T: Scalar> std::iter::Iterator for CsrAijIterator<'a, T> {
-    type Item = (usize, usize, T);
+impl<'a, Item: Scalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
+    type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos == self.mat.data().len() {
@@ -164,7 +165,7 @@ impl<'a, T: Scalar> std::iter::Iterator for CsrAijIterator<'a, T> {
         self.pos += 1;
 
         // The following jumps over all zero rows to the next relevant row
-        while self.row < self.mat.shape().0 && self.mat.indptr()[1 + self.row] <= self.pos {
+        while self.row < self.mat.shape()[0] && self.mat.indptr()[1 + self.row] <= self.pos {
             self.row += 1;
         }
 
@@ -179,17 +180,17 @@ impl<'a, T: Scalar> std::iter::Iterator for CsrAijIterator<'a, T> {
     }
 }
 
-impl<T: Scalar> rlst_common::traits::iterators::AijIterator for CsrMatrix<T> {
-    type T = T;
-    type Iter<'a> = CsrAijIterator<'a, T> where Self: 'a;
+impl<Item: Scalar> AijIterator for CsrMatrix<Item> {
+    type Item = Item;
+    type Iter<'a> = CsrAijIterator<'a, Item> where Self: 'a;
 
     fn iter_aij(&self) -> Self::Iter<'_> {
         CsrAijIterator::new(self)
     }
 }
 
-impl<T: Scalar> rlst_common::traits::Shape for CsrMatrix<T> {
-    fn shape(&self) -> (usize, usize) {
+impl<Item: Scalar> Shape<2> for CsrMatrix<Item> {
+    fn shape(&self) -> [usize; 2] {
         self.shape
     }
 }
@@ -197,7 +198,7 @@ impl<T: Scalar> rlst_common::traits::Shape for CsrMatrix<T> {
 #[cfg(test)]
 mod test {
 
-    use rlst_common::traits::AijIterator;
+    use rlst_dense::traits::AijIterator;
 
     use super::*;
 
@@ -208,7 +209,7 @@ mod test {
         let cols = vec![0, 1, 0, 1, 1];
         let data = vec![1.0, 2.0, 3.0, 4.0, 6.0];
 
-        let csr = CsrMatrix::from_aij((2, 2), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij([2, 2], &rows, &cols, &data).unwrap();
 
         assert_eq!(csr.data().len(), 4);
         assert_eq!(csr.indices().len(), 4);
@@ -220,7 +221,7 @@ mod test {
         let cols = vec![0, 2, 0];
         let data = vec![2.0, 0.0, 3.0];
 
-        let csr = CsrMatrix::from_aij((3, 3), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij([3, 3], &rows, &cols, &data).unwrap();
 
         assert_eq!(csr.indptr()[0], 0);
         assert_eq!(csr.indptr()[1], 0);
@@ -236,7 +237,7 @@ mod test {
         let cols = vec![0, 1, 0, 1];
         let data = vec![1.0, 2.0, 3.0, 4.0];
 
-        let csr = CsrMatrix::from_aij((2, 2), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij([2, 2], &rows, &cols, &data).unwrap();
 
         // Execute 2 * [1, 2] + 3 * A*x with x = [3, 4];
         // Expected result is [35, 79].
@@ -257,7 +258,7 @@ mod test {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
 
         // This matrix has a zero row at the beginning one in between and several zero rows at the end.
-        let csr = CsrMatrix::from_aij((10, 3), &rows, &cols, &data).unwrap();
+        let csr = CsrMatrix::from_aij([10, 3], &rows, &cols, &data).unwrap();
 
         let aij_data: Vec<(usize, usize, f64)> = csr.iter_aij().collect();
 

@@ -2,7 +2,7 @@
 use super::types::TransMode;
 use crate::interface::assert_data_size;
 use crate::raw;
-use rlst_common::types::{c32, c64, Scalar};
+use cauchy::{c32, c64, Scalar};
 
 pub trait Gemm: Scalar {
     #[allow(clippy::too_many_arguments)]
@@ -48,20 +48,20 @@ macro_rules! impl_gemm {
                 csc: usize,
             ) {
                 match transa {
-                    TransMode::NoTrans => assert_data_size(a, (rsa, csa), (m, k)),
-                    TransMode::ConjNoTrans => assert_data_size(a, (rsa, csa), (m, k)),
-                    TransMode::Trans => assert_data_size(a, (rsa, csa), (k, m)),
-                    TransMode::ConjTrans => assert_data_size(a, (rsa, csa), (k, m)),
+                    TransMode::NoTrans => assert_data_size(a, [rsa, csa], [m, k]),
+                    TransMode::ConjNoTrans => assert_data_size(a, [rsa, csa], [m, k]),
+                    TransMode::Trans => assert_data_size(a, [rsa, csa], [k, m]),
+                    TransMode::ConjTrans => assert_data_size(a, [rsa, csa], [k, m]),
                 }
 
                 match transb {
-                    TransMode::NoTrans => assert_data_size(b, (rsb, csb), (k, n)),
-                    TransMode::ConjNoTrans => assert_data_size(b, (rsb, csb), (k, n)),
-                    TransMode::Trans => assert_data_size(b, (rsb, csb), (n, k)),
-                    TransMode::ConjTrans => assert_data_size(b, (rsb, csb), (n, k)),
+                    TransMode::NoTrans => assert_data_size(b, [rsb, csb], [k, n]),
+                    TransMode::ConjNoTrans => assert_data_size(b, [rsb, csb], [k, n]),
+                    TransMode::Trans => assert_data_size(b, [rsb, csb], [n, k]),
+                    TransMode::ConjTrans => assert_data_size(b, [rsb, csb], [n, k]),
                 }
 
-                assert_data_size(c, (rsc, csc), (m, n));
+                assert_data_size(c, [rsc, csc], [m, n]);
 
                 unsafe {
                     raw::$blis_gemm(

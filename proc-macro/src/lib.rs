@@ -8,3 +8,7 @@ mod dense;
 pub fn rlst_static_size(args: TokenStream, input: TokenStream) -> TokenStream {
     dense::rlst_static_size_impl(args, input)
 }
+#[proc_macro]
+pub fn rlst_static_array(items: TokenStream) -> TokenStream {
+    dense::rlst_static_array_impl(items)
+}

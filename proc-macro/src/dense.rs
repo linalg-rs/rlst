@@ -37,3 +37,28 @@ pub(crate) fn rlst_static_size_impl(args: TokenStream, input: TokenStream) -> To
     };
     output.into()
 }
+
+pub(crate) fn rlst_static_array_impl(items: TokenStream) -> TokenStream {
+    let args = items.to_string();
+    let args: Vec<&str> = args.split(',').map(|elem| elem.trim()).collect();
+    let ty = args[0];
+    let ty = if let Ok(syn::Type::Path(type_path)) = syn::parse_str(ty) {
+        type_path
+    } else {
+        panic!("Type expected as first argument.");
+    };
+    let dims = args[1..]
+        .iter()
+        .map(|elem| elem.parse::<usize>().unwrap())
+        .collect::<Vec<usize>>();
+
+    let ndim: usize = dims.iter().product();
+
+    let output = quote! { {
+        let data = rlst_dense::data_container::ArrayContainer::<#ty, #ndim>::new();
+        rlst_dense::array::Array::new(rlst_dense::base_array::BaseArray::new(data, [#(#dims),*]))
+    }
+    };
+
+    output.into()
+}

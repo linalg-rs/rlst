@@ -4,32 +4,32 @@ use crate::traits::index_layout::IndexLayout;
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
 use rlst_common::types::{RlstResult, Scalar};
-use rlst_dense::{rlst_col_vec, RawAccess, RawAccessMut};
-use rlst_dense::{MatrixD, RandomAccessByValue, Shape};
+use rlst_dense::array::DynamicArray;
+use rlst_dense::{rlst_dynamic_array1, traits::*};
 
 use crate::index_layout::DefaultMpiIndexLayout;
 
-pub struct DistributedVector<'a, T: Scalar + Equivalence, C: Communicator> {
+pub struct DistributedVector<'a, Item: Scalar + Equivalence, C: Communicator> {
     index_layout: &'a DefaultMpiIndexLayout<'a, C>,
-    local: MatrixD<T>,
+    local: DynamicArray<Item, 1>,
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
+impl<'a, Item: Scalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
     pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
-            local: rlst_col_vec![T, index_layout.number_of_local_indices()],
+            local: rlst_dynamic_array1!(Item, [index_layout.number_of_local_indices()]),
         }
     }
-    pub fn local(&self) -> &MatrixD<T> {
+    pub fn local(&self) -> &DynamicArray<Item, 1> {
         &self.local
     }
 
-    pub fn local_mut(&mut self) -> &mut MatrixD<T> {
+    pub fn local_mut(&mut self) -> &mut DynamicArray<Item, 1> {
         &mut self.local
     }
 
-    pub fn to_root(&self) -> Option<MatrixD<T>> {
+    pub fn to_root(&self) -> Option<DynamicArray<Item, 1>> {
         let comm = self.index_layout().comm();
         let root_process = comm.process_at_rank(0);
 
@@ -48,8 +48,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
                 .collect();
             let global_dim = self.index_layout().number_of_global_indices();
 
-            let mut vec = rlst_col_vec![T, global_dim];
-            //let mut vec = DefaultSerialVector::<T>::new(global_dim);
+            let mut vec = rlst_dynamic_array1!(Item, [global_dim]);
 
             let mut partition = PartitionMut::new(vec.data_mut(), counts, displacements);
 
@@ -62,9 +61,9 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
         }
     }
 
-    pub fn from_root<LocalVec: RandomAccessByValue<Item = T> + Shape>(
+    pub fn from_root(
         index_layout: &'a DefaultMpiIndexLayout<'a, C>,
-        other: &Option<LocalVec>,
+        other: &Option<DynamicArray<Item, 1>>,
     ) -> RlstResult<Self> {
         let comm = index_layout.comm();
         let counts: Vec<i32> = (0..comm.size())
@@ -88,11 +87,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
         if comm.rank() == 0 {
             assert!(other.is_some(), "`other` has a `none` value.");
             let other = other.as_ref().unwrap();
-            assert!(
-                other.shape().0 == 1 || other.shape().1 == 1,
-                "`other` is not a vector"
-            );
-            let local_dim = other.shape().0 * other.shape().1;
+            let local_dim = other.shape()[0];
 
             assert!(
                 index_layout.number_of_global_indices() == local_dim,
@@ -101,10 +96,10 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> DistributedVector<'a, T, C> {
                 local_dim
             );
 
-            let mut data = vec![T::zero(); local_dim];
+            let mut data = vec![Item::zero(); local_dim];
 
             for (index, item) in data.iter_mut().enumerate() {
-                *item = other.get1d_value(index).unwrap()
+                *item = other[[index]];
             }
             let partition = Partition::new(data.as_slice(), counts, displacements);
 
