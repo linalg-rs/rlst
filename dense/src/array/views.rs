@@ -1,4 +1,7 @@
-//! Views onto an array
+//! Views onto an array.
+//!
+//! A view onto an array stores a reference to the array and forwards all method calls to the
+//! original array. A subview is similar but restricts to a subpart of the original array.
 
 use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
@@ -6,6 +9,7 @@ use super::Array;
 use crate::traits::*;
 use rlst_common::types::*;
 
+/// Basic structure for a `View`
 pub struct ArrayView<
     'a,
     Item: Scalar,
@@ -487,6 +491,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Move the array into a subview specified by an offset and shape of the subview.
     pub fn into_subview(
         self,
         offset: [usize; NDIM],
@@ -502,6 +507,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Return a view onto the array.
     pub fn view(&self) -> Array<Item, ArrayView<'_, Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayView::new(self))
     }
@@ -515,6 +521,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Return a mutable view onto the array.
     pub fn view_mut(&mut self) -> Array<Item, ArrayViewMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayViewMut::new(self))
     }

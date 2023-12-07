@@ -1,9 +1,12 @@
-//! Various iterator implementations
+//! Various iterator implementations.
 
 use crate::array::*;
 use crate::layout::convert_1d_nd_from_shape;
 use rlst_common::types::Scalar;
 
+/// Default column major iterator.
+///
+/// This iterator returns elements of an array in standard column major order.
 pub struct ArrayDefaultIterator<
     'a,
     Item: Scalar,
@@ -16,6 +19,7 @@ pub struct ArrayDefaultIterator<
     nelements: usize,
 }
 
+/// Mutable default iterator. Like [ArrayDefaultIterator] but with mutable access.
 pub struct ArrayDefaultIteratorMut<
     'a,
     Item: Scalar,
@@ -30,6 +34,7 @@ pub struct ArrayDefaultIteratorMut<
     nelements: usize,
 }
 
+/// A multi-index iterator returns the corrent element and the corresponding multi-index.
 pub struct MultiIndexIterator<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
     shape: [usize; NDIM],
     iter: I,
@@ -49,6 +54,8 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> Iterator
     }
 }
 
+/// Helper trait that returns from an enumeration iterator a new iterator
+/// that converts the 1d index into a multi-index.
 pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
     fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<T, I, NDIM>;
 }

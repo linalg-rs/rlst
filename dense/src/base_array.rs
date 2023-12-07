@@ -1,3 +1,8 @@
+//! Definition of [BaseArray], a container for array data.
+//!
+//! A [BaseArray] is a simple container for array data. It is mainly a convient interface
+//! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
+
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataContainerMut};
 use crate::layout::{
@@ -6,6 +11,8 @@ use crate::layout::{
 use crate::traits::*;
 use rlst_common::types::Scalar;
 
+/// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
+/// the shape of the array, and `stride` contains the `stride` of the underlying data.
 pub struct BaseArray<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],

@@ -1,9 +1,9 @@
-//! Set global threading for BLIS
+//! Set global threading for Blis.
 
 use crate::raw::{self, bli_thread_set_num_threads};
 use num_cpus;
 
-/// Get the current number of threads used by BLIS.
+/// Get the current number of threads used by Blis.
 pub fn get_num_threads() -> usize {
     let threads = unsafe { raw::bli_thread_get_num_threads() };
 

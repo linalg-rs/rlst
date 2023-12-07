@@ -1,4 +1,4 @@
-//! Operations on arrays
+//! Operations on arrays.
 use crate::layout::convert_1d_nd_from_shape;
 
 use super::*;
@@ -11,18 +11,21 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Set all elements of an array to zero.
     pub fn set_zero(&mut self) {
         for elem in self.iter_mut() {
             *elem = <Item as num::Zero>::zero();
         }
     }
 
+    /// Set all elements of an array to one.
     pub fn set_one(&mut self) {
         for elem in self.iter_mut() {
             *elem = <Item as num::One>::one();
         }
     }
 
+    /// Fill the diagonal of an array with the value 1 and all other elements zero.
     pub fn set_identity(&mut self) {
         self.set_zero();
 
@@ -31,12 +34,54 @@ impl<
         }
     }
 
+    /// Multiply all array elements with the scalar `alpha`.
     pub fn scale_in_place(&mut self, alpha: Item) {
         for elem in self.iter_mut() {
             *elem *= alpha;
         }
     }
 
+    /// Get the diagonal of an array.
+    ///
+    /// Argument must be a 1d array of length `self.shape().iter().min()`.
+    pub fn get_diag<
+        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandomAccessMut<1, Item = Item>,
+    >(
+        &self,
+        mut other: Array<Item, ArrayImplOther, 1>,
+    ) {
+        assert_eq!(
+            other.number_of_elements(),
+            *self.shape().iter().min().unwrap()
+        );
+        for index in 0..self.shape().iter().copied().min().unwrap() {
+            *other.get_mut([index]).unwrap() = self.get_value([index; NDIM]).unwrap();
+        }
+    }
+
+    /// Set the diagonal of an array.
+    ///
+    /// Argument must be a 1d array of length `self.shape().iter().min()`.
+    pub fn set_diag<
+        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandomAccessMut<1, Item = Item>,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, 1>,
+    ) {
+        assert_eq!(
+            other.number_of_elements(),
+            *self.shape().iter().min().unwrap()
+        );
+        for index in 0..self.shape().iter().copied().min().unwrap() {
+            *self.get_mut([index; NDIM]).unwrap() = other.get_value([index]).unwrap();
+        }
+    }
+
+    /// Fill an array with values from another array.
     pub fn fill_from<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
@@ -48,6 +93,7 @@ impl<
         }
     }
 
+    /// Fill an array with values from an other arrays using chunks of size `N`.
     pub fn fill_from_chunked<
         Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const N: usize,
@@ -74,6 +120,7 @@ impl<
         }
     }
 
+    /// Sum other array into array.
     pub fn sum_into<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
@@ -83,6 +130,7 @@ impl<
         }
     }
 
+    /// Chunked summation into array.
     pub fn sum_into_chunked<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const N: usize,
@@ -125,6 +173,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Return true of array is empty (that is one dimension is zero), otherwise false.
     pub fn is_empty(&self) -> bool {
         self.shape().iter().copied().min().unwrap() == 0
     }

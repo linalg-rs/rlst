@@ -1,13 +1,13 @@
-//! LU Decomposition and linear system solves
+//! LU Decomposition and linear system solves.
 use super::assert_lapack_stride;
 use super::Trans;
 use crate::array::Array;
 use crate::traits::*;
 use lapack::{dgetrf, dgetrs};
 use num::One;
-use rlst_common::traits::*;
 use rlst_common::types::*;
 
+/// Container for the LU Decomposition of a matrix.
 pub struct LuDecomposition<
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
@@ -25,6 +25,7 @@ macro_rules! impl_lu {
                     + RawAccessMut<Item = $scalar>,
             > LuDecomposition<$scalar, ArrayImpl>
         {
+            /// Create a new LU Decomposition from a given array.
             pub fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
                 let shape = arr.shape();
                 let stride = arr.stride();
@@ -54,6 +55,9 @@ macro_rules! impl_lu {
                 }
             }
 
+            /// Solve a linear system with given right-hand side.
+            ///
+            /// The right-hand side is overwritten with the solution.
             pub fn solve<
                 ArrayImplMut: RawAccessMut<Item = $scalar>
                     + UnsafeRandomAccessByValue<2, Item = $scalar>
@@ -63,7 +67,7 @@ macro_rules! impl_lu {
                 &self,
                 trans: Trans,
                 mut rhs: Array<$scalar, ArrayImplMut, 2>,
-            ) -> RlstResult<Array<$scalar, ArrayImplMut, 2>> {
+            ) -> RlstResult<()> {
                 assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
                 let n = self.arr.shape()[0];
                 assert_eq!(rhs.shape()[0], n);
@@ -101,11 +105,14 @@ macro_rules! impl_lu {
                 };
 
                 match info {
-                    0 => Ok(rhs),
+                    0 => Ok(()),
                     _ => Err(RlstError::LapackError(info)),
                 }
             }
 
+            /// Get the L matrix of the LU Decomposition.
+            ///
+            /// This method resizes the input `arr` as required.
             pub fn get_l_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -124,6 +131,10 @@ macro_rules! impl_lu {
                 self.get_l(arr);
             }
 
+            /// Get the L matrix of the LU decomposition.
+            ///
+            /// If A has the dimension `(m, n)` then the L matrix
+            /// has the dimension `(m, k)` with `k = min(m, n)`.
             pub fn get_l<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -158,6 +169,9 @@ macro_rules! impl_lu {
                 }
             }
 
+            /// Get the R matrix of the LU Decomposition.
+            ///
+            /// This method resizes the input `arr` as required.
             pub fn get_r_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -176,6 +190,10 @@ macro_rules! impl_lu {
                 self.get_r(arr);
             }
 
+            /// Get the R matrix of the LU Decomposition.
+            ///
+            /// If A has the dimension `(m, n)` then the L matrix
+            /// has the dimension `(k, n)` with `k = min(m, n)`.
             pub fn get_r<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -206,6 +224,9 @@ macro_rules! impl_lu {
                 }
             }
 
+            /// Get the P matrix of the LU Decomposition.
+            ///
+            /// This method resizes the input `arr` as required.
             pub fn get_p_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -237,6 +258,10 @@ macro_rules! impl_lu {
                 perm
             }
 
+            /// Get the P matrix of the LU Decomposition.
+            ///
+            /// If A has the dimension `(m, n)` then the P matrix
+            /// has the dimension (m, m).
             pub fn get_p<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -273,6 +298,7 @@ macro_rules! impl_lu {
                     + Shape<2>,
             > Array<$scalar, ArrayImpl, 2>
         {
+            /// Compute the LU decomposition of a matrix.
             pub fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 LuDecomposition::new(self)

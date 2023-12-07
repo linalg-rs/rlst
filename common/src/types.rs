@@ -1,9 +1,9 @@
-//! Basic types
+//! Basic types.
 
 pub use cauchy::{c32, c64, Scalar};
 use thiserror::Error;
 
-/// The RLST error type.
+/// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
     #[error("Method {0} is not implemented.")]
@@ -34,7 +34,7 @@ pub enum RlstError {
     MatrixNotHermitian,
 }
 
-/// Alias for an RLST Result type.
+/// Alias for an Rlst Result type.
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
 
 /// Data chunk of fixed size N.

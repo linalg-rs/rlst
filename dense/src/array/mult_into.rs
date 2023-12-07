@@ -1,4 +1,4 @@
-//! Multiplication of Arrays
+//! Implementation of array multiplication.
 
 use crate::traits::MultInto;
 use crate::traits::MultIntoResize;

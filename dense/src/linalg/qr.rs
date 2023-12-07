@@ -7,7 +7,6 @@ use itertools::Itertools;
 use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 
 use num::Zero;
-use rlst_common::traits::*;
 use rlst_common::types::*;
 
 #[derive(Clone, Copy)]

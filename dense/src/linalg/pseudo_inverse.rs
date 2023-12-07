@@ -1,4 +1,5 @@
-//! Implement the Pseudo-Inverse
+//! Implement the Pseudo-Inverse.
+
 use crate::array::Array;
 use crate::rlst_dynamic_array2;
 use crate::traits::*;
@@ -15,6 +16,13 @@ macro_rules! impl_pinv {
                     + RawAccessMut<Item = $scalar>,
             > Array<$scalar, ArrayImpl, 2>
         {
+            /// Compute the pseudo inverse into the array `pinv`.
+            ///
+            /// This method dynamically allocates memory for the computation.
+            ///
+            /// # Parameters
+            /// - `pinv`: Array to store the pseudo-inverse in. Array is resized if necessary.
+            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol` will be discarded.
             pub fn into_pseudo_inverse_resize_alloc<
                 ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
@@ -28,10 +36,21 @@ macro_rules! impl_pinv {
                 tol: <$scalar as Scalar>::Real,
             ) -> RlstResult<()> {
                 let shape = pinv.shape();
-                pinv.resize_in_place([shape[1], shape[0]]);
+
+                if pinv.shape() != [shape[1], shape[0]] {
+                    pinv.resize_in_place([shape[1], shape[0]]);
+                }
                 self.into_pseudo_inverse_alloc(pinv, tol)
             }
 
+            /// Compute the pseudo inverse into the array `pinv`.
+            ///
+            /// This method dynamically allocates memory for the computation.
+            ///
+            /// # Parameters
+            /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
+            ///           `pinv` must have shape `[n, m]`.
+            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol` will be discarded.
             pub fn into_pseudo_inverse_alloc<
                 ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
