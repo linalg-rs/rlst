@@ -1,4 +1,4 @@
-//! Implement the Pseudo-Inverse.
+//! Pseudo-Inverse of a matrix.
 
 use crate::array::Array;
 use crate::rlst_dynamic_array2;
@@ -50,7 +50,8 @@ macro_rules! impl_pinv {
             /// # Parameters
             /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
             ///           `pinv` must have shape `[n, m]`.
-            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol` will be discarded.
+            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol * s\[0\]` will be discarded,
+            /// where s\[0\] is the largest singular value.
             pub fn into_pseudo_inverse_alloc<
                 ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>

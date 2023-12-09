@@ -5,6 +5,8 @@
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
 use crate::base_array::BaseArray;
+use crate::data_container::SliceContainer;
+use crate::data_container::SliceContainerMut;
 use crate::data_container::VectorContainer;
 use crate::traits::*;
 use rlst_common::types::DataChunk;
@@ -22,6 +24,14 @@ pub mod views;
 /// A basic dynamically allocated array.
 pub type DynamicArray<Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A dynamically allocated array from a data slice.
+pub type SliceArray<'a, Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
+
+/// A mutable dynamically allocated array from a data slice.
+pub type SliceArrayMut<'a, Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
 pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
@@ -242,4 +252,48 @@ pub fn empty_array<Item: Scalar, const NDIM: usize>() -> DynamicArray<Item, NDIM
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
+}
+
+impl<'a, Item: Scalar, const NDIM: usize> SliceArray<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape`.
+    ///
+    /// The `stride` is automatically assumed to be column major.
+    pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
+        Array::new(BaseArray::new(SliceContainer::new(slice), shape))
+    }
+
+    /// Create a new array from a slice with a given `shape` and `stride`.
+    pub fn from_shape_with_stride(
+        slice: &'a [Item],
+        shape: [usize; NDIM],
+        stride: [usize; NDIM],
+    ) -> Self {
+        Array::new(BaseArray::new_with_stride(
+            SliceContainer::new(slice),
+            shape,
+            stride,
+        ))
+    }
+}
+
+impl<'a, Item: Scalar, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape`.
+    ///
+    /// The `stride` is automatically assumed to be column major.
+    pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
+        Array::new(BaseArray::new(SliceContainerMut::new(slice), shape))
+    }
+
+    /// Create a new array from a slice with a given `shape` and `stride`.
+    pub fn from_shape_with_stride(
+        slice: &'a mut [Item],
+        shape: [usize; NDIM],
+        stride: [usize; NDIM],
+    ) -> Self {
+        Array::new(BaseArray::new_with_stride(
+            SliceContainerMut::new(slice),
+            shape,
+            stride,
+        ))
+    }
 }

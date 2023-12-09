@@ -1,253 +1,328 @@
 //! The macros defined here make it easy to create new matrices and vectors.
 
-// pub use rand;
-
-/// Create a new array.
+/// Create a new two one dimensional heap allocated array.
 ///
-/// Example:
+/// A heap allocated array has a size that is determined at runtime.
+///
+/// # Example
 /// ```
 /// # use rlst_dense::*;
-/// // Creates a (3, 5) matrix with `f64` entries.
-/// let mat = rlst_dynamic_array2!(f64, [3, 5]);
+/// // Creates a (3) array with `f64` entries.
+/// let arr = rlst_dynamic_array1!(f64, [3]);
+/// ```
+#[macro_export]
+macro_rules! rlst_dynamic_array1 {
+    ($scalar:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$scalar, 1>::from_shape($shape)
+    }};
+}
+
+/// Create a new two dimensional heap allocated array.
+///
+/// A heap allocated array has a size that is determined at runtime.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// // Creates a (3, 5) array with `f64` entries.
+/// let arr = rlst_dynamic_array2!(f64, [3, 5]);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array2 {
-    ($ScalarType:ty, $shape:expr) => {{
-        $crate::array::DynamicArray::<$ScalarType, 2>::from_shape($shape)
+    ($scalar:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$scalar, 2>::from_shape($shape)
     }};
 }
 
-#[macro_export]
-macro_rules! rlst_dynamic_array1 {
-    ($ScalarType:ty, $shape:expr) => {{
-        $crate::array::DynamicArray::<$ScalarType, 1>::from_shape($shape)
-    }};
-}
-
+/// Create a new three dimensional heap allocated array.
+///
+/// A heap allocated array has a size that is determined at runtime.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// // Creates a (3, 5, 2) array with `f64` entries.
+/// let arr = rlst_dynamic_array3!(f64, [3, 5, 2]);
+/// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array3 {
-    ($ScalarType:ty, $shape:expr) => {{
-        $crate::array::DynamicArray::<$ScalarType, 3>::from_shape($shape)
+    ($scalar:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$scalar, 3>::from_shape($shape)
     }};
 }
 
+/// Create a new four dimensional heap allocated array.
+///
+/// A heap allocated array has a size that is determined at runtime.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// // Creates a (3, 5, 2, 4) array with `f64` entries.
+/// let arr = rlst_dynamic_array4!(f64, [3, 5, 2, 4]);
+/// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array4 {
-    ($ScalarType:ty, $shape:expr) => {{
-        $crate::array::DynamicArray::<$ScalarType, 4>::from_shape($shape)
+    ($scalar:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$scalar, 4>::from_shape($shape)
     }};
 }
 
-// #[macro_export]
-// macro_rules! rlst_static_mat {
-//     ($ScalarType:ty, $SizeIdentifier:ty) => {{
-//         use $crate::{MatrixBuilder};
-//         use $crate::SizeIdentifierValue;
-//         match <$SizeIdentifier>::SIZE {
-//             SizeIdentifierValue::Static(m, n) => <$SizeIdentifier as MatrixBuilder<$ScalarType>>::new_matrix((m, n)),
-//             _ => panic!("Macro `rlst_static_mat` can only be called with size identifiers representic static sizes."),
-//         }
-//     }};
-// }
+/// Create a new five dimensional heap allocated array.
+///
+/// A heap allocated array has a size that is determined at runtime.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// // Creates a (3, 5, 2, 4, 6) array with `f64` entries.
+/// let arr = rlst_dynamic_array5!(f64, [3, 5, 2, 4, 6]);
+/// ```
+#[macro_export]
+macro_rules! rlst_dynamic_array5 {
+    ($scalar:ty, $shape:expr) => {{
+        $crate::array::DynamicArray::<$scalar, 5>::from_shape($shape)
+    }};
+}
 
-// /// Create a new matrix from a given mutable pointer.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// let mut vec = vec![0.0; 10];
-// /// vec[5] = 5.0;
-// /// let ptr = vec.as_mut_ptr();
-// /// // Create a (2, 5) matrix with stride (1, 2).
-// /// let mat = unsafe {rlst_mut_pointer_mat!['static, f64, ptr, (2, 5), (1, 2)] };
-// /// assert_eq!(mat[[1, 2]], 5.0);
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_mut_pointer_mat {
-//     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
-//         let new_layout = $crate::DefaultLayout::new($dim, $stride);
-//         let nmulti_index = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
-//         let slice = std::slice::from_raw_parts_mut($ptr, nmulti_index);
-//         let data = $crate::SliceContainerMut::<$a, $ScalarType>::new(slice);
+/// Create a new one dimensional array from a given data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let vec = vec![1.0; 5];
+/// let shape = [5];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice1!(f64, vec.as_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice1!(f64, vec.as_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice1 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArray::<$scalar, 1>::from_shape_with_stride($slice, $shape, $stride)
+    }};
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArray::<$scalar, 1>::from_shape($slice, $shape)
+    }};
+}
 
-//         $crate::SliceMatrixMut::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)
-//     }};
-// }
+/// Create a new two dimensional array from a given data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let vec = vec![1.0; 10];
+/// let shape = [2, 5];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice2!(f64, vec.as_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice2!(f64, vec.as_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice2 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArray::<$scalar, 2>::from_shape_with_stride($slice, $shape, $stride)
+    }};
 
-// /// Create a new matrix from a given pointer.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::traits::*;
-// /// let vec = vec![0.0; 10];
-// /// let ptr = vec.as_ptr();
-// /// // Create a (2, 5) matrix with stride (1, 2).
-// /// let mat = unsafe {rlst_pointer_mat!['static, f64, ptr, (2, 5), (1, 2)] };
-// /// # assert_eq!(mat.shape(), (2, 5));
-// /// # assert_eq!(mat.layout().stride(), (1, 2));
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_pointer_mat {
-//     ($a:lifetime, $ScalarType:ty, $ptr:expr, $dim:expr, $stride:expr) => {{
-//         let new_layout = $crate::DefaultLayout::new($dim, $stride);
-//         let nmulti_index = new_layout.convert_2d_raw($dim.0 - 1, $dim.1 - 1) + 1;
-//         let slice = std::slice::from_raw_parts($ptr, nmulti_index);
-//         let data = $crate::SliceContainer::<$a, $ScalarType>::new(slice);
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArray::<$scalar, 2>::from_shape($slice, $shape)
+    }};
+}
 
-//         $crate::SliceMatrix::<$a, $ScalarType, Dynamic>::from_data(data, new_layout)
-//     }};
-// }
+/// Create a new three dimensional array from a given data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let vec = vec![1.0; 30];
+/// let shape = [2, 5, 3];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice3!(f64, vec.as_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice3!(f64, vec.as_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice3 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArray::<$scalar, 3>::from_shape_with_stride($slice, $shape, $stride)
+    }};
 
-// /// Create a new random matrix with normally distributed elements.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::types::*;
-// /// // Creates a (3, 5) random matrix with `c64` entries.
-// /// let mat = rlst_rand_mat![c64, (3, 5)];
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_rand_mat {
-//     ($ScalarType:ty, $dim:expr) => {{
-//         let mut rng = $crate::macros::rand::thread_rng();
-//         let mut mat = $crate::rlst_dynamic_mat![$ScalarType, $dim];
-//         mat.fill_from_standard_normal(&mut rng);
-//         mat
-//     }};
-// }
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArray::<$scalar, 3>::from_shape($slice, $shape)
+    }};
+}
 
-// // / Create a new matrix with compile-time known dimension parameters and stack allocated storage.
-// // /
-// // / Currently only dimensions 1, 2, 3 are supported as
-// // / dimension parameters.
-// // /
-// // / Example:
-// // / ```
-// // / # use rlst_dense::*;
-// // / # use rlst_common::traits::*;
-// // / // Creates a (2, 3) .
-// // / let mat = rlst_fixed_mat![f64, 2, 3];
-// // / # assert_eq!(mat.shape(), (2, 3))
-// // / ```
-// // #[macro_export]
-// // macro_rules! rlst_fixed_mat {
-// //     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
-// //         use paste::paste;
-// //         use $crate::LayoutType;
-// //         #[allow(unused_imports)]
-// //         use $crate::{Fixed2, Fixed3};
-// //         $crate::GenericBaseMatrix::<
-// //             $ScalarType,
-// //             $crate::ArrayContainer<$ScalarType, { $dim1 * $dim2 }>,
-// //             paste! {[<Fixed $dim1>]},
-// //             paste! {[<Fixed $dim2>]},
-// //         >::from_data(
-// //             $crate::ArrayContainer::<$ScalarType, { $dim1 * $dim2 }>::new(),
-// //             $crate::DefaultLayout::from_dimension(($dim1, $dim2)),
-// //         )
-// //     }};
-// // }
+/// Create a new four dimensional array from a given data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let vec = vec![1.0; 60];
+/// let shape = [2, 5, 3, 2];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice4!(f64, vec.as_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice4!(f64, vec.as_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice4 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArray::<$scalar, 4>::from_shape_with_stride($slice, $shape, $stride)
+    }};
 
-// // /// Create a new random matrix with compile-time known dimension parameters and stack allocated storage.
-// // ///
-// // /// Currently only dimensions 1, 2, 3 are supported as
-// // /// dimension parameters.
-// // ///
-// // /// Example:
-// // /// ```
-// // /// # use rlst_dense::*;
-// // /// # use rlst_common::traits::*;
-// // /// // Creates a (2, 3) .
-// // /// let mat = rlst_static_rand_mat![f64, 2, 3];
-// // /// # assert_eq!(mat.shape(), (2, 3))
-// // /// ```
-// // #[macro_export]
-// // macro_rules! rlst_static_rand_mat {
-// //     ($ScalarType:ty, $dim1:literal, $dim2:literal) => {{
-// //         let mut rng = $crate::macros::rand::thread_rng();
-// //         let mut mat = $crate::rlst_fixed_mat![$ScalarType, $dim1, $dim2];
-// //         mat.fill_from_standard_normal(&mut rng);
-// //         mat
-// //     }};
-// // }
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArray::<$scalar, 4>::from_shape($slice, $shape)
+    }};
+}
 
-// /// Create a new column vector.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::traits::*;
-// /// // Creates a column vector with 5 elements.
-// /// let vec = rlst_col_vec![f64, 5];
-// /// # assert_eq!(vec.shape(), (5, 1));
-// /// # assert_eq!(vec.layout().stride(), (1, 5));
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_col_vec {
-//     ($ScalarType:ty, $len:expr) => {{
-//         $crate::rlst_dynamic_mat![$ScalarType, ($len, 1)]
-//     }};
-// }
+/// Create a new five dimensional array from a given data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let vec = vec![1.0; 60];
+/// let shape = [2, 5, 3, 2, 1];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice5!(f64, vec.as_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice5!(f64, vec.as_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice5 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArray::<$scalar, 5>::from_shape_with_stride($slice, $shape, $stride)
+    }};
 
-// /// Create a new row vector.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::traits::*;
-// /// // Creates a row vector with 5 elements.
-// /// let vec = rlst_row_vec![f64, 5];
-// /// # assert_eq!(vec.shape(), (1, 5));
-// /// # assert_eq!(vec.layout().stride(), (1, 1));
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_row_vec {
-//     ($ScalarType:ty, $len:expr) => {{
-//         $crate::rlst_dynamic_mat![$ScalarType, (1, $len)]
-//     }};
-// }
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArray::<$scalar, 5>::from_shape($slice, $shape)
+    }};
+}
 
-// /// Create a new random column vector with normally distributed elements.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::traits::*;
-// /// // Creates a random column vector with 5 elements.
-// /// let vec = rlst_rand_col_vec![f64, 5];
-// /// # assert_eq!(vec.shape(), (5, 1));
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_rand_col_vec {
-//     ($ScalarType:ty, $dim:expr) => {{
-//         let mut rng = $crate::macros::rand::thread_rng();
-//         let mut vec = $crate::rlst_col_vec![$ScalarType, $dim];
-//         vec.fill_from_standard_normal(&mut rng);
-//         vec
-//     }};
-// }
+/// Create a new one dimensional array from a given mutable data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![1.0; 5];
+/// let shape = [5];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice_mut1!(f64, vec.as_mut_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice_mut1!(f64, vec.as_mut_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice_mut1 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 1>::from_shape_with_stride($slice, $shape, $stride)
+    }};
 
-// /// Create a new random row vector with normally distributed elements.
-// ///
-// /// Example:
-// /// ```
-// /// # use rlst_dense::*;
-// /// # use rlst_common::traits::*;
-// /// // Creates a random column vector with 5 elements.
-// /// let vec = rlst_rand_row_vec![f64, 5];
-// /// # assert_eq!(vec.shape(), (1, 5));
-// /// ```
-// #[macro_export]
-// macro_rules! rlst_rand_row_vec {
-//     ($ScalarType:ty, $dim:expr) => {{
-//         let mut rng = $crate::macros::rand::thread_rng();
-//         let mut vec = $crate::rlst_row_vec![$ScalarType, $dim];
-//         vec.fill_from_standard_normal(&mut rng);
-//         vec
-//     }};
-// }
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 1>::from_shape($slice, $shape)
+    }};
+}
+
+/// Create a new two dimensional array from a given mutable data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![1.0; 10];
+/// let shape = [2, 5];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice_mut2!(f64, vec.as_mut_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice_mut2!(f64, vec.as_mut_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice_mut2 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 2>::from_shape_with_stride($slice, $shape, $stride)
+    }};
+
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 2>::from_shape($slice, $shape)
+    }};
+}
+
+/// Create a new three dimensional array from a given mutable data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![1.0; 30];
+/// let shape = [2, 5, 3];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice_mut3!(f64, vec.as_mut_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice_mut3!(f64, vec.as_mut_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice_mut3 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 3>::from_shape_with_stride($slice, $shape, $stride)
+    }};
+
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 3>::from_shape($slice, $shape)
+    }};
+}
+
+/// Create a new four dimensional array from a given mutable data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![1.0; 60];
+/// let shape = [2, 5, 3, 2];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice_mut4!(f64, vec.as_mut_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice_mut4!(f64, vec.as_mut_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice_mut4 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 4>::from_shape_with_stride($slice, $shape, $stride)
+    }};
+
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 4>::from_shape($slice, $shape)
+    }};
+}
+
+/// Create a new five dimensional array from a given mutable data slice.
+///
+/// # Example
+/// ```
+/// # use rlst_dense::*;
+/// let mut vec = vec![1.0; 60];
+/// let shape = [2, 5, 3, 2, 1];
+/// let stride = rlst_dense::layout::stride_from_shape(shape);
+/// // Specify no stride (use default stride).
+/// let arr = rlst_array_from_slice_mut5!(f64, vec.as_mut_slice(), shape);
+/// // Specify stride explicitly.
+/// let arr = rlst_array_from_slice_mut5!(f64, vec.as_mut_slice(), shape, stride);
+/// ```
+#[macro_export]
+macro_rules! rlst_array_from_slice_mut5 {
+    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 5>::from_shape_with_stride($slice, $shape, $stride)
+    }};
+
+    ($scalar:ty, $slice:expr, $shape:expr) => {{
+        $crate::array::SliceArrayMut::<$scalar, 5>::from_shape($slice, $shape)
+    }};
+}
 
 // #[cfg(test)]
 // mod test {

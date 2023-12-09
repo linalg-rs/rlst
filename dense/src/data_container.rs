@@ -47,8 +47,11 @@ pub trait DataContainerMut: DataContainer {
     fn data_mut(&mut self) -> &mut [Self::Item];
 }
 
+/// Definition of a resizeable data container.
+///
+/// A resizeable data container can change its size during runtime.
 pub trait ResizeableDataContainerMut: DataContainerMut {
-    /// Reshape the data container
+    /// Resize the data container.
     fn resize(&mut self, new_len: usize);
 }
 
@@ -58,6 +61,10 @@ pub struct VectorContainer<Item: Scalar> {
     data: Vec<Item>,
 }
 
+/// A container that uses a statically allocated array.
+/// 
+/// The size of this container needs to be known at compile time.
+/// It is useful for data structures that should be stack allocated.
 #[derive(Clone)]
 pub struct ArrayContainer<Item: Scalar, const N: usize> {
     data: [Item; N],

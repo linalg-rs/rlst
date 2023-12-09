@@ -1,4 +1,4 @@
-//! Interface to QR Decomposition
+//! Pivoted QR Decomposition.
 
 use super::assert_lapack_stride;
 use crate::array::Array;
@@ -105,6 +105,10 @@ macro_rules! implement_qr_real {
                 }
             }
 
+            /// Return the permuation vector for the QR decomposition.
+            ///
+            /// If `perm[i] = j` then the ith column of QR corresponds
+            /// to the jth column of the original array.
             pub fn get_perm(&self) -> Vec<usize> {
                 self.jpvt
                     .iter()
@@ -112,6 +116,10 @@ macro_rules! implement_qr_real {
                     .collect_vec()
             }
 
+            /// Return the R matrix of the QR decomposition.
+            ///
+            /// If `A` has dimension `(m, n)` then R has
+            /// dimension `(k, n)` with `k=min(m, n)`.
             pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -137,6 +145,9 @@ macro_rules! implement_qr_real {
                 }
             }
 
+            /// Return the permuation matrix `P`.
+            ///
+            /// For `A` an `(m,n)` matrix `P` has dimension `(n, n)`.
             pub fn get_p<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -155,6 +166,13 @@ macro_rules! implement_qr_real {
                 }
             }
 
+            /// Return the Q matrix of the QR decomposition.
+            ///
+            /// If `A` has dimension `(m, n)` then `arr` needs
+            /// to be of dimension `(m, r)`, where `r<= m``
+            /// is the desired number of columns of `Q`.
+            ///
+            /// This method allocates temporary memory during execution.
             pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -171,6 +189,9 @@ macro_rules! implement_qr_real {
                 self.apply_q_alloc(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
             }
 
+            /// Apply Q to a given matrix.
+            ///
+            /// This method allocates temporary memory during execution.
             pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -277,6 +298,14 @@ macro_rules! implement_qr_real {
                     + Shape<2>,
             > Array<$scalar, ArrayImpl, 2>
         {
+            /// Compute the QR decomposition of a given `(m, n)` matrix A.
+            ///
+            /// The function computes a decomposition of the form `AP=QR`, where
+            /// `P` is a permutation matrix. It is implemented through a pivoted QR
+            /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
+            /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
+            /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
+            /// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
             pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)
@@ -363,6 +392,10 @@ macro_rules! implement_qr_complex {
                 }
             }
 
+            /// Return the permuation vector for the QR decomposition.
+            ///
+            /// If `perm[i] = j` then the ith column of QR corresponds
+            /// to the jth column of the original array.
             pub fn get_perm(&self) -> Vec<usize> {
                 self.jpvt
                     .iter()
@@ -370,6 +403,10 @@ macro_rules! implement_qr_complex {
                     .collect_vec()
             }
 
+            /// Return the R matrix of the QR decomposition.
+            ///
+            /// If `A` has dimension `(m, n)` then R has
+            /// dimension `(k, n)` with `k=min(m, n)`.
             pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -395,6 +432,9 @@ macro_rules! implement_qr_complex {
                 }
             }
 
+            /// Return the permuation matrix `P`.
+            ///
+            /// For `A` an `(m,n)` matrix `P` has dimension `(n, n)`.
             pub fn get_p<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -413,6 +453,13 @@ macro_rules! implement_qr_complex {
                 }
             }
 
+            /// Return the Q matrix of the QR decomposition.
+            ///
+            /// If `A` has dimension `(m, n)` then `arr` needs
+            /// to be of dimension `(m, r)`, where `r<= m``
+            /// is the desired number of columns of `Q`.
+            ///
+            /// This method allocates temporary memory during execution.
             pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -429,6 +476,9 @@ macro_rules! implement_qr_complex {
                 self.apply_q_alloc(arr, ApplyQSide::Left, ApplyQTrans::NoTrans)
             }
 
+            /// Apply Q to a given matrix.
+            ///
+            /// This method allocates temporary memory during execution.
             pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -535,6 +585,14 @@ macro_rules! implement_qr_complex {
                     + Shape<2>,
             > Array<$scalar, ArrayImpl, 2>
         {
+            /// Compute the QR decomposition of a given `(m, n)` matrix A.
+            ///
+            /// The function computes a decomposition of the form `AP=QR`, where
+            /// `P` is a permutation matrix. It is implemented through a pivoted QR
+            /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
+            /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
+            /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
+            /// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
             pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)

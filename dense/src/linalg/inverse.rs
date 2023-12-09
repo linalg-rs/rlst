@@ -25,14 +25,8 @@ macro_rules! impl_inverse {
             //!
             //! # Example
             //!
-            //! We initialize a random matrix `a`.
-            //! ```
-            //! # use rlst_dense::rlst_dynamic_array2;
-            //! let mut a = rlst_dynamic_array2!(f64, [3, 3]);
-            //! a.fill_from_seed_equally_distributed(0);
-            //! ```
-            //! The following command computes the inverse of `a`. The content
-            //! of `a` is replaced by the inverese.
+            //! The following command computes the inverse of an array `a`. The content
+            //! of `a` is replaced by the inverse.
             //! ```
             //! # use rlst_dense::rlst_dynamic_array2;
             //! # let mut a = rlst_dynamic_array2!(f64, [3, 3]);

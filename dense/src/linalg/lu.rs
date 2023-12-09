@@ -1,11 +1,20 @@
 //! LU Decomposition and linear system solves.
 use super::assert_lapack_stride;
-use super::Trans;
 use crate::array::Array;
 use crate::traits::*;
-use lapack::{dgetrf, dgetrs};
+use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 use rlst_common::types::*;
+
+/// Transposition modes for solving linear systems via LU decomposition.
+pub enum LuTrans {
+    /// Transpose.
+    Trans,
+    /// No transpose.
+    NoTrans,
+    /// Conjugate transpose.
+    ConjTrans,
+}
 
 /// Container for the LU Decomposition of a matrix.
 pub struct LuDecomposition<
@@ -55,17 +64,36 @@ macro_rules! impl_lu {
                 }
             }
 
-            /// Solve a linear system with given right-hand side.
+            /// Solve a linear system with a single right-hand side.
             ///
             /// The right-hand side is overwritten with the solution.
-            pub fn solve<
+            pub fn solve_vec<
+                ArrayImplMut: RawAccessMut<Item = $scalar>
+                    + UnsafeRandomAccessByValue<1, Item = $scalar>
+                    + Shape<1>
+                    + Stride<1>,
+            >(
+                &self,
+                trans: LuTrans,
+                rhs: Array<$scalar, ArrayImplMut, 1>,
+            ) -> RlstResult<()> {
+                self.solve_mat(
+                    trans,
+                    rhs.insert_empty_axis(crate::array::empty_axis::AxisPosition::Back),
+                )
+            }
+
+            /// Solve a linear system with multiple right-hand sides.
+            ///
+            /// The right-hand sides are overwritten with the solution.
+            pub fn solve_mat<
                 ArrayImplMut: RawAccessMut<Item = $scalar>
                     + UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + Stride<2>,
             >(
                 &self,
-                trans: Trans,
+                trans: LuTrans,
                 mut rhs: Array<$scalar, ArrayImplMut, 2>,
             ) -> RlstResult<()> {
                 assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
@@ -84,9 +112,9 @@ macro_rules! impl_lu {
                 assert_lapack_stride(rhs_stride);
 
                 let trans_param = match trans {
-                    Trans::NoTrans => b'N',
-                    Trans::Trans => b'T',
-                    Trans::ConjTrans => b'C',
+                    LuTrans::NoTrans => b'N',
+                    LuTrans::Trans => b'T',
+                    LuTrans::ConjTrans => b'C',
                 };
 
                 let mut info = 0;
@@ -172,7 +200,7 @@ macro_rules! impl_lu {
             /// Get the R matrix of the LU Decomposition.
             ///
             /// This method resizes the input `arr` as required.
-            pub fn get_r_resize<
+            pub fn get_u_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -187,14 +215,14 @@ macro_rules! impl_lu {
                 let k = std::cmp::min(m, n);
 
                 arr.resize_in_place([k, n]);
-                self.get_r(arr);
+                self.get_u(arr);
             }
 
             /// Get the R matrix of the LU Decomposition.
             ///
             /// If A has the dimension `(m, n)` then the L matrix
             /// has the dimension `(k, n)` with `k = min(m, n)`.
-            pub fn get_r<
+            pub fn get_u<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -243,10 +271,11 @@ macro_rules! impl_lu {
                 self.get_p(arr);
             }
 
+            /// Get the permutation vector from the LU decomposition.
+            ///
+            /// If `perm[i] = j` then the ith row of `LU` corresponds to the jth row of `A`.
             fn get_perm(&self) -> Vec<usize> {
                 let m = self.arr.shape()[0];
-                // let n = self.arr.shape()[1];
-                // let k = std::cmp::min(m, n);
                 let ipiv: Vec<usize> = self.ipiv.iter().map(|&elem| (elem as usize) - 1).collect();
 
                 let mut perm = (0..m).collect::<Vec<_>>();
@@ -299,110 +328,146 @@ macro_rules! impl_lu {
             > Array<$scalar, ArrayImpl, 2>
         {
             /// Compute the LU decomposition of a matrix.
+            ///
+            /// The LU Decomposition of an `(m,n)` matrix `A` is defined
+            /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
+            /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
+            /// an `(k, n)` upper triangular matrix.
             pub fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
-                LuDecomposition::new(self)
+                LuDecomposition::<$scalar, ArrayImpl>::new(self)
             }
         }
     };
 }
 
 impl_lu!(f64, dgetrf, dgetrs);
+impl_lu!(f32, sgetrf, sgetrs);
+impl_lu!(c64, zgetrf, zgetrs);
+impl_lu!(c32, cgetrf, cgetrs);
 
 #[cfg(test)]
 mod test {
 
     use crate::assert_array_relative_eq;
 
+    use crate::rlst_dynamic_array1;
     use crate::rlst_dynamic_array2;
 
     use super::*;
     use crate::array::empty_array;
 
-    #[test]
-    fn test_lu_thick() {
-        let dim = [8, 20];
-        let mut arr = rlst_dynamic_array2!(f64, dim);
+    use paste::paste;
 
-        arr.fill_from_seed_normally_distributed(0);
-        let mut arr2 = rlst_dynamic_array2!(f64, dim);
-        arr2.fill_from(arr.view());
+    macro_rules! impl_lu_tests {
 
-        let lu = arr2.into_lu().unwrap();
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+                #[test]
+                fn [<test_lu_thick_$scalar>]() {
+                    let dim = [8, 20];
+                    let mut arr = rlst_dynamic_array2!($scalar, dim);
 
-        let mut l_mat = empty_array::<f64, 2>();
-        let mut r_mat = empty_array::<f64, 2>();
-        let mut p_mat = empty_array::<f64, 2>();
+                    arr.fill_from_seed_normally_distributed(0);
+                    let mut arr2 = rlst_dynamic_array2!($scalar, dim);
+                    arr2.fill_from(arr.view());
 
-        lu.get_l_resize(l_mat.view_mut());
-        lu.get_r_resize(r_mat.view_mut());
-        lu.get_p_resize(p_mat.view_mut());
+                    let lu = arr2.into_lu().unwrap();
 
-        let res = crate::array::empty_array::<f64, 2>();
+                    let mut l_mat = empty_array::<$scalar, 2>();
+                    let mut u_mat = empty_array::<$scalar, 2>();
+                    let mut p_mat = empty_array::<$scalar, 2>();
 
-        let res =
-            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
+                    lu.get_l_resize(l_mat.view_mut());
+                    lu.get_u_resize(u_mat.view_mut());
+                    lu.get_p_resize(p_mat.view_mut());
 
-        assert_array_relative_eq!(res, arr, 1E-12)
+                    let res = crate::array::empty_array::<$scalar, 2>();
+
+                    let res =
+                        res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    assert_array_relative_eq!(res, arr, $tol)
+                }
+
+                #[test]
+                fn [<test_lu_square_$scalar>]() {
+                    let dim = [12, 12];
+                    let mut arr = rlst_dynamic_array2!($scalar, dim);
+
+                    arr.fill_from_seed_normally_distributed(0);
+                    let mut arr2 = rlst_dynamic_array2!($scalar, dim);
+                    arr2.fill_from(arr.view());
+
+                    let lu = arr2.into_lu().unwrap();
+
+                    let mut l_mat = empty_array::<$scalar, 2>();
+                    let mut u_mat = empty_array::<$scalar, 2>();
+                    let mut p_mat = empty_array::<$scalar, 2>();
+
+                    lu.get_l_resize(l_mat.view_mut());
+                    lu.get_u_resize(u_mat.view_mut());
+                    lu.get_p_resize(p_mat.view_mut());
+
+                    let res = crate::array::empty_array::<$scalar, 2>();
+
+                    let res =
+                        res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    assert_array_relative_eq!(res, arr, $tol)
+                }
+
+                #[test]
+                fn [<test_lu_solve_$scalar>]() {
+                    let dim = [12, 12];
+                    let mut arr = rlst_dynamic_array2!($scalar, dim);
+                    arr.fill_from_seed_equally_distributed(0);
+                    let mut x_actual = rlst_dynamic_array1!($scalar, [dim[0]]);
+                    let mut rhs = rlst_dynamic_array1!($scalar, [dim[0]]);
+                    x_actual.fill_from_seed_equally_distributed(1);
+                    rhs.view_mut().simple_mult_into_resize(arr.view(), x_actual.view());
+
+                    let lu = arr.into_lu().unwrap();
+                    lu.solve_vec(LuTrans::NoTrans, rhs.view_mut()).unwrap();
+
+                    assert_array_relative_eq!(x_actual, rhs, $tol)
+                }
+
+
+
+                #[test]
+                fn [<test_lu_thin_$scalar>]() {
+                    let dim = [12, 8];
+                    let mut arr = rlst_dynamic_array2!($scalar, dim);
+
+                    arr.fill_from_seed_normally_distributed(0);
+                    let mut arr2 = rlst_dynamic_array2!($scalar, dim);
+                    arr2.fill_from(arr.view());
+
+                    let lu = arr2.into_lu().unwrap();
+
+                    let mut l_mat = empty_array::<$scalar, 2>();
+                    let mut u_mat = empty_array::<$scalar, 2>();
+                    let mut p_mat = empty_array::<$scalar, 2>();
+
+                    lu.get_l_resize(l_mat.view_mut());
+                    lu.get_u_resize(u_mat.view_mut());
+                    lu.get_p_resize(p_mat.view_mut());
+
+                    let res = crate::array::empty_array::<$scalar, 2>();
+
+                    let res =
+                        res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    assert_array_relative_eq!(res, arr, $tol)
+                }
+
+            }
+        };
     }
 
-    #[test]
-    fn test_lu_square() {
-        let dim = [12, 12];
-        // let l_dim = [3, 3];
-        // let r_dim = [3, 5];
-        // let p_dim = [3, 3];
-        let mut arr = rlst_dynamic_array2!(f64, dim);
-
-        arr.fill_from_seed_normally_distributed(0);
-        let mut arr2 = rlst_dynamic_array2!(f64, dim);
-        arr2.fill_from(arr.view());
-
-        let lu = arr2.into_lu().unwrap();
-
-        let mut l_mat = empty_array::<f64, 2>();
-        let mut r_mat = empty_array::<f64, 2>();
-        let mut p_mat = empty_array::<f64, 2>();
-
-        lu.get_l_resize(l_mat.view_mut());
-        lu.get_r_resize(r_mat.view_mut());
-        lu.get_p_resize(p_mat.view_mut());
-
-        let res = crate::array::empty_array::<f64, 2>();
-
-        let res =
-            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
-
-        assert_array_relative_eq!(res, arr, 1E-12)
-    }
-
-    #[test]
-    fn test_lu_thin() {
-        let dim = [12, 8];
-        // let l_dim = [3, 3];
-        // let r_dim = [3, 5];
-        // let p_dim = [3, 3];
-        let mut arr = rlst_dynamic_array2!(f64, dim);
-
-        arr.fill_from_seed_normally_distributed(0);
-        let mut arr2 = rlst_dynamic_array2!(f64, dim);
-        arr2.fill_from(arr.view());
-
-        let lu = arr2.into_lu().unwrap();
-
-        let mut l_mat = empty_array::<f64, 2>();
-        let mut r_mat = empty_array::<f64, 2>();
-        let mut p_mat = empty_array::<f64, 2>();
-
-        lu.get_l_resize(l_mat.view_mut());
-        lu.get_r_resize(r_mat.view_mut());
-        lu.get_p_resize(p_mat.view_mut());
-
-        let res = crate::array::empty_array::<f64, 2>();
-
-        let res =
-            res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), r_mat);
-
-        assert_array_relative_eq!(res, arr, 1E-12)
-    }
+    impl_lu_tests!(f64, 1E-12);
+    impl_lu_tests!(f32, 1E-5);
+    impl_lu_tests!(c64, 1E-12);
+    impl_lu_tests!(c32, 1E-5);
 }
