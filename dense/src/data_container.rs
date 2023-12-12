@@ -62,7 +62,7 @@ pub struct VectorContainer<Item: Scalar> {
 }
 
 /// A container that uses a statically allocated array.
-/// 
+///
 /// The size of this container needs to be known at compile time.
 /// It is useful for data structures that should be stack allocated.
 #[derive(Clone)]
