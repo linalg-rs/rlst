@@ -1,4 +1,6 @@
 //! Linear algebra routines
+
+use self::{inverse::MatrixInverse, lu::MatrixLuDecomposition};
 pub mod inverse;
 pub mod lu;
 pub mod pseudo_inverse;
@@ -13,3 +15,7 @@ pub fn assert_lapack_stride(stride: [usize; 2]) {
         stride[0]
     );
 }
+
+pub trait Linalg {}
+
+impl<T> Linalg for T where T: MatrixInverse + MatrixLuDecomposition<Item = Self> {}

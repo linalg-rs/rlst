@@ -6,6 +6,150 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 use rlst_common::types::*;
 
+/// Compute the LU decomposition of a matrix.
+///
+/// The LU Decomposition of an `(m,n)` matrix `A` is defined
+/// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
+/// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
+/// an `(k, n)` upper triangular matrix.
+pub trait MatrixLuDecomposition {
+    type Item: Scalar;
+    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
+        + Stride<2>
+        + RawAccessMut<Item = Self::Item>
+        + Shape<2>;
+
+    fn into_lu(self) -> RlstResult<LuDecomposition<Self::Item, Self::ArrayImpl>>;
+}
+
+pub trait LuOperations: Sized {
+    type Item: Scalar;
+    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
+        + Stride<2>
+        + RawAccessMut<Item = Self::Item>
+        + Shape<2>;
+
+    /// Create a new LU Decomposition from a given array.
+    fn new(arr: Array<Self::Item, Self::ArrayImpl, 2>) -> RlstResult<Self>;
+
+    /// Solve a linear system with a single right-hand side.
+    ///
+    /// The right-hand side is overwritten with the solution.
+    fn solve_vec<
+        ArrayImplMut: RawAccessMut<Item = Self::Item>
+            + UnsafeRandomAccessByValue<1, Item = Self::Item>
+            + Shape<1>
+            + Stride<1>,
+    >(
+        &self,
+        trans: LuTrans,
+        rhs: Array<Self::Item, ArrayImplMut, 1>,
+    ) -> RlstResult<()>;
+
+    /// Solve a linear system with multiple right-hand sides.
+    ///
+    /// The right-hand sides are overwritten with the solution.
+    fn solve_mat<
+        ArrayImplMut: RawAccessMut<Item = Self::Item>
+            + UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        &self,
+        trans: LuTrans,
+        rhs: Array<Self::Item, ArrayImplMut, 2>,
+    ) -> RlstResult<()>;
+
+    /// Get the L matrix of the LU Decomposition.
+    ///
+    /// This method resizes the input `arr` as required.
+    fn get_l_resize<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + ResizeInPlace<2>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+
+    /// Get the L matrix of the LU decomposition.
+    ///
+    /// If A has the dimension `(m, n)` then the L matrix
+    /// has the dimension `(m, k)` with `k = min(m, n)`.
+    fn get_l<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+
+    /// Get the R matrix of the LU Decomposition.
+    ///
+    /// This method resizes the input `arr` as required.
+    fn get_u_resize<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + ResizeInPlace<2>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+
+    /// Get the R matrix of the LU Decomposition.
+    ///
+    /// If A has the dimension `(m, n)` then the L matrix
+    /// has the dimension `(k, n)` with `k = min(m, n)`.
+    fn get_u<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+
+    /// Get the P matrix of the LU Decomposition.
+    ///
+    /// This method resizes the input `arr` as required.
+    fn get_p_resize<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + ResizeInPlace<2>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+
+    /// Get the permutation vector from the LU decomposition.
+    ///
+    /// If `perm[i] = j` then the ith row of `LU` corresponds to the jth row of `A`.
+    fn get_perm(&self) -> Vec<usize>;
+
+    /// Get the P matrix of the LU Decomposition.
+    ///
+    /// If A has the dimension `(m, n)` then the P matrix
+    /// has the dimension (m, m).
+    fn get_p<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+    >(
+        &self,
+        arr: Array<Self::Item, ArrayImplMut, 2>,
+    );
+}
+
 /// Transposition modes for solving linear systems via LU decomposition.
 pub enum LuTrans {
     /// Transpose.
@@ -32,10 +176,12 @@ macro_rules! impl_lu {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > LuDecomposition<$scalar, ArrayImpl>
+            > LuOperations for LuDecomposition<$scalar, ArrayImpl>
         {
-            /// Create a new LU Decomposition from a given array.
-            pub fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
+            type Item = $scalar;
+            type ArrayImpl = ArrayImpl;
+
+            fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
                 let shape = arr.shape();
                 let stride = arr.stride();
 
@@ -64,10 +210,7 @@ macro_rules! impl_lu {
                 }
             }
 
-            /// Solve a linear system with a single right-hand side.
-            ///
-            /// The right-hand side is overwritten with the solution.
-            pub fn solve_vec<
+            fn solve_vec<
                 ArrayImplMut: RawAccessMut<Item = $scalar>
                     + UnsafeRandomAccessByValue<1, Item = $scalar>
                     + Shape<1>
@@ -83,10 +226,7 @@ macro_rules! impl_lu {
                 )
             }
 
-            /// Solve a linear system with multiple right-hand sides.
-            ///
-            /// The right-hand sides are overwritten with the solution.
-            pub fn solve_mat<
+            fn solve_mat<
                 ArrayImplMut: RawAccessMut<Item = $scalar>
                     + UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -138,10 +278,7 @@ macro_rules! impl_lu {
                 }
             }
 
-            /// Get the L matrix of the LU Decomposition.
-            ///
-            /// This method resizes the input `arr` as required.
-            pub fn get_l_resize<
+            fn get_l_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -159,11 +296,7 @@ macro_rules! impl_lu {
                 self.get_l(arr);
             }
 
-            /// Get the L matrix of the LU decomposition.
-            ///
-            /// If A has the dimension `(m, n)` then the L matrix
-            /// has the dimension `(m, k)` with `k = min(m, n)`.
-            pub fn get_l<
+            fn get_l<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -197,10 +330,7 @@ macro_rules! impl_lu {
                 }
             }
 
-            /// Get the R matrix of the LU Decomposition.
-            ///
-            /// This method resizes the input `arr` as required.
-            pub fn get_u_resize<
+            fn get_u_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -218,11 +348,7 @@ macro_rules! impl_lu {
                 self.get_u(arr);
             }
 
-            /// Get the R matrix of the LU Decomposition.
-            ///
-            /// If A has the dimension `(m, n)` then the L matrix
-            /// has the dimension `(k, n)` with `k = min(m, n)`.
-            pub fn get_u<
+            fn get_u<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -252,10 +378,7 @@ macro_rules! impl_lu {
                 }
             }
 
-            /// Get the P matrix of the LU Decomposition.
-            ///
-            /// This method resizes the input `arr` as required.
-            pub fn get_p_resize<
+            fn get_p_resize<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -271,9 +394,6 @@ macro_rules! impl_lu {
                 self.get_p(arr);
             }
 
-            /// Get the permutation vector from the LU decomposition.
-            ///
-            /// If `perm[i] = j` then the ith row of `LU` corresponds to the jth row of `A`.
             fn get_perm(&self) -> Vec<usize> {
                 let m = self.arr.shape()[0];
                 let ipiv: Vec<usize> = self.ipiv.iter().map(|&elem| (elem as usize) - 1).collect();
@@ -287,11 +407,7 @@ macro_rules! impl_lu {
                 perm
             }
 
-            /// Get the P matrix of the LU Decomposition.
-            ///
-            /// If A has the dimension `(m, n)` then the P matrix
-            /// has the dimension (m, m).
-            pub fn get_p<
+            fn get_p<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
@@ -325,15 +441,11 @@ macro_rules! impl_lu {
                     + Stride<2>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixLuDecomposition for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the LU decomposition of a matrix.
-            ///
-            /// The LU Decomposition of an `(m,n)` matrix `A` is defined
-            /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
-            /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
-            /// an `(k, n)` upper triangular matrix.
-            pub fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
+            type Item = $scalar;
+            type ArrayImpl = ArrayImpl;
+            fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 LuDecomposition::<$scalar, ArrayImpl>::new(self)
             }

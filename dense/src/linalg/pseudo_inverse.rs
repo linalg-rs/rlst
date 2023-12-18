@@ -7,6 +7,53 @@ use itertools::Itertools;
 use num::traits::{One, Zero};
 use rlst_common::types::{c32, c64, RlstResult, Scalar};
 
+use crate::linalg::svd::*;
+
+pub trait MatrixPseudoInverse {
+    type Item: Scalar;
+
+    /// Compute the pseudo inverse into the array `pinv`.
+    ///
+    /// This method dynamically allocates memory for the computation.
+    ///
+    /// # Parameters
+    /// - `pinv`: Array to store the pseudo-inverse in. Array is resized if necessary.
+    /// - `tol`: The relative tolerance. Singular values smaller or equal `tol` will be discarded.
+    fn into_pseudo_inverse_resize_alloc<
+        ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self::Item>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + ResizeInPlace<2>,
+    >(
+        self,
+        pinv: Array<Self::Item, ArrayImplPInv, 2>,
+        tol: <Self::Item as Scalar>::Real,
+    ) -> RlstResult<()>;
+
+    /// Compute the pseudo inverse into the array `pinv`.
+    ///
+    /// This method dynamically allocates memory for the computation.
+    ///
+    /// # Parameters
+    /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
+    ///           `pinv` must have shape `[n, m]`.
+    /// - `tol`: The relative tolerance. Singular values smaller or equal `tol * s\[0\]` will be discarded,
+    /// where s\[0\] is the largest singular value.
+    fn into_pseudo_inverse_alloc<
+        ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self::Item>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>,
+    >(
+        self,
+        pinv: Array<Self::Item, ArrayImplPInv, 2>,
+        tol: <Self::Item as Scalar>::Real,
+    ) -> RlstResult<()>;
+}
+
 macro_rules! impl_pinv {
     ($scalar:ty) => {
         impl<
@@ -14,16 +61,11 @@ macro_rules! impl_pinv {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixPseudoInverse for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the pseudo inverse into the array `pinv`.
-            ///
-            /// This method dynamically allocates memory for the computation.
-            ///
-            /// # Parameters
-            /// - `pinv`: Array to store the pseudo-inverse in. Array is resized if necessary.
-            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol` will be discarded.
-            pub fn into_pseudo_inverse_resize_alloc<
+            type Item = $scalar;
+
+            fn into_pseudo_inverse_resize_alloc<
                 ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>
@@ -43,16 +85,7 @@ macro_rules! impl_pinv {
                 self.into_pseudo_inverse_alloc(pinv, tol)
             }
 
-            /// Compute the pseudo inverse into the array `pinv`.
-            ///
-            /// This method dynamically allocates memory for the computation.
-            ///
-            /// # Parameters
-            /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
-            ///           `pinv` must have shape `[n, m]`.
-            /// - `tol`: The relative tolerance. Singular values smaller or equal `tol * s\[0\]` will be discarded,
-            /// where s\[0\] is the largest singular value.
-            pub fn into_pseudo_inverse_alloc<
+            fn into_pseudo_inverse_alloc<
                 ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>

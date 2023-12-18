@@ -16,6 +16,24 @@ pub enum ApplyQSide {
     Right = b'R',
 }
 
+/// Compute the QR decomposition of a given `(m, n)` matrix A.
+///
+/// The function computes a decomposition of the form `AP=QR`, where
+/// `P` is a permutation matrix. It is implemented through a pivoted QR
+/// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
+/// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
+/// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
+/// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
+pub trait MatrixQrDecomposition {
+    type Item: Scalar;
+    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
+        + Stride<2>
+        + RawAccessMut<Item = Self::Item>
+        + Shape<2>;
+
+    fn into_qr_alloc(self) -> RlstResult<QRDecomposition<Self::Item, Self::ArrayImpl>>;
+}
+
 #[derive(Clone, Copy)]
 pub enum ApplyQTrans {
     NoTrans,
@@ -296,17 +314,12 @@ macro_rules! implement_qr_real {
                     + Stride<2>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixQrDecomposition for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the QR decomposition of a given `(m, n)` matrix A.
-            ///
-            /// The function computes a decomposition of the form `AP=QR`, where
-            /// `P` is a permutation matrix. It is implemented through a pivoted QR
-            /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
-            /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
-            /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
-            /// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
-            pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+            type Item = $scalar;
+            type ArrayImpl = ArrayImpl;
+
+            fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)
             }
@@ -583,17 +596,12 @@ macro_rules! implement_qr_complex {
                     + Stride<2>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixQrDecomposition for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the QR decomposition of a given `(m, n)` matrix A.
-            ///
-            /// The function computes a decomposition of the form `AP=QR`, where
-            /// `P` is a permutation matrix. It is implemented through a pivoted QR
-            /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
-            /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
-            /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
-            /// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
-            pub fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
+            type Item = $scalar;
+            type ArrayImpl = ArrayImpl;
+
+            fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
                 assert!(!self.is_empty(), "Matrix is empty.");
                 QRDecomposition::<$scalar, ArrayImpl>::new(self)
             }
@@ -615,6 +623,8 @@ mod test {
     use crate::array::empty_array;
     use crate::rlst_dynamic_array2;
     use paste::paste;
+
+    use super::*;
 
     macro_rules! implement_qr_tests {
         ($scalar:ty, $tol:expr) => {

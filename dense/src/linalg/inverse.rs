@@ -9,6 +9,27 @@ use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
 
+/// Compute the matrix inverse.
+///
+/// The matrix inverse is defined for a two dimensional square array `arr` of
+/// shape `[m, m]`.
+///
+/// # Example
+///
+/// The following command computes the inverse of an array `a`. The content
+/// of `a` is replaced by the inverse.
+/// ```
+/// # use rlst_dense::rlst_dynamic_array2;
+/// # use rlst_dense::linalg::inverse::MatrixInverse;
+/// # let mut a = rlst_dynamic_array2!(f64, [3, 3]);
+/// # a.fill_from_seed_equally_distributed(0);
+/// a.view_mut().into_inverse_alloc().unwrap();
+/// ```
+/// This method allocates memory for the inverse computation.
+pub trait MatrixInverse {
+    fn into_inverse_alloc(self) -> RlstResult<()>;
+}
+
 macro_rules! impl_inverse {
     ($scalar:ty, $getrf: expr, $getri:expr) => {
         impl<
@@ -16,25 +37,9 @@ macro_rules! impl_inverse {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixInverse for Array<$scalar, ArrayImpl, 2>
         {
-            //! Compute the matrix inverse.
-            //!
-            //! The matrix inverse is defined for a two dimensional square array `arr` of
-            //! shape `[m, m]`.
-            //!
-            //! # Example
-            //!
-            //! The following command computes the inverse of an array `a`. The content
-            //! of `a` is replaced by the inverse.
-            //! ```
-            //! # use rlst_dense::rlst_dynamic_array2;
-            //! # let mut a = rlst_dynamic_array2!(f64, [3, 3]);
-            //! # a.fill_from_seed_equally_distributed(0);
-            //! a.view_mut().into_inverse_alloc().unwrap();
-            //! ```
-            //! This method allocates memory for the inverse computation.
-            pub fn into_inverse_alloc(mut self) -> RlstResult<()> {
+            fn into_inverse_alloc(mut self) -> RlstResult<()> {
                 assert_lapack_stride(self.stride());
 
                 let m = self.shape()[0] as i32;

@@ -7,6 +7,56 @@ use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
 
+pub trait MatrixSvd {
+    type Item: Scalar;
+
+    /// Compute the singular values of the matrix.
+    ///
+    /// For a `(m, n)` matrix A the slice `singular_values` has
+    /// length `k=min(m, n)`.
+    ///
+    /// This method allocates temporary memory during execution.
+    fn into_singular_values_alloc(
+        self,
+        singular_values: &mut [<Self::Item as Scalar>::Real],
+    ) -> RlstResult<()>;
+
+    /// Compute the singular value decomposition.
+    ///
+    /// We assume that `A` is a `(m, n)` matrix and assume
+    /// `k=min(m, n)`. This method computes the singular value
+    /// decomposition `A = USVt`.
+    ///
+    /// # Parameters
+    ///
+    /// - `u` - Stores the matrix `U`. For the full SVD the shape
+    ///         needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
+    /// - `vt` - Stores the matrix `Vt`. For the full SVD the shape needs to be `(n, n)`.
+    ///          For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
+    ///          the complex conjugate transpose of the matrix of right singular vectors.
+    ///          Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
+    /// - `singular_values` - Stores the `k` singular values of `A`.
+    /// - `mode` - Choose between full SVD [SvdMode::Full] or reduced SVD [SvdMode::Reduced].
+    ///
+    /// This method allocates temporary memory during execution.
+    fn into_svd_alloc<
+        ArrayImplU: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self::Item>,
+        ArrayImplVt: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self::Item>,
+    >(
+        self,
+        u: Array<Self::Item, ArrayImplU, 2>,
+        vt: Array<Self::Item, ArrayImplVt, 2>,
+        singular_values: &mut [<Self::Item as Scalar>::Real],
+        mode: SvdMode,
+    ) -> RlstResult<()>;
+}
+
 pub enum SvdMode {
     Reduced,
     Full,
@@ -19,15 +69,11 @@ macro_rules! impl_svd_real {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixSvd for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the singular values of the matrix.
-            ///
-            /// For a `(m, n)` matrix A the slice `singular_values` has
-            /// length `k=min(m, n)`.
-            ///
-            /// This method allocates temporary memory during execution.
-            pub fn into_singular_values_alloc(
+            type Item = $scalar;
+
+            fn into_singular_values_alloc(
                 mut self,
                 singular_values: &mut [<$scalar as Scalar>::Real],
             ) -> RlstResult<()> {
@@ -99,25 +145,7 @@ macro_rules! impl_svd_real {
                 }
             }
 
-            /// Compute the singular value decomposition.
-            ///
-            /// We assume that `A` is a `(m, n)` matrix and assume
-            /// `k=min(m, n)`. This method computes the singular value
-            /// decomposition `A = USVt`.
-            ///
-            /// # Parameters
-            ///
-            /// - `u` - Stores the matrix `U`. For the full SVD the shape
-            ///         needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
-            /// - `vt` - Stores the matrix `Vt`. For the full SVD the shape needs to be `(n, n)`.
-            ///          For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
-            ///          the complex conjugate transpose of the matrix of right singular vectors.
-            ///          Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
-            /// - `singular_values` - Stores the `k` singular values of `A`.
-            /// - `mode` - Choose between full SVD [SvdMode::Full] or reduced SVD [SvdMode::Reduced].
-            ///
-            /// This method allocates temporary memory during execution.
-            pub fn into_svd_alloc<
+            fn into_svd_alloc<
                 ArrayImplU: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>
@@ -233,15 +261,11 @@ macro_rules! impl_svd_complex {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > Array<$scalar, ArrayImpl, 2>
+            > MatrixSvd for Array<$scalar, ArrayImpl, 2>
         {
-            /// Compute the singular values of the matrix.
-            ///
-            /// For a `(m, n)` matrix A the slice `singular_values` has
-            /// length `k=min(m, n)`.
-            ///
-            /// This method allocates temporary memory during execution.
-            pub fn into_singular_values_alloc(
+            type Item = $scalar;
+
+            fn into_singular_values_alloc(
                 mut self,
                 singular_values: &mut [<$scalar as Scalar>::Real],
             ) -> RlstResult<()> {
@@ -317,25 +341,7 @@ macro_rules! impl_svd_complex {
                 }
             }
 
-            /// Compute the singular value decomposition.
-            ///
-            /// We assume that `A` is a `(m, n)` matrix and assume
-            /// `k=min(m, n)`. This method computes the singular value
-            /// decomposition `A = USVt`.
-            ///
-            /// # Parameters
-            ///
-            /// - `u` - Stores the matrix `U`. For the full SVD the shape
-            ///         needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
-            /// - `vt` - Stores the matrix `Vt`. For the full SVD the shape needs to be `(n, n)`.
-            ///          For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
-            ///          the complex conjugate transpose of the matrix of right singular vectors.
-            ///          Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
-            /// - `singular_values` - Stores the `k` singular values of `A`.
-            /// - `mode` - Choose between full SVD [SvdMode::Full] or reduced SVD [SvdMode::Reduced].
-            ///
-            /// This method allocates temporary memory during execution.
-            pub fn into_svd_alloc<
+            fn into_svd_alloc<
                 ArrayImplU: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Stride<2>
                     + Shape<2>
@@ -464,6 +470,8 @@ mod test {
 
     use crate::array::empty_array;
     use crate::{rlst_dynamic_array1, rlst_dynamic_array2};
+
+    use crate::linalg::qr::*;
 
     macro_rules! impl_tests {
         ($scalar:ty, $tol:expr) => {
