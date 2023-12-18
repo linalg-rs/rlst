@@ -409,6 +409,9 @@ macro_rules! impl_lu {
                 self.get_p(arr);
             }
 
+            /// Get the permutation vector from the LU decomposition.
+            ///
+            /// If `perm[i] = j` then the ith row of `LU` corresponds to the jth row of `A`.
             fn get_perm(&self) -> Vec<usize> {
                 let m = self.arr.shape()[0];
                 let ipiv: Vec<usize> = self.ipiv.iter().map(|&elem| (elem as usize) - 1).collect();
