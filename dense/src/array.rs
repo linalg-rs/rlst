@@ -1,6 +1,12 @@
 //! Basic Array type
+//!
+//! [Array] is the basic type for dense calculations in Rlst. The full definition
+//! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
+//! (e.g. `f64`), and implemented through `ArrayImpl`.
 
 use crate::base_array::BaseArray;
+use crate::data_container::SliceContainer;
+use crate::data_container::SliceContainerMut;
 use crate::data_container::VectorContainer;
 use crate::traits::*;
 use rlst_common::types::DataChunk;
@@ -15,8 +21,17 @@ pub mod random;
 pub mod slice;
 pub mod views;
 
+/// A basic dynamically allocated array.
 pub type DynamicArray<Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A dynamically allocated array from a data slice.
+pub type SliceArray<'a, Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
+
+/// A mutable dynamically allocated array from a data slice.
+pub type SliceArrayMut<'a, Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
 pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
@@ -30,19 +45,18 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Instantiate a new array from an `ArrayImpl` structure.
     pub fn new(arr: ArrayImpl) -> Self {
         Self(arr)
     }
 
-    pub fn new_dynamic_like_self(&self) -> DynamicArray<Item, NDIM> {
-        DynamicArray::<Item, NDIM>::from_shape(self.shape())
-    }
-
+    /// Return the number of elements in the array.
     pub fn number_of_elements(&self) -> usize {
         self.0.shape().iter().product()
     }
 }
 
+/// Create a new heap allocated array from a given shape.
 impl<Item: Scalar, const NDIM: usize> DynamicArray<Item, NDIM> {
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
@@ -151,6 +165,7 @@ impl<
     }
 }
 
+/// Create an empty chunk.
 pub(crate) fn empty_chunk<const N: usize, Item: Scalar>(
     chunk_index: usize,
     nelements: usize,
@@ -230,8 +245,55 @@ impl<
 }
 
 /// Create an empty array of given type and dimension.
+///
+/// Empty arrays serve as convenient containers for input into functions that
+/// resize an array before filling it with data.
 pub fn empty_array<Item: Scalar, const NDIM: usize>() -> DynamicArray<Item, NDIM> {
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
+}
+
+impl<'a, Item: Scalar, const NDIM: usize> SliceArray<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape`.
+    ///
+    /// The `stride` is automatically assumed to be column major.
+    pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
+        Array::new(BaseArray::new(SliceContainer::new(slice), shape))
+    }
+
+    /// Create a new array from a slice with a given `shape` and `stride`.
+    pub fn from_shape_with_stride(
+        slice: &'a [Item],
+        shape: [usize; NDIM],
+        stride: [usize; NDIM],
+    ) -> Self {
+        Array::new(BaseArray::new_with_stride(
+            SliceContainer::new(slice),
+            shape,
+            stride,
+        ))
+    }
+}
+
+impl<'a, Item: Scalar, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape`.
+    ///
+    /// The `stride` is automatically assumed to be column major.
+    pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
+        Array::new(BaseArray::new(SliceContainerMut::new(slice), shape))
+    }
+
+    /// Create a new array from a slice with a given `shape` and `stride`.
+    pub fn from_shape_with_stride(
+        slice: &'a mut [Item],
+        shape: [usize; NDIM],
+        stride: [usize; NDIM],
+    ) -> Self {
+        Array::new(BaseArray::new_with_stride(
+            SliceContainerMut::new(slice),
+            shape,
+            stride,
+        ))
+    }
 }

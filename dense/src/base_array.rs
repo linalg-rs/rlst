@@ -1,3 +1,8 @@
+//! Definition of [BaseArray], a container for array data.
+//!
+//! A [BaseArray] is a simple container for array data. It is mainly a convient interface
+//! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
+
 use crate::array::empty_chunk;
 use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataContainerMut};
 use crate::layout::{
@@ -6,6 +11,8 @@ use crate::layout::{
 use crate::traits::*;
 use rlst_common::types::Scalar;
 
+/// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
+/// the shape of the array, and `stride` contains the `stride` of the underlying data.
 pub struct BaseArray<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],
@@ -17,14 +24,32 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
 {
     pub fn new(data: Data, shape: [usize; NDIM]) -> Self {
         let stride = stride_from_shape(shape);
-        Self {
-            data,
-            shape,
-            stride,
-        }
+        Self::new_with_stride(data, shape, stride)
     }
 
     pub fn new_with_stride(data: Data, shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
+        if *shape.iter().min().unwrap() == 0 {
+            // Array is empty
+            assert_eq!(
+                data.number_of_elements(),
+                0,
+                "Expected 0 elements but `data` has {} elements",
+                data.number_of_elements()
+            );
+        } else {
+            // Array is not empty
+            let mut largest_index = [0; NDIM];
+            largest_index.copy_from_slice(&shape.iter().map(|elem| elem - 1).collect::<Vec<_>>());
+            let raw_index = convert_nd_raw(largest_index, stride);
+            assert_eq!(
+                1 + raw_index,
+                data.number_of_elements(),
+                "`data` has {} elements but expected {} elements from shape and stride.",
+                data.number_of_elements(),
+                1 + raw_index
+            );
+        }
+
         Self {
             data,
             shape,

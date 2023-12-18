@@ -1,6 +1,6 @@
 //! Modify the threading behaviour in BLIS
 
-use rlst_blis::threading;
+use rlst_blis::interface::threading;
 
 fn main() {
     println!("Num threads: {}", threading::get_num_threads());

@@ -1,4 +1,6 @@
-//! Implement the Inverse
+//! Matrix inverse.
+//!
+//!
 use crate::array::Array;
 use crate::traits::*;
 use lapack::{cgetrf, cgetri, dgetrf, dgetri, sgetrf, sgetri, zgetrf, zgetri};
@@ -16,7 +18,23 @@ macro_rules! impl_inverse {
                     + RawAccessMut<Item = $scalar>,
             > Array<$scalar, ArrayImpl, 2>
         {
-            pub fn into_inverse_alloc(mut self) -> RlstResult<Self> {
+            //! Compute the matrix inverse.
+            //!
+            //! The matrix inverse is defined for a two dimensional square array `arr` of
+            //! shape `[m, m]`.
+            //!
+            //! # Example
+            //!
+            //! The following command computes the inverse of an array `a`. The content
+            //! of `a` is replaced by the inverse.
+            //! ```
+            //! # use rlst_dense::rlst_dynamic_array2;
+            //! # let mut a = rlst_dynamic_array2!(f64, [3, 3]);
+            //! # a.fill_from_seed_equally_distributed(0);
+            //! a.view_mut().into_inverse_alloc().unwrap();
+            //! ```
+            //! This method allocates memory for the inverse computation.
+            pub fn into_inverse_alloc(mut self) -> RlstResult<()> {
                 assert_lapack_stride(self.stride());
 
                 let m = self.shape()[0] as i32;
@@ -55,7 +73,7 @@ macro_rules! impl_inverse {
                 if info != 0 {
                     Err(RlstError::LapackError(info))
                 } else {
-                    Ok(self)
+                    Ok(())
                 }
             }
         }
@@ -95,9 +113,9 @@ mod test {
                     a.fill_from_seed_equally_distributed(0);
                     b.fill_from(a.view());
 
-                    let inverse = a.into_inverse_alloc().unwrap();
+                    a.view_mut().into_inverse_alloc().unwrap();
 
-                    let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(inverse.view(), b.view());
+                    let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(a.view(), b.view());
 
                     assert_array_abs_diff_eq!(actual, ident, $tol);
                 }

@@ -1,4 +1,7 @@
+//! Public interface to Blis routines.
+
 pub mod gemm;
+pub mod threading;
 pub mod types;
 
 use cauchy::Scalar;

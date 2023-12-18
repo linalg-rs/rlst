@@ -9,11 +9,11 @@
 //! - [SliceContainer] - A container that forwards calls to a given memory slice.
 //! - [SliceContainerMut] - Like [SliceContainer] but provides also mutable access.
 //!
-//!
 
 use num::Zero;
 use rlst_common::types::Scalar;
 
+/// Defines the basic behaviour of a data container.
 pub trait DataContainer {
     type Item: Scalar;
 
@@ -29,35 +29,11 @@ pub trait DataContainer {
     /// `index` must not be out of bounds.
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item;
 
-    /// Get pointer to data.
-    fn get_pointer(&self) -> *const Self::Item;
-
-    /// Get data slice
-    fn get_slice(&self, first: usize, last: usize) -> &[Self::Item] {
-        assert!(
-            first < last,
-            "'first' {} must be smaller than 'last' {}.",
-            first,
-            last
-        );
-
-        assert!(
-            last <= self.number_of_elements(),
-            "Value of 'last' {} must be smaller or equal to the number of elements {}.",
-            last,
-            self.number_of_elements()
-        );
-
-        unsafe { std::slice::from_raw_parts(self.get_pointer().add(first), last - first) }
-    }
-
     /// Return the number of elements in the container.
     fn number_of_elements(&self) -> usize;
 
     /// Get slice to the whole data
-    fn data(&self) -> &[Self::Item] {
-        self.get_slice(0, self.number_of_elements())
-    }
+    fn data(&self) -> &[Self::Item];
 }
 
 pub trait DataContainerMut: DataContainer {
@@ -67,43 +43,15 @@ pub trait DataContainerMut: DataContainer {
     /// `index` must not be out of bounds.
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item;
 
-    /// Get mutable pointer to data.
-    fn get_pointer_mut(&mut self) -> *mut Self::Item;
-
-    /// Get data slice
-    fn get_slice_mut(&mut self, first: usize, last: usize) -> &mut [Self::Item] {
-        assert!(
-            first < last,
-            "'first' {} must be smaller than 'last' {}.",
-            first,
-            last
-        );
-
-        assert!(
-            first < self.number_of_elements(),
-            "Value of 'first' {} must be smaller than number of elements {}.",
-            first,
-            self.number_of_elements()
-        );
-
-        assert!(
-            last <= self.number_of_elements(),
-            "Value of 'last' {} must be smaller or equal to the number of elements {}.",
-            last,
-            self.number_of_elements()
-        );
-
-        unsafe { std::slice::from_raw_parts_mut(self.get_pointer_mut().add(first), last - first) }
-    }
-
     /// Get mutable slice to the whole data.
-    fn data_mut(&mut self) -> &mut [Self::Item] {
-        self.get_slice_mut(0, self.number_of_elements())
-    }
+    fn data_mut(&mut self) -> &mut [Self::Item];
 }
 
+/// Definition of a resizeable data container.
+///
+/// A resizeable data container can change its size during runtime.
 pub trait ResizeableDataContainerMut: DataContainerMut {
-    /// Reshape the data container
+    /// Resize the data container.
     fn resize(&mut self, new_len: usize);
 }
 
@@ -113,6 +61,10 @@ pub struct VectorContainer<Item: Scalar> {
     data: Vec<Item>,
 }
 
+/// A container that uses a statically allocated array.
+///
+/// The size of this container needs to be known at compile time.
+/// It is useful for data structures that should be stack allocated.
 #[derive(Clone)]
 pub struct ArrayContainer<Item: Scalar, const N: usize> {
     data: [Item; N],
@@ -180,8 +132,8 @@ impl<Item: Scalar> DataContainer for VectorContainer<Item> {
         self.data.get_unchecked(index)
     }
 
-    fn get_pointer(&self) -> *const Self::Item {
-        self.data.as_ptr()
+    fn data(&self) -> &[Self::Item] {
+        &self.data
     }
 
     fn number_of_elements(&self) -> usize {
@@ -195,8 +147,8 @@ impl<Item: Scalar> DataContainerMut for VectorContainer<Item> {
         self.data.get_unchecked_mut(index)
     }
 
-    fn get_pointer_mut(&mut self) -> *mut Self::Item {
-        self.data.as_mut_ptr()
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        &mut self.data
     }
 }
 
@@ -219,8 +171,8 @@ impl<Item: Scalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
         self.data.get_unchecked(index)
     }
 
-    fn get_pointer(&self) -> *const Self::Item {
-        self.data.as_ptr()
+    fn data(&self) -> &[Self::Item] {
+        &self.data
     }
 
     fn number_of_elements(&self) -> usize {
@@ -234,8 +186,8 @@ impl<Item: Scalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> 
         self.data.get_unchecked_mut(index)
     }
 
-    fn get_pointer_mut(&mut self) -> *mut Self::Item {
-        self.data.as_mut_ptr()
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        &mut self.data
     }
 }
 
@@ -252,8 +204,8 @@ impl<'a, Item: Scalar> DataContainer for SliceContainer<'a, Item> {
         self.data.get_unchecked(index)
     }
 
-    fn get_pointer(&self) -> *const Self::Item {
-        self.data.as_ptr()
+    fn data(&self) -> &[Self::Item] {
+        self.data
     }
 
     fn number_of_elements(&self) -> usize {
@@ -274,8 +226,8 @@ impl<'a, Item: Scalar> DataContainer for SliceContainerMut<'a, Item> {
         self.data.get_unchecked(index)
     }
 
-    fn get_pointer(&self) -> *const Self::Item {
-        self.data.as_ptr()
+    fn data(&self) -> &[Self::Item] {
+        self.data
     }
 
     fn number_of_elements(&self) -> usize {
@@ -289,7 +241,7 @@ impl<'a, Item: Scalar> DataContainerMut for SliceContainerMut<'a, Item> {
         self.data.get_unchecked_mut(index)
     }
 
-    fn get_pointer_mut(&mut self) -> *mut Self::Item {
-        self.data.as_mut_ptr()
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        self.data
     }
 }

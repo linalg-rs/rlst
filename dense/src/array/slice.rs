@@ -1,4 +1,4 @@
-//! Explicit casts to arrays with specific number of dimensions.
+//! Array slicing.
 
 use crate::{
     layout::convert_1d_nd_from_shape,
@@ -7,6 +7,7 @@ use crate::{
 
 use super::*;
 
+/// Generic structure to store Array slices.
 pub struct ArraySlice<
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
@@ -169,6 +170,17 @@ impl<
         const ADIM: usize,
     > Array<Item, ArrayImpl, ADIM>
 {
+    /// Create a slice from a given array.
+    ///
+    /// Consider an array `arr` with shape `[a0, a1, a2, a3, ...]`. The function call
+    /// `arr.slice(2, 3)` returns a one dimension smaller array indexed by `[a0, a1, 3, a3, ...]`.
+    /// Hence, the dimension `2` has been fixed to always have the value `3.`
+    ///
+    /// # Examples
+    ///
+    /// If `arr` is a matrix then the first column of the matrix is obtained from
+    /// `arr.slice(1, 0)`, while the third row of the matrix is obtained from
+    /// `arr.slice(0, 2)`.
     pub fn slice<const NDIM: usize>(
         self,
         axis: usize,

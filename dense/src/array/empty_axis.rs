@@ -1,15 +1,19 @@
-//! Explicit casts to arrays with specific number of dimensions.
+//! Extend an array by an empty axis either at the front or back.
 
 use crate::number_types::{IsSmallerByOne, NumberType};
 
 use super::*;
 
+/// Axis position.
 #[derive(Clone, Copy)]
 pub enum AxisPosition {
+    /// Insert axis at the front.
     Front,
+    /// Insert axis at the back.
     Back,
 }
 
+/// Array implementation that provides an appended empty axis.
 pub struct ArrayAppendAxis<
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
@@ -19,11 +23,8 @@ pub struct ArrayAppendAxis<
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
     arr: Array<Item, ArrayImpl, ADIM>,
-    // The first entry is the axis, the second is the index in the axis.
     axis_position: AxisPosition,
 }
-
-// Implementation of ArraySlice
 
 impl<
         Item: Scalar,
@@ -215,6 +216,7 @@ where
     }
 }
 
+/// Map an extended index of dimension NDIM to an index of dimension ADIM with NDIM = ADIM + 1.
 fn multi_index_to_orig<const ADIM: usize, const NDIM: usize>(
     multi_index: [usize; NDIM],
     axis_position: AxisPosition,

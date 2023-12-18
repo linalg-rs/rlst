@@ -1,9 +1,12 @@
-//! Column major layout with arbitrary stride.
+//! Default layout for dense arrays.
 //!
-//! This layout uses an arbitrary stride in memory with 1d indexing
-//! in column major order.
+//! The default layout is a column-major format such that in an
+//! index `[a0, a1, a2, ...]` the left-most axis is stored consecutively in memory.
+//!
 
-/// Compute stride from a shape
+/// Compute stride from a shape.
+///
+/// Given an array shape, compute the corresponding stride assuming column-major ordering.
 pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {
     let mut output = [0; NDIM];
 
@@ -28,7 +31,7 @@ pub fn check_multi_index_in_bounds<const N: usize>(
     true
 }
 
-/// Convert an n-d index into a 1d index.
+/// Convert a multi-index into a 1d index.
 #[inline]
 pub fn convert_nd_raw<const NDIM: usize>(
     multi_index: [usize; NDIM],
@@ -43,7 +46,7 @@ pub fn convert_nd_raw<const NDIM: usize>(
     acc
 }
 
-/// Convert a 1d index into a nd index.
+/// Convert a 1d index into a multi-index.
 #[inline]
 pub fn convert_1d_nd_from_shape<const NDIM: usize>(
     mut index: usize,

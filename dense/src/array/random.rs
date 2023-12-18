@@ -32,7 +32,7 @@ where
             .for_each(|val| *val = <Item>::random_scalar(rng, &dist));
     }
 
-    /// Fill from seed with equally distributed numbers.
+    /// Fill with equally distributed numbers using a given `seed`.
     pub fn fill_from_seed_equally_distributed(&mut self, seed: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed as u64);
         let dist = Standard;
@@ -40,7 +40,7 @@ where
             .for_each(|val| *val = <Item>::random_scalar(&mut rng, &dist));
     }
 
-    /// Fill from seed with equally distributed numbers.
+    /// Fill with normally distributed numbers using a given seed.
     pub fn fill_from_seed_normally_distributed(&mut self, seed: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed as u64);
         let dist = StandardNormal;

@@ -1,4 +1,4 @@
-//! A Rust native linear algebra library
+//! Dense array types and operations on them.
 //!
 #![cfg_attr(feature = "strict", deny(warnings))]
 
@@ -12,21 +12,7 @@ pub mod number_types;
 pub mod tools;
 pub mod traits;
 
-// pub mod base_array;
-// pub mod base_matrix;
-// pub mod data_container;
-// pub mod examples;
-// pub mod global;
 pub mod array;
 pub mod layout;
 pub mod macros;
-//pub mod traits;
-// pub mod matrix;
 pub mod matrix_multiply;
-// pub mod matrix_ref;
-// pub mod matrix_view;
-// pub mod op_containers;
-// pub mod traits;
-// pub mod types;
-
-// pub use global::*;

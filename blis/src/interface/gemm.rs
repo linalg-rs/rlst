@@ -1,9 +1,30 @@
-//! Computational BLIS routines
+//! Matrix product in Blis.
 use super::types::TransMode;
 use crate::interface::assert_data_size;
 use crate::raw;
 use cauchy::{c32, c64, Scalar};
 
+/// Safe interface to using the Blis Gemm routine.
+///
+/// Performs the matrix multiplication `C = alpha * A * B + beta * C`.
+/// # Arguments
+///
+/// - `transa` - Transposition mode of A.
+/// - `transb` - Transposition mode of B.
+/// - `m` - Row dimension of C.
+/// - `k` - Column dimension of C.
+/// - `k` - Column dimension of A. Same as row dimension of B.
+/// - `a` - Reference to data of A.
+/// - `alpha` - Scalar `alpha parameter.
+/// - `rsa` - Row stride of A.
+/// - `csb` - Row stride of A.
+/// - `b` - Reference to data of B.
+/// - `rsb` - Row stride of B.
+/// - `csb` - Column stride of B.
+/// - `beta` - Scalar `beta` parameter.
+/// - `c` - Reference to data of C.
+/// - `rsc` - Row stride of C.
+/// - `csc` - Column stride of C.
 pub trait Gemm: Scalar {
     #[allow(clippy::too_many_arguments)]
     fn gemm(
