@@ -6,13 +6,28 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 use rlst_common::types::*;
 
+pub trait MatrixLuDecomposition {}
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + Stride<2>
+            + RawAccessMut<Item = Item>,
+    > MatrixLuDecomposition for Array<Item, ArrayImpl, 2>
+where
+    Self: IntoLu<Item = Item, ArrayImpl = ArrayImpl>,
+    LuDecomposition<Item, ArrayImpl>: LuOperations<Item = Item, ArrayImpl = ArrayImpl>,
+{
+}
+
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined
 /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
 /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
 /// an `(k, n)` upper triangular matrix.
-pub trait MatrixLuDecomposition {
+pub trait IntoLu {
     type Item: Scalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
@@ -441,7 +456,7 @@ macro_rules! impl_lu {
                     + Stride<2>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>,
-            > MatrixLuDecomposition for Array<$scalar, ArrayImpl, 2>
+            > IntoLu for Array<$scalar, ArrayImpl, 2>
         {
             type Item = $scalar;
             type ArrayImpl = ArrayImpl;
