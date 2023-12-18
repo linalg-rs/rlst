@@ -2,6 +2,7 @@
 
 pub mod accessors;
 
+pub use crate::linalg::Linalg;
 pub use accessors::*;
 
 use rlst_blis::interface::types::TransMode;
