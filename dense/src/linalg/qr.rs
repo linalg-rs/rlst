@@ -16,21 +16,6 @@ pub enum ApplyQSide {
     Right = b'R',
 }
 
-pub trait MatrixQrDecomposition {}
-
-impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > MatrixQrDecomposition for Array<Item, ArrayImpl, 2>
-where
-    Self: IntoQr<Item = Item, ArrayImpl = ArrayImpl>,
-    QRDecomposition<Item, ArrayImpl>: QrOperations<Item = Item, ArrayImpl = ArrayImpl>,
-{
-}
-
 /// Compute the QR decomposition of a given `(m, n)` matrix A.
 ///
 /// The function computes a decomposition of the form `AP=QR`, where

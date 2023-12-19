@@ -6,21 +6,6 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 use rlst_common::types::*;
 
-pub trait MatrixLuDecomposition {}
-
-impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > MatrixLuDecomposition for Array<Item, ArrayImpl, 2>
-where
-    Self: IntoLu<Item = Item, ArrayImpl = ArrayImpl>,
-    LuDecomposition<Item, ArrayImpl>: LuOperations<Item = Item, ArrayImpl = ArrayImpl>,
-{
-}
-
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined
