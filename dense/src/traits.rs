@@ -2,7 +2,10 @@
 
 pub mod accessors;
 
-pub use crate::linalg::*;
+pub use crate::linalg::{
+    inverse::MatrixInverse, lu::MatrixLuDecomposition, pseudo_inverse::MatrixPseudoInverse,
+    qr::MatrixQrDecomposition, svd::MatrixSvd,
+};
 pub use accessors::*;
 
 use rlst_blis::interface::types::TransMode;

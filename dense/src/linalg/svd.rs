@@ -498,7 +498,7 @@ mod test {
                     let mut sigma = rlst_dynamic_array2!($scalar, [m, n]);
 
                     mat.fill_from_seed_equally_distributed(0);
-                    let qr = mat.into_qr_alloc().unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
                     qr.get_q_alloc(q.view_mut()).unwrap();
 
                     for index in 0..k {
@@ -545,10 +545,10 @@ mod test {
                     mat_u.fill_from_seed_equally_distributed(0);
                     mat_vt.fill_from_seed_equally_distributed(1);
 
-                    let qr = mat_u.into_qr_alloc().unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat_u).unwrap();
                     qr.get_q_alloc(u.view_mut()).unwrap();
 
-                    let qr = mat_vt.into_qr_alloc().unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat_vt).unwrap();
                     qr.get_q_alloc(vt.view_mut()).unwrap();
 
                     for index in 0..k {
