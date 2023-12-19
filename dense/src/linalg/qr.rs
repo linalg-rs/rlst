@@ -23,17 +23,7 @@ pub enum ApplyQSide {
 /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
 /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
 /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
-/// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
-// pub trait IntoQr {
-//     type Item: Scalar;
-//     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-//         + Stride<2>
-//         + RawAccessMut<Item = Self::Item>
-//         + Shape<2>;
-
-//     fn into_qr_alloc(self) -> RlstResult<QRDecomposition<Self::Item, Self::ArrayImpl>>;
-// }
-
+/// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
 pub trait MatrixQrDecomposition: Sized {
     type Item: Scalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
