@@ -16,21 +16,6 @@ pub enum ApplyQSide {
     Right = b'R',
 }
 
-pub trait MatrixQrDecomposition {}
-
-impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > MatrixQrDecomposition for Array<Item, ArrayImpl, 2>
-where
-    Self: IntoQr<Item = Item, ArrayImpl = ArrayImpl>,
-    QRDecomposition<Item, ArrayImpl>: QrOperations<Item = Item, ArrayImpl = ArrayImpl>,
-{
-}
-
 /// Compute the QR decomposition of a given `(m, n)` matrix A.
 ///
 /// The function computes a decomposition of the form `AP=QR`, where
@@ -38,18 +23,8 @@ where
 /// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
 /// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
 /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
-/// method [QRDecomposition::get_q_alloc] how many columns of `Q` to return.
-pub trait IntoQr {
-    type Item: Scalar;
-    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-        + Stride<2>
-        + RawAccessMut<Item = Self::Item>
-        + Shape<2>;
-
-    fn into_qr_alloc(self) -> RlstResult<QRDecomposition<Self::Item, Self::ArrayImpl>>;
-}
-
-pub trait QrOperations: Sized {
+/// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
+pub trait MatrixQrDecomposition: Sized {
     type Item: Scalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
@@ -134,7 +109,7 @@ pub enum ApplyQTrans {
     ConjTrans,
 }
 
-pub struct QRDecomposition<
+pub struct QrDecomposition<
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
 > {
@@ -150,7 +125,7 @@ macro_rules! implement_qr_real {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > QrOperations for QRDecomposition<$scalar, ArrayImpl>
+            > MatrixQrDecomposition for QrDecomposition<$scalar, ArrayImpl>
         {
             type Item = $scalar;
             type ArrayImpl = ArrayImpl;
@@ -404,22 +379,6 @@ macro_rules! implement_qr_real {
                 }
             }
         }
-
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Stride<2>
-                    + RawAccessMut<Item = $scalar>
-                    + Shape<2>,
-            > IntoQr for Array<$scalar, ArrayImpl, 2>
-        {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
-
-            fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
-                assert!(!self.is_empty(), "Matrix is empty.");
-                QRDecomposition::<$scalar, ArrayImpl>::new(self)
-            }
-        }
     };
 }
 
@@ -430,7 +389,7 @@ macro_rules! implement_qr_complex {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > QrOperations for QRDecomposition<$scalar, ArrayImpl>
+            > MatrixQrDecomposition for QrDecomposition<$scalar, ArrayImpl>
         {
             type Item = $scalar;
             type ArrayImpl = ArrayImpl;
@@ -689,22 +648,6 @@ macro_rules! implement_qr_complex {
                 }
             }
         }
-
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Stride<2>
-                    + RawAccessMut<Item = $scalar>
-                    + Shape<2>,
-            > IntoQr for Array<$scalar, ArrayImpl, 2>
-        {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
-
-            fn into_qr_alloc(self) -> RlstResult<QRDecomposition<$scalar, ArrayImpl>> {
-                assert!(!self.is_empty(), "Matrix is empty.");
-                QRDecomposition::<$scalar, ArrayImpl>::new(self)
-            }
-        }
     };
 }
 
@@ -746,7 +689,7 @@ mod test {
                 let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
                 ident.set_identity();
 
-                let qr = mat.into_qr_alloc().unwrap();
+                let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
 
                 let _ = qr.get_r(r_mat.view_mut());
                 let _ = qr.get_q_alloc(q_mat.view_mut());
@@ -788,7 +731,7 @@ mod test {
                 let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
                 ident.set_identity();
 
-                let qr = mat.into_qr_alloc().unwrap();
+                let qr = QrDecomposition::<$scalar, _>::new(mat).unwrap();
 
                 let _ = qr.get_r(r_mat.view_mut());
                 let _ = qr.get_q_alloc(q_mat.view_mut());

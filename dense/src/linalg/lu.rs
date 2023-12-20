@@ -6,38 +6,13 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 use rlst_common::types::*;
 
-pub trait MatrixLuDecomposition {}
-
-impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > MatrixLuDecomposition for Array<Item, ArrayImpl, 2>
-where
-    Self: IntoLu<Item = Item, ArrayImpl = ArrayImpl>,
-    LuDecomposition<Item, ArrayImpl>: LuOperations<Item = Item, ArrayImpl = ArrayImpl>,
-{
-}
-
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined
 /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
 /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
 /// an `(k, n)` upper triangular matrix.
-pub trait IntoLu {
-    type Item: Scalar;
-    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-        + Stride<2>
-        + RawAccessMut<Item = Self::Item>
-        + Shape<2>;
-
-    fn into_lu(self) -> RlstResult<LuDecomposition<Self::Item, Self::ArrayImpl>>;
-}
-
-pub trait LuOperations: Sized {
+pub trait MatrixLuDecomposition: Sized {
     type Item: Scalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
@@ -191,7 +166,7 @@ macro_rules! impl_lu {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > LuOperations for LuDecomposition<$scalar, ArrayImpl>
+            > MatrixLuDecomposition for LuDecomposition<$scalar, ArrayImpl>
         {
             type Item = $scalar;
             type ArrayImpl = ArrayImpl;
@@ -453,21 +428,6 @@ macro_rules! impl_lu {
                 }
             }
         }
-
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Stride<2>
-                    + RawAccessMut<Item = $scalar>
-                    + Shape<2>,
-            > IntoLu for Array<$scalar, ArrayImpl, 2>
-        {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
-            fn into_lu(self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
-                assert!(!self.is_empty(), "Matrix is empty.");
-                LuDecomposition::<$scalar, ArrayImpl>::new(self)
-            }
-        }
     };
 }
 
@@ -502,7 +462,7 @@ mod test {
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
                     arr2.fill_from(arr.view());
 
-                    let lu = arr2.into_lu().unwrap();
+                    let lu = LuDecomposition::<$scalar,_>::new(arr2).unwrap();
 
                     let mut l_mat = empty_array::<$scalar, 2>();
                     let mut u_mat = empty_array::<$scalar, 2>();
@@ -529,7 +489,7 @@ mod test {
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
                     arr2.fill_from(arr.view());
 
-                    let lu = arr2.into_lu().unwrap();
+                    let lu = LuDecomposition::<$scalar, _>::new(arr2).unwrap();
 
                     let mut l_mat = empty_array::<$scalar, 2>();
                     let mut u_mat = empty_array::<$scalar, 2>();
@@ -557,7 +517,7 @@ mod test {
                     x_actual.fill_from_seed_equally_distributed(1);
                     rhs.view_mut().simple_mult_into_resize(arr.view(), x_actual.view());
 
-                    let lu = arr.into_lu().unwrap();
+                    let lu = LuDecomposition::<$scalar,_>::new(arr).unwrap();
                     lu.solve_vec(LuTrans::NoTrans, rhs.view_mut()).unwrap();
 
                     assert_array_relative_eq!(x_actual, rhs, $tol)
@@ -574,7 +534,7 @@ mod test {
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
                     arr2.fill_from(arr.view());
 
-                    let lu = arr2.into_lu().unwrap();
+                    let lu = LuDecomposition::<$scalar,_>::new(arr2).unwrap();
 
                     let mut l_mat = empty_array::<$scalar, 2>();
                     let mut u_mat = empty_array::<$scalar, 2>();
