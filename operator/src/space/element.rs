@@ -16,9 +16,17 @@ pub trait Element {
         std::unimplemented!();
     }
 
+    /// Get a view onto the element.
     fn view(&self) -> Self::View<'_>;
 
+    /// Get a mutable view onto the element.
     fn view_mut(&mut self) -> Self::ViewMut<'_>;
+
+    /// `self += alpha * other`.
+    fn sum_into(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self);
+
+    /// `self *= alpha`.
+    fn scale_in_place(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self);
 }
 
 // The view type associated with elements of linear spaces.

@@ -7,6 +7,7 @@ pub mod indexable_space;
 pub mod inner_product_space;
 pub mod linear_space;
 pub mod normed_space;
+pub mod spanning_set;
 
 pub use dual_space::*;
 pub use element::*;

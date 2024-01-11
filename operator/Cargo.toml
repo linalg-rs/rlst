@@ -10,6 +10,7 @@ edition = "2021"
 
 [dependencies]
 rlst-common = {path = "../common"}
+rlst-dense = {path = "../dense"}
 num = "0.4"
 cauchy = "0.4"
 thiserror = "1.0.40"

@@ -1,9 +1,10 @@
 //! The operator library contains traits and methods to support arbitrary operator types.
 #![cfg_attr(feature = "strict", deny(warnings))]
 
+pub mod implementation;
 pub mod linalg;
 pub mod operator;
-pub mod spaces;
+pub mod space;
 
 pub use operator::*;
-pub use spaces::*;
+pub use space::*;
