@@ -1,9 +1,12 @@
+use rlst_common::types::Scalar;
+
 use super::LinearSpace;
 
 /// Elements of linear spaces.
 pub trait Element {
     /// Item type of the vector.
     type Space: LinearSpace;
+
     type View<'b>
     where
         Self: 'b;
@@ -26,7 +29,7 @@ pub trait Element {
     fn sum_into(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self);
 
     /// `self *= alpha`.
-    fn scale_in_place(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self);
+    fn scale_in_place(&mut self, alpha: <Self::Space as LinearSpace>::F);
 }
 
 // The view type associated with elements of linear spaces.
