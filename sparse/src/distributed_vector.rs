@@ -3,18 +3,18 @@ use crate::traits::index_layout::IndexLayout;
 
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
-use rlst_common::types::{RlstResult, Scalar};
+use rlst_common::types::{RlstResult, RlstScalar};
 use rlst_dense::array::DynamicArray;
 use rlst_dense::{rlst_dynamic_array1, traits::*};
 
 use crate::index_layout::DefaultMpiIndexLayout;
 
-pub struct DistributedVector<'a, Item: Scalar + Equivalence, C: Communicator> {
+pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
     index_layout: &'a DefaultMpiIndexLayout<'a, C>,
     local: DynamicArray<Item, 1>,
 }
 
-impl<'a, Item: Scalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
+impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
     pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,

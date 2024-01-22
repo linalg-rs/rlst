@@ -25,7 +25,7 @@ pub enum ApplyQSide {
 /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
 /// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
 pub trait MatrixQrDecomposition: Sized {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
         + RawAccessMut<Item = Self::Item>
@@ -110,7 +110,7 @@ pub enum ApplyQTrans {
 }
 
 pub struct QrDecomposition<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,
@@ -412,7 +412,8 @@ macro_rules! implement_qr_complex {
                 let mut jpvt = vec![0 as i32; n as usize];
                 let mut tau = vec![<$scalar as Zero>::zero(); k];
 
-                let mut rwork = vec![<<$scalar as Scalar>::Real as Zero>::zero(); 2 * n as usize];
+                let mut rwork =
+                    vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 2 * n as usize];
 
                 let mut work_query = [<$scalar as Zero>::zero()];
                 let lwork = -1;

@@ -3,7 +3,7 @@
 use crate::array::*;
 
 pub struct ArrayConjugate<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -11,7 +11,7 @@ pub struct ArrayConjugate<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayConjugate<Item, ArrayImpl, NDIM>
@@ -22,7 +22,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayConjugate<Item, ArrayImpl, NDIM>
@@ -35,7 +35,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayConjugate<Item, ArrayImpl, NDIM>
@@ -46,7 +46,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -57,7 +57,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,

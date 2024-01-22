@@ -1,7 +1,7 @@
 //! Linear spaces and their elements.
 
 use super::Element;
-use rlst_common::types::Scalar;
+use rlst_common::types::RlstScalar;
 
 /// Definition of a linear space
 ///
@@ -9,7 +9,7 @@ use rlst_common::types::Scalar;
 /// elements of the space.
 pub trait LinearSpace {
     /// Field Type.
-    type F: Scalar;
+    type F: RlstScalar;
 
     /// Type associated with elements of the space.
     type E<'b>: Element<Space = Self>

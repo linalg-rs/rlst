@@ -4,7 +4,7 @@ use crate::array::*;
 use rlst_common::types::*;
 
 pub struct ArrayScalarMult<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -13,7 +13,7 @@ pub struct ArrayScalarMult<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -24,7 +24,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -37,7 +37,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -48,7 +48,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -65,6 +65,20 @@ impl<
         } else {
             None
         }
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    pub fn scalar_mul(
+        self,
+        alpha: Item,
+    ) -> Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayScalarMult::new(alpha, self))
     }
 }
 

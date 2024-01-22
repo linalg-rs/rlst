@@ -5,7 +5,7 @@
 //! files must use the `general` property. To write out matrices the functions [write_array_mm] and
 //! [write_coordinate_mm] are provided.
 
-use rlst_common::types::Scalar;
+use rlst_common::types::RlstScalar;
 use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::array::DynamicArray;
 use rlst_dense::traits::RawAccessMut;
@@ -86,7 +86,7 @@ pub struct MatrixMarketInfo {
 /// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
-    T: Scalar + MmIdentifier,
+    T: RlstScalar + MmIdentifier,
     Mat: rlst_dense::traits::AijIterator<Item = T> + rlst_dense::traits::Shape<2>,
 >(
     mat: &Mat,
@@ -121,7 +121,7 @@ pub fn write_coordinate_mm<
 /// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
-    T: Scalar + MmIdentifier,
+    T: RlstScalar + MmIdentifier,
     Mat: rlst_dense::traits::DefaultIterator<Item = T> + rlst_dense::traits::Shape<2>,
 >(
     mat: &Mat,
@@ -147,7 +147,7 @@ pub fn write_array_mm<
 ///
 /// The function returns a [DynamicArray] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
+pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -209,7 +209,7 @@ pub fn read_array_mm<T: Scalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
 /// Returns a [rlst_sparse::sparse::csr_mat::CsrMatrix] sparse matrix object representing
 /// the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_coordinate_mm<T: Scalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
+pub fn read_coordinate_mm<T: RlstScalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -344,7 +344,7 @@ fn parse_header(reader: &mut io::Lines<io::BufReader<File>>) -> RlstResult<Matri
 }
 
 /// Parse array information.
-fn parse_array<T: Scalar>(
+fn parse_array<T: RlstScalar>(
     reader: &mut io::Lines<io::BufReader<File>>,
     buf: &mut [T],
     nelems: usize,
@@ -395,7 +395,7 @@ fn parse_array<T: Scalar>(
 }
 
 /// Parse coordinate information.
-fn parse_coordinate<T: Scalar>(
+fn parse_coordinate<T: RlstScalar>(
     reader: &mut io::Lines<io::BufReader<File>>,
     rows: &mut [usize],
     cols: &mut [usize],

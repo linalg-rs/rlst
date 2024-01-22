@@ -7,7 +7,7 @@ use crate::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
 use super::*;
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -171,7 +171,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -191,7 +191,7 @@ impl<
     }
 }
 
-impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
+impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
     Array<Item, ArrayImpl, 1>
 where
     Item::Real: num::Float,
@@ -218,29 +218,29 @@ where
     }
 
     /// Compute the maximum (or inf) norm of a vector.
-    pub fn norm_inf(self) -> <Item as Scalar>::Real {
+    pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
         self.iter()
-            .map(|elem| <Item as Scalar>::abs(elem))
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .map(|elem| <Item as RlstScalar>::abs(elem))
+            .reduce(<<Item as RlstScalar>::Real as Float>::max)
             .unwrap()
     }
 
     /// Compute the 1-norm of a vector.
-    pub fn norm_1(self) -> <Item as Scalar>::Real {
+    pub fn norm_1(self) -> <Item as RlstScalar>::Real {
         self.iter()
-            .map(|elem| <Item as Scalar>::abs(elem))
-            .fold(<<Item as Scalar>::Real as Zero>::zero(), |acc, elem| {
+            .map(|elem| <Item as RlstScalar>::abs(elem))
+            .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
                 acc + elem
             })
     }
 
     /// Compute the 2-norm of a vector.
-    pub fn norm_2(self) -> <Item as Scalar>::Real {
-        Scalar::sqrt(
+    pub fn norm_2(self) -> <Item as RlstScalar>::Real {
+        RlstScalar::sqrt(
             self.iter()
-                .map(|elem| <Item as Scalar>::abs(elem))
+                .map(|elem| <Item as RlstScalar>::abs(elem))
                 .map(|elem| elem * elem)
-                .fold(<<Item as Scalar>::Real as Zero>::zero(), |acc, elem| {
+                .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
                     acc + elem
                 }),
         )
@@ -248,7 +248,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + Shape<2>
             + Stride<2>
@@ -260,10 +260,10 @@ where
     /// Compute the 2-norm of a matrix.
     ///
     /// This method allocates temporary memory during execution.
-    pub fn norm_2_alloc(self) -> RlstResult<<Item as Scalar>::Real> {
+    pub fn norm_2_alloc(self) -> RlstResult<<Item as RlstScalar>::Real> {
         let k = *self.shape().iter().min().unwrap();
 
-        let mut singular_values = vec![<<Item as Scalar>::Real as Zero>::zero(); k];
+        let mut singular_values = vec![<<Item as RlstScalar>::Real as Zero>::zero(); k];
 
         self.into_singular_values_alloc(singular_values.as_mut_slice())?;
 
@@ -271,16 +271,16 @@ where
     }
 }
 
-impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
+impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     Array<Item, ArrayImpl, 2>
 {
     /// Compute the Frobenius-norm of a matrix.
     pub fn norm_fro(self) -> Item::Real {
-        Scalar::sqrt(
+        RlstScalar::sqrt(
             self.iter()
-                .map(|elem| <Item as Scalar>::abs(elem))
+                .map(|elem| <Item as RlstScalar>::abs(elem))
                 .map(|elem| elem * elem)
-                .fold(<<Item as Scalar>::Real as Zero>::zero(), |acc, elem| {
+                .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
                     acc + elem
                 }),
         )
@@ -290,7 +290,7 @@ impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<
     pub fn norm_inf(self) -> Item::Real {
         self.row_iter()
             .map(|row| row.norm_1())
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .reduce(<<Item as RlstScalar>::Real as Float>::max)
             .unwrap()
     }
 
@@ -298,7 +298,7 @@ impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<
     pub fn norm_1(self) -> Item::Real {
         self.col_iter()
             .map(|row| row.norm_1())
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .reduce(<<Item as RlstScalar>::Real as Float>::max)
             .unwrap()
     }
 }

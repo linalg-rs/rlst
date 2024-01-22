@@ -5,12 +5,12 @@ use crate::rlst_dynamic_array2;
 use crate::traits::*;
 use itertools::Itertools;
 use num::traits::{One, Zero};
-use rlst_common::types::{c32, c64, RlstResult, Scalar};
+use rlst_common::types::{c32, c64, RlstResult, RlstScalar};
 
 use crate::linalg::svd::*;
 
 pub trait MatrixPseudoInverse {
-    type Item: Scalar;
+    type Item: RlstScalar;
 
     /// Compute the pseudo inverse into the array `pinv`.
     ///
@@ -29,7 +29,7 @@ pub trait MatrixPseudoInverse {
     >(
         self,
         pinv: Array<Self::Item, ArrayImplPInv, 2>,
-        tol: <Self::Item as Scalar>::Real,
+        tol: <Self::Item as RlstScalar>::Real,
     ) -> RlstResult<()>;
 
     /// Compute the pseudo inverse into the array `pinv`.
@@ -50,7 +50,7 @@ pub trait MatrixPseudoInverse {
     >(
         self,
         pinv: Array<Self::Item, ArrayImplPInv, 2>,
-        tol: <Self::Item as Scalar>::Real,
+        tol: <Self::Item as RlstScalar>::Real,
     ) -> RlstResult<()>;
 }
 
@@ -75,7 +75,7 @@ macro_rules! impl_pinv {
             >(
                 self,
                 mut pinv: Array<$scalar, ArrayImplPInv, 2>,
-                tol: <$scalar as Scalar>::Real,
+                tol: <$scalar as RlstScalar>::Real,
             ) -> RlstResult<()> {
                 let shape = pinv.shape();
 
@@ -94,12 +94,12 @@ macro_rules! impl_pinv {
             >(
                 self,
                 mut pinv: Array<$scalar, ArrayImplPInv, 2>,
-                tol: <$scalar as Scalar>::Real,
+                tol: <$scalar as RlstScalar>::Real,
             ) -> RlstResult<()> {
                 let shape = self.shape();
                 let k = std::cmp::min(self.shape()[0], self.shape()[1]);
                 let mode = crate::linalg::svd::SvdMode::Reduced;
-                let mut singvals = vec![<<$scalar as Scalar>::Real as Zero>::zero(); k];
+                let mut singvals = vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); k];
                 let mut u = rlst_dynamic_array2!($scalar, [self.shape()[0], k]);
                 let mut vt = rlst_dynamic_array2!($scalar, [k, self.shape()[1]]);
 
@@ -136,7 +136,7 @@ macro_rules! impl_pinv {
 
                 for (col_index, &singval) in singvals.iter().take(index).enumerate() {
                     v.view_mut().slice(1, col_index).scale_in_place(
-                        (<<$scalar as Scalar>::Real as One>::one() / singval).into(),
+                        (<<$scalar as RlstScalar>::Real as One>::one() / singval).into(),
                     );
                 }
 

@@ -3,12 +3,12 @@ use crate::array::Array;
 use crate::traits::*;
 use lapack::{cgesvd, dgesvd, sgesvd, zgesvd};
 use num::traits::Zero;
-use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
+use rlst_common::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 
 use super::assert_lapack_stride;
 
 pub trait MatrixSvd {
-    type Item: Scalar;
+    type Item: RlstScalar;
 
     /// Compute the singular values of the matrix.
     ///
@@ -18,7 +18,7 @@ pub trait MatrixSvd {
     /// This method allocates temporary memory during execution.
     fn into_singular_values_alloc(
         self,
-        singular_values: &mut [<Self::Item as Scalar>::Real],
+        singular_values: &mut [<Self::Item as RlstScalar>::Real],
     ) -> RlstResult<()>;
 
     /// Compute the singular value decomposition.
@@ -52,7 +52,7 @@ pub trait MatrixSvd {
         self,
         u: Array<Self::Item, ArrayImplU, 2>,
         vt: Array<Self::Item, ArrayImplVt, 2>,
-        singular_values: &mut [<Self::Item as Scalar>::Real],
+        singular_values: &mut [<Self::Item as RlstScalar>::Real],
         mode: SvdMode,
     ) -> RlstResult<()>;
 }
@@ -75,7 +75,7 @@ macro_rules! impl_svd_real {
 
             fn into_singular_values_alloc(
                 mut self,
-                singular_values: &mut [<$scalar as Scalar>::Real],
+                singular_values: &mut [<$scalar as RlstScalar>::Real],
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
                 let mut work = [<$scalar as Zero>::zero(); 1];
@@ -158,7 +158,7 @@ macro_rules! impl_svd_real {
                 mut self,
                 mut u: Array<$scalar, ArrayImplU, 2>,
                 mut vt: Array<$scalar, ArrayImplVt, 2>,
-                singular_values: &mut [<$scalar as Scalar>::Real],
+                singular_values: &mut [<$scalar as RlstScalar>::Real],
                 mode: SvdMode,
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
@@ -267,7 +267,7 @@ macro_rules! impl_svd_complex {
 
             fn into_singular_values_alloc(
                 mut self,
-                singular_values: &mut [<$scalar as Scalar>::Real],
+                singular_values: &mut [<$scalar as RlstScalar>::Real],
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
                 let mut work = [<$scalar as Zero>::zero(); 1];
@@ -285,7 +285,8 @@ macro_rules! impl_svd_complex {
                 let ldvt = 1;
                 let mut info = 0;
 
-                let mut rwork = vec![<<$scalar as Scalar>::Real as Zero>::zero(); 5 * k as usize];
+                let mut rwork =
+                    vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 5 * k as usize];
 
                 unsafe {
                     $gesvd(
@@ -354,7 +355,7 @@ macro_rules! impl_svd_complex {
                 mut self,
                 mut u: Array<$scalar, ArrayImplU, 2>,
                 mut vt: Array<$scalar, ArrayImplVt, 2>,
-                singular_values: &mut [<$scalar as Scalar>::Real],
+                singular_values: &mut [<$scalar as RlstScalar>::Real],
                 mode: SvdMode,
             ) -> RlstResult<()> {
                 let lwork: i32 = -1;
@@ -395,7 +396,8 @@ macro_rules! impl_svd_complex {
                 let ldvt = vt.stride()[1] as i32;
                 let mut info = 0;
 
-                let mut rwork = vec![<<$scalar as Scalar>::Real as Zero>::zero(); 5 * k as usize];
+                let mut rwork =
+                    vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 5 * k as usize];
 
                 unsafe {
                     $gesvd(
@@ -491,7 +493,7 @@ mod test {
                     [<test_svd_impl_$scalar>](5, 10, SvdMode::Full, $tol);
                 }
 
-                fn [<test_singular_values_impl_$scalar>](m: usize, n: usize, tol: <$scalar as Scalar>::Real) {
+                fn [<test_singular_values_impl_$scalar>](m: usize, n: usize, tol: <$scalar as RlstScalar>::Real) {
                     let k = std::cmp::min(m, n);
                     let mut mat = rlst_dynamic_array2!($scalar, [m, m]);
                     let mut q = rlst_dynamic_array2!($scalar, [m, m]);
@@ -502,12 +504,12 @@ mod test {
                     qr.get_q_alloc(q.view_mut()).unwrap();
 
                     for index in 0..k {
-                        sigma[[index, index]] = ((k - index) as <$scalar as Scalar>::Real).into();
+                        sigma[[index, index]] = ((k - index) as <$scalar as RlstScalar>::Real).into();
                     }
 
                     let a = empty_array::<$scalar, 2>().simple_mult_into_resize(q.view(), sigma.view());
 
-                    let mut singvals = rlst_dynamic_array1!(<$scalar as Scalar>::Real, [k]);
+                    let mut singvals = rlst_dynamic_array1!(<$scalar as RlstScalar>::Real, [k]);
 
                     a.into_singular_values_alloc(singvals.data_mut()).unwrap();
 
@@ -516,7 +518,7 @@ mod test {
                     }
                 }
 
-                fn [<test_svd_impl_$scalar>](m: usize, n: usize, mode: SvdMode, tol: <$scalar as Scalar>::Real) {
+                fn [<test_svd_impl_$scalar>](m: usize, n: usize, mode: SvdMode, tol: <$scalar as RlstScalar>::Real) {
                     let k = std::cmp::min(m, n);
 
                     let mut mat_u;
@@ -552,7 +554,7 @@ mod test {
                     qr.get_q_alloc(vt.view_mut()).unwrap();
 
                     for index in 0..k {
-                        sigma[[index, index]] = ((k - index) as <$scalar as Scalar>::Real).into();
+                        sigma[[index, index]] = ((k - index) as <$scalar as RlstScalar>::Real).into();
                     }
 
                     let a = empty_array::<$scalar, 2>().simple_mult_into_resize(
@@ -567,7 +569,7 @@ mod test {
                     vt.set_zero();
                     sigma.set_zero();
 
-                    let mut singvals = rlst_dynamic_array1!(<$scalar as Scalar>::Real, [k]);
+                    let mut singvals = rlst_dynamic_array1!(<$scalar as RlstScalar>::Real, [k]);
 
                     a.into_svd_alloc(u.view_mut(), vt.view_mut(), singvals.data_mut(), mode)
                         .unwrap();

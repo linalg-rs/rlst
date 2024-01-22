@@ -5,7 +5,7 @@ use std::os::raw::c_void;
 use mpi::topology::SimpleCommunicator;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence, FromRaw};
 use mpi_sys;
-use rlst_common::types::Scalar;
+use rlst_common::types::RlstScalar;
 
 use crate::traits::index_layout::IndexLayout;
 
@@ -151,7 +151,7 @@ impl GhostCommunicator {
         }
     }
 
-    pub fn forward_send_ghosts<T: Scalar + Equivalence>(
+    pub fn forward_send_ghosts<T: RlstScalar + Equivalence>(
         &self,
         local_values: &[T],
         ghost_values: &mut [T],
@@ -176,7 +176,7 @@ impl GhostCommunicator {
             );
         }
     }
-    pub fn backward_send_ghosts<Acc: Fn(&mut T, &T), T: Scalar + Equivalence>(
+    pub fn backward_send_ghosts<Acc: Fn(&mut T, &T), T: RlstScalar + Equivalence>(
         &self,
         local_values: &mut [T],
         ghost_values: &[T],

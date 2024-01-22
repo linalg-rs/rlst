@@ -7,16 +7,16 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::Standard;
 use rand_distr::StandardNormal;
-use rlst_common::types::Scalar;
+use rlst_common::types::RlstScalar;
 
 use super::Array;
 use crate::base_array::BaseArray;
 
-impl<Item: Scalar + RandScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar + RandScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     Array<Item, BaseArray<Item, Data, NDIM>, NDIM>
 where
-    StandardNormal: Distribution<<Item as Scalar>::Real>,
-    Standard: Distribution<<Item as Scalar>::Real>,
+    StandardNormal: Distribution<<Item as RlstScalar>::Real>,
+    Standard: Distribution<<Item as RlstScalar>::Real>,
 {
     /// Fill an array with normally distributed random numbers.
     pub fn fill_from_standard_normal<R: Rng>(&mut self, rng: &mut R) {

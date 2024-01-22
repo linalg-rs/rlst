@@ -9,17 +9,17 @@ use rlst_common::types::*;
 /// from a given random number generator and distribution. For complex types the
 /// generator and distribution are separately applied to obtain the real and imaginary
 /// part of the random number.
-pub trait RandScalar: Scalar {
+pub trait RandScalar: RlstScalar {
     /// Returns a random number from a given random number generator `rng` and associated
     /// distribution `dist`.
-    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self;
 }
 
 impl RandScalar for f32 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {
@@ -28,7 +28,7 @@ impl RandScalar for f32 {
 }
 
 impl RandScalar for f64 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {
@@ -37,7 +37,7 @@ impl RandScalar for f64 {
 }
 
 impl RandScalar for c32 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {
@@ -46,7 +46,7 @@ impl RandScalar for c32 {
 }
 
 impl RandScalar for c64 {
-    fn random_scalar<R: Rng, D: Distribution<<Self as Scalar>::Real>>(
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
         rng: &mut R,
         dist: &D,
     ) -> Self {
@@ -127,7 +127,7 @@ macro_rules! assert_matrix_ulps_eq {
     }};
 }
 
-pub trait PrettyPrint<T: Scalar> {
+pub trait PrettyPrint<T: RlstScalar> {
     fn pretty_print(&self);
     fn pretty_print_with_dimension(&self, rows: usize, cols: usize);
     fn pretty_print_advanced(
@@ -215,7 +215,7 @@ pretty_print_impl!(c32, fmt_complex);
 pretty_print_impl!(c64, fmt_complex);
 
 // https://stackoverflow.com/a/65266882
-fn fmt_real<T: Scalar>(num: T::Real, width: usize, precision: usize, exp_pad: usize) -> String {
+fn fmt_real<T: RlstScalar>(num: T::Real, width: usize, precision: usize, exp_pad: usize) -> String {
     let mut num = format!("{:.precision$e}", num, precision = precision);
     // Safe to `unwrap` as `num` is guaranteed to contain `'e'`
     let exp = num.split_off(num.find('e').unwrap());
@@ -229,7 +229,7 @@ fn fmt_real<T: Scalar>(num: T::Real, width: usize, precision: usize, exp_pad: us
     format!("{:>width$}", num, width = width)
 }
 
-fn fmt_complex<T: Scalar>(num: T, width: usize, precision: usize, exp_pad: usize) -> String {
+fn fmt_complex<T: RlstScalar>(num: T, width: usize, precision: usize, exp_pad: usize) -> String {
     let sign = if num.im() < <T::Real as num::Zero>::zero() {
         "-"
     } else {

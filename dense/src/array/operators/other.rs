@@ -5,7 +5,7 @@ use crate::array::*;
 use num::One;
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
