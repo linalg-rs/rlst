@@ -12,8 +12,13 @@ use rlst_common::types::Scalar;
 use super::Array;
 use crate::base_array::BaseArray;
 
-impl<Item: Scalar + RandScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
-    Array<Item, BaseArray<Item, Data, NDIM>, NDIM>
+impl<
+        Item: Scalar + RandScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
 where
     StandardNormal: Distribution<<Item as Scalar>::Real>,
     Standard: Distribution<<Item as Scalar>::Real>,

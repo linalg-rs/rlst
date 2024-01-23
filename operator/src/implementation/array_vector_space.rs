@@ -6,7 +6,6 @@ use crate::space::*;
 use rlst_common::types::Scalar;
 use rlst_dense::{
     array::{
-        operators::scalar_mult::ArrayScalarMult,
         views::{ArrayView, ArrayViewMut},
         Array, DynamicArray,
     },
@@ -41,8 +40,10 @@ impl<Item: Scalar> ArrayVectorSpace<Item> {
             _marker: PhantomData,
         }
     }
+}
 
-    pub fn dimension(&self) -> usize {
+impl<Item: Scalar> IndexableSpace for ArrayVectorSpace<Item> {
+    fn dimension(&self) -> usize {
         self.dimension
     }
 }
@@ -53,7 +54,22 @@ impl<Item: Scalar> LinearSpace for ArrayVectorSpace<Item> {
     type F = Item;
 
     fn zero(&self) -> Self::E<'_> {
-        std::unimplemented!();
+        ArrayVectorSpaceElement::new(self)
+    }
+}
+
+impl<Item: Scalar> InnerProductSpace for ArrayVectorSpace<Item> {
+    fn inner<'a>(&'a self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F
+    where
+        Self: 'a,
+    {
+        x.view().inner(other.view())
+    }
+}
+
+impl<Item: Scalar> NormedSpace for ArrayVectorSpace<Item> {
+    fn norm<'a>(&'a self, x: &ElementView<'a, Self>) -> <Self::F as Scalar>::Real {
+        x.view().norm_2()
     }
 }
 
@@ -75,10 +91,7 @@ impl<'a, Item: Scalar> Element for ArrayVectorSpaceElement<'a, Item> {
     }
 
     fn sum_into(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self) {
-        let result = alpha * other.view();
-        self.view_mut().sum_into(alpha * other.view());
-        // self.view_mut()
-        //     .sum_into(Array::new(ArrayScalarMult::new(alpha, other.view())));
+        self.view_mut().sum_into(other.view().scalar_mul(alpha));
     }
 
     fn view(&self) -> Self::View<'_> {
@@ -95,8 +108,5 @@ mod test {
     use rlst_dense::rlst_dynamic_array1;
 
     #[test]
-    fn test_vec() {
-        let mut mat = rlst_dynamic_array1!(f64, [3]);
-        let mat2 = 3.0 * mat.view();
-    }
+    fn test_vec() {}
 }

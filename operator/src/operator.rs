@@ -1,6 +1,7 @@
 //! Definition of a general linear operator.
 
 use crate::LinearSpace;
+use num::One;
 use rlst_common::types::*;
 use std::fmt::Debug;
 
@@ -23,24 +24,94 @@ pub trait OperatorBase: Debug {
     fn has_apply(&self) -> bool {
         self.as_apply().is_some()
     }
+
+    fn domain(&self) -> &Self::Domain;
+
+    fn range(&self) -> &Self::Range;
 }
 
-/// Apply an operator.
+/// Apply an operator as y -> alpha * Ax + beta y
 pub trait AsApply: OperatorBase {
-    fn apply(&self, x: ElementView<Self::Domain>, y: ElementViewMut<Self::Range>)
-        -> RlstResult<()>;
+    fn apply(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
+    ) -> RlstResult<()>;
 }
 
 impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In, Range = Out> {
     fn apply(
         &self,
-        x: ElementView<Self::Domain>,
-        y: ElementViewMut<Self::Range>,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         if let Some(op) = self.as_apply() {
-            op.apply(x, y)
+            op.apply(alpha, x, beta, y)
         } else {
             Err(RlstError::NotImplemented("Apply".to_string()))
+        }
+    }
+}
+
+pub struct OperatorSum<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq>(
+    &'a dyn OperatorBase<Domain = Domain, Range = Range>,
+    &'a dyn OperatorBase<Domain = Domain, Range = Range>,
+);
+
+impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> std::fmt::Debug
+    for OperatorSum<'a, Domain, Range>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("OperatorSum")
+            .field(&self.0)
+            .field(&self.1)
+            .finish()
+    }
+}
+
+impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> OperatorBase
+    for OperatorSum<'a, Domain, Range>
+{
+    type Domain = Domain;
+
+    type Range = Range;
+
+    fn domain(&self) -> &Self::Domain {
+        self.0.domain()
+    }
+
+    fn range(&self) -> &Self::Range {
+        self.0.range()
+    }
+
+    fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
+        std::unimplemented!()
+    }
+}
+
+impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> AsApply
+    for OperatorSum<'a, Domain, Range>
+{
+    fn apply(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
+    ) -> RlstResult<()> {
+        if let (Some(op_a), Some(op_b)) = (self.0.as_apply(), self.1.as_apply()) {
+            op_a.apply(alpha, x, beta, y).unwrap();
+            op_b.apply(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y)
+                .unwrap();
+            Ok(())
+        } else {
+            Err(RlstError::OperationFailed(
+                "AsAppy must be implemented for both operators in sum.".to_string(),
+            ))
         }
     }
 }

@@ -297,3 +297,19 @@ impl<'a, Item: Scalar, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
         ))
     }
 }
+
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > std::fmt::Debug for Array<Item, ArrayImpl, NDIM>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let shape = self.shape();
+        write!(f, "Array[").unwrap();
+        for item in shape {
+            write!(f, "{},", item).unwrap();
+        }
+        write!(f, "]")
+    }
+}

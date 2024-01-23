@@ -1,13 +1,10 @@
-use super::ElementView;
+use crate::Element;
+
 use super::LinearSpace;
 use rlst_common::types::RlstResult;
 
 pub trait InnerProductSpace: LinearSpace {
-    fn inner<'a>(
-        &self,
-        x: &ElementView<'a, Self>,
-        other: &ElementView<'a, Self>,
-    ) -> RlstResult<Self::F>
+    fn inner<'a>(&'a self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F
     where
         Self: 'a;
 }
