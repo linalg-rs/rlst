@@ -7,6 +7,9 @@ use std::fmt::Debug;
 
 use crate::*;
 
+pub type RlstOperator<'a, Domain, Range> =
+    Box<dyn OperatorBase<Domain = Domain, Range = Range> + 'a>;
+
 // A base operator trait.
 pub trait OperatorBase: Debug {
     type Domain: LinearSpace;
@@ -57,24 +60,20 @@ impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In
     }
 }
 
-pub struct OperatorSum<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq>(
-    &'a dyn OperatorBase<Domain = Domain, Range = Range>,
-    &'a dyn OperatorBase<Domain = Domain, Range = Range>,
+pub struct RlstOperatorReference<'a, Domain: LinearSpace, Range: LinearSpace>(
+    &'a RlstOperator<'a, Domain, Range>,
 );
 
-impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> std::fmt::Debug
-    for OperatorSum<'a, Domain, Range>
+impl<'a, Domain: LinearSpace, Range: LinearSpace> std::fmt::Debug
+    for RlstOperatorReference<'a, Domain, Range>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("OperatorSum")
-            .field(&self.0)
-            .field(&self.1)
-            .finish()
+        f.debug_tuple("OperatorReference").field(&self.0).finish()
     }
 }
 
-impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> OperatorBase
-    for OperatorSum<'a, Domain, Range>
+impl<'a, Domain: LinearSpace, Range: LinearSpace> OperatorBase
+    for RlstOperatorReference<'a, Domain, Range>
 {
     type Domain = Domain;
 
@@ -93,9 +92,62 @@ impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> Operat
     }
 }
 
-impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> AsApply
+impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply
+    for RlstOperatorReference<'a, Domain, Range>
+{
+    fn apply(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
+    ) -> RlstResult<()> {
+        if let Some(op) = self.0.as_apply() {
+            op.apply(alpha, x, beta, y).unwrap();
+            Ok(())
+        } else {
+            Err(RlstError::OperationFailed(
+                "AsApply must be implemented for operator.".to_string(),
+            ))
+        }
+    }
+}
+
+pub struct OperatorSum<'a, Domain: LinearSpace, Range: LinearSpace>(
+    RlstOperator<'a, Domain, Range>,
+    RlstOperator<'a, Domain, Range>,
+);
+
+impl<'a, Domain: LinearSpace, Range: LinearSpace> std::fmt::Debug
     for OperatorSum<'a, Domain, Range>
 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("OperatorSum")
+            .field(&&self.0)
+            .field(&&self.1)
+            .finish()
+    }
+}
+
+impl<'a, Domain: LinearSpace, Range: LinearSpace> OperatorBase for OperatorSum<'a, Domain, Range> {
+    type Domain = Domain;
+
+    type Range = Range;
+
+    fn domain(&self) -> &Self::Domain {
+        self.0.domain()
+    }
+
+    fn range(&self) -> &Self::Range {
+        self.0.range()
+    }
+
+    fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
+        Some(self)
+    }
+}
+
+impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply for OperatorSum<'a, Domain, Range> {
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
@@ -110,157 +162,182 @@ impl<'a, Domain: LinearSpace + PartialEq, Range: LinearSpace + PartialEq> AsAppl
             Ok(())
         } else {
             Err(RlstError::OperationFailed(
-                "AsAppy must be implemented for both operators in sum.".to_string(),
+                "AsApply must be implemented for both operators in sum.".to_string(),
             ))
         }
     }
 }
 
-// #[cfg(test)]
-// mod tests {
+pub struct ScalarTimesOperator<'a, Domain: LinearSpace, Range: LinearSpace>(
+    RlstOperator<'a, Domain, Range>,
+    Range::F,
+);
 
-//     use std::marker::PhantomData;
+impl<'a, Domain: LinearSpace, Range: LinearSpace> std::fmt::Debug
+    for ScalarTimesOperator<'a, Domain, Range>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("OperatorSum")
+            .field(&self.0)
+            .field(&self.1)
+            .finish()
+    }
+}
 
-//     use super::*;
+impl<'a, Domain: LinearSpace, Range: LinearSpace> OperatorBase
+    for ScalarTimesOperator<'a, Domain, Range>
+{
+    type Domain = Domain;
 
-//     #[derive(Debug)]
-//     struct SimpleSpace;
-//     impl LinearSpace for SimpleSpace {
-//         type F = f64;
-//         type E<'a> = SimpleVector;
-//     }
+    type Range = Range;
 
-//     #[derive(Debug)]
-//     struct SimpleVector {}
+    fn domain(&self) -> &Self::Domain {
+        self.0.domain()
+    }
 
-//     #[derive(Debug)]
-//     struct View<'a> {
-//         marker: PhantomData<&'a ()>,
-//     }
+    fn range(&self) -> &Self::Range {
+        self.0.range()
+    }
 
-//     impl<'a> View<'a> {
-//         fn new() -> Self {
-//             Self {
-//                 marker: PhantomData,
-//             }
-//         }
-//     }
+    fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
+        Some(self)
+    }
+}
 
-//     impl Element for SimpleVector {
-//         type Space = SimpleSpace;
-//         type View<'b> = View<'b> where Self: 'b;
-//         type ViewMut<'b> = View<'b> where Self: 'b;
+impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply
+    for ScalarTimesOperator<'a, Domain, Range>
+{
+    fn apply(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
+    ) -> RlstResult<()> {
+        if let Some(op) = self.0.as_apply() {
+            op.apply(self.1 * alpha, x, beta, y).unwrap();
+            Ok(())
+        } else {
+            Err(RlstError::NotImplemented("Apply".to_string()))
+        }
+    }
+}
 
-//         fn view(&self) -> Self::View<'_> {
-//             View::new()
-//         }
+macro_rules! impl_scalar_mult {
+    ($scalar:ty) => {
+        impl<'a, Domain: LinearSpace<F = $scalar> + 'a, Range: LinearSpace<F = $scalar> + 'a>
+            std::ops::Mul<$scalar> for RlstOperator<'a, Domain, Range>
+        {
+            type Output = RlstOperator<'a, Domain, Range>;
 
-//         fn view_mut(&mut self) -> Self::View<'_> {
-//             View::new()
-//         }
-//     }
+            fn mul(self, rhs: Range::F) -> Self::Output {
+                Box::new(ScalarTimesOperator(self, rhs))
+            }
+        }
 
-//     #[derive(Debug)]
-//     struct SparseMatrix;
-//     impl OperatorBase for SparseMatrix {
-//         type Domain = SimpleSpace;
-//         type Range = SimpleSpace;
+        impl<'a, Domain: LinearSpace<F = $scalar> + 'a, Range: LinearSpace<F = $scalar> + 'a>
+            std::ops::Mul<$scalar> for &'a RlstOperator<'a, Domain, Range>
+        {
+            type Output = RlstOperator<'a, Domain, Range>;
 
-//         fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
-//             Some(self)
-//         }
-//         // fn as_matvec_h(
-//         //     &self,
-//         // ) -> Option<&dyn AsHermitianMatVec<Domain = Self::Domain, Range = Self::Range>> {
-//         //     Some(self)
-//         // }
-//     }
-//     impl AsApply for SparseMatrix {
-//         fn apply(
-//             &self,
-//             _x: ElementView<Self::Domain>,
-//             _y: ElementViewMut<Self::Range>,
-//         ) -> RlstResult<()> {
-//             println!("{self:?} matvec");
-//             Ok(())
-//         }
-//     }
+            fn mul(self, rhs: Range::F) -> Self::Output {
+                Box::new(ScalarTimesOperator(
+                    Box::new(RlstOperatorReference(self)),
+                    rhs,
+                ))
+            }
+        }
 
-//     // Finite difference matrices use the following formula where f is a
-//     // nonlinear function and x is a vector that we linearize around. It is not
-//     // tractable to apply the transpose or Hermitian adjoint without access to
-//     // the code that computes f.
-//     //
-//     // A y = (f(x + hy) - f(x)) / h
-//     #[derive(Debug)]
-//     struct FiniteDifference;
-//     impl OperatorBase for FiniteDifference {
-//         type Domain = SimpleSpace;
-//         type Range = SimpleSpace;
-//         fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
-//             Some(self)
-//         }
-//     }
-//     impl AsApply for FiniteDifference {
-//         fn apply(
-//             &self,
-//             _x: ElementView<Self::Domain>,
-//             _y: ElementViewMut<Self::Range>,
-//         ) -> RlstResult<()> {
-//             println!("{self:?} matvec");
-//             Ok(())
-//         }
-//     }
+        impl<'a, Domain: LinearSpace<F = $scalar> + 'a, Range: LinearSpace<F = $scalar> + 'a>
+            std::ops::Mul<RlstOperator<'a, Domain, Range>> for $scalar
+        {
+            type Output = RlstOperator<'a, Domain, Range>;
 
-//     /// A fallible matrix
-//     #[derive(Debug)]
-//     struct SketchyMatrix;
-//     impl OperatorBase for SketchyMatrix {
-//         type Domain = SimpleSpace;
-//         type Range = SimpleSpace;
-//         fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
-//             Some(self)
-//         }
-//     }
-//     impl AsApply for SketchyMatrix {
-//         fn apply(
-//             &self,
-//             _x: ElementView<Self::Domain>,
-//             _y: ElementViewMut<Self::Range>,
-//         ) -> RlstResult<()> {
-//             println!("{self:?} matvec");
-//             Err(RlstError::OperationFailed("Apply".to_string()))
-//         }
-//     }
-//     #[test]
-//     fn test_mult_dyn() -> RlstResult<()> {
-//         let x = SimpleVector {};
-//         let mut y = SimpleVector {};
-//         let ops: Vec<Box<dyn OperatorBase<Domain = SimpleSpace, Range = SimpleSpace>>> =
-//             vec![Box::new(SparseMatrix), Box::new(FiniteDifference)];
-//         for op in ops {
-//             op.apply(x.view(), y.view_mut())?;
-//         }
-//         Ok(())
-//     }
+            fn mul(self, rhs: RlstOperator<'a, Domain, Range>) -> Self::Output {
+                Box::new(ScalarTimesOperator(rhs, self))
+            }
+        }
 
-//     #[test]
-//     fn test_mult() -> RlstResult<()> {
-//         let x = SimpleVector {};
-//         let mut y = SimpleVector {};
-//         let a = SparseMatrix;
-//         // Static dispatch because we're using a struct that implements AsMatVec
-//         a.apply(x.view(), y.view_mut())?;
-//         Ok(())
-//     }
+        impl<'a, Domain: LinearSpace<F = $scalar> + 'a, Range: LinearSpace<F = $scalar> + 'a>
+            std::ops::Mul<&'a RlstOperator<'a, Domain, Range>> for $scalar
+        {
+            type Output = RlstOperator<'a, Domain, Range>;
 
-//     #[test]
-//     #[should_panic]
-//     fn test_mult_sketchy() {
-//         let x = SimpleVector {};
-//         let mut y = SimpleVector {};
-//         let a = SketchyMatrix;
-//         // Static dispatch because we're using a struct that implements AsMatVec
-//         a.apply(x.view(), y.view_mut()).unwrap();
-//     }
-// }
+            fn mul(self, rhs: &'a RlstOperator<'a, Domain, Range>) -> Self::Output {
+                Box::new(ScalarTimesOperator(
+                    Box::new(RlstOperatorReference(rhs)),
+                    self,
+                ))
+            }
+        }
+    };
+}
+
+impl_scalar_mult!(f32);
+impl_scalar_mult!(f64);
+impl_scalar_mult!(c32);
+impl_scalar_mult!(c64);
+
+impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
+    std::ops::Add<RlstOperator<'a, Domain, Range>> for RlstOperator<'a, Domain, Range>
+{
+    type Output = RlstOperator<'a, Domain, Range>;
+
+    fn add(self, rhs: RlstOperator<'a, Domain, Range>) -> Self::Output {
+        Box::new(OperatorSum(self, rhs))
+    }
+}
+
+impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
+    std::ops::Add<&'a RlstOperator<'a, Domain, Range>> for RlstOperator<'a, Domain, Range>
+{
+    type Output = RlstOperator<'a, Domain, Range>;
+
+    fn add(self, rhs: &'a RlstOperator<'a, Domain, Range>) -> Self::Output {
+        Box::new(OperatorSum(self, Box::new(RlstOperatorReference(rhs))))
+    }
+}
+
+impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
+    std::ops::Add<RlstOperator<'a, Domain, Range>> for &'a RlstOperator<'a, Domain, Range>
+{
+    type Output = RlstOperator<'a, Domain, Range>;
+
+    fn add(self, rhs: RlstOperator<'a, Domain, Range>) -> Self::Output {
+        Box::new(OperatorSum(Box::new(RlstOperatorReference(self)), rhs))
+    }
+}
+
+impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
+    std::ops::Add<&'a RlstOperator<'a, Domain, Range>> for &'a RlstOperator<'a, Domain, Range>
+{
+    type Output = RlstOperator<'a, Domain, Range>;
+
+    fn add(self, rhs: &'a RlstOperator<'a, Domain, Range>) -> Self::Output {
+        Box::new(OperatorSum(
+            Box::new(RlstOperatorReference(self)),
+            Box::new(RlstOperatorReference(rhs)),
+        ))
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::implementation::dense_matrix_operator::DenseMatrixOperator;
+    use rlst_dense::rlst_dynamic_array2;
+
+    #[test]
+    fn test_operator_algebra() {
+        let mut mat1 = rlst_dynamic_array2!(f64, [4, 3]);
+        let mut mat2 = rlst_dynamic_array2!(f64, [4, 3]);
+
+        mat1.fill_from_seed_equally_distributed(0);
+        mat2.fill_from_seed_equally_distributed(1);
+
+        let op1 = DenseMatrixOperator::from(mat1);
+        let op2 = DenseMatrixOperator::from(mat2);
+
+        let _sum = 5.0 * &op1 + &op2;
+    }
+}

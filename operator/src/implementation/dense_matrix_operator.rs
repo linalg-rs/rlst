@@ -32,17 +32,22 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: Scalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > DenseMatrixOperator<Item, ArrayImpl>
 {
-    pub fn new(arr: Array<Item, ArrayImpl, 2>) -> Self {
+    pub fn from<'a>(
+        arr: Array<Item, ArrayImpl, 2>,
+    ) -> crate::operator::RlstOperator<'a, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>>
+    where
+        ArrayImpl: 'a,
+    {
         let shape = arr.shape();
-        Self {
+        Box::new(Self {
             arr,
             domain: ArrayVectorSpace::new(shape[1]),
             range: ArrayVectorSpace::new(shape[0]),
-        }
+        })
     }
 }
 
@@ -114,9 +119,9 @@ mod test {
         let mut mat = rlst_dynamic_array2!(f64, [3, 4]);
         mat.fill_from_seed_equally_distributed(0);
 
-        let op = DenseMatrixOperator::new(mat);
-        let mut x = op.domain.zero();
-        let mut y = op.range.zero();
+        let op = DenseMatrixOperator::from(mat);
+        let mut x = op.domain().zero();
+        let mut y = op.range().zero();
 
         x.view_mut().fill_from_seed_equally_distributed(0);
 
