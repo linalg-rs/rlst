@@ -1,5 +1,3 @@
-use rlst_common::types::Scalar;
-
 use super::LinearSpace;
 
 /// Elements of linear spaces.

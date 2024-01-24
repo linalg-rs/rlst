@@ -1,6 +1,5 @@
 //! Methods for the creation of random matrices.
 
-use crate::data_container::DataContainerMut;
 use crate::tools::*;
 use crate::traits::*;
 use rand::prelude::*;
@@ -10,7 +9,6 @@ use rand_distr::StandardNormal;
 use rlst_common::types::Scalar;
 
 use super::Array;
-use crate::base_array::BaseArray;
 
 impl<
         Item: Scalar + RandScalar,

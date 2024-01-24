@@ -1,28 +1,28 @@
-use std::ops::Mul;
-
 use crate::{space::*, AsApply, OperatorBase};
 use rlst_blis::interface::gemm::Gemm;
 use rlst_common::types::Scalar;
 use rlst_dense::{
-    array::{Array, DynamicArray},
+    array::Array,
     traits::{MultInto, RawAccess, Shape, Stride, UnsafeRandomAccessByValue},
 };
 
 use super::array_vector_space::ArrayVectorSpace;
 
 pub struct DenseMatrixOperator<
+    'a,
     Item: Scalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,
-    domain: ArrayVectorSpace<Item>,
-    range: ArrayVectorSpace<Item>,
+    domain: &'a ArrayVectorSpace<Item>,
+    range: &'a ArrayVectorSpace<Item>,
 }
 
 impl<
+        'a,
         Item: Scalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > std::fmt::Debug for DenseMatrixOperator<Item, ArrayImpl>
+    > std::fmt::Debug for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DenseMatrixOperator")
@@ -32,29 +32,32 @@ impl<
 }
 
 impl<
+        'a,
         Item: Scalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > DenseMatrixOperator<Item, ArrayImpl>
+    > DenseMatrixOperator<'a, Item, ArrayImpl>
 {
-    pub fn from<'a>(
+    pub fn from<'b>(
         arr: Array<Item, ArrayImpl, 2>,
-    ) -> crate::operator::RlstOperator<'a, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>>
+        domain: &'a ArrayVectorSpace<Item>,
+        range: &'a ArrayVectorSpace<Item>,
+    ) -> crate::operator::RlstOperator<'b, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>>
     where
-        ArrayImpl: 'a,
+        ArrayImpl: 'b,
+        'a: 'b,
     {
         let shape = arr.shape();
-        Box::new(Self {
-            arr,
-            domain: ArrayVectorSpace::new(shape[1]),
-            range: ArrayVectorSpace::new(shape[0]),
-        })
+        assert_eq!(domain.dimension(), shape[1]);
+        assert_eq!(range.dimension(), shape[0]);
+        Box::new(Self { arr, domain, range })
     }
 }
 
 impl<
+        'a,
         Item: Scalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > OperatorBase for DenseMatrixOperator<Item, ArrayImpl>
+    > OperatorBase for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
     type Domain = ArrayVectorSpace<Item>;
     type Range = ArrayVectorSpace<Item>;
@@ -68,18 +71,19 @@ impl<
     }
 
     fn domain(&self) -> &Self::Domain {
-        &self.domain
+        self.domain
     }
 
     fn range(&self) -> &Self::Range {
-        &self.range
+        self.range
     }
 }
 
 impl<
+        'a,
         Item: Scalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > AsApply for DenseMatrixOperator<Item, ArrayImpl>
+    > AsApply for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
     fn apply(
         &self,
@@ -106,20 +110,20 @@ mod test {
 
     use rlst_dense::rlst_dynamic_array2;
 
-    use rlst_dense::rlst_dynamic_array1;
-
+    use crate::implementation::array_vector_space::ArrayVectorSpace;
     use crate::Element;
     use crate::LinearSpace;
-    use crate::OperatorBase;
 
     use super::DenseMatrixOperator;
 
     #[test]
     fn test_mat() {
         let mut mat = rlst_dynamic_array2!(f64, [3, 4]);
+        let domain = ArrayVectorSpace::new(4);
+        let range = ArrayVectorSpace::new(3);
         mat.fill_from_seed_equally_distributed(0);
 
-        let op = DenseMatrixOperator::from(mat);
+        let op = DenseMatrixOperator::from(mat, &domain, &range);
         let mut x = op.domain().zero();
         let mut y = op.range().zero();
 

@@ -5,8 +5,6 @@ use num::One;
 use rlst_common::types::*;
 use std::fmt::Debug;
 
-use crate::*;
-
 pub type RlstOperator<'a, Domain, Range> =
     Box<dyn OperatorBase<Domain = Domain, Range = Range> + 'a>;
 
@@ -88,7 +86,7 @@ impl<'a, Domain: LinearSpace, Range: LinearSpace> OperatorBase
     }
 
     fn as_apply(&self) -> Option<&dyn AsApply<Domain = Self::Domain, Range = Self::Range>> {
-        std::unimplemented!()
+        Some(self)
     }
 }
 
@@ -324,20 +322,48 @@ impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
 #[cfg(test)]
 mod test {
 
-    use crate::implementation::dense_matrix_operator::DenseMatrixOperator;
-    use rlst_dense::rlst_dynamic_array2;
+    use crate::{
+        implementation::{
+            array_vector_space::ArrayVectorSpace, dense_matrix_operator::DenseMatrixOperator,
+        },
+        Element, LinearSpace,
+    };
+    use rlst_dense::{assert_array_relative_eq, rlst_dynamic_array2, traits::*};
 
     #[test]
     fn test_operator_algebra() {
         let mut mat1 = rlst_dynamic_array2!(f64, [4, 3]);
         let mut mat2 = rlst_dynamic_array2!(f64, [4, 3]);
 
+        let domain = ArrayVectorSpace::new(3);
+        let range = ArrayVectorSpace::new(4);
+
         mat1.fill_from_seed_equally_distributed(0);
         mat2.fill_from_seed_equally_distributed(1);
 
-        let op1 = DenseMatrixOperator::from(mat1);
-        let op2 = DenseMatrixOperator::from(mat2);
+        let op1 = DenseMatrixOperator::from(mat1, &domain, &range);
+        let op2 = DenseMatrixOperator::from(mat2, &domain, &range);
 
-        let _sum = 5.0 * &op1 + &op2;
+        let mut x = domain.zero();
+        let mut y = range.zero();
+        let mut y_expected = range.zero();
+        x.view_mut().fill_from_seed_equally_distributed(2);
+        y.view_mut().fill_from_seed_equally_distributed(3);
+        y_expected.view_mut().fill_from(y.view());
+
+        op2.as_apply()
+            .unwrap()
+            .apply(2.0, &x, 3.5, &mut y_expected)
+            .unwrap();
+        op1.as_apply()
+            .unwrap()
+            .apply(10.0, &x, 1.0, &mut y_expected)
+            .unwrap();
+
+        let sum = 5.0 * &op1 + &op2;
+
+        sum.as_apply().unwrap().apply(2.0, &x, 3.5, &mut y).unwrap();
+
+        assert_array_relative_eq!(y.view(), y_expected.view(), 1E-12);
     }
 }

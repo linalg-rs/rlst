@@ -105,7 +105,6 @@ impl<'a, Item: Scalar> Element for ArrayVectorSpaceElement<'a, Item> {
 
 #[cfg(test)]
 mod test {
-    use rlst_dense::rlst_dynamic_array1;
 
     #[test]
     fn test_vec() {}

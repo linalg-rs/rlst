@@ -16,5 +16,9 @@ num = "0.4"
 cauchy = "0.4"
 thiserror = "1.0.40"
 
+[dev-dependencies]
+approx = { version = "0.5", features = ["num-complex"] }
+
+
 [lib]
 name = "rlst_operator"
