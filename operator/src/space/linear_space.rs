@@ -16,6 +16,11 @@ pub trait LinearSpace {
     where
         Self: 'b;
 
+    /// Check if a space is the same as another space.
+    fn is_same(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+
     /// Create a new vector from the space.
     fn zero(&self) -> Self::E<'_> {
         std::unimplemented!();
