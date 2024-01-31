@@ -47,11 +47,7 @@ impl<'space, Space: LinearSpace> Frame<'space, Space> {
         self.data.push(elem);
     }
 
-    pub fn evaluate(
-        &mut self,
-        coeffs: &[FieldType<Space>],
-        result: &mut ElementType<'space, Space>,
-    ) {
+    pub fn evaluate(&self, coeffs: &[FieldType<Space>], result: &mut ElementType<'space, Space>) {
         assert!(self.space.is_same(result.space()));
         assert_eq!(coeffs.len(), self.len());
 

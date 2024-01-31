@@ -1,1 +1,1 @@
-pub mod gram_schmidt;
+pub mod modified_gram_schmidt;
