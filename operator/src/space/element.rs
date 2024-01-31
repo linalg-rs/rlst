@@ -1,3 +1,5 @@
+use crate::{FieldType, InnerProductSpace};
+
 use super::LinearSpace;
 
 /// Elements of linear spaces.

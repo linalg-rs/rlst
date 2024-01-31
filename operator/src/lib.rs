@@ -3,6 +3,7 @@
 
 pub mod implementation;
 pub mod linalg;
+pub mod operations;
 pub mod operator;
 pub mod space;
 

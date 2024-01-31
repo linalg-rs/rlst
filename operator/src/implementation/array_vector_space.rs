@@ -67,12 +67,6 @@ impl<Item: Scalar> InnerProductSpace for ArrayVectorSpace<Item> {
     }
 }
 
-impl<Item: Scalar> NormedSpace for ArrayVectorSpace<Item> {
-    fn norm<'a>(&'a self, x: &ElementView<'a, Self>) -> <Self::F as Scalar>::Real {
-        x.view().norm_2()
-    }
-}
-
 impl<'a, Item: Scalar> Element for ArrayVectorSpaceElement<'a, Item> {
     type Space = ArrayVectorSpace<Item>;
     type View<'b> = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> where

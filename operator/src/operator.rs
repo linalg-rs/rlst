@@ -317,6 +317,7 @@ impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
             Box::new(RlstOperatorReference(rhs)),
         ))
     }
+    
 }
 
 #[cfg(test)]
