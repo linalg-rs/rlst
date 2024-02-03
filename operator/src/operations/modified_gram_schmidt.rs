@@ -1,5 +1,7 @@
 //! Gram Schmidt orthogonalization
-use crate::{space::frame::Frame, Element, FieldType, InnerProductSpace, NormedSpace};
+use crate::{
+    frame::Frame, space::frame::DefaultFrame, Element, FieldType, InnerProductSpace, NormedSpace,
+};
 use num::One;
 use rlst_common::types::Scalar;
 use rlst_dense::{array::DynamicArray, rlst_dynamic_array2, traits::RandomAccessMut};
@@ -7,12 +9,15 @@ pub struct ModifiedGramSchmidt;
 
 impl ModifiedGramSchmidt {
     pub fn orthogonalize<'space, Space: InnerProductSpace>(
-        frame: &'space Frame<'space, Space>,
-    ) -> (Frame<'space, Space>, DynamicArray<FieldType<Space>, 2>) {
+        frame: &'space DefaultFrame<'space, Space>,
+    ) -> (
+        DefaultFrame<'space, Space>,
+        DynamicArray<FieldType<Space>, 2>,
+    ) {
         let nelements = frame.len();
         let space = frame.space();
 
-        let mut new_frame = Frame::new(frame.space());
+        let mut new_frame = DefaultFrame::new(frame.space());
         let mut r_mat = rlst_dynamic_array2!(FieldType<Space>, [nelements, nelements]);
 
         for (elem_index, elem) in frame.iter().enumerate() {
@@ -55,7 +60,7 @@ mod test {
         vec2.view_mut().fill_from_seed_equally_distributed(1);
         vec3.view_mut().fill_from_seed_equally_distributed(2);
 
-        let mut frame = Frame::new(&space);
+        let mut frame = DefaultFrame::new(&space);
 
         frame.push(vec1);
         frame.push(vec2);

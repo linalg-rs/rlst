@@ -13,9 +13,9 @@ pub trait LinearSpace {
     type F: Scalar;
 
     /// Type associated with elements of the space.
-    type E<'b>: Element<'b, Space = Self>
+    type E<'elem>: Element<'elem, Space = Self>
     where
-        Self: 'b;
+        Self: 'elem;
 
     /// Check if a space is the same as another space.
     fn is_same(&self, other: &Self) -> bool {
@@ -23,17 +23,20 @@ pub trait LinearSpace {
     }
 
     /// Create a new vector from the space.
-    fn zero(&self) -> Self::E<'_> {
-        std::unimplemented!();
-    }
+    fn zero(&self) -> Self::E<'_>;
 
     /// Clone an element of the space.
-    fn clone<'a>(&'a self, elem: &Self::E<'a>) -> Self::E<'a> {
+    fn clone<'space, 'elem>(&'space self, elem: &Self::E<'elem>) -> Self::E<'space>
+    where
+        'space: 'elem,
+    {
         let mut cloned = self.zero();
         cloned.sum_into(<Self::F as One>::one(), elem);
-        cloned
+
+        // Manually ensure that the new variable as the lifetime of Space
+        unsafe { std::mem::transmute(cloned) }
     }
 }
 
-pub type ElementType<'a, Space> = <Space as LinearSpace>::E<'a>;
+pub type ElementType<'elem, Space> = <Space as LinearSpace>::E<'elem>;
 pub type FieldType<Space> = <Space as LinearSpace>::F;
