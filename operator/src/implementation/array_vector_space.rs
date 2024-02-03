@@ -67,7 +67,7 @@ impl<Item: Scalar> InnerProductSpace for ArrayVectorSpace<Item> {
     }
 }
 
-impl<'a, Item: Scalar> Element for ArrayVectorSpaceElement<'a, Item> {
+impl<'a, Item: Scalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
     type Space = ArrayVectorSpace<Item>;
     type View<'b> = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> where
         Self: 'b;

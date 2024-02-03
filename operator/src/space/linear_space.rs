@@ -13,7 +13,7 @@ pub trait LinearSpace {
     type F: Scalar;
 
     /// Type associated with elements of the space.
-    type E<'b>: Element<Space = Self>
+    type E<'b>: Element<'b, Space = Self>
     where
         Self: 'b;
 
