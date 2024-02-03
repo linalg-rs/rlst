@@ -1,23 +1,21 @@
 //! A frame is a collection of elements of a space.
 
-use crate::{Element, ElementType, FieldType, LinearSpace};
+use crate::Element;
 
-pub trait Frame<'space: 'elem, 'elem> {
-    type Space: LinearSpace + 'space;
+pub trait Frame {
+    type E: Element;
 
-    type Iter<'iter>: std::iter::Iterator<Item = &'iter ElementType<'elem, Self::Space>>
+    type Iter<'iter>: std::iter::Iterator<Item = &'iter Self::E>
     where
-        Self: 'elem,
-        'elem: 'iter;
+        Self: 'iter;
 
-    type IterMut<'iter>: std::iter::Iterator<Item = &'iter mut ElementType<'elem, Self::Space>>
+    type IterMut<'iter>: std::iter::Iterator<Item = &'iter mut Self::E>
     where
-        Self: 'elem,
-        'elem: 'iter;
+        Self: 'iter;
 
-    fn get(&self, index: usize) -> Option<&ElementType<'elem, Self::Space>>;
+    fn get(&self, index: usize) -> Option<&Self::E>;
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut ElementType<'elem, Self::Space>>;
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self::E>;
 
     fn len(&self) -> usize;
 
@@ -29,60 +27,48 @@ pub trait Frame<'space: 'elem, 'elem> {
 
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
-    fn space(&self) -> &Self::Space;
+    fn push(&mut self, elem: Self::E);
 
-    fn push(&mut self, elem: <Self::Space as LinearSpace>::E<'elem>);
-
-    fn evaluate<'a>(
-        &'a self,
-        coeffs: &[FieldType<Self::Space>],
-        result: &'a mut ElementType<'elem, Self::Space>,
-    ) where
-        'a: 'elem,
-    {
-        assert!(self.space().is_same(result.space()));
+    fn evaluate(&self, coeffs: &[<Self::E as Element>::F], result: &mut Self::E) {
         assert_eq!(coeffs.len(), self.len());
-
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
             result.sum_into(coeff, elem);
         }
     }
 }
 
-pub struct DefaultFrame<'space: 'elem, 'elem, Space: LinearSpace> {
-    data: Vec<<Space as LinearSpace>::E<'elem>>,
-    space: &'space Space,
+pub struct VectorFrame<Elem: Element> {
+    data: Vec<Elem>,
 }
 
-impl<'space: 'elem, 'elem, Space: LinearSpace> DefaultFrame<'space, 'elem, Space> {
-    pub fn new(space: &'space Space) -> Self {
-        Self {
-            data: Vec::new(),
-            space,
-        }
+impl<Elem: Element> VectorFrame<Elem> {
+    pub fn new() -> Self {
+        Self { data: Vec::new() }
     }
 }
 
-impl<'space: 'elem, 'elem, Space: LinearSpace> Frame<'space, 'elem>
-    for DefaultFrame<'space, 'elem, Space>
-{
-    type Space = Space;
+impl<Elem: Element> Default for VectorFrame<Elem> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-    type Iter<'iter> = std::slice::Iter<'iter, ElementType<'elem, Space>>
+impl<Elem: Element> Frame for VectorFrame<Elem> {
+    type E = Elem;
+
+    type Iter<'iter> = std::slice::Iter<'iter, Self::E>
     where
-        Self: 'elem,
-        'elem: 'iter;
+        Self: 'iter;
 
-    type IterMut<'iter> = std::slice::IterMut<'iter, ElementType<'elem, Space>>
+    type IterMut<'iter> = std::slice::IterMut<'iter, Self::E>
     where
-        Self: 'elem,
-        'elem: 'iter;
+        Self: 'iter;
 
-    fn get(&self, index: usize) -> Option<&ElementType<'elem, Self::Space>> {
+    fn get(&self, index: usize) -> Option<&Self::E> {
         self.data.get(index)
     }
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut ElementType<'elem, Self::Space>> {
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self::E> {
         self.data.get_mut(index)
     }
 
@@ -98,11 +84,7 @@ impl<'space: 'elem, 'elem, Space: LinearSpace> Frame<'space, 'elem>
         self.data.iter_mut()
     }
 
-    fn space(&self) -> &Self::Space {
-        self.space
-    }
-
-    fn push(&mut self, elem: <Self::Space as LinearSpace>::E<'elem>) {
+    fn push(&mut self, elem: Self::E) {
         self.data.push(elem)
     }
 }

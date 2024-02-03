@@ -1,12 +1,14 @@
-use crate::{FieldType, InnerProductSpace, NormedSpace};
 use rlst_common::types::Scalar;
 
 use super::LinearSpace;
 
 /// Elements of linear spaces.
-pub trait Element<'elem> {
+pub trait Element {
     /// Item type of the vector.
-    type Space: LinearSpace<E<'elem> = Self> + 'elem;
+
+    type Space: LinearSpace<F = Self::F, E = Self>;
+
+    type F: Scalar;
 
     type View<'b>
     where
@@ -15,11 +17,6 @@ pub trait Element<'elem> {
     where
         Self: 'b;
 
-    /// Return the underlying space.
-    fn space(&self) -> &Self::Space {
-        std::unimplemented!();
-    }
-
     /// Get a view onto the element.
     fn view(&self) -> Self::View<'_>;
 
@@ -27,37 +24,17 @@ pub trait Element<'elem> {
     fn view_mut(&mut self) -> Self::ViewMut<'_>;
 
     /// `self += alpha * other`.
-    fn sum_into(&mut self, alpha: <Self::Space as LinearSpace>::F, other: &Self);
+    fn sum_into(&mut self, alpha: Self::F, other: &Self);
+
+    /// self = other.
+    fn fill_from(&mut self, other: &Self);
 
     /// `self *= alpha`.
-    fn scale_in_place(&mut self, alpha: <Self::Space as LinearSpace>::F);
-
-    fn inner(&'elem self, other: &'elem Self) -> FieldType<Self::Space>
-    where
-        Self::Space: InnerProductSpace,
-    {
-        self.space().inner(self, other)
-    }
-
-    fn norm(&'elem self) -> <FieldType<Self::Space> as Scalar>::Real
-    where
-        Self::Space: NormedSpace,
-    {
-        self.space().norm(self)
-    }
-
-    fn clone(&'elem self) -> Self
-    where
-        Self: std::marker::Sized,
-    {
-        self.space().clone(self)
-    }
+    fn scale_in_place(&mut self, alpha: Self::F);
 }
 
 // The view type associated with elements of linear spaces.
-pub type ElementView<'elem, Space> =
-    <<Space as LinearSpace>::E<'elem> as Element<'elem>>::View<'elem>;
+pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as Element>::View<'view>;
 
 // The mutable view type associated with elements of linear spaces.
-pub type ElementViewMut<'elem, Space> =
-    <<Space as LinearSpace>::E<'elem> as Element<'elem>>::ViewMut<'elem>;
+pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as Element>::ViewMut<'view>;

@@ -36,9 +36,9 @@ pub trait AsApply: OperatorBase {
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()>;
 }
 
@@ -46,9 +46,9 @@ impl<In: LinearSpace, Out: LinearSpace> AsApply for dyn OperatorBase<Domain = In
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()> {
         if let Some(op) = self.as_apply() {
             op.apply(alpha, x, beta, y)
@@ -96,9 +96,9 @@ impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()> {
         if let Some(op) = self.0.as_apply() {
             op.apply(alpha, x, beta, y).unwrap();
@@ -149,9 +149,9 @@ impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply for OperatorSum<'a, Do
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()> {
         if let (Some(op_a), Some(op_b)) = (self.0.as_apply(), self.1.as_apply()) {
             op_a.apply(alpha, x, beta, y).unwrap();
@@ -208,9 +208,9 @@ impl<'a, Domain: LinearSpace, Range: LinearSpace> AsApply
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()> {
         if let Some(op) = self.0.as_apply() {
             op.apply(self.1 * alpha, x, beta, y).unwrap();
@@ -317,7 +317,6 @@ impl<'a, Domain: LinearSpace + 'a, Range: LinearSpace + 'a>
             Box::new(RlstOperatorReference(rhs)),
         ))
     }
-    
 }
 
 #[cfg(test)]

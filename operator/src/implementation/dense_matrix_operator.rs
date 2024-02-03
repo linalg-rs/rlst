@@ -34,18 +34,18 @@ impl<
 impl<
         'a,
         Item: Scalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + Stride<2>
+            + RawAccess<Item = Item>
+            + 'a,
     > DenseMatrixOperator<'a, Item, ArrayImpl>
 {
-    pub fn from<'b>(
+    pub fn from(
         arr: Array<Item, ArrayImpl, 2>,
         domain: &'a ArrayVectorSpace<Item>,
         range: &'a ArrayVectorSpace<Item>,
-    ) -> crate::operator::RlstOperator<'b, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>>
-    where
-        ArrayImpl: 'b,
-        'a: 'b,
-    {
+    ) -> crate::operator::RlstOperator<'a, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>> {
         let shape = arr.shape();
         assert_eq!(domain.dimension(), shape[1]);
         assert_eq!(range.dimension(), shape[0]);
@@ -88,9 +88,9 @@ impl<
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
+        y: &mut <Self::Range as LinearSpace>::E,
     ) -> rlst_common::types::RlstResult<()> {
         use rlst_dense::array::mult_into::TransMode;
         y.view_mut().mult_into(
