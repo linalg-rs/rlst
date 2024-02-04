@@ -32,7 +32,7 @@ pub trait Frame {
     fn evaluate(&self, coeffs: &[<Self::E as Element>::F], result: &mut Self::E) {
         assert_eq!(coeffs.len(), self.len());
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
-            result.sum_into(coeff, elem);
+            result.axpy_inplace(coeff, elem);
         }
     }
 }

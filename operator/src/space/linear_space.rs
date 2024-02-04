@@ -21,7 +21,7 @@ pub trait LinearSpace {
     /// Create a new element from a given one.
     fn new_from(&self, elem: &Self::E) -> Self::E {
         let mut cloned = self.zero();
-        cloned.sum_into(<Self::F as One>::one(), elem);
+        cloned.axpy_inplace(<Self::F as One>::one(), elem);
         cloned
     }
 }

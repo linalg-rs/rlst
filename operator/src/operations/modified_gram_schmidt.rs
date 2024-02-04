@@ -30,12 +30,12 @@ impl ModifiedGramSchmidt {
             for (other_index, other_elem) in frame.iter().take(elem_index).enumerate() {
                 let inner = space.inner(&elem, other_elem);
                 *r_mat.get_mut([other_index, elem_index]).unwrap() = inner;
-                elem.sum_into(-inner, other_elem);
+                elem.axpy_inplace(-inner, other_elem);
             }
             let norm = <Item as Scalar>::from_real(space.norm(&elem));
             *r_mat.get_mut([elem_index, elem_index]).unwrap() = norm;
-            elem.scale_in_place(<Item as One>::one() / norm);
-            frame.get_mut(elem_index).unwrap().fill_from(&elem);
+            elem.scale_inplace(<Item as One>::one() / norm);
+            frame.get_mut(elem_index).unwrap().fill_inplace(&elem);
         }
     }
 }

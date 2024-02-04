@@ -45,11 +45,11 @@ impl<
         arr: Array<Item, ArrayImpl, 2>,
         domain: &'a ArrayVectorSpace<Item>,
         range: &'a ArrayVectorSpace<Item>,
-    ) -> crate::operator::RlstOperator<'a, ArrayVectorSpace<Item>, ArrayVectorSpace<Item>> {
+    ) -> Self {
         let shape = arr.shape();
         assert_eq!(domain.dimension(), shape[1]);
         assert_eq!(range.dimension(), shape[0]);
-        Box::new(Self { arr, domain, range })
+        Self { arr, domain, range }
     }
 }
 
@@ -61,14 +61,6 @@ impl<
 {
     type Domain = ArrayVectorSpace<Item>;
     type Range = ArrayVectorSpace<Item>;
-
-    fn as_apply(&self) -> Option<&dyn crate::AsApply<Domain = Self::Domain, Range = Self::Range>> {
-        Some(self)
-    }
-
-    fn has_apply(&self) -> bool {
-        true
-    }
 
     fn domain(&self) -> &Self::Domain {
         self.domain
@@ -85,7 +77,7 @@ impl<
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > AsApply for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
-    fn apply(
+    fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
         x: &<Self::Domain as LinearSpace>::E,
@@ -111,8 +103,10 @@ mod test {
     use rlst_dense::rlst_dynamic_array2;
 
     use crate::implementation::array_vector_space::ArrayVectorSpace;
+    use crate::AsApply;
     use crate::Element;
     use crate::LinearSpace;
+    use crate::OperatorBase;
 
     use super::DenseMatrixOperator;
 
@@ -129,6 +123,6 @@ mod test {
 
         x.view_mut().fill_from_seed_equally_distributed(0);
 
-        op.as_apply().unwrap().apply(1.0, &x, 0.0, &mut y).unwrap();
+        op.apply_extended(1.0, &x, 0.0, &mut y).unwrap();
     }
 }

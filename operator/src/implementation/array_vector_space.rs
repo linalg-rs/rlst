@@ -82,16 +82,20 @@ impl<Item: Scalar> Element for ArrayVectorSpaceElement<Item> {
         self.elem.view_mut()
     }
 
-    fn sum_into(&mut self, alpha: Self::F, other: &Self) {
-        self.elem.sum_into(other.view().scalar_mul(alpha))
+    fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {
+        self.elem.sum_into(other.view().scalar_mul(alpha));
     }
 
-    fn fill_from(&mut self, other: &Self) {
+    fn sum_inplace(&mut self, other: &Self) {
+        self.elem.sum_into(other.view());
+    }
+
+    fn fill_inplace(&mut self, other: &Self) {
         self.elem.fill_from(other.view());
     }
 
-    fn scale_in_place(&mut self, alpha: Self::F) {
-        self.view_mut().scale_in_place(alpha)
+    fn scale_inplace(&mut self, alpha: Self::F) {
+        self.view_mut().scale_in_place(alpha);
     }
 
 
