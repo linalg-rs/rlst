@@ -1,6 +1,6 @@
 //! Definition of a general linear operator.
 
-use crate::{Element, FieldType, LinearSpace};
+use crate::{FieldType, LinearSpace};
 use num::{One, Zero};
 use rlst_common::types::*;
 use std::fmt::Debug;
