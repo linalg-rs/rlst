@@ -1,6 +1,5 @@
 //! Methods for the creation of random matrices.
 
-use crate::data_container::DataContainerMut;
 use crate::tools::*;
 use crate::traits::*;
 use rand::prelude::*;
@@ -10,10 +9,14 @@ use rand_distr::StandardNormal;
 use rlst_common::types::Scalar;
 
 use super::Array;
-use crate::base_array::BaseArray;
 
-impl<Item: Scalar + RandScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
-    Array<Item, BaseArray<Item, Data, NDIM>, NDIM>
+impl<
+        Item: Scalar + RandScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
 where
     StandardNormal: Distribution<<Item as Scalar>::Real>,
     Standard: Distribution<<Item as Scalar>::Real>,

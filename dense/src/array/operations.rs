@@ -198,8 +198,7 @@ where
 {
     /// Compute the inner product between two vectors.
     ///
-    /// Note that the function does not take the complex conjugate of `other`.
-    /// For a complex conjugate inner product call with `self.inner(other.conj())`.
+    /// The inner product takes the complex conjugate of the `other` argument.
     pub fn inner<ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>(
         &self,
         other: Array<Item, ArrayImplOther, 1>,
@@ -213,7 +212,7 @@ where
         self.iter()
             .zip(other.iter())
             .fold(<Item as Zero>::zero(), |acc, (elem1, elem_other)| {
-                acc + elem1 * elem_other
+                acc + elem1 * elem_other.conj()
             })
     }
 

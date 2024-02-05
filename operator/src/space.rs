@@ -2,6 +2,7 @@
 
 pub mod dual_space;
 pub mod element;
+pub mod frame;
 pub mod indexable_element;
 pub mod indexable_space;
 pub mod inner_product_space;

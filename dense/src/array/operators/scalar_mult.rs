@@ -68,6 +68,20 @@ impl<
     }
 }
 
+impl<
+        Item: Scalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    pub fn scalar_mul(
+        self,
+        other: Item,
+    ) -> Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayScalarMult::new(other, self))
+    }
+}
+
 macro_rules! impl_scalar_mult {
     ($ScalarType:ty) => {
         impl<
