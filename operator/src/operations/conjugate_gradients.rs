@@ -140,6 +140,7 @@ mod test {
     #[test]
     fn test_cg() {
         let dim = 10;
+        let tol = 1E-5;
 
         let space = ArrayVectorSpace::<f64>::new(dim);
         let mut residuals = Vec::<f64>::new();
@@ -162,11 +163,10 @@ mod test {
                 let res_norm = space.norm(res);
                 residuals.push(res_norm);
             })
-            .set_tol(1E-3)
+            .set_tol(tol)
             .print_debug();
 
         let (_sol, res) = cg.run();
-
-        println!("{}", res);
+        assert!(res < tol);
     }
 }
