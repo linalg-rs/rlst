@@ -66,7 +66,7 @@ impl<Item: Scalar> Element for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 
-    type View<'b> = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> 
+    type View<'b> = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
     where
         Self: 'b;
 
@@ -97,8 +97,6 @@ impl<Item: Scalar> Element for ArrayVectorSpaceElement<Item> {
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.view_mut().scale_in_place(alpha);
     }
-
-
 }
 
 #[cfg(test)]
