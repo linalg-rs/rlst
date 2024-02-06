@@ -56,6 +56,8 @@ impl<Item: Scalar> CsrMatrix<Item> {
     }
 
     pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
+        assert_eq!(self.shape()[0], y.len());
+        assert_eq!(self.shape()[1], x.len());
         for (row, out) in y.iter_mut().enumerate() {
             *out = beta * *out
                 + alpha * {

@@ -41,7 +41,7 @@ impl<
             + 'a,
     > DenseMatrixOperator<'a, Item, ArrayImpl>
 {
-    pub fn from(
+    pub fn new(
         arr: Array<Item, ArrayImpl, 2>,
         domain: &'a ArrayVectorSpace<Item>,
         range: &'a ArrayVectorSpace<Item>,
@@ -102,7 +102,7 @@ mod test {
 
     use rlst_dense::rlst_dynamic_array2;
 
-    use crate::implementation::array_vector_space::ArrayVectorSpace;
+    use crate::interface::array_vector_space::ArrayVectorSpace;
     use crate::AsApply;
     use crate::Element;
     use crate::LinearSpace;
@@ -117,7 +117,7 @@ mod test {
         let range = ArrayVectorSpace::new(3);
         mat.fill_from_seed_equally_distributed(0);
 
-        let op = DenseMatrixOperator::from(mat, &domain, &range);
+        let op = DenseMatrixOperator::new(mat, &domain, &range);
         let mut x = op.domain().zero();
         let mut y = op.range().zero();
 

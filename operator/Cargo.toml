@@ -10,6 +10,7 @@ edition = "2021"
 
 [dependencies]
 rlst-common = {path = "../common"}
+rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
 rlst-blis = {path = "../blis"}
 num = "0.4"

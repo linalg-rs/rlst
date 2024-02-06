@@ -129,7 +129,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
 #[cfg(test)]
 mod test {
 
-    use crate::implementation::{
+    use crate::interface::{
         array_vector_space::ArrayVectorSpace, dense_matrix_operator::DenseMatrixOperator,
     };
 
@@ -153,7 +153,7 @@ mod test {
             mat[[index, index]] = rng.gen_range(1.0..=2.0);
         }
 
-        let op = DenseMatrixOperator::from(mat.view(), &space, &space);
+        let op = DenseMatrixOperator::new(mat.view(), &space, &space);
 
         let mut rhs = space.zero();
         rhs.view_mut().fill_from_equally_distributed(&mut rng);

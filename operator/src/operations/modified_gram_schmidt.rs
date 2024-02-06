@@ -50,7 +50,7 @@ mod test {
     use rlst_dense::{rlst_dynamic_array1, traits::RawAccess};
 
     use crate::space::frame::VectorFrame;
-    use crate::{implementation::array_vector_space::ArrayVectorSpace, LinearSpace};
+    use crate::{interface::array_vector_space::ArrayVectorSpace, LinearSpace};
 
     use super::*;
 
