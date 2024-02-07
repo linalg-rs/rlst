@@ -37,6 +37,20 @@ pub trait OperatorBase: Debug {
     {
         OperatorSum(self, other)
     }
+
+    /// Form a new operator self * other.
+    fn product<Op: OperatorBase<Range = Self::Domain>>(
+        self,
+        other: Op,
+    ) -> OperatorProduct<Self::Domain, Op, Self>
+    where
+        Self: Sized,
+    {
+        OperatorProduct {
+            op1: other,
+            op2: self,
+        }
+    }
 }
 
 /// Apply an operator as y -> alpha * Ax + beta y
@@ -198,11 +212,62 @@ impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
     }
 }
 
+/// The product op2 * op1.
+pub struct OperatorProduct<
+    Space: LinearSpace,
+    Op1: OperatorBase<Range = Space>,
+    Op2: OperatorBase<Domain = Space>,
+> {
+    op1: Op1,
+    op2: Op2,
+}
+
+impl<Space: LinearSpace, Op1: OperatorBase<Range = Space>, Op2: OperatorBase<Domain = Space>> Debug
+    for OperatorProduct<Space, Op1, Op2>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProductOperator")
+            .field("op1", &self.op1)
+            .field("op2", &self.op2)
+            .finish()
+    }
+}
+
+impl<Space: LinearSpace, Op1: OperatorBase<Range = Space>, Op2: OperatorBase<Domain = Space>>
+    OperatorBase for OperatorProduct<Space, Op1, Op2>
+{
+    type Domain = Op1::Domain;
+
+    type Range = Op2::Range;
+
+    fn domain(&self) -> &Self::Domain {
+        self.op1.domain()
+    }
+
+    fn range(&self) -> &Self::Range {
+        self.op2.range()
+    }
+}
+
+impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Space>> AsApply
+    for OperatorProduct<Space, Op1, Op2>
+{
+    fn apply_extended(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E,
+    ) -> RlstResult<()> {
+        self.op2.apply_extended(alpha, &self.op1.apply(x), beta, y)
+    }
+}
+
 #[cfg(test)]
 mod test {
 
     use crate::{
-        implementation::{
+        interface::{
             array_vector_space::ArrayVectorSpace, dense_matrix_operator::DenseMatrixOperator,
         },
         AsApply, Element, LinearSpace, OperatorBase,
@@ -220,8 +285,8 @@ mod test {
         mat1.fill_from_seed_equally_distributed(0);
         mat2.fill_from_seed_equally_distributed(1);
 
-        let op1 = DenseMatrixOperator::from(mat1, &domain, &range);
-        let op2 = DenseMatrixOperator::from(mat2, &domain, &range);
+        let op1 = DenseMatrixOperator::new(mat1, &domain, &range);
+        let op2 = DenseMatrixOperator::new(mat2, &domain, &range);
 
         let mut x = domain.zero();
         let mut y = range.zero();

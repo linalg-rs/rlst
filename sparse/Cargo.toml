@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rlst-operator = {path = "../operator"}
 rlst-common = {path = "../common"}
 rlst-dense = {path = "../dense"}
 mpi = { version="0.7.0", optional=true }
