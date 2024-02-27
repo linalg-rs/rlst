@@ -1,5 +1,7 @@
 //! Other operators that do not require special containers
 
+use std::ops::Add;
+
 use crate::array::operators::{addition::ArrayAddition, scalar_mult::ArrayScalarMult};
 use crate::array::*;
 use num::One;
@@ -10,11 +12,6 @@ impl<
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > std::ops::Sub<Array<Item, ArrayImpl2, NDIM>> for Array<Item, ArrayImpl1, NDIM>
-where
-    Item: std::ops::Mul<
-        Array<Item, ArrayImpl2, NDIM>,
-        Output = Array<Item, ArrayScalarMult<Item, ArrayImpl2, NDIM>, NDIM>,
-    >,
 {
     type Output = Array<
         Item,
@@ -23,7 +20,7 @@ where
     >;
     fn sub(self, rhs: Array<Item, ArrayImpl2, NDIM>) -> Self::Output {
         let minus_one = -<Item as One>::one();
-        let minus_rhs = minus_one * rhs;
-        self + minus_rhs
+        let minus_rhs = rhs.scalar_mul(minus_one);
+        self.add(minus_rhs)
     }
 }
