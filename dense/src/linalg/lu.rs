@@ -138,6 +138,9 @@ pub trait MatrixLuDecomposition: Sized {
         &self,
         arr: Array<Self::Item, ArrayImplMut, 2>,
     );
+
+    /// Compute the determinant of A.
+    fn det(&self) -> Self::Item;
 }
 
 /// Transposition modes for solving linear systems via LU decomposition.
@@ -427,6 +430,23 @@ macro_rules! impl_lu {
                     arr[[perm[col], col]] = <$scalar as One>::one();
                 }
             }
+
+            fn det(&self) -> Self::Item {
+                assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
+                let n = self.arr.shape()[0];
+
+                let mut det = <$scalar as One>::one();
+                for index in 0..n {
+                    det *= self.arr.get_value([index, index]).unwrap();
+                    // Every permutation changes the sign of the determinant.
+                    // Need to compare with 1 + index because ipiv is in Fortran numbering.
+                    if (1 + index) as i32 != self.ipiv[index] {
+                        det = -det;
+                    }
+                }
+
+                det
+            }
         }
     };
 }
@@ -440,6 +460,7 @@ impl_lu!(c32, cgetrf, cgetrs);
 mod test {
 
     use crate::assert_array_relative_eq;
+    use approx;
 
     use crate::rlst_dynamic_array1;
     use crate::rlst_dynamic_array2;
@@ -551,6 +572,20 @@ mod test {
 
                     assert_array_relative_eq!(res, arr, $tol)
                 }
+
+                #[test]
+                fn [<test_det_$scalar>]() {
+                    let dim = [2, 2];
+                    let mut arr = rlst_dynamic_array2!($scalar, dim);
+                    arr[[0, 1]] = $scalar::from_real(3.0);
+                    arr[[1, 0]] = $scalar::from_real(2.0);
+
+                    let det = LuDecomposition::<$scalar, _>::new(arr).unwrap().det();
+
+                    approx::assert_relative_eq!(det, $scalar::from_real(-6.0), epsilon=$tol);
+                }
+
+
 
             }
         };

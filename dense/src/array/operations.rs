@@ -244,6 +244,40 @@ where
                 }),
         )
     }
+
+    /// Return the length of a 1-dimensional vector.
+    pub fn len(&self) -> usize {
+        self.shape()[0]
+    }
+
+    /// Compute the cross product with vector `other` and store into `res`.
+    pub fn cross<
+        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImplRes: UnsafeRandomAccessByValue<1, Item = Item>
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + UnsafeRandomAccessByRef<1, Item = Item>
+            + Shape<1>,
+    >(
+        &self,
+        other: Array<Item, ArrayImplOther, 1>,
+        mut res: Array<Item, ArrayImplRes, 1>,
+    ) {
+        assert_eq!(self.len(), 3);
+        assert_eq!(other.len(), 3);
+        assert_eq!(res.len(), 3);
+
+        let a0 = self.get_value([0]).unwrap();
+        let a1 = self.get_value([1]).unwrap();
+        let a2 = self.get_value([2]).unwrap();
+
+        let b0 = other.get_value([0]).unwrap();
+        let b1 = other.get_value([1]).unwrap();
+        let b2 = other.get_value([2]).unwrap();
+
+        res[[0]] = a1 * b2 - a2 * a1;
+        res[[1]] = a2 * b0 - a0 * b2;
+        res[[2]] = a0 * b1 - a1 * b0;
+    }
 }
 
 impl<
