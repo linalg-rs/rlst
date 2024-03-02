@@ -12,6 +12,7 @@ Cargo.lock
 examples.sh
 
 .vscode
+.idea
 .*.swp
 
 *.pyc
