@@ -274,7 +274,7 @@ where
         let b1 = other.get_value([1]).unwrap();
         let b2 = other.get_value([2]).unwrap();
 
-        res[[0]] = a1 * b2 - a2 * a1;
+        res[[0]] = a1 * b2 - a2 * b1;
         res[[1]] = a2 * b0 - a0 * b2;
         res[[2]] = a0 * b1 - a1 * b0;
     }
