@@ -18,7 +18,7 @@ categories = ["mathematics", "science"]
 name = "rlst_dense"
 
 [dependencies]
-num = "0.4"
+num = {version = "0.4", features = ["serde", "rand"] }
 rand = "0.8"
 itertools = "0.12"
 rand_distr = "0.4"
