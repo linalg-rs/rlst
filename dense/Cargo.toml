@@ -25,7 +25,6 @@ itertools = "0.12"
 rand_distr = "0.4"
 rlst-blis = { path = "../blis" }
 approx = { version = "0.5", features = ["num-complex"] }
-rlst-common = { path = "../common" }
 paste = "1"
 rand_chacha = "0.3"
 rlst-blis-src = { path = "../blis-src" }

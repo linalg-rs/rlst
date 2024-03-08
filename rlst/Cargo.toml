@@ -19,7 +19,6 @@ name = "rlst"
 
 [dependencies]
 rlst-operator = {path = "../operator"}
-rlst-common = {path = "../common"}
 rlst-sparse = {path = "../sparse"}
 rlst-dense = { path = "../dense"}
 rlst-blis = { path = "../blis"}
