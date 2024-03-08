@@ -1,6 +1,6 @@
 //! Operations on arrays.
-use num::{Float, Zero};
-use rlst_common::types::RlstResult;
+use crate::types::RlstResult;
+use num::Zero;
 
 use crate::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
 
@@ -220,7 +220,7 @@ where
     pub fn norm_inf(self) -> <Item as Scalar>::Real {
         self.iter()
             .map(|elem| <Item as Scalar>::abs(elem))
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .reduce(<<Item as Scalar>::Real as num::Float>::max)
             .unwrap()
     }
 
@@ -323,7 +323,7 @@ impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<
     pub fn norm_inf(self) -> Item::Real {
         self.row_iter()
             .map(|row| row.norm_1())
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .reduce(<<Item as Scalar>::Real as num::Float>::max)
             .unwrap()
     }
 
@@ -331,7 +331,7 @@ impl<Item: Scalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<
     pub fn norm_1(self) -> Item::Real {
         self.col_iter()
             .map(|row| row.norm_1())
-            .reduce(<<Item as Scalar>::Real as Float>::max)
+            .reduce(<<Item as Scalar>::Real as num::Float>::max)
             .unwrap()
     }
 }

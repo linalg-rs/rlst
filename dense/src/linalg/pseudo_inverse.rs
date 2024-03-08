@@ -3,9 +3,9 @@
 use crate::array::Array;
 use crate::rlst_dynamic_array2;
 use crate::traits::*;
+use crate::types::{c32, c64, RlstResult, Scalar};
 use itertools::Itertools;
 use num::traits::{One, Zero};
-use rlst_common::types::{c32, c64, RlstResult, Scalar};
 
 use crate::linalg::svd::*;
 

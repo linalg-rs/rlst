@@ -2,7 +2,7 @@
 
 use approx::assert_relative_eq;
 use rlst::rlst_dynamic_array3;
-use rlst_common::types::*;
+use rlst_dense::types::*;
 use rlst_dense::{array::iterators::AsMultiIndex, layout::convert_1d_nd_from_shape};
 use rlst_dense::{assert_array_relative_eq, traits::*};
 

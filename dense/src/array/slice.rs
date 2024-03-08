@@ -208,10 +208,7 @@ where
     type Item = Item;
 
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         let nelements = self.shape().iter().product();
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {

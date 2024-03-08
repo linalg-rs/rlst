@@ -2,11 +2,11 @@
 
 use crate::tools::*;
 use crate::traits::*;
+use crate::types::Scalar;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::Standard;
 use rand_distr::StandardNormal;
-use rlst_common::types::Scalar;
 
 use super::Array;
 

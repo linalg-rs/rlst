@@ -1,5 +1,5 @@
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 
 use super::LinearSpace;
 

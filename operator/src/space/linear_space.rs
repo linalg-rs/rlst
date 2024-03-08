@@ -2,7 +2,7 @@
 
 use super::Element;
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 
 /// Definition of a linear space
 ///

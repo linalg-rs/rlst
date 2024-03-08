@@ -3,7 +3,7 @@
 //! An [IndexLayout] specified how degrees of freedom are distributed among processes.
 //! We always assume that a process has a contiguous set of degrees of freedom.
 
-use rlst_common::types::RlstResult;
+use rlst_dense::types::RlstResult;
 
 /// The Index Layout trait. It fully specifies how degrees of freedom are distributed
 /// among processes. Each process must hold a contiguous number of degrees of freedom (dofs).

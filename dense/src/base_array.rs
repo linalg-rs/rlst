@@ -9,7 +9,7 @@ use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
 use crate::traits::*;
-use rlst_common::types::Scalar;
+use crate::types::Scalar;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
 /// the shape of the array, and `stride` contains the `stride` of the underlying data.
@@ -111,10 +111,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const ND
     type Item = Item;
 
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         let nelements = self.shape().iter().product();
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {

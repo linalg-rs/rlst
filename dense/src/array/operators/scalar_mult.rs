@@ -1,7 +1,7 @@
 //! Container representing multiplication with a scalar
 
 use crate::array::*;
-use rlst_common::types::*;
+use crate::types::*;
 
 pub struct ArrayScalarMult<
     Item: Scalar,

@@ -3,11 +3,11 @@
 use std::ffi::c_void;
 
 use crate::sparse::csc_mat::CscMatrix;
-use rlst_common::types::Scalar;
-use rlst_common::types::*;
-use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::array::Array;
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
+use rlst_dense::types::Scalar;
+use rlst_dense::types::*;
+use rlst_dense::types::{RlstError, RlstResult};
 use rlst_umfpack as umfpack;
 
 use super::csr_mat::CsrMatrix;
@@ -47,7 +47,7 @@ impl UmfpackLu<f64> {
         rhs: Array<f64, ArrayImplRhs, 1>,
         mut x: Array<f64, ArrayImplX, 1>,
         trans: TransposeMode,
-    ) -> rlst_common::types::RlstResult<()> {
+    ) -> rlst_dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 
@@ -98,7 +98,7 @@ impl UmfpackLu<c64> {
         rhs: Array<c64, ArrayImplRhs, 1>,
         mut x: Array<c64, ArrayImplX, 1>,
         trans: TransposeMode,
-    ) -> rlst_common::types::RlstResult<()> {
+    ) -> rlst_dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 

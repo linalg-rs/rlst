@@ -1,14 +1,14 @@
 //! Definition of CSC matrices.
 
 use crate::sparse::SparseMatType;
-use rlst_common::types::RlstResult;
+use rlst_dense::types::RlstResult;
 
 use crate::sparse::csr_mat::CsrMatrix;
 use crate::sparse::tools::normalize_aij;
 use itertools::Itertools;
-use rlst_common::types::Scalar;
 use rlst_dense::traits::AijIterator;
 use rlst_dense::traits::Shape;
+use rlst_dense::types::Scalar;
 
 #[derive(Clone)]
 pub struct CscMatrix<Item: Scalar> {

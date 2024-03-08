@@ -3,8 +3,8 @@ use crate::traits::index_layout::IndexLayout;
 
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::*;
-use rlst_common::types::{RlstResult, Scalar};
 use rlst_dense::array::DynamicArray;
+use rlst_dense::types::{RlstResult, Scalar};
 use rlst_dense::{rlst_dynamic_array1, traits::*};
 
 use crate::index_layout::DefaultMpiIndexLayout;

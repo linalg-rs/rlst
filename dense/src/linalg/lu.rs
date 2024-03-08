@@ -2,9 +2,9 @@
 use super::assert_lapack_stride;
 use crate::array::Array;
 use crate::traits::*;
+use crate::types::*;
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
-use rlst_common::types::*;
 
 /// Compute the LU decomposition of a matrix.
 ///

@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 
 use crate::space::*;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 use rlst_dense::{
     array::{
         views::{ArrayView, ArrayViewMut},

@@ -8,8 +8,8 @@ pub use crate::linalg::{
 };
 pub use accessors::*;
 
-use rlst_blis::interface::types::TransMode;
-use rlst_common::types::*;
+use crate::types::TransMode;
+use crate::types::*;
 
 /// Return the shape of the object.
 pub trait Shape<const NDIM: usize> {

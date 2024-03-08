@@ -5,7 +5,7 @@ use std::os::raw::c_void;
 use mpi::topology::SimpleCommunicator;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence, FromRaw};
 use mpi_sys;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 
 use crate::traits::index_layout::IndexLayout;
 

@@ -1,6 +1,6 @@
 use crate::{space::*, AsApply, OperatorBase};
-use rlst_common::types::Scalar;
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape};
+use rlst_dense::types::Scalar;
 use rlst_sparse::sparse::csc_mat::CscMatrix;
 use rlst_sparse::sparse::csr_mat::CsrMatrix;
 
@@ -59,7 +59,7 @@ impl<Item: Scalar> AsApply for CsrMatrixOperator<'_, Item> {
         x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
         y: &mut <Self::Range as LinearSpace>::E,
-    ) -> rlst_common::types::RlstResult<()> {
+    ) -> rlst_dense::types::RlstResult<()> {
         self.csr_mat
             .matmul(alpha, x.view().data(), beta, y.view_mut().data_mut());
         Ok(())
@@ -119,7 +119,7 @@ impl<Item: Scalar> AsApply for CscMatrixOperator<'_, Item> {
         x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
         y: &mut <Self::Range as LinearSpace>::E,
-    ) -> rlst_common::types::RlstResult<()> {
+    ) -> rlst_dense::types::RlstResult<()> {
         self.csc_mat
             .matmul(alpha, x.view().data(), beta, y.view_mut().data_mut());
         Ok(())

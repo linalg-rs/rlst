@@ -1,7 +1,7 @@
 //! An indexable vector is the standard type for n-dimensional containers
 
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 
 pub trait IndexableVector {
     type Item: Scalar;
@@ -61,7 +61,7 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
 /// Inner product with another object.
 pub trait Inner: IndexableVector {
-    fn inner(&self, other: &Self) -> rlst_common::types::RlstResult<Self::Item>;
+    fn inner(&self, other: &Self) -> rlst_dense::types::RlstResult<Self::Item>;
 }
 
 /// Take the sum of the squares of the absolute values of the entries.
@@ -86,12 +86,12 @@ pub trait NormInfty: IndexableVector {
 
 /// Swap entries with another vector.
 pub trait Swap: IndexableVector {
-    fn swap(&mut self, other: &mut Self) -> rlst_common::types::RlstResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_dense::types::RlstResult<()>;
 }
 
 /// Fill vector by copying from another vector.
 pub trait Fill: IndexableVector {
-    fn fill(&mut self, other: &Self) -> rlst_common::types::RlstResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_dense::types::RlstResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -105,5 +105,5 @@ pub trait MultSumInto: IndexableVector {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_common::types::RlstResult<()>;
+    ) -> rlst_dense::types::RlstResult<()>;
 }

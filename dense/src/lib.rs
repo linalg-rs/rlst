@@ -13,6 +13,8 @@ pub mod tools;
 pub mod traits;
 
 pub mod array;
+pub mod gemm;
 pub mod layout;
 pub mod macros;
 pub mod matrix_multiply;
+pub mod types;

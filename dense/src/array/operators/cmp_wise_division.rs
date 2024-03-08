@@ -62,10 +62,7 @@ impl<
 {
     type Item = Item;
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         if let (Some(mut chunk1), Some(chunk2)) = (
             self.operator1.get_chunk(chunk_index),
             self.operator2.get_chunk(chunk_index),

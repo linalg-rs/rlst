@@ -10,8 +10,8 @@
 //! - [SliceContainerMut] - Like [SliceContainer] but provides also mutable access.
 //!
 
+use crate::types::Scalar;
 use num::Zero;
-use rlst_common::types::Scalar;
 
 /// Defines the basic behaviour of a data container.
 pub trait DataContainer {

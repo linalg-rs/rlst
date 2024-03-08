@@ -3,9 +3,9 @@
 //!
 use crate::array::Array;
 use crate::traits::*;
+use crate::types::{c32, c64, RlstError, RlstResult, Scalar};
 use lapack::{cgetrf, cgetri, dgetrf, dgetri, sgetrf, sgetri, zgetrf, zgetri};
 use num::traits::Zero;
-use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
 

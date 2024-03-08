@@ -9,8 +9,8 @@ use crate::data_container::SliceContainer;
 use crate::data_container::SliceContainerMut;
 use crate::data_container::VectorContainer;
 use crate::traits::*;
-use rlst_common::types::DataChunk;
-use rlst_common::types::Scalar;
+use crate::types::DataChunk;
+use crate::types::Scalar;
 
 pub mod empty_axis;
 pub mod iterators;
@@ -97,10 +97,7 @@ impl<
 {
     type Item = Item;
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         self.0.get_chunk(chunk_index)
     }
 }

@@ -5,10 +5,10 @@
 //! files must use the `general` property. To write out matrices the functions [write_array_mm] and
 //! [write_coordinate_mm] are provided.
 
-use rlst_common::types::Scalar;
-use rlst_common::types::{RlstError, RlstResult};
 use rlst_dense::array::DynamicArray;
 use rlst_dense::traits::RawAccessMut;
+use rlst_dense::types::Scalar;
+use rlst_dense::types::{RlstError, RlstResult};
 use rlst_sparse::sparse::csr_mat::CsrMatrix;
 use std::fs::File;
 use std::io::Write;
@@ -52,11 +52,11 @@ impl MmIdentifier for f64 {
     const MMTYPE: &'static str = "real";
 }
 
-impl MmIdentifier for rlst_common::types::c32 {
+impl MmIdentifier for rlst_dense::types::c32 {
     const MMTYPE: &'static str = "complex";
 }
 
-impl MmIdentifier for rlst_common::types::c64 {
+impl MmIdentifier for rlst_dense::types::c64 {
     const MMTYPE: &'static str = "complex";
 }
 

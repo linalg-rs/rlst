@@ -2,7 +2,7 @@
 
 use crate::array::*;
 use crate::layout::convert_1d_nd_from_shape;
-use rlst_common::types::Scalar;
+use crate::types::Scalar;
 
 use super::slice::ArraySlice;
 

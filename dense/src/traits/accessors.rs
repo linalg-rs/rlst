@@ -17,7 +17,7 @@
 //! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
 use crate::traits::Shape;
-use rlst_common::types::{DataChunk, Scalar};
+use crate::types::{DataChunk, Scalar};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize> {

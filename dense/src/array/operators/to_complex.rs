@@ -1,6 +1,6 @@
 //! Container representing multiplication with a scalar
 
-use rlst_common::types::{c32, c64};
+use crate::types::{c32, c64};
 use std::marker::PhantomData;
 
 use crate::array::*;

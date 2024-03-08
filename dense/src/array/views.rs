@@ -7,7 +7,7 @@ use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
 use crate::traits::*;
-use rlst_common::types::*;
+use crate::types::*;
 
 /// Basic structure for a `View`
 pub struct ArrayView<
@@ -139,10 +139,7 @@ impl<
     > ChunkedAccess<N> for ArrayView<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
     }
 }
@@ -259,10 +256,7 @@ impl<
     > ChunkedAccess<N> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
     }
 }
@@ -421,10 +415,7 @@ impl<
 {
     type Item = Item;
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         if self.offset == [0; NDIM] && self.shape() == self.arr.shape() {
             // If the view is on the full array we can just pass on the chunk request
             self.arr.get_chunk(chunk_index)

@@ -11,9 +11,9 @@ use crate::traits::index_layout::IndexLayout;
 use crate::distributed_vector::DistributedVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
-use rlst_common::types::Scalar;
 use rlst_dense::traits::Shape;
 use rlst_dense::traits::{RawAccess, RawAccessMut};
+use rlst_dense::types::Scalar;
 
 pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,

@@ -2,7 +2,7 @@ use crate::ElementType;
 use crate::InnerProductSpace;
 
 use super::LinearSpace;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 
 pub trait NormedSpace: LinearSpace {
     /// Norm of a vector.

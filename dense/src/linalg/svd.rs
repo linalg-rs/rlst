@@ -1,9 +1,9 @@
 //! Singular Value Decomposition.
 use crate::array::Array;
 use crate::traits::*;
+use crate::types::{c32, c64, RlstError, RlstResult, Scalar};
 use lapack::{cgesvd, dgesvd, sgesvd, zgesvd};
 use num::traits::Zero;
-use rlst_common::types::{c32, c64, RlstError, RlstResult, Scalar};
 
 use super::assert_lapack_stride;
 

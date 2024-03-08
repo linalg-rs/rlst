@@ -1,7 +1,7 @@
 //! Gram Schmidt orthogonalization
 use crate::{frame::Frame, Element, InnerProductSpace, NormedSpace};
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::Scalar;
 use rlst_dense::{
     array::DynamicArray,
     traits::{RandomAccessMut, Shape},
@@ -45,8 +45,8 @@ mod test {
 
     use approx::{assert_abs_diff_eq, assert_relative_eq};
     use num::Zero;
-    use rlst_common::types::c64;
     use rlst_dense::rlst_dynamic_array2;
+    use rlst_dense::types::c64;
     use rlst_dense::{rlst_dynamic_array1, traits::RawAccess};
 
     use crate::space::frame::VectorFrame;

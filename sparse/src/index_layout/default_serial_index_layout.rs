@@ -1,5 +1,5 @@
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::{RlstError, RlstResult};
+use rlst_dense::types::{RlstError, RlstResult};
 
 pub struct DefaultSerialIndexLayout {
     size: usize,
