@@ -58,6 +58,10 @@ pub use num::complex::Complex64 as c64;
 
 use crate::gemm::Gemm;
 
+// The following RlstScalar trait and is implementation for f32, f64, c32, c64
+// is a modifed version of the Scalar trait from the Rust Cauchy package
+// (https://github.com/rust-math/cauchy), which is MIT licensed. For the full license text see
+// https://github.com/rust-math/cauchy/blob/master/LICENSE.
 pub trait RlstScalar:
     NumAssign
     + FromPrimitive
