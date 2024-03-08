@@ -21,7 +21,6 @@ rlst-umfpack = { path = "../umfpack"}
 [dev-dependencies]
 cauchy = "0.4"
 float_eq = { version = "1", features = ["num"] }
-rlst-io = { path = "../io"}
 rand_chacha = "0.3"
 
 [lib]
