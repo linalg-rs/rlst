@@ -1,17 +1,17 @@
 //! Definition of CSR matrices.
 
 use crate::sparse::SparseMatType;
-use rlst_common::types::RlstResult;
 use rlst_dense::traits::AijIterator;
+use rlst_dense::types::RlstResult;
 
 use crate::sparse::tools::normalize_aij;
-use rlst_common::types::Scalar;
 use rlst_dense::traits::Shape;
+use rlst_dense::types::RlstScalar;
 
 use super::csc_mat::CscMatrix;
 
 #[derive(Clone)]
-pub struct CsrMatrix<T: Scalar> {
+pub struct CsrMatrix<T: RlstScalar> {
     mat_type: SparseMatType,
     shape: [usize; 2],
     indices: Vec<usize>,
@@ -19,7 +19,7 @@ pub struct CsrMatrix<T: Scalar> {
     data: Vec<T>,
 }
 
-impl<Item: Scalar> CsrMatrix<Item> {
+impl<Item: RlstScalar> CsrMatrix<Item> {
     pub fn new(
         shape: [usize; 2],
         indices: Vec<usize>,
@@ -130,13 +130,13 @@ impl<Item: Scalar> CsrMatrix<Item> {
     }
 }
 
-pub struct CsrAijIterator<'a, Item: Scalar> {
+pub struct CsrAijIterator<'a, Item: RlstScalar> {
     mat: &'a CsrMatrix<Item>,
     row: usize,
     pos: usize,
 }
 
-impl<'a, Item: Scalar> CsrAijIterator<'a, Item> {
+impl<'a, Item: RlstScalar> CsrAijIterator<'a, Item> {
     pub fn new(mat: &'a CsrMatrix<Item>) -> Self {
         // We need to move the row pointer to the first row that has at least one element.
 
@@ -150,7 +150,7 @@ impl<'a, Item: Scalar> CsrAijIterator<'a, Item> {
     }
 }
 
-impl<'a, Item: Scalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
+impl<'a, Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
     type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -182,7 +182,7 @@ impl<'a, Item: Scalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
     }
 }
 
-impl<Item: Scalar> AijIterator for CsrMatrix<Item> {
+impl<Item: RlstScalar> AijIterator for CsrMatrix<Item> {
     type Item = Item;
     type Iter<'a> = CsrAijIterator<'a, Item> where Self: 'a;
 
@@ -191,7 +191,7 @@ impl<Item: Scalar> AijIterator for CsrMatrix<Item> {
     }
 }
 
-impl<Item: Scalar> Shape<2> for CsrMatrix<Item> {
+impl<Item: RlstScalar> Shape<2> for CsrMatrix<Item> {
     fn shape(&self) -> [usize; 2] {
         self.shape
     }

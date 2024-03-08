@@ -1,10 +1,10 @@
 //! An indexable vector is the standard type for n-dimensional containers
 
 use crate::traits::index_layout::IndexLayout;
-use rlst_common::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 pub trait IndexableVector {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type Ind: IndexLayout;
 
     type View<'a>: IndexableVectorView
@@ -21,7 +21,7 @@ pub trait IndexableVector {
 }
 
 pub trait IndexableVectorView {
-    type T: Scalar;
+    type T: RlstScalar;
     type Iter<'a>: std::iter::Iterator<Item = &'a Self::T>
     where
         Self: 'a;
@@ -61,37 +61,37 @@ pub trait IndexableVectorViewMut: IndexableVectorView {
 
 /// Inner product with another object.
 pub trait Inner: IndexableVector {
-    fn inner(&self, other: &Self) -> rlst_common::types::RlstResult<Self::Item>;
+    fn inner(&self, other: &Self) -> rlst_dense::types::RlstResult<Self::Item>;
 }
 
 /// Take the sum of the squares of the absolute values of the entries.
 pub trait AbsSquareSum: IndexableVector {
-    fn abs_square_sum(&self) -> <Self::Item as Scalar>::Real;
+    fn abs_square_sum(&self) -> <Self::Item as RlstScalar>::Real;
 }
 
 /// Return the 1-Norm (Sum of absolute values of the entries).
 pub trait Norm1: IndexableVector {
-    fn norm_1(&self) -> <Self::Item as Scalar>::Real;
+    fn norm_1(&self) -> <Self::Item as RlstScalar>::Real;
 }
 
 /// Return the 2-Norm (Sqrt of the sum of squares).
 pub trait Norm2: IndexableVector {
-    fn norm_2(&self) -> <Self::Item as Scalar>::Real;
+    fn norm_2(&self) -> <Self::Item as RlstScalar>::Real;
 }
 
 /// Return the supremum norm (largest absolute value of the entries).
 pub trait NormInfty: IndexableVector {
-    fn norm_infty(&self) -> <Self::Item as Scalar>::Real;
+    fn norm_infty(&self) -> <Self::Item as RlstScalar>::Real;
 }
 
 /// Swap entries with another vector.
 pub trait Swap: IndexableVector {
-    fn swap(&mut self, other: &mut Self) -> rlst_common::types::RlstResult<()>;
+    fn swap(&mut self, other: &mut Self) -> rlst_dense::types::RlstResult<()>;
 }
 
 /// Fill vector by copying from another vector.
 pub trait Fill: IndexableVector {
-    fn fill(&mut self, other: &Self) -> rlst_common::types::RlstResult<()>;
+    fn fill(&mut self, other: &Self) -> rlst_dense::types::RlstResult<()>;
 }
 
 /// Multiply entries with a scalar.
@@ -105,5 +105,5 @@ pub trait MultSumInto: IndexableVector {
         &mut self,
         other: &Self,
         scalar: Self::Item,
-    ) -> rlst_common::types::RlstResult<()>;
+    ) -> rlst_dense::types::RlstResult<()>;
 }

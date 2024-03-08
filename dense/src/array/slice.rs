@@ -9,7 +9,7 @@ use super::*;
 
 /// Generic structure to store Array slices.
 pub struct ArraySlice<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
     const ADIM: usize,
     const NDIM: usize,
@@ -26,7 +26,7 @@ pub struct ArraySlice<
 // Implementation of ArraySlice
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -58,7 +58,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -77,7 +77,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>,
@@ -98,7 +98,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -120,7 +120,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccess<Item = Item>
@@ -143,7 +143,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -165,7 +165,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
     > Array<Item, ArrayImpl, ADIM>
@@ -195,7 +195,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -208,10 +208,7 @@ where
     type Item = Item;
 
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         let nelements = self.shape().iter().product();
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {
@@ -230,7 +227,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>
@@ -252,7 +249,7 @@ where
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccessMut<Item = Item>

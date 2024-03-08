@@ -12,7 +12,6 @@ edition = "2021"
 rlst-blis-src = { path = "../blis-src" }
 num_cpus = "1"
 num = "0.4"
-cauchy = "0.4"
 
 [lib]
 name = "rlst_blis"

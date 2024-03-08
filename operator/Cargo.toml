@@ -9,12 +9,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rlst-common = {path = "../common"}
 rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
 rlst-blis = {path = "../blis"}
 num = "0.4"
-cauchy = "0.4"
 thiserror = "1.0.40"
 
 [dev-dependencies]

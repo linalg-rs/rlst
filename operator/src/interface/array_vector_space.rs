@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 
 use crate::space::*;
-use rlst_common::types::Scalar;
+use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::{
         views::{ArrayView, ArrayViewMut},
@@ -14,16 +14,16 @@ use rlst_dense::{
     rlst_dynamic_array1,
 };
 
-pub struct ArrayVectorSpace<Item: Scalar> {
+pub struct ArrayVectorSpace<Item: RlstScalar> {
     dimension: usize,
     _marker: PhantomData<Item>,
 }
 
-pub struct ArrayVectorSpaceElement<Item: Scalar> {
+pub struct ArrayVectorSpaceElement<Item: RlstScalar> {
     elem: DynamicArray<Item, 1>,
 }
 
-impl<Item: Scalar> ArrayVectorSpaceElement<Item> {
+impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
     pub fn new(space: &ArrayVectorSpace<Item>) -> Self {
         Self {
             elem: rlst_dynamic_array1!(Item, [space.dimension()]),
@@ -31,7 +31,7 @@ impl<Item: Scalar> ArrayVectorSpaceElement<Item> {
     }
 }
 
-impl<Item: Scalar> ArrayVectorSpace<Item> {
+impl<Item: RlstScalar> ArrayVectorSpace<Item> {
     pub fn new(dimension: usize) -> Self {
         Self {
             dimension,
@@ -40,13 +40,13 @@ impl<Item: Scalar> ArrayVectorSpace<Item> {
     }
 }
 
-impl<Item: Scalar> IndexableSpace for ArrayVectorSpace<Item> {
+impl<Item: RlstScalar> IndexableSpace for ArrayVectorSpace<Item> {
     fn dimension(&self) -> usize {
         self.dimension
     }
 }
 
-impl<Item: Scalar> LinearSpace for ArrayVectorSpace<Item> {
+impl<Item: RlstScalar> LinearSpace for ArrayVectorSpace<Item> {
     type E = ArrayVectorSpaceElement<Item>;
 
     type F = Item;
@@ -56,13 +56,13 @@ impl<Item: Scalar> LinearSpace for ArrayVectorSpace<Item> {
     }
 }
 
-impl<Item: Scalar> InnerProductSpace for ArrayVectorSpace<Item> {
+impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
     fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F {
         x.view().inner(other.view())
     }
 }
 
-impl<Item: Scalar> Element for ArrayVectorSpaceElement<Item> {
+impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 

@@ -6,8 +6,8 @@ use crate::traits::*;
 use itertools::Itertools;
 use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 
+use crate::types::*;
 use num::Zero;
-use rlst_common::types::*;
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
@@ -25,7 +25,7 @@ pub enum ApplyQSide {
 /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
 /// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
 pub trait MatrixQrDecomposition: Sized {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
         + RawAccessMut<Item = Self::Item>
@@ -110,7 +110,7 @@ pub enum ApplyQTrans {
 }
 
 pub struct QrDecomposition<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,
@@ -412,7 +412,8 @@ macro_rules! implement_qr_complex {
                 let mut jpvt = vec![0 as i32; n as usize];
                 let mut tau = vec![<$scalar as Zero>::zero(); k];
 
-                let mut rwork = vec![<<$scalar as Scalar>::Real as Zero>::zero(); 2 * n as usize];
+                let mut rwork =
+                    vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 2 * n as usize];
 
                 let mut work_query = [<$scalar as Zero>::zero()];
                 let lwork = -1;
@@ -660,7 +661,6 @@ implement_qr_complex!(c32, cgeqp3, cunmqr);
 mod test {
 
     use crate::{assert_array_abs_diff_eq, assert_array_relative_eq, traits::*};
-    use rlst_common::types::*;
 
     use crate::array::empty_array;
     use crate::rlst_dynamic_array2;
@@ -703,8 +703,8 @@ mod test {
                 assert_array_relative_eq!(actual, mat2, $tol);
 
                 let qtq = empty_array::<$scalar, 2>().mult_into_resize(
-                    rlst_blis::interface::types::TransMode::ConjTrans,
-                    rlst_blis::interface::types::TransMode::NoTrans,
+                    crate::types::TransMode::ConjTrans,
+                    crate::types::TransMode::NoTrans,
                     1.0.into(),
                     q_mat.view(),
                     q_mat.view(),
@@ -745,8 +745,8 @@ mod test {
                 assert_array_relative_eq!(actual, mat2, $tol);
 
                 let qtq = empty_array::<$scalar, 2>().mult_into_resize(
-                    rlst_blis::interface::types::TransMode::ConjTrans,
-                    rlst_blis::interface::types::TransMode::NoTrans,
+                    crate::types::TransMode::ConjTrans,
+                    crate::types::TransMode::NoTrans,
                     1.0.into(),
                     q_mat.view(),
                     q_mat.view(),

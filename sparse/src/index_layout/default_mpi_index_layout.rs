@@ -1,6 +1,6 @@
 use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_common::types::RlstResult;
+use rlst_dense::types::RlstResult;
 
 pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
     size: usize,
@@ -89,7 +89,7 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
         if rank < self.comm.size() as usize {
             Ok((self.counts[rank], self.counts[1 + rank]))
         } else {
-            Err(rlst_common::types::RlstError::MpiRankError(rank as i32))
+            Err(rlst_dense::types::RlstError::MpiRankError(rank as i32))
         }
     }
 

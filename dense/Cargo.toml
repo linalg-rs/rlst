@@ -18,19 +18,20 @@ categories = ["mathematics", "science"]
 name = "rlst_dense"
 
 [dependencies]
-num = "0.4"
-cauchy = "0.4"
+num = {version = "0.4", features = ["serde", "rand"] }
 rand = "0.8"
 itertools = "0.12"
 rand_distr = "0.4"
 rlst-blis = { path = "../blis" }
 approx = { version = "0.5", features = ["num-complex"] }
-rlst-common = { path = "../common" }
 paste = "1"
 rand_chacha = "0.3"
 rlst-blis-src = { path = "../blis-src" }
 rlst-netlib-lapack-src = { path = "../netlib-lapack-src" }
 lapack = "0.19.*"
+thiserror = "1.0.40"
+serde = "1.*"
+
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

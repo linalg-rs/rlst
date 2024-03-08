@@ -11,11 +11,11 @@ use crate::traits::index_layout::IndexLayout;
 use crate::distributed_vector::DistributedVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
-use rlst_common::types::Scalar;
 use rlst_dense::traits::Shape;
 use rlst_dense::traits::{RawAccess, RawAccessMut};
+use rlst_dense::types::RlstScalar;
 
-pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
+pub struct MpiCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
     shape: [usize; 2],
     local_matrix: CsrMatrix<T>,
@@ -26,7 +26,7 @@ pub struct MpiCsrMatrix<'a, T: Scalar + Equivalence, C: Communicator> {
     domain_ghosts: crate::ghost_communicator::GhostCommunicator,
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
+impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     pub fn new(
         shape: [usize; 2],
         indices: Vec<usize>,
@@ -283,7 +283,7 @@ impl<'a, T: Scalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     }
 }
 
-impl<'a, T: Scalar + Equivalence, C: Communicator> Shape<2> for MpiCsrMatrix<'a, T, C> {
+impl<'a, T: RlstScalar + Equivalence, C: Communicator> Shape<2> for MpiCsrMatrix<'a, T, C> {
     fn shape(&self) -> [usize; 2] {
         self.shape
     }

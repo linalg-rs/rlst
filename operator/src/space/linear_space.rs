@@ -2,7 +2,7 @@
 
 use super::Element;
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 /// Definition of a linear space
 ///
@@ -10,7 +10,7 @@ use rlst_common::types::Scalar;
 /// elements of the space.
 pub trait LinearSpace {
     /// Field Type.
-    type F: Scalar;
+    type F: RlstScalar;
 
     /// Type associated with elements of the space.
     type E: Element<F = Self::F>;

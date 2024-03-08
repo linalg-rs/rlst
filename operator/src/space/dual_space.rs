@@ -1,5 +1,5 @@
 use super::{ElementView, LinearSpace};
-use rlst_common::types::RlstResult;
+use rlst_dense::types::RlstResult;
 
 pub trait DualSpace: LinearSpace {
     type Space: LinearSpace<F = Self::F>;

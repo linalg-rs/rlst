@@ -1,14 +1,14 @@
 //! Implementation of array multiplication.
 
+use crate::gemm::Gemm;
 use crate::traits::MultInto;
 use crate::traits::MultIntoResize;
-use rlst_blis::interface::gemm::Gemm;
-pub use rlst_blis::interface::types::TransMode;
+pub use crate::types::TransMode;
 
 use super::{empty_axis::AxisPosition, *};
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + UnsafeRandomAccessMut<2, Item = Item>
             + Shape<2>
@@ -38,7 +38,7 @@ impl<
 }
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
             + UnsafeRandomAccessMut<1, Item = Item>
             + Shape<1>
@@ -77,7 +77,7 @@ impl<
 }
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
             + UnsafeRandomAccessMut<1, Item = Item>
             + Shape<1>
@@ -118,7 +118,7 @@ impl<
 /// MultIntoResize
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + UnsafeRandomAccessMut<2, Item = Item>
             + Shape<2>
@@ -157,7 +157,7 @@ impl<
 }
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
             + UnsafeRandomAccessMut<1, Item = Item>
             + Shape<1>
@@ -205,7 +205,7 @@ impl<
 }
 
 impl<
-        Item: Scalar + Gemm,
+        Item: RlstScalar + Gemm,
         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
             + UnsafeRandomAccessMut<1, Item = Item>
             + Shape<1>

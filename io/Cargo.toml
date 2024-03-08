@@ -19,14 +19,12 @@ name = "rlst_io"
 
 [dependencies]
 num = "0.4"
-cauchy = "0.4"
 ndarray = "0.15"
 rand = "0.8"
 itertools = "0.12"
 rand_distr = "0.4"
 matrixmultiply = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
-rlst-common = {path = "../common"}
 rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
 

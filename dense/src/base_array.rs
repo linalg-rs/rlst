@@ -9,17 +9,17 @@ use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
 use crate::traits::*;
-use rlst_common::types::Scalar;
+use crate::types::RlstScalar;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
 /// the shape of the array, and `stride` contains the `stride` of the underlying data.
-pub struct BaseArray<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
+pub struct BaseArray<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],
     stride: [usize; NDIM],
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     BaseArray<Item, Data, NDIM>
 {
     pub fn new(data: Data, shape: [usize; NDIM]) -> Self {
@@ -58,7 +58,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<NDIM>
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<NDIM>
     for BaseArray<Item, Data, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
@@ -66,7 +66,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<ND
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessByRef<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -79,7 +79,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessByValue<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -92,7 +92,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessMut<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -105,16 +105,13 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
+impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
     ChunkedAccess<N> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
 
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         let nelements = self.shape().iter().product();
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {
@@ -132,7 +129,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const N: usize, const ND
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
     for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -142,7 +139,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawAcces
     }
 }
 
-impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
+impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
     for BaseArray<Item, Data, NDIM>
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
@@ -150,7 +147,7 @@ impl<Item: Scalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAc
     }
 }
 
-impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
+impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
     for BaseArray<Item, Data, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
@@ -158,7 +155,7 @@ impl<Item: Scalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<N
     }
 }
 
-impl<Item: Scalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
+impl<Item: RlstScalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
     ResizeInPlace<NDIM> for BaseArray<Item, Data, NDIM>
 {
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {

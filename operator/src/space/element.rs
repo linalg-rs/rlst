@@ -1,5 +1,5 @@
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 use super::LinearSpace;
 
@@ -9,7 +9,7 @@ pub trait Element {
 
     type Space: LinearSpace<F = Self::F, E = Self>;
 
-    type F: Scalar;
+    type F: RlstScalar;
 
     type View<'b>
     where

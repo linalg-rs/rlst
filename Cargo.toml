@@ -5,7 +5,6 @@ members = [
   "dense",
   "operator",
   "sparse",
-  "common",
   "io",
   "suitesparse-src",
   "blis-src",

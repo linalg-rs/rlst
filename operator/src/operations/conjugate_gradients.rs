@@ -1,7 +1,7 @@
 //! Arnoldi Iteration
 use crate::{AsApply, Element, InnerProductSpace, LinearSpace, NormedSpace};
 use num::One;
-use rlst_common::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>> {
     operator: &'a Op,
@@ -9,7 +9,7 @@ pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space,
     rhs: &'a Space::E,
     x: Space::E,
     max_iter: usize,
-    tol: <Space::F as Scalar>::Real,
+    tol: <Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
     callable: Option<Box<dyn FnMut(&<Space as LinearSpace>::E, &<Space as LinearSpace>::E) + 'a>>,
     print_debug: bool,
@@ -25,7 +25,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
             rhs,
             x: op.domain().zero(),
             max_iter: 1000,
-            tol: num::cast::<f64, <Space::F as Scalar>::Real>(1E-6).unwrap(),
+            tol: num::cast::<f64, <Space::F as RlstScalar>::Real>(1E-6).unwrap(),
             callable: None,
             print_debug: false,
         }
@@ -36,7 +36,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         self
     }
 
-    pub fn set_tol(mut self, tol: <Space::F as Scalar>::Real) -> Self {
+    pub fn set_tol(mut self, tol: <Space::F as RlstScalar>::Real) -> Self {
         self.tol = tol;
         self
     }
@@ -56,15 +56,15 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         self
     }
 
-    pub fn run(mut self) -> (Space::E, <Space::F as Scalar>::Real) {
-        fn print_success<T: Scalar>(it_count: usize, rel_res: T) {
+    pub fn run(mut self) -> (Space::E, <Space::F as RlstScalar>::Real) {
+        fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
                 "CG converged in {} iterations with relative residual {:+E}.",
                 it_count, rel_res
             );
         }
 
-        fn print_fail<T: Scalar>(it_count: usize, rel_res: T) {
+        fn print_fail<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
                 "CG did not converge in {} iterations. Final relative residual is {:+E}.",
                 it_count, rel_res

@@ -2,10 +2,23 @@
 use super::types::TransMode;
 use crate::interface::assert_data_size;
 use crate::raw;
-use cauchy::{c32, c64, Scalar};
+use cauchy::{c32, c64};
 
-/// Safe interface to using the Blis Gemm routine.
-///
+/// Transposition Mode.
+#[derive(Clone, Copy, PartialEq)]
+#[repr(u32)]
+
+pub enum TransMode {
+    /// Complex conjugate of matrix.
+    ConjNoTrans,
+    /// No modification of matrix.
+    NoTrans,
+    /// Transposition of matrix.
+    Trans,
+    /// Conjugate transpose of matrix.
+    ConjTrans,
+}
+
 /// Performs the matrix multiplication `C = alpha * A * B + beta * C`.
 /// # Arguments
 ///
@@ -25,7 +38,7 @@ use cauchy::{c32, c64, Scalar};
 /// - `c` - Reference to data of C.
 /// - `rsc` - Row stride of C.
 /// - `csc` - Column stride of C.
-pub trait Gemm: Scalar {
+pub trait Gemm: Sized {
     #[allow(clippy::too_many_arguments)]
     fn gemm(
         transa: TransMode,

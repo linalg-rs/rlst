@@ -7,12 +7,12 @@ use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
 use crate::traits::*;
-use rlst_common::types::*;
+use crate::types::*;
 
 /// Basic structure for a `View`
 pub struct ArrayView<
     'a,
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -21,7 +21,7 @@ pub struct ArrayView<
 
 pub struct ArrayViewMut<
     'a,
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
         + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -32,7 +32,7 @@ pub struct ArrayViewMut<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayView<'a, Item, ArrayImpl, NDIM>
@@ -44,7 +44,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -61,7 +61,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
@@ -73,7 +73,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
     > Stride<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
@@ -85,7 +85,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + RawAccess<Item = Item>
@@ -102,7 +102,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayView<'a, Item, ArrayImpl, NDIM>
@@ -116,7 +116,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -132,17 +132,14 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayView<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
     }
 }
@@ -152,7 +149,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -166,7 +163,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + Stride<NDIM>
@@ -181,7 +178,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + RawAccess<Item = Item>
@@ -199,7 +196,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + RawAccess<Item = Item>
@@ -216,7 +213,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -232,7 +229,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
@@ -249,7 +246,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + ChunkedAccess<N, Item = Item>
@@ -259,17 +256,14 @@ impl<
     > ChunkedAccess<N> for ArrayViewMut<'a, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
     }
 }
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
@@ -286,7 +280,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
@@ -303,7 +297,7 @@ impl<
 
 ////////////////////////////////////////////
 pub struct ArraySubView<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -313,7 +307,7 @@ pub struct ArraySubView<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArraySubView<Item, ArrayImpl, NDIM>
@@ -340,7 +334,7 @@ impl<
 // Basic traits for ArraySubView
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -351,7 +345,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
     > Stride<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -362,7 +356,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + RawAccess<Item = Item>
@@ -381,7 +375,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -396,7 +390,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -413,7 +407,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -421,10 +415,7 @@ impl<
 {
     type Item = Item;
     #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<rlst_common::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(&self, chunk_index: usize) -> Option<crate::types::DataChunk<Self::Item, N>> {
         if self.offset == [0; NDIM] && self.shape() == self.arr.shape() {
             // If the view is on the full array we can just pass on the chunk request
             self.arr.get_chunk(chunk_index)
@@ -451,7 +442,7 @@ impl<
 // Basic traits for ArrayViewMut
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -469,7 +460,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -486,7 +477,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -502,7 +493,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -514,7 +505,7 @@ impl<
 }
 
 impl<
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
