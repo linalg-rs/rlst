@@ -19,7 +19,6 @@ name = "rlst_io"
 
 [dependencies]
 num = "0.4"
-cauchy = "0.4"
 ndarray = "0.15"
 rand = "0.8"
 itertools = "0.12"

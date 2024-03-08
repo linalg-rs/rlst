@@ -13,7 +13,6 @@ rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
 rlst-blis = {path = "../blis"}
 num = "0.4"
-cauchy = "0.4"
 thiserror = "1.0.40"
 
 [dev-dependencies]
