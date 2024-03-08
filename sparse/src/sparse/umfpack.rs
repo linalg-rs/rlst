@@ -5,7 +5,7 @@ use std::ffi::c_void;
 use crate::sparse::csc_mat::CscMatrix;
 use rlst_dense::array::Array;
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
-use rlst_dense::types::Scalar;
+use rlst_dense::types::RlstScalar;
 use rlst_dense::types::*;
 use rlst_dense::types::{RlstError, RlstResult};
 use rlst_umfpack as umfpack;
@@ -18,7 +18,7 @@ pub enum TransposeMode {
     ConjugateTrans,
 }
 
-pub struct UmfpackLu<T: Scalar> {
+pub struct UmfpackLu<T: RlstScalar> {
     shape: [usize; 2],
     indices: Vec<i32>,
     indptr: Vec<i32>,
@@ -26,7 +26,7 @@ pub struct UmfpackLu<T: Scalar> {
     numeric: *mut c_void,
 }
 
-impl<T: Scalar> Drop for UmfpackLu<T> {
+impl<T: RlstScalar> Drop for UmfpackLu<T> {
     fn drop(&mut self) {
         unsafe { umfpack::umfpack_di_free_numeric(&mut self.numeric) };
     }

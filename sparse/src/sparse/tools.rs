@@ -1,6 +1,6 @@
 //! Tools for sparse matrix handling
 use crate::sparse::SparseMatType;
-use rlst_dense::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 /// Normalize an Aij matrix.
 ///
@@ -9,7 +9,7 @@ use rlst_dense::types::Scalar;
 /// deleted and the entries sorted row-wise with increasing column indicies
 /// (if `sort_mode` is [SparseMatType::Csr]) or column-wise with increasing
 /// row indices (if `sort_mode` is [SparseMatType::Csc]).
-pub fn normalize_aij<T: Scalar>(
+pub fn normalize_aij<T: RlstScalar>(
     rows: &[usize],
     cols: &[usize],
     data: &[T],

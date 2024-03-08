@@ -1,7 +1,7 @@
 //! Gram Schmidt orthogonalization
 use crate::{frame::Frame, Element, InnerProductSpace, NormedSpace};
 use num::One;
-use rlst_dense::types::Scalar;
+use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::DynamicArray,
     traits::{RandomAccessMut, Shape},
@@ -10,7 +10,7 @@ pub struct ModifiedGramSchmidt;
 
 impl ModifiedGramSchmidt {
     pub fn orthogonalize<
-        Item: Scalar,
+        Item: RlstScalar,
         Elem: Element<F = Item>,
         Space: InnerProductSpace<E = Elem, F = Item>,
         FrameType: Frame<E = Elem>,
@@ -32,7 +32,7 @@ impl ModifiedGramSchmidt {
                 *r_mat.get_mut([other_index, elem_index]).unwrap() = inner;
                 elem.axpy_inplace(-inner, other_elem);
             }
-            let norm = <Item as Scalar>::from_real(space.norm(&elem));
+            let norm = <Item as RlstScalar>::from_real(space.norm(&elem));
             *r_mat.get_mut([elem_index, elem_index]).unwrap() = norm;
             elem.scale_inplace(<Item as One>::one() / norm);
             frame.get_mut(elem_index).unwrap().fill_inplace(&elem);

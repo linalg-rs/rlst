@@ -5,11 +5,11 @@
 
 use crate::gemm::Gemm;
 use crate::traits::*;
-use crate::types::Scalar;
+use crate::types::RlstScalar;
 use crate::types::TransMode;
 
 pub fn matrix_multiply<
-    Item: Scalar + Gemm,
+    Item: RlstScalar + Gemm,
     MatA: RawAccess<Item = Item> + Shape<2> + Stride<2>,
     MatB: RawAccess<Item = Item> + Shape<2> + Stride<2>,
     MatC: RawAccessMut<Item = Item> + Shape<2> + Stride<2>,
@@ -103,19 +103,19 @@ mod test {
                     matrix_multiply(
                         transa,
                         transb,
-                        <$ScalarType as Scalar>::from_real(1.),
+                        <$ScalarType as RlstScalar>::from_real(1.),
                         &mat_a,
                         &mat_b,
-                        <$ScalarType as Scalar>::from_real(1.),
+                        <$ScalarType as RlstScalar>::from_real(1.),
                         &mut mat_c,
                     );
                     matrix_multiply_compare(
                         transa,
                         transb,
-                        <$ScalarType as Scalar>::from_real(1.),
+                        <$ScalarType as RlstScalar>::from_real(1.),
                         &mat_a,
                         &mat_b,
-                        <$ScalarType as Scalar>::from_real(1.),
+                        <$ScalarType as RlstScalar>::from_real(1.),
                         &mut expected,
                     );
 
@@ -145,7 +145,7 @@ mod test {
         };
     }
 
-    fn matrix_multiply_compare<Item: Scalar>(
+    fn matrix_multiply_compare<Item: RlstScalar>(
         transa: TransMode,
         transb: TransMode,
         alpha: Item,

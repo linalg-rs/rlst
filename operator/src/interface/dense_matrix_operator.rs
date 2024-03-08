@@ -1,5 +1,5 @@
 use crate::{space::*, AsApply, OperatorBase};
-use rlst_dense::types::Scalar;
+use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::Array,
     traits::{MultInto, RawAccess, Shape, Stride, UnsafeRandomAccessByValue},
@@ -9,7 +9,7 @@ use super::array_vector_space::ArrayVectorSpace;
 
 pub struct DenseMatrixOperator<
     'a,
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,
@@ -19,7 +19,7 @@ pub struct DenseMatrixOperator<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > std::fmt::Debug for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
@@ -32,7 +32,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + Shape<2>
             + Stride<2>
@@ -54,7 +54,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > OperatorBase for DenseMatrixOperator<'a, Item, ArrayImpl>
 {
@@ -72,7 +72,7 @@ impl<
 
 impl<
         'a,
-        Item: Scalar,
+        Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > AsApply for DenseMatrixOperator<'a, Item, ArrayImpl>
 {

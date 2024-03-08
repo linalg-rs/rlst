@@ -13,7 +13,7 @@ use num::One;
 /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
 /// an `(k, n)` upper triangular matrix.
 pub trait MatrixLuDecomposition: Sized {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
         + RawAccessMut<Item = Self::Item>
@@ -155,7 +155,7 @@ pub enum LuTrans {
 
 /// Container for the LU Decomposition of a matrix.
 pub struct LuDecomposition<
-    Item: Scalar,
+    Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
 > {
     arr: Array<Item, ArrayImpl, 2>,

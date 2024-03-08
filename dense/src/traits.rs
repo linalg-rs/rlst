@@ -44,7 +44,7 @@ pub trait ResizeInPlace<const NDIM: usize> {
 
 /// Multiply First * Second and sum into Self
 pub trait MultInto<First, Second> {
-    type Item: Scalar;
+    type Item: RlstScalar;
     fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
@@ -71,7 +71,7 @@ pub trait MultInto<First, Second> {
 
 /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
 pub trait MultIntoResize<First, Second> {
-    type Item: Scalar;
+    type Item: RlstScalar;
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
@@ -98,7 +98,7 @@ pub trait MultIntoResize<First, Second> {
 
 /// Default iterator.
 pub trait DefaultIterator {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
         Self: 'a;
@@ -108,7 +108,7 @@ pub trait DefaultIterator {
 
 /// Mutable default iterator.
 pub trait DefaultIteratorMut {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
@@ -120,7 +120,7 @@ pub trait DefaultIteratorMut {
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIterator {
-    type Item: Scalar;
+    type Item: RlstScalar;
     type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where
         Self: 'a;

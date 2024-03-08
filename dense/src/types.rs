@@ -39,7 +39,7 @@ pub type RlstResult<T> = std::result::Result<T, RlstError>;
 /// Data chunk of fixed size N.
 /// The field `valid_entries` stores how many entries of the chunk
 /// contain valid data.
-pub struct DataChunk<Item: Scalar, const N: usize> {
+pub struct DataChunk<Item: RlstScalar, const N: usize> {
     pub data: [Item; N],
     pub start_index: usize,
     pub valid_entries: usize,
@@ -58,7 +58,7 @@ pub use num::complex::Complex64 as c64;
 
 use crate::gemm::Gemm;
 
-pub trait Scalar:
+pub trait RlstScalar:
     NumAssign
     + FromPrimitive
     + NumCast
@@ -78,10 +78,10 @@ pub trait Scalar:
     + for<'de> Deserialize<'de>
     + 'static
 {
-    type Real: Scalar<Real = Self::Real, Complex = Self::Complex>
+    type Real: RlstScalar<Real = Self::Real, Complex = Self::Complex>
         + NumOps<Self::Real, Self::Real>
         + Float;
-    type Complex: Scalar<Real = Self::Real, Complex = Self::Complex>
+    type Complex: RlstScalar<Real = Self::Real, Complex = Self::Complex>
         + NumOps<Self::Real, Self::Complex>
         + NumOps<Self::Complex, Self::Complex>;
 
@@ -180,7 +180,7 @@ macro_rules! impl_with_complex {
 
 macro_rules! impl_scalar {
     ($real:ty, $complex:ty) => {
-        impl Scalar for $real {
+        impl RlstScalar for $real {
             type Real = $real;
             type Complex = $complex;
 
@@ -266,7 +266,7 @@ macro_rules! impl_scalar {
             impl_float!(atanh);
         }
 
-        impl Scalar for $complex {
+        impl RlstScalar for $complex {
             type Real = $real;
             type Complex = $complex;
 

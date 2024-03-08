@@ -2,7 +2,7 @@
 
 use crate::tools::*;
 use crate::traits::*;
-use crate::types::Scalar;
+use crate::types::RlstScalar;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::Standard;
@@ -11,15 +11,15 @@ use rand_distr::StandardNormal;
 use super::Array;
 
 impl<
-        Item: Scalar + RandScalar,
+        Item: RlstScalar + RandScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 where
-    StandardNormal: Distribution<<Item as Scalar>::Real>,
-    Standard: Distribution<<Item as Scalar>::Real>,
+    StandardNormal: Distribution<<Item as RlstScalar>::Real>,
+    Standard: Distribution<<Item as RlstScalar>::Real>,
 {
     /// Fill an array with normally distributed random numbers.
     pub fn fill_from_standard_normal<R: Rng>(&mut self, rng: &mut R) {

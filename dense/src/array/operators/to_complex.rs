@@ -6,21 +6,21 @@ use std::marker::PhantomData;
 use crate::array::*;
 
 pub struct ArrayToComplex<
-    Item: Scalar,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as Scalar>::Real> + Shape<NDIM>,
+    Item: RlstScalar,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
     const NDIM: usize,
 > {
-    operator: Array<<Item as Scalar>::Real, ArrayImpl, NDIM>,
+    operator: Array<<Item as RlstScalar>::Real, ArrayImpl, NDIM>,
     _marker: PhantomData<Item>,
 }
 
 impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as Scalar>::Real> + Shape<NDIM>,
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayToComplex<Item, ArrayImpl, NDIM>
 {
-    pub fn new(operator: Array<<Item as Scalar>::Real, ArrayImpl, NDIM>) -> Self {
+    pub fn new(operator: Array<<Item as RlstScalar>::Real, ArrayImpl, NDIM>) -> Self {
         Self {
             operator,
             _marker: PhantomData,
@@ -29,21 +29,21 @@ impl<
 }
 
 impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as Scalar>::Real> + Shape<NDIM>,
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayToComplex<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        <Item as Scalar>::from_real(self.operator.get_value_unchecked(multi_index))
+        <Item as RlstScalar>::from_real(self.operator.get_value_unchecked(multi_index))
     }
 }
 
 impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as Scalar>::Real> + Shape<NDIM>,
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayToComplex<Item, ArrayImpl, NDIM>
 {
@@ -53,10 +53,10 @@ impl<
 }
 
 impl<
-        Item: Scalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as Scalar>::Real>
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real>
             + Shape<NDIM>
-            + ChunkedAccess<N, Item = <Item as Scalar>::Real>,
+            + ChunkedAccess<N, Item = <Item as RlstScalar>::Real>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayToComplex<Item, ArrayImpl, NDIM>
@@ -68,7 +68,7 @@ impl<
             let mut data = [<Item as num::Zero>::zero(); N];
 
             for (d, &c) in data.iter_mut().zip(chunk.data.iter()) {
-                *d = <Item as Scalar>::from_real(c);
+                *d = <Item as RlstScalar>::from_real(c);
             }
             Some(DataChunk::<Item, N> {
                 data,

@@ -8,10 +8,10 @@ use crate::sparse::tools::normalize_aij;
 use itertools::Itertools;
 use rlst_dense::traits::AijIterator;
 use rlst_dense::traits::Shape;
-use rlst_dense::types::Scalar;
+use rlst_dense::types::RlstScalar;
 
 #[derive(Clone)]
-pub struct CscMatrix<Item: Scalar> {
+pub struct CscMatrix<Item: RlstScalar> {
     mat_type: SparseMatType,
     shape: [usize; 2],
     indices: Vec<usize>,
@@ -19,7 +19,7 @@ pub struct CscMatrix<Item: Scalar> {
     data: Vec<Item>,
 }
 
-impl<Item: Scalar> CscMatrix<Item> {
+impl<Item: RlstScalar> CscMatrix<Item> {
     pub fn new(
         shape: [usize; 2],
         indices: Vec<usize>,
@@ -130,13 +130,13 @@ impl<Item: Scalar> CscMatrix<Item> {
     }
 }
 
-pub struct CscAijIterator<'a, Item: Scalar> {
+pub struct CscAijIterator<'a, Item: RlstScalar> {
     mat: &'a CscMatrix<Item>,
     col: usize,
     pos: usize,
 }
 
-impl<'a, Item: Scalar> CscAijIterator<'a, Item> {
+impl<'a, Item: RlstScalar> CscAijIterator<'a, Item> {
     pub fn new(mat: &'a CscMatrix<Item>) -> Self {
         // We need to move the col pointer to the first col that has at least one element.
 
@@ -150,7 +150,7 @@ impl<'a, Item: Scalar> CscAijIterator<'a, Item> {
     }
 }
 
-impl<'a, Item: Scalar> std::iter::Iterator for CscAijIterator<'a, Item> {
+impl<'a, Item: RlstScalar> std::iter::Iterator for CscAijIterator<'a, Item> {
     type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -184,7 +184,7 @@ impl<'a, Item: Scalar> std::iter::Iterator for CscAijIterator<'a, Item> {
     }
 }
 
-impl<Item: Scalar> AijIterator for CscMatrix<Item> {
+impl<Item: RlstScalar> AijIterator for CscMatrix<Item> {
     type Item = Item;
     type Iter<'a> = CscAijIterator<'a, Item> where Self: 'a;
 
@@ -193,7 +193,7 @@ impl<Item: Scalar> AijIterator for CscMatrix<Item> {
     }
 }
 
-impl<Item: Scalar> rlst_dense::traits::Shape<2> for CscMatrix<Item> {
+impl<Item: RlstScalar> rlst_dense::traits::Shape<2> for CscMatrix<Item> {
     fn shape(&self) -> [usize; 2] {
         self.shape
     }
