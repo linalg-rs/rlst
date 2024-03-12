@@ -11,7 +11,6 @@ edition = "2021"
 [dependencies]
 rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
-rlst-blis = {path = "../blis"}
 num = "0.4"
 thiserror = "1.0.40"
 

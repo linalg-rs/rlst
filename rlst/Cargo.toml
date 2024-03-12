@@ -21,13 +21,14 @@ name = "rlst"
 rlst-operator = {path = "../operator"}
 rlst-sparse = {path = "../sparse"}
 rlst-dense = { path = "../dense"}
-rlst-blis = { path = "../blis"}
-rlst-umfpack = { path = "../umfpack"}
 rlst-proc-macro = { path = "../proc-macro"}
 num = "0.4"
 approx = { version = "0.5", features=["num-complex"] }
 
 
+[target.aarch64-apple-darwin.dependencies]
+blas-src = { version = "0.9", features = ["accelerate"]}
+lapack-src = { version = "0.9", features = ["accelerate"]}
 
 
 [dev-dependencies]

@@ -7,11 +7,7 @@ members = [
   "sparse",
   "io",
   "suitesparse-src",
-  "blis-src",
   "umfpack",
-  "gfortran-src",
-  "netlib-lapack-src",
-  "blis",
   "rlst",
   "proc-macro",
 ]

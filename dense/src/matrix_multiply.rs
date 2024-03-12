@@ -126,9 +126,6 @@ mod test {
                 fn [<test_mat_mul_$ScalarType>]() {
 
                     [<test_mat_mul_impl_$ScalarType>](TransMode::NoTrans, TransMode::NoTrans, [3, 5], [5, 7], [3, 7]);
-                    [<test_mat_mul_impl_$ScalarType>](TransMode::ConjNoTrans, TransMode::ConjNoTrans, [3, 5], [5, 7], [3, 7]);
-                    [<test_mat_mul_impl_$ScalarType>](TransMode::ConjNoTrans, TransMode::NoTrans, [3, 5], [5, 7], [3, 7]);
-                    [<test_mat_mul_impl_$ScalarType>](TransMode::NoTrans, TransMode::ConjNoTrans, [3, 5], [5, 7], [3, 7]);
 
                     [<test_mat_mul_impl_$ScalarType>](TransMode::NoTrans, TransMode::Trans, [3, 5], [7, 5], [3, 7]);
                     [<test_mat_mul_impl_$ScalarType>](TransMode::Trans, TransMode::NoTrans, [2, 1], [2, 1], [1, 1]);
