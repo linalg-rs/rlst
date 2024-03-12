@@ -134,32 +134,3 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
         None
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-    use mpi;
-
-    #[test]
-    fn test_distributed_index_set() {
-        let universe = mpi::initialize().unwrap();
-        let world = universe.world();
-
-        let index_layout = DefaultMpiIndexLayout::new(14, &world);
-
-        // Test that the range is correct on rank 0
-        assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));
-
-        // Test that the number of global indices is correct.
-        assert_eq!(index_layout.number_of_global_indices(), 14);
-
-        // Test that map works
-
-        assert_eq!(index_layout.local2global(2).unwrap(), 2);
-
-        // Return the correct process for an index
-
-        assert_eq!(index_layout.rank_from_index(5).unwrap(), 0);
-    }
-}

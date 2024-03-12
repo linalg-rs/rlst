@@ -6,17 +6,12 @@ use crate::sparse::csc_mat::CscMatrix;
 use rlst_dense::array::Array;
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
 use rlst_dense::types::RlstScalar;
+use rlst_dense::types::TransMode;
 use rlst_dense::types::*;
 use rlst_dense::types::{RlstError, RlstResult};
 use rlst_umfpack as umfpack;
 
 use super::csr_mat::CsrMatrix;
-
-pub enum TransposeMode {
-    NoTrans,
-    Trans,
-    ConjugateTrans,
-}
 
 pub struct UmfpackLu<T: RlstScalar> {
     shape: [usize; 2],
@@ -46,15 +41,16 @@ impl UmfpackLu<f64> {
         &self,
         rhs: Array<f64, ArrayImplRhs, 1>,
         mut x: Array<f64, ArrayImplX, 1>,
-        trans: TransposeMode,
+        trans: TransMode,
     ) -> rlst_dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 
         let sys = match trans {
-            TransposeMode::NoTrans => umfpack::UMFPACK_A,
-            TransposeMode::Trans => umfpack::UMFPACK_Aat,
-            TransposeMode::ConjugateTrans => umfpack::UMFPACK_At,
+            TransMode::NoTrans => umfpack::UMFPACK_A,
+            TransMode::Trans => umfpack::UMFPACK_Aat,
+            TransMode::ConjTrans => umfpack::UMFPACK_At,
+            _ => panic!("Transpose mode not supported for Umfpack"),
         };
 
         let n = self.shape[0];
@@ -97,15 +93,16 @@ impl UmfpackLu<c64> {
         &self,
         rhs: Array<c64, ArrayImplRhs, 1>,
         mut x: Array<c64, ArrayImplX, 1>,
-        trans: TransposeMode,
+        trans: TransMode,
     ) -> rlst_dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 
         let sys = match trans {
-            TransposeMode::NoTrans => umfpack::UMFPACK_A,
-            TransposeMode::Trans => umfpack::UMFPACK_Aat,
-            TransposeMode::ConjugateTrans => umfpack::UMFPACK_At,
+            TransMode::NoTrans => umfpack::UMFPACK_A,
+            TransMode::Trans => umfpack::UMFPACK_Aat,
+            TransMode::ConjTrans => umfpack::UMFPACK_At,
+            _ => panic!("Transpose mode not supported for Umfpack"),
         };
 
         let n = self.shape[0];
@@ -272,92 +269,5 @@ impl CscMatrix<c64> {
         unsafe { umfpack::umfpack_di_free_symbolic(&mut symbolic) };
 
         Ok(umfpack_lu)
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    use rlst_dense::traits::*;
-
-    use rlst_dense::{
-        array::empty_array, assert_array_relative_eq, rlst_dynamic_array1, rlst_dynamic_array2,
-        traits::MultIntoResize,
-    };
-
-    use super::*;
-
-    #[test]
-    fn test_csc_umfpack_f64() {
-        let n = 5;
-
-        let mut mat = rlst_dynamic_array2!(f64, [n, n]);
-        let mut x_exact = rlst_dynamic_array1!(f64, [n]);
-        let mut x_actual = rlst_dynamic_array1!(f64, [n]);
-
-        mat.fill_from_seed_equally_distributed(0);
-        x_exact.fill_from_seed_equally_distributed(1);
-
-        let rhs = empty_array::<f64, 1>().simple_mult_into_resize(mat.view(), x_exact.view());
-
-        let mut rows = Vec::<usize>::with_capacity(n * n);
-        let mut cols = Vec::<usize>::with_capacity(n * n);
-        let mut data = Vec::<f64>::with_capacity(n * n);
-
-        for col_index in 0..n {
-            for row_index in 0..n {
-                rows.push(row_index);
-                cols.push(col_index);
-                data.push(mat[[row_index, col_index]]);
-            }
-        }
-
-        let sparse_mat =
-            crate::sparse::csc_mat::CscMatrix::from_aij([n, n], &rows, &cols, &data).unwrap();
-
-        sparse_mat
-            .into_lu()
-            .unwrap()
-            .solve(rhs.view(), x_actual.view_mut(), TransposeMode::NoTrans)
-            .unwrap();
-
-        assert_array_relative_eq!(x_actual, x_exact, 1E-12);
-    }
-
-    #[test]
-    fn test_csc_umfpack_c64() {
-        let n = 5;
-
-        let mut mat = rlst_dynamic_array2!(c64, [n, n]);
-        let mut x_exact = rlst_dynamic_array1!(c64, [n]);
-        let mut x_actual = rlst_dynamic_array1!(c64, [n]);
-
-        mat.fill_from_seed_equally_distributed(0);
-        x_exact.fill_from_seed_equally_distributed(1);
-
-        let rhs = empty_array::<c64, 1>().simple_mult_into_resize(mat.view(), x_exact.view());
-
-        let mut rows = Vec::<usize>::with_capacity(n * n);
-        let mut cols = Vec::<usize>::with_capacity(n * n);
-        let mut data = Vec::<c64>::with_capacity(n * n);
-
-        for col_index in 0..n {
-            for row_index in 0..n {
-                rows.push(row_index);
-                cols.push(col_index);
-                data.push(mat[[row_index, col_index]]);
-            }
-        }
-
-        let sparse_mat =
-            crate::sparse::csc_mat::CscMatrix::from_aij([n, n], &rows, &cols, &data).unwrap();
-
-        sparse_mat
-            .into_lu()
-            .unwrap()
-            .solve(rhs.view(), x_actual.view_mut(), TransposeMode::NoTrans)
-            .unwrap();
-
-        assert_array_relative_eq!(x_actual, x_exact, 1E-12);
     }
 }

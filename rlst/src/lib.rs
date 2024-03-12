@@ -3,6 +3,8 @@
 extern crate blas_src;
 extern crate lapack_src;
 
+pub use rlst_dense as dense;
+
 pub use rlst_dense::array::empty_array;
 pub use rlst_dense::array::Array;
 
@@ -43,8 +45,13 @@ pub use rlst_dense::linalg::svd::{MatrixSvd, SvdMode};
 
 pub use rlst_dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 
+pub use rlst_sparse::index_layout::DefaultMpiIndexLayout;
+pub use rlst_sparse::index_layout::DefaultSerialIndexLayout;
 pub use rlst_sparse::sparse::csc_mat::CscMatrix;
 pub use rlst_sparse::sparse::csr_mat::CsrMatrix;
+pub use rlst_sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
+pub use rlst_sparse::traits::index_layout::IndexLayout;
 
-pub use rlst_dense as dense;
 pub use rlst_sparse as sparse;
+
+pub use rlst_operator::*;
