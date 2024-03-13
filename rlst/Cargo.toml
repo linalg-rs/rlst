@@ -34,6 +34,7 @@ lapack-src = { version = "0.9", features = ["accelerate"]}
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 paste = "1"
+rand = "0.8.*"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

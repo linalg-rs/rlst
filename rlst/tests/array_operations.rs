@@ -2,10 +2,11 @@
 
 use approx::assert_relative_eq;
 use paste::paste;
+use rlst::dense;
 use rlst::dense::assert_array_relative_eq;
 use rlst::dense::layout::convert_1d_nd_from_shape;
-use rlst::rlst_dynamic_array3;
-use rlst::*;
+use rlst::prelude::rlst_dynamic_array3;
+use rlst::prelude::*;
 
 #[test]
 fn test_addition() {

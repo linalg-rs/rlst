@@ -1,4 +1,5 @@
-use rlst::*;
+use rlst::dense;
+use rlst::prelude::*;
 
 #[test]
 fn test_csc_from_aij() {

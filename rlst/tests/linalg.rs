@@ -3,7 +3,7 @@
 use paste::paste;
 use rlst::dense::assert_array_abs_diff_eq;
 use rlst::dense::assert_array_relative_eq;
-use rlst::*;
+use rlst::prelude::*;
 
 macro_rules! impl_inverse_tests {
         ($scalar:ty, $tol:expr) => {

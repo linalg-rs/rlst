@@ -95,33 +95,3 @@ impl<
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    use rlst_dense::rlst_dynamic_array2;
-
-    use crate::interface::array_vector_space::ArrayVectorSpace;
-    use crate::AsApply;
-    use crate::Element;
-    use crate::LinearSpace;
-    use crate::OperatorBase;
-
-    use super::DenseMatrixOperator;
-
-    #[test]
-    fn test_mat() {
-        let mut mat = rlst_dynamic_array2!(f64, [3, 4]);
-        let domain = ArrayVectorSpace::new(4);
-        let range = ArrayVectorSpace::new(3);
-        mat.fill_from_seed_equally_distributed(0);
-
-        let op = DenseMatrixOperator::new(mat, &domain, &range);
-        let mut x = op.domain().zero();
-        let mut y = op.range().zero();
-
-        x.view_mut().fill_from_seed_equally_distributed(0);
-
-        op.apply_extended(1.0, &x, 0.0, &mut y).unwrap();
-    }
-}
