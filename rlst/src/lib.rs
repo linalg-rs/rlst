@@ -10,3 +10,4 @@ pub use rlst_sparse as sparse;
 pub use rlst_operator as operator;
 
 pub mod prelude;
+pub mod threading;

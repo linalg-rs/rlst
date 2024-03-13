@@ -21,6 +21,7 @@ rlst-dense = { path = "../dense"}
 rlst-proc-macro = { path = "../proc-macro"}
 num = "0.4"
 approx = { version = "0.5", features=["num-complex"] }
+num_cpus = "1"
 
 mpi = { version="0.7.0", optional=true }
 mpi-sys = { version="0.2.1", optional=true }
@@ -29,6 +30,10 @@ mpi-sys = { version="0.2.1", optional=true }
 [target.aarch64-apple-darwin.dependencies]
 blas-src = { version = "0.9", features = ["accelerate"]}
 lapack-src = { version = "0.9", features = ["accelerate"]}
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+blas-src = { version = "0.9", features = ["blis"]}
+lapack-src = { version = "0.9", features = ["netlib"]}
 
 
 [dev-dependencies]
@@ -45,3 +50,4 @@ strict = []
 default = ["mpi", "umfpack"]
 mpi = ["dep:mpi", "dep:mpi-sys", "rlst-sparse/mpi"]
 umfpack = ["rlst-sparse/umfpack"]
+blis = []
