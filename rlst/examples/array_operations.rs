@@ -1,6 +1,6 @@
 //! Tests of array algebray operations
 
-use rlst::rlst_dynamic_array3;
+use rlst::prelude::rlst_dynamic_array3;
 use rlst_dense::traits::*;
 
 pub fn main() {

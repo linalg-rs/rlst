@@ -127,3 +127,12 @@ pub trait AijIterator {
 
     fn iter_aij(&self) -> Self::Iter<'_>;
 }
+
+/// Helper trait that returns from an enumeration iterator a new iterator
+/// that converts the 1d index into a multi-index.
+pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+    fn multi_index(
+        self,
+        shape: [usize; NDIM],
+    ) -> crate::array::iterators::MultiIndexIterator<T, I, NDIM>;
+}

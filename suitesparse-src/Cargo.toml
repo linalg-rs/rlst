@@ -13,10 +13,6 @@ links = "suitesparse"
 [lib]
 name = "rlst_suitesparse_src"
 
-[dependencies]
-rlst-blis-src = { path = "../blis-src"}
-rlst-netlib-lapack-src = { path = "../netlib-lapack-src"}
-
 [build-dependencies]
 bindgen = "0.65.*"
 cmake = "0.1.*"

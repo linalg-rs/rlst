@@ -1,6 +1,3 @@
-[features]
-strict = []
-
 [package]
 name = "rlst"
 version = "0.0.1"
@@ -21,20 +18,36 @@ name = "rlst"
 rlst-operator = {path = "../operator"}
 rlst-sparse = {path = "../sparse"}
 rlst-dense = { path = "../dense"}
-rlst-blis = { path = "../blis"}
-rlst-umfpack = { path = "../umfpack"}
 rlst-proc-macro = { path = "../proc-macro"}
 num = "0.4"
 approx = { version = "0.5", features=["num-complex"] }
+num_cpus = "1"
+
+mpi = { version="0.7.0", optional=true }
+mpi-sys = { version="0.2.1", optional=true }
 
 
+[target.aarch64-apple-darwin.dependencies]
+blas-src = { version = "0.9", features = ["accelerate"]}
+lapack-src = { version = "0.9", features = ["accelerate"]}
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+blas-src = { version = "0.9", features = ["blis"]}
+lapack-src = { version = "0.9", features = ["netlib"]}
 
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
+paste = "1"
+rand = "0.8.*"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 
 
-
+[features]
+strict = []
+default = ["mpi", "umfpack"]
+mpi = ["dep:mpi", "dep:mpi-sys", "rlst-sparse/mpi"]
+umfpack = ["rlst-sparse/umfpack"]
+blis = []

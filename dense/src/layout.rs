@@ -60,24 +60,3 @@ pub fn convert_1d_nd_from_shape<const NDIM: usize>(
     }
     res
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_convert_1d_nd() {
-        let multi_index: [usize; 3] = [2, 3, 7];
-        let shape: [usize; 3] = [3, 4, 8];
-        let stride = stride_from_shape(shape);
-
-        let index_1d = convert_nd_raw(multi_index, stride);
-        let actual_nd = convert_1d_nd_from_shape(index_1d, shape);
-
-        println!("{}, {:#?}", index_1d, actual_nd);
-
-        for (&expected, actual) in multi_index.iter().zip(actual_nd) {
-            assert_eq!(expected, actual)
-        }
-    }
-}

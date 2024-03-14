@@ -1,6 +1,3 @@
-[features]
-strict = []
-
 [package]
 name = "rlst-dense"
 version = "0.0.1"
@@ -22,15 +19,13 @@ num = {version = "0.4", features = ["serde", "rand"] }
 rand = "0.8"
 itertools = "0.12"
 rand_distr = "0.4"
-rlst-blis = { path = "../blis" }
 approx = { version = "0.5", features = ["num-complex"] }
-paste = "1"
 rand_chacha = "0.3"
-rlst-blis-src = { path = "../blis-src" }
-rlst-netlib-lapack-src = { path = "../netlib-lapack-src" }
+paste = "1"
 lapack = "0.19.*"
 thiserror = "1.0.40"
 serde = "1.*"
+blas = "0.22.*"
 
 
 [dev-dependencies]
@@ -38,3 +33,5 @@ criterion = { version = "0.3", features = ["html_reports"] }
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
+
+[features]

@@ -37,6 +37,9 @@ jobs:
       - name: Install Clang
         run: sudo apt-get install -y libclang-dev
 
+      - name: Install Blas
+        run: sudo apt-get install -y libopenblas-dev
+
       - name: Install CMake
         run: sudo apt-get install -y cmake
 

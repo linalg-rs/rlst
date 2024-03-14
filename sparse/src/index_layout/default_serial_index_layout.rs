@@ -56,24 +56,3 @@ impl IndexLayout for DefaultSerialIndexLayout {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn test_local_index_layout() {
-        let index_layout = DefaultSerialIndexLayout::new(14);
-
-        // Test that the range is correct on rank 0
-        assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));
-
-        // Test that the number of global indices is correct.
-        assert_eq!(index_layout.number_of_global_indices(), 14);
-
-        // Test that map works
-
-        assert_eq!(index_layout.local2global(2).unwrap(), 2);
-    }
-}

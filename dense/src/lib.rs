@@ -2,9 +2,6 @@
 //!
 #![cfg_attr(feature = "strict", deny(warnings))]
 
-extern crate rlst_blis_src;
-extern crate rlst_netlib_lapack_src;
-
 pub mod base_array;
 pub mod data_container;
 pub mod linalg;

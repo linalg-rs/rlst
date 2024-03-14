@@ -2,6 +2,7 @@
 
 use crate::array::*;
 use crate::layout::convert_1d_nd_from_shape;
+use crate::traits::AsMultiIndex;
 use crate::types::RlstScalar;
 
 use super::slice::ArraySlice;
@@ -54,12 +55,6 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> Iterator
             None
         }
     }
-}
-
-/// Helper trait that returns from an enumeration iterator a new iterator
-/// that converts the 1d index into a multi-index.
-pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
-    fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<T, I, NDIM>;
 }
 
 impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, NDIM> for I {
@@ -367,112 +362,5 @@ impl<
             ncols,
             current_col: 0,
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    use approx::assert_relative_eq;
-
-    use crate::traits::*;
-
-    #[test]
-    fn test_iter() {
-        let mut arr = crate::rlst_dynamic_array3![f64, [1, 3, 2]];
-
-        for (index, item) in arr.iter_mut().enumerate() {
-            *item = index as f64;
-        }
-
-        assert_eq!(arr[[0, 0, 0]], 0.0);
-        assert_eq!(arr[[0, 1, 0]], 1.0);
-        assert_eq!(arr[[0, 2, 0]], 2.0);
-        assert_eq!(arr[[0, 0, 1]], 3.0);
-        assert_eq!(arr[[0, 1, 1]], 4.0);
-        assert_eq!(arr[[0, 2, 1]], 5.0);
-    }
-
-    #[test]
-    fn test_row_iter() {
-        let shape = [2, 3];
-        let mut arr = crate::rlst_dynamic_array2![f64, shape];
-
-        arr.fill_from_seed_equally_distributed(0);
-
-        let mut row_count = 0;
-        for (row_index, row) in arr.row_iter().enumerate() {
-            for col_index in 0..shape[1] {
-                assert_eq!(row[[col_index]], arr[[row_index, col_index]]);
-            }
-            row_count += 1;
-        }
-        assert_eq!(row_count, shape[0]);
-    }
-
-    #[test]
-    fn test_row_iter_mut() {
-        let shape = [2, 3];
-        let mut arr = crate::rlst_dynamic_array2![f64, shape];
-        let mut arr2 = crate::rlst_dynamic_array2![f64, shape];
-
-        arr.fill_from_seed_equally_distributed(0);
-        arr2.fill_from(arr.view());
-
-        let mut row_count = 0;
-        for (row_index, mut row) in arr.row_iter_mut().enumerate() {
-            for col_index in 0..shape[1] {
-                row[[col_index]] *= 2.0;
-                assert_relative_eq!(
-                    row[[col_index]],
-                    2.0 * arr2[[row_index, col_index]],
-                    epsilon = 1E-14
-                );
-            }
-            row_count += 1;
-        }
-        assert_eq!(row_count, shape[0]);
-    }
-
-    #[test]
-    fn test_col_iter() {
-        let shape = [2, 3];
-        let mut arr = crate::rlst_dynamic_array2![f64, shape];
-
-        arr.fill_from_seed_equally_distributed(0);
-
-        let mut col_count = 0;
-        for (col_index, col) in arr.col_iter().enumerate() {
-            for row_index in 0..shape[0] {
-                assert_eq!(col[[row_index]], arr[[row_index, col_index]]);
-            }
-            col_count += 1;
-        }
-
-        assert_eq!(col_count, shape[1]);
-    }
-
-    #[test]
-    fn test_col_iter_mut() {
-        let shape = [2, 3];
-        let mut arr = crate::rlst_dynamic_array2![f64, shape];
-        let mut arr2 = crate::rlst_dynamic_array2![f64, shape];
-
-        arr.fill_from_seed_equally_distributed(0);
-        arr2.fill_from(arr.view());
-
-        let mut col_count = 0;
-        for (col_index, mut col) in arr.col_iter_mut().enumerate() {
-            for row_index in 0..shape[0] {
-                col[[row_index]] *= 2.0;
-                assert_relative_eq!(
-                    col[[row_index]],
-                    2.0 * arr2[[row_index, col_index]],
-                    epsilon = 1E-14
-                );
-            }
-            col_count += 1;
-        }
-        assert_eq!(col_count, shape[1]);
     }
 }

@@ -98,10 +98,3 @@ impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
         self.view_mut().scale_in_place(alpha);
     }
 }
-
-#[cfg(test)]
-mod test {
-
-    #[test]
-    fn test_vec() {}
-}
