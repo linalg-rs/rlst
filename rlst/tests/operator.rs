@@ -1,6 +1,5 @@
 //! Tests for the operator interface
 
-use approx;
 use num::traits::{One, Zero};
 use rand::Rng;
 use rlst::dense;
