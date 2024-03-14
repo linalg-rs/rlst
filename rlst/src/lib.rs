@@ -11,3 +11,5 @@ pub use rlst_operator as operator;
 
 pub mod prelude;
 pub mod threading;
+
+pub use prelude::*;
