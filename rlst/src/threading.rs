@@ -1,7 +1,5 @@
 //! Control BLAS threading if possible
 
-use num_cpus;
-
 #[cfg(feature = "blis")]
 extern "C" {
     fn bli_thread_set_num_threads(n_threads: i64);
@@ -34,15 +32,4 @@ pub fn enable_threading() {
 /// Set number of threads to 1.
 pub fn disable_threading() {
     unsafe { bli_thread_set_num_threads(1) };
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn test_threading() {
-        println!("Threads: {}", get_num_threads());
-    }
 }
