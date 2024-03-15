@@ -136,6 +136,7 @@ fn test_csr_aij_iterator() {
     assert_eq!(aij_data[4], (6, 1, 5.0));
 }
 
+#[cfg(feature = "mpi")]
 #[test]
 fn test_distributed_index_set() {
     use mpi;

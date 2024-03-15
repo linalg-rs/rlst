@@ -50,11 +50,15 @@ pub use rlst_dense::linalg::svd::{MatrixSvd, SvdMode};
 
 pub use rlst_dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 
+#[cfg(feature = "mpi")]
 pub use rlst_sparse::index_layout::DefaultMpiIndexLayout;
+
+#[cfg(feature = "mpi")]
+pub use rlst_sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
+
 pub use rlst_sparse::index_layout::DefaultSerialIndexLayout;
 pub use rlst_sparse::sparse::csc_mat::CscMatrix;
 pub use rlst_sparse::sparse::csr_mat::CsrMatrix;
-pub use rlst_sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
 pub use rlst_sparse::traits::index_layout::IndexLayout;
 
 pub use rlst_operator::interface::{

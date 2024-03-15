@@ -14,7 +14,7 @@ rand = "0.8"
 rand_distr = "0.4"
 approx = { version = "0.5", features=["num-complex"] }
 itertools = "0.12"
-rlst-umfpack = { path = "../umfpack", optional = true}
+rlst-umfpack = { git = "https://github.com/linalg-rs/rlst-umfpack", optional = true}
 
 
 

@@ -19,11 +19,9 @@ name = "rlst_io"
 
 [dependencies]
 num = "0.4"
-ndarray = "0.15"
 rand = "0.8"
 itertools = "0.12"
 rand_distr = "0.4"
-matrixmultiply = "0.3"
 approx = { version = "0.5", features=["num-complex"] }
 rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
@@ -31,7 +29,7 @@ rlst-dense = {path = "../dense"}
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
-tempfile = { version = "3.5.0"}
+tempfile = { version = "3.10.1"}
 
 
 [package.metadata.docs.rs]

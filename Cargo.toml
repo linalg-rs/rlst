@@ -6,8 +6,6 @@ members = [
   "operator",
   "sparse",
   "io",
-  "suitesparse-src",
-  "umfpack",
   "rlst",
   "proc-macro",
 ]
