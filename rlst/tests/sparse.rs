@@ -1,4 +1,3 @@
-use rlst::dense;
 use rlst::prelude::*;
 
 #[test]
@@ -137,6 +136,7 @@ fn test_csr_aij_iterator() {
     assert_eq!(aij_data[4], (6, 1, 5.0));
 }
 
+#[cfg(feature = "mpi")]
 #[test]
 fn test_distributed_index_set() {
     use mpi;
@@ -210,7 +210,7 @@ fn test_csc_umfpack_f64() {
         .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
         .unwrap();
 
-    dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
+    rlst::dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
 }
 
 #[cfg(feature = "umfpack")]
@@ -247,5 +247,5 @@ fn test_csc_umfpack_c64() {
         .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
         .unwrap();
 
-    dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
+    rlst::dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
 }

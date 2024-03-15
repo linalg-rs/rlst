@@ -23,7 +23,7 @@ approx = { version = "0.5", features = ["num-complex"] }
 rand_chacha = "0.3"
 paste = "1"
 lapack = "0.19.*"
-thiserror = "1.0.40"
+thiserror = "1.0.58"
 serde = "1.*"
 blas = "0.22.*"
 

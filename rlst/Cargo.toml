@@ -47,7 +47,7 @@ rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 
 [features]
 strict = []
-default = ["mpi", "umfpack"]
+default = []
 mpi = ["dep:mpi", "dep:mpi-sys", "rlst-sparse/mpi"]
 umfpack = ["rlst-sparse/umfpack"]
 blis = []

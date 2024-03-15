@@ -22,8 +22,18 @@ pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
 pub use rlst_dense::gemm::Gemm;
-pub use rlst_dense::traits::*;
-pub use rlst_dense::types::*;
+
+pub use rlst_dense::traits::{
+    ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, RawAccess,
+    RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
+
+pub use rlst_dense::traits::{
+    AijIterator, AsMultiIndex, DefaultIterator, DefaultIteratorMut, MultInto, MultIntoResize,
+    NumberOfElements, ResizeInPlace, Shape, Stride,
+};
+
+pub use rlst_dense::types::{c32, c64, DataChunk, RlstError, RlstResult, RlstScalar, TransMode};
 
 pub use rlst_dense::base_array::BaseArray;
 pub use rlst_dense::data_container::{
@@ -40,11 +50,15 @@ pub use rlst_dense::linalg::svd::{MatrixSvd, SvdMode};
 
 pub use rlst_dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 
+#[cfg(feature = "mpi")]
 pub use rlst_sparse::index_layout::DefaultMpiIndexLayout;
+
+#[cfg(feature = "mpi")]
+pub use rlst_sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
+
 pub use rlst_sparse::index_layout::DefaultSerialIndexLayout;
 pub use rlst_sparse::sparse::csc_mat::CscMatrix;
 pub use rlst_sparse::sparse::csr_mat::CsrMatrix;
-pub use rlst_sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
 pub use rlst_sparse::traits::index_layout::IndexLayout;
 
 pub use rlst_operator::interface::{

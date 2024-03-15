@@ -12,7 +12,7 @@ edition = "2021"
 rlst-sparse = {path = "../sparse"}
 rlst-dense = {path = "../dense"}
 num = "0.4"
-thiserror = "1.0.40"
+thiserror = "1.0.58"
 
 [dev-dependencies]
 approx = { version = "0.5", features = ["num-complex"] }
