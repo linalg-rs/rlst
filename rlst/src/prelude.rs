@@ -22,8 +22,18 @@ pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
 pub use rlst_dense::gemm::Gemm;
-pub use rlst_dense::traits::*;
-pub use rlst_dense::types::*;
+
+pub use rlst_dense::traits::{
+    ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, RawAccess,
+    RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
+
+pub use rlst_dense::traits::{
+    AijIterator, AsMultiIndex, DefaultIterator, DefaultIteratorMut, MultInto, MultIntoResize,
+    NumberOfElements, ResizeInPlace, Shape, Stride,
+};
+
+pub use rlst_dense::types::{c32, c64, DataChunk, RlstError, RlstResult, RlstScalar, TransMode};
 
 pub use rlst_dense::base_array::BaseArray;
 pub use rlst_dense::data_container::{
