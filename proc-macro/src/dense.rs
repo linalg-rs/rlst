@@ -19,7 +19,7 @@ pub(crate) fn rlst_static_array_impl(items: TokenStream) -> TokenStream {
 
     let output = quote! { {
         let data = rlst::dense::data_container::ArrayContainer::<#ty, #ndim>::new();
-        rlst::dense::array::Array::new(rlst_dense::base_array::BaseArray::new(data, [#(#dims),*]))
+        rlst::dense::array::Array::new(rlst::dense::base_array::BaseArray::new(data, [#(#dims),*]))
     }
     };
 
