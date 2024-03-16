@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         rust-version: ["stable"]
-        mpi: ["mpich","openmpi"]
+        mpi: ["openmpi"]
     steps:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
