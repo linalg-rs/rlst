@@ -9,3 +9,6 @@ members = [
   "rlst",
   "proc-macro",
 ]
+
+[workspace.lints.clippy]
+wildcard_imports = "forbid"

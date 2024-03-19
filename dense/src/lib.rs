@@ -1,6 +1,7 @@
 //! Dense array types and operations on them.
 //!
 #![cfg_attr(feature = "strict", deny(warnings))]
+#![warn(missing_docs)]
 
 pub mod base_array;
 pub mod data_container;

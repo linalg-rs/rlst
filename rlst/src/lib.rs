@@ -1,4 +1,6 @@
 //! Interface to the rlst library
+#![cfg_attr(feature = "strict", deny(warnings))]
+#![warn(missing_docs)]
 
 pub use rlst_dense as dense;
 

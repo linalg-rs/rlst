@@ -32,3 +32,6 @@ mpi = ["dep:mpi", "mpi-sys"]
 umfpack = ["dep:rlst-umfpack"]
 
 strict = []
+
+[lints]
+workspace = true

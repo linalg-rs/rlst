@@ -1,5 +1,6 @@
 //! The operator library contains traits and methods to support arbitrary operator types.
 #![cfg_attr(feature = "strict", deny(warnings))]
+#![warn(missing_docs)]
 
 pub mod interface;
 pub mod linalg;

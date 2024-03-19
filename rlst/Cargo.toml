@@ -51,3 +51,6 @@ default = []
 mpi = ["dep:mpi", "dep:mpi-sys", "rlst-sparse/mpi"]
 umfpack = ["rlst-sparse/umfpack"]
 blis = []
+
+[lints]
+workspace = true
