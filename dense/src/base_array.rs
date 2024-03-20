@@ -22,11 +22,13 @@ pub struct BaseArray<Item: RlstScalar, Data: DataContainer<Item = Item>, const N
 impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     BaseArray<Item, Data, NDIM>
 {
+    /// Create new
     pub fn new(data: Data, shape: [usize; NDIM]) -> Self {
         let stride = stride_from_shape(shape);
         Self::new_with_stride(data, shape, stride)
     }
 
+    /// Create new with stride
     pub fn new_with_stride(data: Data, shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
         if *shape.iter().min().unwrap() == 0 {
             // Array is empty

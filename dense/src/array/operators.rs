@@ -9,6 +9,7 @@ pub mod scalar_mult;
 pub mod to_complex;
 pub mod transpose;
 
+/// Test SIMD
 pub fn test_simd() {
     use crate::rlst_dynamic_array2;
 

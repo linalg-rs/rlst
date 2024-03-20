@@ -35,6 +35,7 @@ where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
+    /// Create new array slice
     pub fn new(arr: Array<Item, ArrayImpl, ADIM>, slice: [usize; 2]) -> Self {
         // The mask is zero for all entries before the sliced out one and
         // one for all entries after.

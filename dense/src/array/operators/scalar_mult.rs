@@ -3,6 +3,7 @@
 use crate::array::*;
 use crate::types::*;
 
+/// Scalar multiplication of array
 pub struct ArrayScalarMult<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -18,6 +19,7 @@ impl<
         const NDIM: usize,
     > ArrayScalarMult<Item, ArrayImpl, NDIM>
 {
+    /// Create new
     pub fn new(scalar: Item, operator: Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { scalar, operator }
     }
@@ -74,6 +76,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Multiplication by a scalar
     pub fn scalar_mul(
         self,
         other: Item,

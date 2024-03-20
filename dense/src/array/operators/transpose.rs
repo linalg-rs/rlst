@@ -2,6 +2,7 @@
 
 use crate::{array::*, layout::convert_1d_nd_from_shape};
 
+/// Transpose array
 pub struct ArrayTranspose<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -18,6 +19,7 @@ impl<
         const NDIM: usize,
     > ArrayTranspose<Item, ArrayImpl, NDIM>
 {
+    /// Create new transpose array
     pub fn new(operator: Array<Item, ArrayImpl, NDIM>, permutation: [usize; NDIM]) -> Self {
         let mut shape = [0; NDIM];
         let operator_shape = operator.shape();
@@ -96,6 +98,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Permute axes of an array
     pub fn permute_axes(
         self,
         permutation: [usize; NDIM],
@@ -103,6 +106,7 @@ impl<
         Array::new(ArrayTranspose::new(self, permutation))
     }
 
+    /// Transpose an array
     pub fn transpose(self) -> Array<Item, ArrayTranspose<Item, ArrayImpl, NDIM>, NDIM> {
         let mut permutation = [0; NDIM];
 

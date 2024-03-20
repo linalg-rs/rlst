@@ -35,6 +35,7 @@ impl<
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
+    /// Create new
     pub fn new(arr: Array<Item, ArrayImpl, ADIM>, axis_position: AxisPosition) -> Self {
         Self { arr, axis_position }
     }
@@ -184,6 +185,7 @@ impl<
         const ADIM: usize,
     > Array<Item, ArrayImpl, ADIM>
 {
+    /// Insert empty axis
     pub fn insert_empty_axis<const NDIM: usize>(
         self,
         axis_position: AxisPosition,

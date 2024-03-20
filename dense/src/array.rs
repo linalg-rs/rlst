@@ -56,8 +56,8 @@ impl<
     }
 }
 
-/// Create a new heap allocated array from a given shape.
 impl<Item: RlstScalar, const NDIM: usize> DynamicArray<Item, NDIM> {
+    /// Create a new heap allocated array from a given shape.
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))

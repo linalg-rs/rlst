@@ -19,6 +19,7 @@ pub struct ArrayView<
     arr: &'a Array<Item, ArrayImpl, NDIM>,
 }
 
+/// Mutable array view
 pub struct ArrayViewMut<
     'a,
     Item: RlstScalar,
@@ -37,6 +38,7 @@ impl<
         const NDIM: usize,
     > ArrayView<'a, Item, ArrayImpl, NDIM>
 {
+    /// Create new view
     pub fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { arr }
     }
@@ -51,6 +53,7 @@ impl<
         const NDIM: usize,
     > ArrayViewMut<'a, Item, ArrayImpl, NDIM>
 {
+    /// Create new mutable view
     pub fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { arr }
     }
@@ -295,7 +298,7 @@ impl<
     }
 }
 
-////////////////////////////////////////////
+/// Subview of an array
 pub struct ArraySubView<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -312,6 +315,7 @@ impl<
         const NDIM: usize,
     > ArraySubView<Item, ArrayImpl, NDIM>
 {
+    /// Create new array sub-view
     pub fn new(
         arr: Array<Item, ArrayImpl, NDIM>,
         offset: [usize; NDIM],

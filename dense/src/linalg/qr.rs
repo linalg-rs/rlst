@@ -9,10 +9,13 @@ use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 use crate::types::*;
 use num::Zero;
 
+/// Apply Q side
 #[derive(Clone, Copy)]
 #[repr(u8)]
 pub enum ApplyQSide {
+    /// Left
     Left = b'L',
+    /// Right
     Right = b'R',
 }
 
@@ -25,12 +28,14 @@ pub enum ApplyQSide {
 /// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
 /// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
 pub trait MatrixQrDecomposition: Sized {
+    /// Item type
     type Item: RlstScalar;
+    /// Array implementation
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
         + RawAccessMut<Item = Self::Item>
         + Shape<2>;
-
+    /// Create new
     fn new(arr: Array<Self::Item, Self::ArrayImpl, 2>) -> RlstResult<Self>;
 
     /// Return the permuation vector for the QR decomposition.
@@ -103,12 +108,16 @@ pub trait MatrixQrDecomposition: Sized {
     ) -> RlstResult<()>;
 }
 
+/// Transpose
 #[derive(Clone, Copy)]
 pub enum ApplyQTrans {
+    /// No transpose
     NoTrans,
+    /// Conjugate transpose
     ConjTrans,
 }
 
+/// QR decomposition
 pub struct QrDecomposition<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,

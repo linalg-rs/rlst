@@ -2,6 +2,7 @@
 
 use crate::array::*;
 
+/// Component-wise product
 pub struct CmpWiseProduct<
     Item: RlstScalar,
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -19,6 +20,7 @@ impl<
         const NDIM: usize,
     > CmpWiseProduct<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
+    /// Create new
     pub fn new(
         operator1: Array<Item, ArrayImpl1, NDIM>,
         operator2: Array<Item, ArrayImpl2, NDIM>,

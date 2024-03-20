@@ -27,6 +27,7 @@ use super::assert_lapack_stride;
 /// ```
 /// This method allocates memory for the inverse computation.
 pub trait MatrixInverse {
+    /// Compute the matrix inverse
     fn into_inverse_alloc(self) -> RlstResult<()>;
 }
 

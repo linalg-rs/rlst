@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 
 use crate::array::*;
 
+/// Array to complex
 pub struct ArrayToComplex<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
@@ -20,6 +21,7 @@ impl<
         const NDIM: usize,
     > ArrayToComplex<Item, ArrayImpl, NDIM>
 {
+    /// Create new
     pub fn new(operator: Array<<Item as RlstScalar>::Real, ArrayImpl, NDIM>) -> Self {
         Self {
             operator,
@@ -84,6 +86,7 @@ impl<
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM>, const NDIM: usize>
     Array<f32, ArrayImpl, NDIM>
 {
+    /// Convert to complex
     pub fn to_complex(self) -> Array<c32, ArrayToComplex<c32, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
@@ -92,6 +95,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM>, const
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f64> + Shape<NDIM>, const NDIM: usize>
     Array<f64, ArrayImpl, NDIM>
 {
+    /// Convert to complex
     pub fn to_complex(self) -> Array<c64, ArrayToComplex<c64, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
@@ -100,6 +104,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f64> + Shape<NDIM>, const
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c64> + Shape<NDIM>, const NDIM: usize>
     Array<c64, ArrayImpl, NDIM>
 {
+    /// Convert to complex
     pub fn to_complex(self) -> Self {
         self
     }
@@ -108,6 +113,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c64> + Shape<NDIM>, const
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c32> + Shape<NDIM>, const NDIM: usize>
     Array<c32, ArrayImpl, NDIM>
 {
+    /// Convert to complex
     pub fn to_complex(self) -> Self {
         self
     }

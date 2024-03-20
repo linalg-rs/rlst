@@ -9,7 +9,9 @@ use num::traits::{One, Zero};
 
 use crate::linalg::svd::*;
 
+/// Pseudo-inverse of a matrix
 pub trait MatrixPseudoInverse {
+    /// Item type
     type Item: RlstScalar;
 
     /// Compute the pseudo inverse into the array `pinv`.
