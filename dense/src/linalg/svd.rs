@@ -1,6 +1,6 @@
 //! Singular Value Decomposition.
 use crate::array::Array;
-use crate::traits::*;
+use crate::traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue};
 use crate::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use lapack::{cgesvd, dgesvd, sgesvd, zgesvd};
 use num::traits::Zero;

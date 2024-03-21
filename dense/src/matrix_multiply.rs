@@ -4,7 +4,7 @@
 //! uses the [rlst-blis] crate.
 
 use crate::gemm::Gemm;
-use crate::traits::*;
+use crate::traits::{RawAccess, RawAccessMut, Shape, Stride};
 use crate::types::RlstScalar;
 use crate::types::TransMode;
 

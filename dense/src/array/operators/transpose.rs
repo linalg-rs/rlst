@@ -1,6 +1,12 @@
 //! Container representing multiplication with a scalar
 
-use crate::{array::*, layout::convert_1d_nd_from_shape};
+use crate::{
+    array::{
+        empty_chunk, Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByRef,
+        UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    },
+    layout::convert_1d_nd_from_shape,
+};
 
 /// Transpose array
 pub struct ArrayTranspose<

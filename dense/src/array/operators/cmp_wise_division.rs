@@ -1,6 +1,6 @@
 //! Implementation of array addition
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
 /// Component-wise division
 pub struct CmpWiseDivision<

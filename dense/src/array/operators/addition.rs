@@ -1,6 +1,6 @@
 //! Implementation of array addition
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
 /// Addition
 pub struct ArrayAddition<

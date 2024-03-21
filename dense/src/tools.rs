@@ -1,7 +1,7 @@
 //! Useful library tools.
 
-use crate::traits::*;
-use crate::types::*;
+use crate::traits::{RandomAccessByValue, Shape};
+use crate::types::{c32, c64, RlstScalar};
 use rand::prelude::*;
 use rand_distr::Distribution;
 

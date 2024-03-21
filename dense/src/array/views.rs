@@ -6,8 +6,11 @@
 use crate::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use super::Array;
-use crate::traits::*;
-use crate::types::*;
+use crate::traits::{
+    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
+use crate::types::RlstScalar;
 
 /// Basic structure for a `View`
 pub struct ArrayView<

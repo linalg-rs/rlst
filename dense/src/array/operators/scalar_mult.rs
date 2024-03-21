@@ -1,7 +1,7 @@
 //! Container representing multiplication with a scalar
 
-use crate::array::*;
-use crate::types::*;
+use crate::array::{Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue};
+use crate::types::{c32, c64};
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<

@@ -2,11 +2,14 @@
 
 use super::assert_lapack_stride;
 use crate::array::Array;
-use crate::traits::*;
+use crate::traits::{
+    RandomAccessByValue, RandomAccessMut, RawAccess, RawAccessMut, Shape, Stride,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use itertools::Itertools;
 use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 
-use crate::types::*;
+use crate::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use num::Zero;
 
 /// Apply Q side

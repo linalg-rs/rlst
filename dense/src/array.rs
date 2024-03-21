@@ -8,7 +8,11 @@ use crate::base_array::BaseArray;
 use crate::data_container::SliceContainer;
 use crate::data_container::SliceContainerMut;
 use crate::data_container::VectorContainer;
-use crate::traits::*;
+use crate::traits::{
+    ChunkedAccess, DefaultIterator, DefaultIteratorMut, NumberOfElements, RandomAccessByRef,
+    RandomAccessByValue, RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use crate::types::DataChunk;
 use crate::types::RlstScalar;
 

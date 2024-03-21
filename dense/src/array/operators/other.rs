@@ -3,7 +3,7 @@
 use std::ops::Add;
 
 use crate::array::operators::{addition::ArrayAddition, scalar_mult::ArrayScalarMult};
-use crate::array::*;
+use crate::array::{Array, RlstScalar, Shape, UnsafeRandomAccessByValue};
 use num::One;
 
 impl<

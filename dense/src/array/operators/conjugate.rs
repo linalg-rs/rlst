@@ -1,6 +1,6 @@
 //! Container representing multiplication with a scalar
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
 /// Conjugate
 pub struct ArrayConjugate<

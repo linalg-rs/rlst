@@ -8,7 +8,10 @@ use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataConta
 use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
-use crate::traits::*;
+use crate::traits::{
+    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use crate::types::RlstScalar;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores

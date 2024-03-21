@@ -2,7 +2,10 @@
 
 use crate::number_types::{IsSmallerByOne, NumberType};
 
-use super::*;
+use super::{
+    Array, ChunkedAccess, DataChunk, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 
 /// Axis position.
 #[derive(Clone, Copy)]

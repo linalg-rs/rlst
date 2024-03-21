@@ -1,6 +1,6 @@
 //! Various iterator implementations.
 
-use crate::array::*;
+use crate::array::{views, Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::layout::convert_1d_nd_from_shape;
 use crate::traits::AsMultiIndex;
 use crate::types::RlstScalar;

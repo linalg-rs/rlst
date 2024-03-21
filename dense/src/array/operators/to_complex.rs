@@ -3,7 +3,7 @@
 use crate::types::{c32, c64};
 use std::marker::PhantomData;
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
 /// Array to complex
 pub struct ArrayToComplex<

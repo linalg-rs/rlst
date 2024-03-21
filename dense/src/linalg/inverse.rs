@@ -2,7 +2,7 @@
 //!
 //!
 use crate::array::Array;
-use crate::traits::*;
+use crate::traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue};
 use crate::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use lapack::{cgetrf, cgetri, dgetrf, dgetri, sgetrf, sgetri, zgetrf, zgetri};
 use num::traits::Zero;
