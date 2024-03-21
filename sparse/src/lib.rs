@@ -1,3 +1,4 @@
+//! RLST sparse
 #![cfg_attr(feature = "strict", deny(warnings))]
 #![warn(missing_docs)]
 

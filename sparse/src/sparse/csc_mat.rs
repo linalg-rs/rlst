@@ -10,6 +10,7 @@ use rlst_dense::traits::AijIterator;
 use rlst_dense::traits::Shape;
 use rlst_dense::types::RlstScalar;
 
+/// A CSC matrix
 #[derive(Clone)]
 pub struct CscMatrix<Item: RlstScalar> {
     mat_type: SparseMatType,
@@ -20,6 +21,7 @@ pub struct CscMatrix<Item: RlstScalar> {
 }
 
 impl<Item: RlstScalar> CscMatrix<Item> {
+    /// Create a new CSC matrix
     pub fn new(
         shape: [usize; 2],
         indices: Vec<usize>,
@@ -35,26 +37,32 @@ impl<Item: RlstScalar> CscMatrix<Item> {
         }
     }
 
+    /// Number of elements
     pub fn nelems(&self) -> usize {
         self.data.len()
     }
 
+    /// Matrix type
     pub fn mat_type(&self) -> &SparseMatType {
         &self.mat_type
     }
 
+    /// Row indices of items
     pub fn indices(&self) -> &[usize] {
         &self.indices
     }
 
+    /// Indices at which each column starts
     pub fn indptr(&self) -> &[usize] {
         &self.indptr
     }
 
+    /// Entries of the matrix
     pub fn data(&self) -> &[Item] {
         &self.data
     }
 
+    /// Matrix multiplication
     pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
         y.iter_mut().for_each(|elem| *elem = beta * *elem);
 
@@ -74,6 +82,7 @@ impl<Item: RlstScalar> CscMatrix<Item> {
         (self.shape, self.indices, self.indptr, self.data)
     }
 
+    /// Convert to CSR matrix
     pub fn into_csr(self) -> CsrMatrix<Item> {
         let mut rows = Vec::<usize>::with_capacity(self.nelems());
         let mut cols = Vec::<usize>::with_capacity(self.nelems());
@@ -88,6 +97,7 @@ impl<Item: RlstScalar> CscMatrix<Item> {
         CsrMatrix::from_aij(self.shape(), &rows, &cols, &data).unwrap()
     }
 
+    /// Create CSC matrix from rows, columns and data
     pub fn from_aij(
         shape: [usize; 2],
         rows: &[usize],
@@ -130,6 +140,7 @@ impl<Item: RlstScalar> CscMatrix<Item> {
     }
 }
 
+/// CSC iterator
 pub struct CscAijIterator<'a, Item: RlstScalar> {
     mat: &'a CscMatrix<Item>,
     col: usize,
@@ -137,6 +148,7 @@ pub struct CscAijIterator<'a, Item: RlstScalar> {
 }
 
 impl<'a, Item: RlstScalar> CscAijIterator<'a, Item> {
+    /// Create a new CSC iterator
     pub fn new(mat: &'a CscMatrix<Item>) -> Self {
         // We need to move the col pointer to the first col that has at least one element.
 
