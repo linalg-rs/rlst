@@ -9,19 +9,29 @@ use rlst_dense::types::RlstScalar;
 
 use crate::traits::index_layout::IndexLayout;
 
+/// Ghost communicator
 pub struct GhostCommunicator {
+    /// Global receive indices
     pub global_receive_indices: Vec<usize>,
+    /// Local send indices
     pub local_send_indices: Vec<usize>,
+    /// Neighbourhood send counts
     pub neighborhood_send_counts: Vec<i32>,
+    /// Neighbourhood receive counts
     pub neighborhood_receive_counts: Vec<i32>,
+    /// Neighbourhood send displacements
     pub neighborhood_send_displacements: Vec<i32>,
+    /// Neighbourhood receive displacements
     pub neighborhood_receive_displacements: Vec<i32>,
+    /// Total send count
     pub total_send_count: usize,
+    /// Total receive count
     pub total_receive_count: usize,
     neighbor_comm: SimpleCommunicator,
 }
 
 impl GhostCommunicator {
+    /// Create new ghost communicator
     pub fn new<C: Communicator, Layout: IndexLayout>(
         ghost_indices: &[usize],
         layout: &Layout,
@@ -151,6 +161,7 @@ impl GhostCommunicator {
         }
     }
 
+    /// Forward send ghosts
     pub fn forward_send_ghosts<T: RlstScalar + Equivalence>(
         &self,
         local_values: &[T],
@@ -176,6 +187,7 @@ impl GhostCommunicator {
             );
         }
     }
+    /// Backward send ghosts
     pub fn backward_send_ghosts<Acc: Fn(&mut T, &T), T: RlstScalar + Equivalence>(
         &self,
         local_values: &mut [T],

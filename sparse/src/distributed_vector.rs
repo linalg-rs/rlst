@@ -2,33 +2,41 @@
 use crate::traits::index_layout::IndexLayout;
 
 use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::*;
+use mpi::traits::{Communicator, Equivalence, Root};
 use rlst_dense::array::DynamicArray;
 use rlst_dense::types::{RlstResult, RlstScalar};
-use rlst_dense::{rlst_dynamic_array1, traits::*};
+use rlst_dense::{
+    rlst_dynamic_array1,
+    traits::{RawAccess, RawAccessMut, Shape},
+};
 
 use crate::index_layout::DefaultMpiIndexLayout;
 
+/// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
     index_layout: &'a DefaultMpiIndexLayout<'a, C>,
     local: DynamicArray<Item, 1>,
 }
 
 impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
+    /// Crate new
     pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
             local: rlst_dynamic_array1!(Item, [index_layout.number_of_local_indices()]),
         }
     }
+    /// Local part
     pub fn local(&self) -> &DynamicArray<Item, 1> {
         &self.local
     }
 
+    /// Mutable local part
     pub fn local_mut(&mut self) -> &mut DynamicArray<Item, 1> {
         &mut self.local
     }
 
+    /// Send to root
     pub fn to_root(&self) -> Option<DynamicArray<Item, 1>> {
         let comm = self.index_layout().comm();
         let root_process = comm.process_at_rank(0);
@@ -61,6 +69,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
         }
     }
 
+    /// Create from root
     pub fn from_root(
         index_layout: &'a DefaultMpiIndexLayout<'a, C>,
         other: &Option<DynamicArray<Item, 1>>,
