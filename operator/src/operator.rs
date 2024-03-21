@@ -2,7 +2,7 @@
 
 use crate::{FieldType, LinearSpace};
 use num::{One, Zero};
-use rlst_dense::types::*;
+use rlst_dense::types::RlstResult;
 use std::fmt::Debug;
 
 /// A base operator trait.

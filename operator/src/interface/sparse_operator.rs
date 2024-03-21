@@ -1,5 +1,8 @@
 //! Sparse operator
-use crate::{space::*, AsApply, OperatorBase};
+use crate::{
+    space::{Element, IndexableSpace, LinearSpace},
+    AsApply, OperatorBase,
+};
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape};
 use rlst_dense::types::RlstScalar;
 use rlst_sparse::sparse::csc_mat::CscMatrix;

@@ -1,5 +1,8 @@
 //! Dense matrix operator
-use crate::{space::*, AsApply, OperatorBase};
+use crate::{
+    space::{Element, IndexableSpace, LinearSpace},
+    AsApply, OperatorBase,
+};
 use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::Array,

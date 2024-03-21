@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-use crate::space::*;
+use crate::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
 use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::{
