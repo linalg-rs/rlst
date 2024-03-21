@@ -1,4 +1,8 @@
-use crate::{space::*, AsApply, OperatorBase};
+//! Sparse operator
+use crate::{
+    space::{Element, IndexableSpace, LinearSpace},
+    AsApply, OperatorBase,
+};
 use rlst_dense::traits::{RawAccess, RawAccessMut, Shape};
 use rlst_dense::types::RlstScalar;
 use rlst_sparse::sparse::csc_mat::CscMatrix;
@@ -6,6 +10,7 @@ use rlst_sparse::sparse::csr_mat::CsrMatrix;
 
 use super::array_vector_space::ArrayVectorSpace;
 
+/// CSR matrix operator
 pub struct CsrMatrixOperator<'a, Item: RlstScalar> {
     csr_mat: &'a CsrMatrix<Item>,
     domain: &'a ArrayVectorSpace<Item>,
@@ -22,6 +27,7 @@ impl<Item: RlstScalar> std::fmt::Debug for CsrMatrixOperator<'_, Item> {
 }
 
 impl<'a, Item: RlstScalar> CsrMatrixOperator<'a, Item> {
+    /// Create a new CSR matrix operator
     pub fn new(
         csr_mat: &'a CsrMatrix<Item>,
         domain: &'a ArrayVectorSpace<Item>,
@@ -66,6 +72,7 @@ impl<Item: RlstScalar> AsApply for CsrMatrixOperator<'_, Item> {
     }
 }
 
+/// CSC matrix operator
 pub struct CscMatrixOperator<'a, Item: RlstScalar> {
     csc_mat: &'a CscMatrix<Item>,
     domain: &'a ArrayVectorSpace<Item>,
@@ -82,6 +89,7 @@ impl<Item: RlstScalar> std::fmt::Debug for CscMatrixOperator<'_, Item> {
 }
 
 impl<'a, Item: RlstScalar> CscMatrixOperator<'a, Item> {
+    /// Create a new CSC matrix operator
     pub fn new(
         csc_mat: &'a CscMatrix<Item>,
         domain: &'a ArrayVectorSpace<Item>,

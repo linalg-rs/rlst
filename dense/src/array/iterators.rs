@@ -1,6 +1,6 @@
 //! Various iterator implementations.
 
-use crate::array::*;
+use crate::array::{views, Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::layout::convert_1d_nd_from_shape;
 use crate::traits::AsMultiIndex;
 use crate::types::RlstScalar;
@@ -179,6 +179,7 @@ impl<
     }
 }
 
+/// Row iterator
 pub struct RowIterator<
     'a,
     Item: RlstScalar,
@@ -190,6 +191,7 @@ pub struct RowIterator<
     current_row: usize,
 }
 
+/// Mutable row iterator
 pub struct RowIteratorMut<
     'a,
     Item: RlstScalar,
@@ -272,6 +274,7 @@ impl<
     }
 }
 
+/// Column iterator
 pub struct ColIterator<
     'a,
     Item: RlstScalar,
@@ -283,6 +286,7 @@ pub struct ColIterator<
     current_col: usize,
 }
 
+/// Mutable column iterator
 pub struct ColIteratorMut<
     'a,
     Item: RlstScalar,

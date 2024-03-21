@@ -1,7 +1,9 @@
+//! Default index layout
 use crate::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
 use rlst_dense::types::RlstResult;
 
+/// Default index layout
 pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
     size: usize,
     my_rank: usize,
@@ -10,6 +12,7 @@ pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
 }
 
 impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
+    /// Crate new
     pub fn new(size: usize, comm: &'a C) -> Self {
         let comm_size = comm.size() as usize;
 
@@ -79,6 +82,7 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
             comm,
         }
     }
+    /// MPI communicator
     pub fn comm(&self) -> &C {
         self.comm
     }

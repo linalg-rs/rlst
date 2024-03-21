@@ -8,7 +8,11 @@ use crate::base_array::BaseArray;
 use crate::data_container::SliceContainer;
 use crate::data_container::SliceContainerMut;
 use crate::data_container::VectorContainer;
-use crate::traits::*;
+use crate::traits::{
+    ChunkedAccess, DefaultIterator, DefaultIteratorMut, NumberOfElements, RandomAccessByRef,
+    RandomAccessByValue, RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use crate::types::DataChunk;
 use crate::types::RlstScalar;
 
@@ -56,8 +60,8 @@ impl<
     }
 }
 
-/// Create a new heap allocated array from a given shape.
 impl<Item: RlstScalar, const NDIM: usize> DynamicArray<Item, NDIM> {
+    /// Create a new heap allocated array from a given shape.
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))

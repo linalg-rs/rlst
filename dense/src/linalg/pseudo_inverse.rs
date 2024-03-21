@@ -2,14 +2,19 @@
 
 use crate::array::Array;
 use crate::rlst_dynamic_array2;
-use crate::traits::*;
+use crate::traits::{
+    MultInto, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
+};
 use crate::types::{c32, c64, RlstResult, RlstScalar};
 use itertools::Itertools;
 use num::traits::{One, Zero};
 
-use crate::linalg::svd::*;
+use crate::linalg::svd::MatrixSvd;
 
+/// Pseudo-inverse of a matrix
 pub trait MatrixPseudoInverse {
+    /// Item type
     type Item: RlstScalar;
 
     /// Compute the pseudo inverse into the array `pinv`.

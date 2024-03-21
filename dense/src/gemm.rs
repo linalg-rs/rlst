@@ -2,7 +2,9 @@
 use crate::types::{c32, c64, TransMode};
 use blas::{cgemm, dgemm, sgemm, zgemm};
 
+/// Gemm
 pub trait Gemm: Sized {
+    /// Gemm
     #[allow(clippy::too_many_arguments)]
     fn gemm(
         transa: TransMode,

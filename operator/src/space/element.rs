@@ -1,19 +1,20 @@
+//! Elements of linear spaces
 use num::One;
 use rlst_dense::types::RlstScalar;
 
 use super::LinearSpace;
 
-/// Elements of linear spaces.
+/// An Element of a linear spaces.
 pub trait Element {
-    /// Item type of the vector.
-
+    /// Space type
     type Space: LinearSpace<F = Self::F, E = Self>;
-
+    /// Scalar Type
     type F: RlstScalar;
-
+    /// View
     type View<'b>
     where
         Self: 'b;
+    /// Mutable view
     type ViewMut<'b>
     where
         Self: 'b;
@@ -52,6 +53,7 @@ pub trait Element {
         self
     }
 
+    /// self += other
     fn sum(mut self, other: &Self) -> Self
     where
         Self: Sized,
@@ -88,8 +90,8 @@ pub trait Element {
     }
 }
 
-// The view type associated with elements of linear spaces.
+/// The view type associated with elements of linear spaces.
 pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as Element>::View<'view>;
 
-// The mutable view type associated with elements of linear spaces.
+/// The mutable view type associated with elements of linear spaces.
 pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as Element>::ViewMut<'view>;

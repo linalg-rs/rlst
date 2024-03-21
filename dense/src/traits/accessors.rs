@@ -21,6 +21,7 @@ use crate::types::{DataChunk, RlstScalar};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
+    /// Item type
     type Item: RlstScalar;
 
     /// Return the element at position determined by `multi_index`.
@@ -32,6 +33,7 @@ pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
 
 /// This trait provides unsafe access by reference to the underlying data.
 pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
+    /// Item type
     type Item: RlstScalar;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
@@ -43,6 +45,7 @@ pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
 
 /// This trait provides unsafe mutable access to the underlying data.
 pub trait UnsafeRandomAccessMut<const NDIM: usize> {
+    /// Item type
     type Item: RlstScalar;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
@@ -72,12 +75,15 @@ pub trait RandomAccessMut<const NDIM: usize>: UnsafeRandomAccessMut<NDIM> {
 
 /// Return chunks of data of size N;
 pub trait ChunkedAccess<const N: usize> {
+    /// Item type
     type Item: RlstScalar;
+    /// Get chunk
     fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>>;
 }
 
 /// Get raw access to the underlying data.
 pub trait RawAccess {
+    /// Item type
     type Item: RlstScalar;
 
     /// Get a slice of the whole data.

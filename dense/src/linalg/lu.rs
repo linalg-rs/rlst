@@ -1,8 +1,11 @@
 //! LU Decomposition and linear system solves.
 use super::assert_lapack_stride;
 use crate::array::Array;
-use crate::traits::*;
-use crate::types::*;
+use crate::traits::{
+    RandomAccessByValue, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
+use crate::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 
@@ -13,7 +16,9 @@ use num::One;
 /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
 /// an `(k, n)` upper triangular matrix.
 pub trait MatrixLuDecomposition: Sized {
+    /// Item type
     type Item: RlstScalar;
+    /// Array implementaion
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + Stride<2>
         + RawAccessMut<Item = Self::Item>

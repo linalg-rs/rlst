@@ -1,11 +1,12 @@
 //! Relation between numbers represented as types and traits
 
+/// Number type
 pub struct NumberType<const N: usize>;
-
+/// Is one more than
 pub trait IsGreaterByOne<const N: usize> {}
-
+/// Is one less than
 pub trait IsSmallerByOne<const N: usize> {}
-
+/// Is greater than zero
 pub trait IsGreaterZero {}
 
 impl IsGreaterByOne<0> for NumberType<1> {}

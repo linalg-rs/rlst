@@ -1,7 +1,8 @@
 //! Implementation of array addition
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
+/// Component-wise division
 pub struct CmpWiseDivision<
     Item: RlstScalar,
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -19,6 +20,7 @@ impl<
         const NDIM: usize,
     > CmpWiseDivision<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
+    /// Create new
     pub fn new(
         operator1: Array<Item, ArrayImpl1, NDIM>,
         operator2: Array<Item, ArrayImpl2, NDIM>,

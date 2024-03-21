@@ -2,32 +2,35 @@
 
 use crate::{FieldType, LinearSpace};
 use num::{One, Zero};
-use rlst_dense::types::*;
+use rlst_dense::types::RlstResult;
 use std::fmt::Debug;
 
-// A base operator trait.
+/// A base operator trait.
 pub trait OperatorBase: Debug {
+    /// Domain space type
     type Domain: LinearSpace;
+    /// Range space type
     type Range: LinearSpace;
 
+    /// Get the domain
     fn domain(&self) -> &Self::Domain;
-
+    /// Get the range
     fn range(&self) -> &Self::Range;
-
+    /// Convert to RLST reference
     fn as_ref_obj(&self) -> RlstOperatorReference<'_, Self>
     where
         Self: Sized,
     {
         RlstOperatorReference(self)
     }
-
+    /// Form a new operator alpha * self.
     fn scale(self, alpha: <Self::Range as LinearSpace>::F) -> ScalarTimesOperator<Self>
     where
         Self: Sized,
     {
         ScalarTimesOperator(self, alpha)
     }
-
+    /// Form a new operator self + other.
     fn sum<Op: OperatorBase<Domain = Self::Domain, Range = Self::Range> + Sized>(
         self,
         other: Op,
@@ -55,6 +58,7 @@ pub trait OperatorBase: Debug {
 
 /// Apply an operator as y -> alpha * Ax + beta y
 pub trait AsApply: OperatorBase {
+    /// Apply an operator as y -> alpha * Ax + beta y
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
@@ -63,6 +67,7 @@ pub trait AsApply: OperatorBase {
         y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()>;
 
+    /// Apply
     fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
         let mut out = self.range().zero();
 
@@ -77,6 +82,7 @@ pub trait AsApply: OperatorBase {
     }
 }
 
+/// Operator reference
 pub struct RlstOperatorReference<'a, Op: OperatorBase>(&'a Op);
 
 impl<Op: OperatorBase> std::fmt::Debug for RlstOperatorReference<'_, Op> {
@@ -111,6 +117,7 @@ impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
     }
 }
 
+/// Operator sum
 pub struct OperatorSum<
     Domain: LinearSpace,
     Range: LinearSpace,
@@ -174,6 +181,7 @@ impl<
     }
 }
 
+/// Operator muiltiplied by a scalar
 pub struct ScalarTimesOperator<Op: OperatorBase>(Op, <Op::Range as LinearSpace>::F);
 
 impl<Op: OperatorBase> std::fmt::Debug for ScalarTimesOperator<Op> {

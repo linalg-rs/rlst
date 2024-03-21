@@ -25,6 +25,7 @@ pub trait LinearSpace {
         cloned
     }
 }
-
+/// Element type
 pub type ElementType<Space> = <Space as LinearSpace>::E;
+/// Field type
 pub type FieldType<Space> = <Space as LinearSpace>::F;

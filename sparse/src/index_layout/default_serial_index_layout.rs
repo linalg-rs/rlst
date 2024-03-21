@@ -1,11 +1,15 @@
+//! Defailt serial index layout
+
 use crate::traits::index_layout::IndexLayout;
 use rlst_dense::types::{RlstError, RlstResult};
 
+/// Default serial index layout
 pub struct DefaultSerialIndexLayout {
     size: usize,
 }
 
 impl DefaultSerialIndexLayout {
+    /// Create new
     pub fn new(size: usize) -> Self {
         Self { size }
     }

@@ -21,3 +21,6 @@ rand = "0.8.*"
 
 [lib]
 name = "rlst_operator"
+
+[lints]
+workspace = true

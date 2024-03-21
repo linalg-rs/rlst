@@ -1,4 +1,8 @@
-use crate::{space::*, AsApply, OperatorBase};
+//! Dense matrix operator
+use crate::{
+    space::{Element, IndexableSpace, LinearSpace},
+    AsApply, OperatorBase,
+};
 use rlst_dense::types::RlstScalar;
 use rlst_dense::{
     array::Array,
@@ -7,6 +11,7 @@ use rlst_dense::{
 
 use super::array_vector_space::ArrayVectorSpace;
 
+/// Dense matrix operator
 pub struct DenseMatrixOperator<
     'a,
     Item: RlstScalar,
@@ -40,6 +45,7 @@ impl<
             + 'a,
     > DenseMatrixOperator<'a, Item, ArrayImpl>
 {
+    /// Create a new dense matrix operator
     pub fn new(
         arr: Array<Item, ArrayImpl, 2>,
         domain: &'a ArrayVectorSpace<Item>,

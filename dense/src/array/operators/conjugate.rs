@@ -1,7 +1,8 @@
 //! Container representing multiplication with a scalar
 
-use crate::array::*;
+use crate::array::{Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue};
 
+/// Conjugate
 pub struct ArrayConjugate<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -16,6 +17,7 @@ impl<
         const NDIM: usize,
     > ArrayConjugate<Item, ArrayImpl, NDIM>
 {
+    /// Create new
     pub fn new(operator: Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { operator }
     }
@@ -51,6 +53,7 @@ impl<
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
+    /// Conjugate
     pub fn conj(self) -> Array<Item, ArrayConjugate<Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayConjugate::new(self))
     }

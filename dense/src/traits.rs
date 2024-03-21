@@ -8,11 +8,12 @@ pub use crate::linalg::{
 };
 pub use accessors::*;
 
+use crate::types::RlstScalar;
 use crate::types::TransMode;
-use crate::types::*;
 
-/// Return the shape of the object.
+/// Shape of an object
 pub trait Shape<const NDIM: usize> {
+    /// Return the shape of the object.
     fn shape(&self) -> [usize; NDIM];
 
     /// Return true if a dimension is 0.
@@ -27,24 +28,29 @@ pub trait Shape<const NDIM: usize> {
     }
 }
 
-/// Return the stride of the object.
+/// Stride of an object
 pub trait Stride<const NDIM: usize> {
+    /// Return the stride of the object.
     fn stride(&self) -> [usize; NDIM];
 }
 
-/// Return the number of elements.
+/// Number of elements
 pub trait NumberOfElements {
+    /// Return the number of elements.
     fn number_of_elements(&self) -> usize;
 }
 
-/// Resize an operator in place
+/// Resize in place
 pub trait ResizeInPlace<const NDIM: usize> {
+    /// Resize an operator in place
     fn resize_in_place(&mut self, shape: [usize; NDIM]);
 }
 
-/// Multiply First * Second and sum into Self
+/// Multiply into
 pub trait MultInto<First, Second> {
+    /// Item type
     type Item: RlstScalar;
+    /// Multiply First * Second and sum into Self
     fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
@@ -58,6 +64,7 @@ pub trait MultInto<First, Second> {
             <Self::Item as num::Zero>::zero(),
         )
     }
+    /// Multiply into
     fn mult_into(
         self,
         transa: TransMode,
@@ -69,9 +76,11 @@ pub trait MultInto<First, Second> {
     ) -> Self;
 }
 
-/// Multiply First * Second and sum into Self. Allow to resize Self if necessary
+/// Multiply into with resize
 pub trait MultIntoResize<First, Second> {
+    /// Item type
     type Item: RlstScalar;
+    /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
@@ -85,6 +94,7 @@ pub trait MultIntoResize<First, Second> {
             <Self::Item as num::Zero>::zero(),
         )
     }
+    /// Multiply into with resize
     fn mult_into_resize(
         self,
         transa: TransMode,
@@ -98,21 +108,25 @@ pub trait MultIntoResize<First, Second> {
 
 /// Default iterator.
 pub trait DefaultIterator {
+    /// Item type
     type Item: RlstScalar;
+    /// Iterator type
     type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
         Self: 'a;
-
+    /// Get iterator
     fn iter(&self) -> Self::Iter<'_>;
 }
 
 /// Mutable default iterator.
 pub trait DefaultIteratorMut {
+    /// Item type
     type Item: RlstScalar;
+    /// Iterator
     type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
-
+    /// Get mutable iterator
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
@@ -120,17 +134,20 @@ pub trait DefaultIteratorMut {
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIterator {
+    /// Item type
     type Item: RlstScalar;
+    /// Iterator
     type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where
         Self: 'a;
-
+    /// Get iterator
     fn iter_aij(&self) -> Self::Iter<'_>;
 }
 
 /// Helper trait that returns from an enumeration iterator a new iterator
 /// that converts the 1d index into a multi-index.
 pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+    /// Get multi-index
     fn multi_index(
         self,
         shape: [usize; NDIM],

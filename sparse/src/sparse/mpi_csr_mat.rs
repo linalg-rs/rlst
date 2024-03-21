@@ -15,6 +15,7 @@ use rlst_dense::traits::Shape;
 use rlst_dense::traits::{RawAccess, RawAccessMut};
 use rlst_dense::types::RlstScalar;
 
+/// Distributed CSR matrix
 pub struct MpiCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
     shape: [usize; 2],
@@ -27,6 +28,7 @@ pub struct MpiCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
 }
 
 impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
+    /// Create new
     pub fn new(
         shape: [usize; 2],
         indices: Vec<usize>,
@@ -90,34 +92,42 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         }
     }
 
+    /// Matrix type
     pub fn mat_type(&self) -> &SparseMatType {
         &self.mat_type
     }
 
+    /// Local shape
     pub fn local_shape(&self) -> [usize; 2] {
         self.local_matrix.shape()
     }
 
+    /// Column indices
     pub fn indices(&self) -> &[usize] {
         &self.global_indices
     }
 
+    /// Indices at which each row starts
     pub fn indptr(&self) -> &[usize] {
         self.local_matrix.indptr()
     }
 
+    /// Matrix entries
     pub fn data(&self) -> &[T] {
         self.local_matrix.data()
     }
 
+    /// Domain layout
     pub fn domain_layout(&self) -> &'a DefaultMpiIndexLayout<'a, C> {
         self.domain_layout
     }
 
+    /// Range layout
     pub fn range_layout(&self) -> &'a DefaultMpiIndexLayout<'a, C> {
         self.range_layout
     }
 
+    /// Create from root
     pub fn from_root(
         csr_mat: Option<CsrMatrix<T>>,
         domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
@@ -259,6 +269,7 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         )
     }
 
+    /// Matrix multiplication
     pub fn matmul<'b>(
         &self,
         alpha: T,

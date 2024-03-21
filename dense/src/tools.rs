@@ -1,7 +1,7 @@
 //! Useful library tools.
 
-use crate::traits::*;
-use crate::types::*;
+use crate::traits::{RandomAccessByValue, Shape};
+use crate::types::{c32, c64, RlstScalar};
 use rand::prelude::*;
 use rand_distr::Distribution;
 
@@ -54,6 +54,7 @@ impl RandScalar for c64 {
     }
 }
 
+/// Assert that the absolute difference of two matrices is small enough
 #[macro_export]
 macro_rules! assert_matrix_abs_diff_eq {
     ($expected_matrix:expr, $actual_matrix:expr, $epsilon:expr) => {{
@@ -71,6 +72,7 @@ macro_rules! assert_matrix_abs_diff_eq {
     }};
 }
 
+/// Assert that the relative difference of two matrices is small enough
 #[macro_export]
 macro_rules! assert_matrix_relative_eq {
     ($expected_matrix:expr, $actual_matrix:expr, $epsilon:expr) => {{
@@ -88,6 +90,7 @@ macro_rules! assert_matrix_relative_eq {
     }};
 }
 
+/// Assert that the absolute difference of two arrays is small enough
 #[macro_export]
 macro_rules! assert_array_abs_diff_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
@@ -99,6 +102,7 @@ macro_rules! assert_array_abs_diff_eq {
     }};
 }
 
+/// Assert that the relative difference of two arrays is small enough
 #[macro_export]
 macro_rules! assert_array_relative_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
@@ -110,6 +114,7 @@ macro_rules! assert_array_relative_eq {
     }};
 }
 
+/// TODO: document
 #[macro_export]
 macro_rules! assert_matrix_ulps_eq {
     ($expected_matrix:expr, $actual_matrix:expr, $ulps:expr) => {{
@@ -127,9 +132,13 @@ macro_rules! assert_matrix_ulps_eq {
     }};
 }
 
+/// Pretty printing
 pub trait PrettyPrint<T: RlstScalar> {
+    /// Pretty printing
     fn pretty_print(&self);
+    /// Pretty printing with dimension
     fn pretty_print_with_dimension(&self, rows: usize, cols: usize);
+    /// Pretty printing with advanced options
     fn pretty_print_advanced(
         &self,
         rows: usize,

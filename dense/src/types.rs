@@ -5,30 +5,48 @@ use thiserror::Error;
 /// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
+    /// Not implemented
     #[error("Method {0} is not implemented.")]
     NotImplemented(String),
+    /// Operation failed
     #[error("Operation {0} failed.")]
     OperationFailed(String),
+    /// Matrix is empty
     #[error("Matrix has empty dimension {0:#?}.")]
     MatrixIsEmpty((usize, usize)),
+    /// Dimension mismatch
     #[error("Dimension mismatch. Expected {expected:}. Actual {actual:}")]
-    SingleDimensionError { expected: usize, actual: usize },
+    SingleDimensionError {
+        /// Expected dimension
+        expected: usize,
+        /// Actual dimension
+        actual: usize,
+    },
+    /// Index layout error
     #[error("Index Layout error: {0}")]
     IndexLayoutError(String),
+    /// MPI rank error
     #[error("MPI Rank does not exist. {0}")]
     MpiRankError(i32),
+    /// Incompatible stride for Lapack
     #[error("Incompatible stride for Lapack.")]
     IncompatibleStride,
+    /// Lapack error
     #[error("Lapack error: {0}")]
     LapackError(i32),
+    /// General error
     #[error("{0}")]
     GeneralError(String),
+    /// I/O error
     #[error("I/O Error: {0}")]
     IoError(String),
+    /// Umfpack error
     #[error("Umfpack Error Code: {0}")]
     UmfpackError(i32),
+    /// Matrix is not square
     #[error("Matrix is not square. Dimension: {0}x{1}")]
     MatrixNotSquare(usize, usize),
+    /// Matrix is not Hermitian
     #[error("Matrix is not Hermitian (complex conjugate symmetric).")]
     MatrixNotHermitian,
 }
@@ -37,11 +55,12 @@ pub enum RlstError {
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
 
 /// Data chunk of fixed size N.
-/// The field `valid_entries` stores how many entries of the chunk
-/// contain valid data.
 pub struct DataChunk<Item: RlstScalar, const N: usize> {
+    /// The data
     pub data: [Item; N],
+    /// The start index
     pub start_index: usize,
+    /// How many entries of the chunk contain valid data.
     pub valid_entries: usize,
 }
 
@@ -58,10 +77,12 @@ pub use num::complex::Complex64 as c64;
 
 use crate::gemm::Gemm;
 
-// The following RlstScalar trait and is implementation for f32, f64, c32, c64
-// is a modifed version of the Scalar trait from the Rust Cauchy package
-// (https://github.com/rust-math/cauchy), which is MIT licensed. For the full license text see
-// https://github.com/rust-math/cauchy/blob/master/LICENSE.
+/// Rlst scalar
+///
+/// The following RlstScalar trait and is implementation for f32, f64, c32, c64
+/// is a modifed version of the Scalar trait from the Rust Cauchy package
+/// (<https://github.com/rust-math/cauchy>), which is MIT licensed. For the full license text see
+/// <https://github.com/rust-math/cauchy/blob/master/LICENSE>.
 pub trait RlstScalar:
     NumAssign
     + FromPrimitive
@@ -82,9 +103,11 @@ pub trait RlstScalar:
     + for<'de> Deserialize<'de>
     + 'static
 {
+    /// Real type
     type Real: RlstScalar<Real = Self::Real, Complex = Self::Complex>
         + NumOps<Self::Real, Self::Real>
         + Float;
+    /// Complex type
     type Complex: RlstScalar<Real = Self::Real, Complex = Self::Complex>
         + NumOps<Self::Real, Self::Complex>
         + NumOps<Self::Complex, Self::Complex>;
@@ -93,22 +116,31 @@ pub trait RlstScalar:
     fn real<T: ToPrimitive>(re: T) -> Self::Real;
     /// Create a new complex number
     fn complex<T: ToPrimitive>(re: T, im: T) -> Self::Complex;
-
+    /// Create from a real number
     fn from_real(re: Self::Real) -> Self;
-
+    /// Add a real number
     fn add_real(self, re: Self::Real) -> Self;
+    /// Subtract a real number
     fn sub_real(self, re: Self::Real) -> Self;
+    /// Multiply by a real number
     fn mul_real(self, re: Self::Real) -> Self;
+    /// Divide by a real number
     fn div_real(self, re: Self::Real) -> Self;
-
+    /// Add a complex number
     fn add_complex(self, im: Self::Complex) -> Self::Complex;
+    /// Subtract a complex number
     fn sub_complex(self, im: Self::Complex) -> Self::Complex;
+    /// Multiply by a complex number
     fn mul_complex(self, im: Self::Complex) -> Self::Complex;
+    /// Divide by a complex number
     fn div_complex(self, im: Self::Complex) -> Self::Complex;
-
+    /// Raise to a power
     fn pow(self, n: Self) -> Self;
+    /// Raise to an integer power
     fn powi(self, n: i32) -> Self;
+    /// Raise to a real power
     fn powf(self, n: Self::Real) -> Self;
+    /// Raise to a complex power
     fn powc(self, n: Self::Complex) -> Self::Complex;
 
     /// Real part
@@ -125,20 +157,35 @@ pub trait RlstScalar:
     /// Sqaure of absolute value
     fn square(self) -> Self::Real;
 
+    /// Square root
     fn sqrt(self) -> Self;
+    /// Exponential
     fn exp(self) -> Self;
+    /// Natural logarithm
     fn ln(self) -> Self;
+    /// Sine
     fn sin(self) -> Self;
+    /// Cosine
     fn cos(self) -> Self;
+    /// Tangeng
     fn tan(self) -> Self;
+    /// Inverse sine
     fn asin(self) -> Self;
+    /// Inverse cosine
     fn acos(self) -> Self;
+    /// Inverse tangent
     fn atan(self) -> Self;
+    /// Hyperbolic sine
     fn sinh(self) -> Self;
+    /// Hyperbolic cosine
     fn cosh(self) -> Self;
+    /// Hyperbolic tangent
     fn tanh(self) -> Self;
+    /// Inverse hyperbolic sine
     fn asinh(self) -> Self;
+    /// Inverse hyperbolic cosine
     fn acosh(self) -> Self;
+    /// Inverse hyperbolic tangent
     fn atanh(self) -> Self;
 
     /// Generate an random number from

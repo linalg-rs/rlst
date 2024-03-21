@@ -1,3 +1,4 @@
+//! Index layout
 #[cfg(feature = "mpi")]
 pub mod default_mpi_index_layout;
 

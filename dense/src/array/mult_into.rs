@@ -5,7 +5,10 @@ use crate::traits::MultInto;
 use crate::traits::MultIntoResize;
 pub use crate::types::TransMode;
 
-use super::{empty_axis::AxisPosition, *};
+use super::{
+    empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, RlstScalar, Shape,
+    Stride, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 
 impl<
         Item: RlstScalar,

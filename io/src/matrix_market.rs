@@ -41,6 +41,7 @@ pub enum DataType {
 
 /// Identifier trait to associate a matrix market identifier with a Rust type.
 pub trait MmIdentifier {
+    /// Matrix market type
     const MMTYPE: &'static str;
 }
 

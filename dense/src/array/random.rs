@@ -1,7 +1,7 @@
 //! Methods for the creation of random matrices.
 
-use crate::tools::*;
-use crate::traits::*;
+use crate::tools::RandScalar;
+use crate::traits::{DefaultIteratorMut, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::types::RlstScalar;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;

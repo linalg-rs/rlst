@@ -8,7 +8,10 @@ use crate::data_container::{DataContainer, DataContainerMut, ResizeableDataConta
 use crate::layout::{
     check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
 };
-use crate::traits::*;
+use crate::traits::{
+    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
 use crate::types::RlstScalar;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
@@ -22,11 +25,13 @@ pub struct BaseArray<Item: RlstScalar, Data: DataContainer<Item = Item>, const N
 impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     BaseArray<Item, Data, NDIM>
 {
+    /// Create new
     pub fn new(data: Data, shape: [usize; NDIM]) -> Self {
         let stride = stride_from_shape(shape);
         Self::new_with_stride(data, shape, stride)
     }
 
+    /// Create new with stride
     pub fn new_with_stride(data: Data, shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
         if *shape.iter().min().unwrap() == 0 {
             // Array is empty
