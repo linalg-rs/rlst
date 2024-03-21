@@ -6,9 +6,11 @@ use rlst_dense::{
     array::DynamicArray,
     traits::{RandomAccessMut, Shape},
 };
+/// Gram Schmidt orthogonalization
 pub struct ModifiedGramSchmidt;
 
 impl ModifiedGramSchmidt {
+    /// Orthogonalize a matrix
     pub fn orthogonalize<
         Item: RlstScalar,
         Elem: Element<F = Item>,

@@ -2,33 +2,37 @@
 
 use crate::Element;
 
+/// A frame
+///
+/// A frame is a collection of elements of a space.
 pub trait Frame {
+    /// Element type
     type E: Element;
-
+    /// Iterator
     type Iter<'iter>: std::iter::Iterator<Item = &'iter Self::E>
     where
         Self: 'iter;
-
+    /// Mutable iterator
     type IterMut<'iter>: std::iter::Iterator<Item = &'iter mut Self::E>
     where
         Self: 'iter;
-
+    /// Get an element
     fn get(&self, index: usize) -> Option<&Self::E>;
-
+    /// Get a mutable element
     fn get_mut(&mut self, index: usize) -> Option<&mut Self::E>;
-
+    /// Number of elements
     fn len(&self) -> usize;
-
+    /// Is empty
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
-
+    /// Get iterator
     fn iter(&self) -> Self::Iter<'_>;
-
+    /// Get mutable iterator
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
-
+    /// Add an element
     fn push(&mut self, elem: Self::E);
-
+    /// Evaluate
     fn evaluate(&self, coeffs: &[<Self::E as Element>::F], result: &mut Self::E) {
         assert_eq!(coeffs.len(), self.len());
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
@@ -37,11 +41,13 @@ pub trait Frame {
     }
 }
 
+/// A vector frame
 pub struct VectorFrame<Elem: Element> {
     data: Vec<Elem>,
 }
 
 impl<Elem: Element> VectorFrame<Elem> {
+    /// Create a new vector frame
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }

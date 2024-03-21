@@ -1,1 +1,1 @@
-// Linear algebra operations on function spaces
+//! Linear algebra operations on function spaces

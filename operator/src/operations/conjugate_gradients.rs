@@ -3,6 +3,7 @@ use crate::{AsApply, Element, InnerProductSpace, LinearSpace, NormedSpace};
 use num::One;
 use rlst_dense::types::RlstScalar;
 
+/// Iteration for CG
 pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>> {
     operator: &'a Op,
     space: &'a Space,
@@ -18,6 +19,7 @@ pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space,
 impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     CgIteration<'a, Space, Op>
 {
+    /// Create a new CG iteration
     pub fn new(op: &'a Op, rhs: &'a Space::E) -> Self {
         Self {
             operator: op,
@@ -31,31 +33,37 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         }
     }
 
+    /// Set x
     pub fn set_x(mut self, x: &Space::E) -> Self {
         self.x.fill_inplace(x);
         self
     }
 
+    /// Set the tolerance
     pub fn set_tol(mut self, tol: <Space::F as RlstScalar>::Real) -> Self {
         self.tol = tol;
         self
     }
 
+    /// Set maximum number of iterations
     pub fn set_max_iter(mut self, max_iter: usize) -> Self {
         self.max_iter = max_iter;
         self
     }
 
+    /// Set the cammable
     pub fn set_callable(mut self, callable: impl FnMut(&Space::E, &Space::E) + 'a) -> Self {
         self.callable = Some(Box::new(callable));
         self
     }
 
+    /// Enable debug printing
     pub fn print_debug(mut self) -> Self {
         self.print_debug = true;
         self
     }
 
+    /// Run CG
     pub fn run(mut self) -> (Space::E, <Space::F as RlstScalar>::Real) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(

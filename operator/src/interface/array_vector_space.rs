@@ -14,16 +14,19 @@ use rlst_dense::{
     rlst_dynamic_array1,
 };
 
+/// Array vector space
 pub struct ArrayVectorSpace<Item: RlstScalar> {
     dimension: usize,
     _marker: PhantomData<Item>,
 }
 
+/// Element of an array vector space
 pub struct ArrayVectorSpaceElement<Item: RlstScalar> {
     elem: DynamicArray<Item, 1>,
 }
 
 impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
+    /// Create a new element
     pub fn new(space: &ArrayVectorSpace<Item>) -> Self {
         Self {
             elem: rlst_dynamic_array1!(Item, [space.dimension()]),
@@ -32,6 +35,7 @@ impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
 }
 
 impl<Item: RlstScalar> ArrayVectorSpace<Item> {
+    /// Create a new vector space
     pub fn new(dimension: usize) -> Self {
         Self {
             dimension,
