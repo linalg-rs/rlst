@@ -1,7 +1,7 @@
 //! Fixed size matrix example
 //!
 
-use rlst_dense::types::c64;
+use rlst::dense::types::c64;
 use rlst_proc_macro::rlst_static_array;
 use rlst_proc_macro::rlst_static_type;
 

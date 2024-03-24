@@ -5,8 +5,8 @@ extern crate lapack_src;
 
 use approx::assert_relative_eq;
 use paste::paste;
+use rlst::assert_array_relative_eq;
 use rlst::dense;
-use rlst::dense::assert_array_relative_eq;
 use rlst::dense::layout::convert_1d_nd_from_shape;
 use rlst::prelude::rlst_dynamic_array3;
 use rlst::prelude::*;

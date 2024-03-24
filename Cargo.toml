@@ -2,10 +2,6 @@
 resolver = "2"
 
 members = [
-  "dense",
-  "operator",
-  "sparse",
-  "io",
   "rlst",
   "proc-macro",
 ]
