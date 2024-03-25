@@ -1,13 +1,13 @@
 //! Definition of CSC matrices.
 
 use crate::dense::types::RlstResult;
-use crate::sparse::sparse::SparseMatType;
+use crate::sparse::sparse_mat::SparseMatType;
 
 use crate::dense::traits::AijIterator;
 use crate::dense::traits::Shape;
 use crate::dense::types::RlstScalar;
-use crate::sparse::sparse::csr_mat::CsrMatrix;
-use crate::sparse::sparse::tools::normalize_aij;
+use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
+use crate::sparse::sparse_mat::tools::normalize_aij;
 use itertools::Itertools;
 
 /// A CSC matrix

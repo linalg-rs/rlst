@@ -54,11 +54,11 @@ pub use crate::dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 pub use crate::sparse::index_layout::DefaultMpiIndexLayout;
 
 #[cfg(feature = "mpi")]
-pub use crate::sparse::sparse::mpi_csr_mat::MpiCsrMatrix;
+pub use crate::sparse::sparse_mat::mpi_csr_mat::MpiCsrMatrix;
 
 pub use crate::sparse::index_layout::DefaultSerialIndexLayout;
-pub use crate::sparse::sparse::csc_mat::CscMatrix;
-pub use crate::sparse::sparse::csr_mat::CsrMatrix;
+pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
+pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 pub use crate::sparse::traits::index_layout::IndexLayout;
 
 // pub use rlst_operator::interface::{

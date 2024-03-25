@@ -2,18 +2,18 @@
 
 use std::collections::HashMap;
 
-use crate::ghost_communicator::GhostCommunicator;
-use crate::index_layout::DefaultMpiIndexLayout;
-use crate::sparse::csr_mat::CsrMatrix;
-use crate::sparse::SparseMatType;
-use crate::traits::index_layout::IndexLayout;
+use crate::sparse::ghost_communicator::GhostCommunicator;
+use crate::sparse::index_layout::DefaultMpiIndexLayout;
+use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
+use crate::sparse::sparse_mat::SparseMatType;
+use crate::sparse::traits::index_layout::IndexLayout;
 
-use crate::distributed_vector::DistributedVector;
+use crate::sparse::distributed_vector::DistributedVector;
 use mpi::traits::{Communicator, Equivalence, Root};
 
-use rlst_dense::traits::Shape;
-use rlst_dense::traits::{RawAccess, RawAccessMut};
-use rlst_dense::types::RlstScalar;
+use crate::dense::traits::Shape;
+use crate::dense::traits::{RawAccess, RawAccessMut};
+use crate::dense::types::RlstScalar;
 
 /// Distributed CSR matrix
 pub struct MpiCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
@@ -24,7 +24,7 @@ pub struct MpiCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
     local_dof_count: usize,
     domain_layout: &'a DefaultMpiIndexLayout<'a, C>,
     range_layout: &'a DefaultMpiIndexLayout<'a, C>,
-    domain_ghosts: crate::ghost_communicator::GhostCommunicator,
+    domain_ghosts: crate::sparse::ghost_communicator::GhostCommunicator,
 }
 
 impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {

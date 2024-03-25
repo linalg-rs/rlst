@@ -2,12 +2,12 @@
 
 use std::os::raw::c_void;
 
+use crate::dense::types::RlstScalar;
 use mpi::topology::SimpleCommunicator;
 use mpi::traits::{AsRaw, Communicator, CommunicatorCollectives, Equivalence, FromRaw};
 use mpi_sys;
-use rlst_dense::types::RlstScalar;
 
-use crate::traits::index_layout::IndexLayout;
+use crate::sparse::traits::index_layout::IndexLayout;
 
 /// Ghost communicator
 pub struct GhostCommunicator {

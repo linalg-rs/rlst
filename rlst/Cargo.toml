@@ -31,6 +31,8 @@ serde = "1"
 mpi = { version="0.7.0", optional=true }
 mpi-sys = { version="0.2.1", optional=true }
 
+rlst-umfpack = { git = "https://github.com/linalg-rs/rlst-umfpack", optional = true}
+
 
 [target.aarch64-apple-darwin.dev-dependencies]
 blas-src = { version = "0.9", features = ["accelerate"]}
@@ -52,9 +54,9 @@ rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 
 [features]
 strict = []
-default = []
+default = ["mpi", "umfpack"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
-umfpack = []
+umfpack = ["dep:rlst-umfpack"]
 blis = []
 
 [lints]

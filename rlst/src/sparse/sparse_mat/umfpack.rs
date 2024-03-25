@@ -2,13 +2,13 @@
 
 use std::ffi::c_void;
 
-use crate::sparse::csc_mat::CscMatrix;
-use rlst_dense::array::Array;
-use rlst_dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
-use rlst_dense::types::RlstScalar;
-use rlst_dense::types::TransMode;
-use rlst_dense::types::*;
-use rlst_dense::types::{RlstError, RlstResult};
+use crate::dense::array::Array;
+use crate::dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
+use crate::dense::types::RlstScalar;
+use crate::dense::types::TransMode;
+use crate::dense::types::*;
+use crate::dense::types::{RlstError, RlstResult};
+use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 use rlst_umfpack as umfpack;
 
 use super::csr_mat::CsrMatrix;
@@ -29,11 +29,11 @@ impl<T: RlstScalar> Drop for UmfpackLu<T> {
 
 impl UmfpackLu<f64> {
     pub fn solve<
-        ArrayImplX: rlst_dense::traits::RandomAccessByValue<1, Item = f64>
+        ArrayImplX: crate::dense::traits::RandomAccessByValue<1, Item = f64>
             + Shape<1>
             + RawAccessMut<Item = f64>
             + Stride<1>,
-        ArrayImplRhs: rlst_dense::traits::RandomAccessByValue<1, Item = f64>
+        ArrayImplRhs: crate::dense::traits::RandomAccessByValue<1, Item = f64>
             + Shape<1>
             + RawAccess<Item = f64>
             + Stride<1>,
@@ -42,7 +42,7 @@ impl UmfpackLu<f64> {
         rhs: Array<f64, ArrayImplRhs, 1>,
         mut x: Array<f64, ArrayImplX, 1>,
         trans: TransMode,
-    ) -> rlst_dense::types::RlstResult<()> {
+    ) -> crate::dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 
@@ -81,11 +81,11 @@ impl UmfpackLu<f64> {
 
 impl UmfpackLu<c64> {
     pub fn solve<
-        ArrayImplX: rlst_dense::traits::RandomAccessByValue<1, Item = c64>
+        ArrayImplX: crate::dense::traits::RandomAccessByValue<1, Item = c64>
             + Shape<1>
             + RawAccessMut<Item = c64>
             + Stride<1>,
-        ArrayImplRhs: rlst_dense::traits::RandomAccessByValue<1, Item = c64>
+        ArrayImplRhs: crate::dense::traits::RandomAccessByValue<1, Item = c64>
             + Shape<1>
             + RawAccess<Item = c64>
             + Stride<1>,
@@ -94,7 +94,7 @@ impl UmfpackLu<c64> {
         rhs: Array<c64, ArrayImplRhs, 1>,
         mut x: Array<c64, ArrayImplX, 1>,
         trans: TransMode,
-    ) -> rlst_dense::types::RlstResult<()> {
+    ) -> crate::dense::types::RlstResult<()> {
         assert_eq!(rhs.stride()[0], 1);
         assert_eq!(x.stride()[0], 1);
 

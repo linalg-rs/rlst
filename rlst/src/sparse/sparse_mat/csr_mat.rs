@@ -2,11 +2,11 @@
 
 use crate::dense::traits::AijIterator;
 use crate::dense::types::RlstResult;
-use crate::sparse::sparse::SparseMatType;
+use crate::sparse::sparse_mat::SparseMatType;
 
 use crate::dense::traits::Shape;
 use crate::dense::types::RlstScalar;
-use crate::sparse::sparse::tools::normalize_aij;
+use crate::sparse::sparse_mat::tools::normalize_aij;
 
 use super::csc_mat::CscMatrix;
 

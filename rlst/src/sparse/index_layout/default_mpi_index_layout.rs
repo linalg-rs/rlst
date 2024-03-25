@@ -1,7 +1,7 @@
 //! Default index layout
-use crate::traits::index_layout::IndexLayout;
+use crate::dense::types::RlstResult;
+use crate::sparse::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
-use rlst_dense::types::RlstResult;
 
 /// Default index layout
 pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
@@ -93,7 +93,7 @@ impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
         if rank < self.comm.size() as usize {
             Ok((self.counts[rank], self.counts[1 + rank]))
         } else {
-            Err(rlst_dense::types::RlstError::MpiRankError(rank as i32))
+            Err(crate::dense::types::RlstError::MpiRankError(rank as i32))
         }
     }
 

@@ -1,16 +1,14 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
-use crate::traits::index_layout::IndexLayout;
+use crate::sparse::traits::index_layout::IndexLayout;
 
+use crate::dense::array::DynamicArray;
+use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
+use crate::dense::types::{RlstResult, RlstScalar};
+use crate::rlst_dynamic_array1;
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, Equivalence, Root};
-use rlst_dense::array::DynamicArray;
-use rlst_dense::types::{RlstResult, RlstScalar};
-use rlst_dense::{
-    rlst_dynamic_array1,
-    traits::{RawAccess, RawAccessMut, Shape},
-};
 
-use crate::index_layout::DefaultMpiIndexLayout;
+use crate::sparse::index_layout::DefaultMpiIndexLayout;
 
 /// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
