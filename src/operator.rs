@@ -2,11 +2,11 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 #![warn(missing_docs)]
 
+pub mod abstract_operator;
 pub mod interface;
 pub mod linalg;
 pub mod operations;
-pub mod operator;
 pub mod space;
 
-pub use operator::*;
+pub use abstract_operator::*;
 pub use space::*;
