@@ -5,7 +5,6 @@ extern crate lapack_src;
 
 use num::traits::{One, Zero};
 use rand::Rng;
-use rlst::dense;
 use rlst::prelude::*;
 
 #[test]
@@ -136,5 +135,5 @@ fn test_operator_algebra() {
 
     sum.apply_extended(2.0, &x, 3.5, &mut y).unwrap();
 
-    dense::assert_array_relative_eq!(y.view(), y_expected.view(), 1E-12);
+    rlst::assert_array_relative_eq!(y.view(), y_expected.view(), 1E-12);
 }
