@@ -83,8 +83,8 @@ pub struct MatrixMarketInfo {
 
 /// Export a matrix in coordinate format.
 ///
-/// This function requires objects to implement the [rlst::dense::traits::AijIterator] and
-/// [rlst::dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [crate::dense::traits::AijIterator] and
+/// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
     T: RlstScalar + MmIdentifier,
@@ -118,8 +118,8 @@ pub fn write_coordinate_mm<
 
 /// Export a matrix in array format.
 ///
-/// This function requires objects to implement the [rlst::dense::traits::DefaultIterator] and
-/// [rlst::dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [crate::dense::traits::DefaultIterator] and
+/// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
     T: RlstScalar + MmIdentifier,
@@ -207,7 +207,7 @@ pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2
 
 /// Read a coordinate matrix in Matrix Market format.
 ///
-/// Returns a [rlst_sparse::sparse::csr_mat::CsrMatrix] sparse matrix object representing
+/// Returns a [crate::sparse::sparse_mat::csr_mat::CsrMatrix] sparse matrix object representing
 /// the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
 pub fn read_coordinate_mm<T: RlstScalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
