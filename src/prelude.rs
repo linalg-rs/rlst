@@ -7,16 +7,19 @@ pub use crate::rlst_dynamic_array1;
 pub use crate::rlst_dynamic_array2;
 pub use crate::rlst_dynamic_array3;
 pub use crate::rlst_dynamic_array4;
+pub use crate::rlst_dynamic_array5;
 
 pub use crate::rlst_array_from_slice1;
 pub use crate::rlst_array_from_slice2;
 pub use crate::rlst_array_from_slice3;
 pub use crate::rlst_array_from_slice4;
+pub use crate::rlst_array_from_slice5;
 
 pub use crate::rlst_array_from_slice_mut1;
 pub use crate::rlst_array_from_slice_mut2;
 pub use crate::rlst_array_from_slice_mut3;
 pub use crate::rlst_array_from_slice_mut4;
+pub use crate::rlst_array_from_slice_mut5;
 
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
