@@ -8,7 +8,7 @@
 //! matrix element. The one-dimensional access takes a single `index` parameter that
 //! iterates through the matrix elements.
 //!
-//! If the [`crate::traits::Shape`]
+//! If the [`crate::dense::traits::Shape`]
 //! trait is implemented on top of [`UnsafeRandomAccessByValue`], [`UnsafeRandomAccessByRef`]
 //! and [`UnsafeRandomAccessMut`] then the
 //! corresponding bounds-checked traits [`RandomAccessByValue`], [`RandomAccessByRef`] and

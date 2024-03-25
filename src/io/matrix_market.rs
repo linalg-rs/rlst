@@ -83,8 +83,8 @@ pub struct MatrixMarketInfo {
 
 /// Export a matrix in coordinate format.
 ///
-/// This function requires objects to implement the [rlst_dense::traits::AijIterator] and
-/// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [rlst::dense::traits::AijIterator] and
+/// [rlst::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
     T: RlstScalar + MmIdentifier,
@@ -118,8 +118,8 @@ pub fn write_coordinate_mm<
 
 /// Export a matrix in array format.
 ///
-/// This function requires objects to implement the [rlst_dense::traits::DefaultIterator] and
-/// [rlst_dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [rlst::dense::traits::DefaultIterator] and
+/// [rlst::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
     T: RlstScalar + MmIdentifier,
