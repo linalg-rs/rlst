@@ -1,7 +1,7 @@
 //! Arnoldi Iteration
-use crate::{AsApply, Element, InnerProductSpace, LinearSpace, NormedSpace};
+use crate::dense::types::RlstScalar;
+use crate::operator::{AsApply, Element, InnerProductSpace, LinearSpace, NormedSpace};
 use num::One;
-use rlst_dense::types::RlstScalar;
 
 /// Iteration for CG
 pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>> {

@@ -1,8 +1,8 @@
 //! Linear spaces and their elements.
 
 use super::Element;
+use crate::dense::types::RlstScalar;
 use num::One;
-use rlst_dense::types::RlstScalar;
 
 /// Definition of a linear space
 ///

@@ -1,9 +1,9 @@
 //! Normed spaces
-use crate::ElementType;
-use crate::InnerProductSpace;
+use crate::operator::ElementType;
+use crate::operator::InnerProductSpace;
 
 use super::LinearSpace;
-use rlst_dense::types::RlstScalar;
+use crate::dense::types::RlstScalar;
 
 /// Normed space
 pub trait NormedSpace: LinearSpace {

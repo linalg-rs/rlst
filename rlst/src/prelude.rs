@@ -61,14 +61,14 @@ pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 pub use crate::sparse::traits::index_layout::IndexLayout;
 
-// pub use rlst_operator::interface::{
-//     ArrayVectorSpace, ArrayVectorSpaceElement, CscMatrixOperator, CsrMatrixOperator,
-//     DenseMatrixOperator,
-// };
+pub use crate::operator::interface::{
+    ArrayVectorSpace, ArrayVectorSpaceElement, CscMatrixOperator, CsrMatrixOperator,
+    DenseMatrixOperator,
+};
 
-// pub use rlst_operator::operations::conjugate_gradients::CgIteration;
-// pub use rlst_operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
-// pub use rlst_operator::space::frame::{Frame, VectorFrame};
-// pub use rlst_operator::{AsApply, OperatorBase};
-// pub use rlst_operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
-// pub use rlst_operator::{Element, ElementView, ElementViewMut};
+pub use crate::operator::operations::conjugate_gradients::CgIteration;
+pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
+pub use crate::operator::space::frame::{Frame, VectorFrame};
+pub use crate::operator::{AsApply, OperatorBase};
+pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
+pub use crate::operator::{Element, ElementView, ElementViewMut};

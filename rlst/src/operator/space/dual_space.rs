@@ -1,6 +1,6 @@
 //! Dual space
 use super::{ElementView, LinearSpace};
-use rlst_dense::types::RlstResult;
+use crate::dense::types::RlstResult;
 
 /// A dual space
 pub trait DualSpace: LinearSpace {

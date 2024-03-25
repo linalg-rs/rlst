@@ -1,11 +1,11 @@
 //! Gram Schmidt orthogonalization
-use crate::{frame::Frame, Element, InnerProductSpace, NormedSpace};
-use num::One;
-use rlst_dense::types::RlstScalar;
-use rlst_dense::{
+use crate::dense::types::RlstScalar;
+use crate::dense::{
     array::DynamicArray,
     traits::{RandomAccessMut, Shape},
 };
+use crate::operator::{frame::Frame, Element, InnerProductSpace, NormedSpace};
+use num::One;
 /// Gram Schmidt orthogonalization
 pub struct ModifiedGramSchmidt;
 

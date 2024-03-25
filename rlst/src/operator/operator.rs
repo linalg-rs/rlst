@@ -1,8 +1,8 @@
 //! Definition of a general linear operator.
 
-use crate::{FieldType, LinearSpace};
+use crate::dense::types::RlstResult;
+use crate::operator::{FieldType, LinearSpace};
 use num::{One, Zero};
-use rlst_dense::types::RlstResult;
 use std::fmt::Debug;
 
 /// A base operator trait.

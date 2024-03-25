@@ -1,6 +1,6 @@
 //! A frame is a collection of elements of a space.
 
-use crate::Element;
+use crate::operator::Element;
 
 /// A frame
 ///

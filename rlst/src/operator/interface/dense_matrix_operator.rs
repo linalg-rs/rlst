@@ -1,12 +1,13 @@
 //! Dense matrix operator
-use crate::{
-    space::{Element, IndexableSpace, LinearSpace},
-    AsApply, OperatorBase,
-};
-use rlst_dense::types::RlstScalar;
-use rlst_dense::{
+use crate::dense::types::RlstScalar;
+use crate::dense::{
     array::Array,
     traits::{MultInto, RawAccess, Shape, Stride, UnsafeRandomAccessByValue},
+};
+use crate::{
+    operator::space::{Element, IndexableSpace, LinearSpace},
+    operator::AsApply,
+    operator::OperatorBase,
 };
 
 use super::array_vector_space::ArrayVectorSpace;
@@ -88,8 +89,8 @@ impl<
         x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
         y: &mut <Self::Range as LinearSpace>::E,
-    ) -> rlst_dense::types::RlstResult<()> {
-        use rlst_dense::array::mult_into::TransMode;
+    ) -> crate::dense::types::RlstResult<()> {
+        use crate::dense::array::mult_into::TransMode;
         y.view_mut().mult_into(
             TransMode::NoTrans,
             TransMode::NoTrans,

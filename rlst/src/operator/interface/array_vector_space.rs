@@ -2,17 +2,17 @@
 
 use std::marker::PhantomData;
 
-use crate::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
-use rlst_dense::types::RlstScalar;
-use rlst_dense::{
+use crate::dense::types::RlstScalar;
+use crate::dense::{
     array::{
         views::{ArrayView, ArrayViewMut},
         Array, DynamicArray,
     },
     base_array::BaseArray,
     data_container::VectorContainer,
-    rlst_dynamic_array1,
 };
+use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
+use crate::rlst_dynamic_array1;
 
 /// Array vector space
 pub struct ArrayVectorSpace<Item: RlstScalar> {

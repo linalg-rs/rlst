@@ -1,6 +1,6 @@
 //! Elements of linear spaces
+use crate::dense::types::RlstScalar;
 use num::One;
-use rlst_dense::types::RlstScalar;
 
 use super::LinearSpace;
 

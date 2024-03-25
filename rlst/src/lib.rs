@@ -8,4 +8,6 @@ pub mod sparse;
 pub mod prelude;
 pub mod threading;
 
+pub mod operator;
+
 pub use prelude::*;
