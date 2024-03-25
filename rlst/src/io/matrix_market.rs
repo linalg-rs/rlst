@@ -5,11 +5,11 @@
 //! files must use the `general` property. To write out matrices the functions [write_array_mm] and
 //! [write_coordinate_mm] are provided.
 
-use rlst_dense::array::DynamicArray;
-use rlst_dense::traits::RawAccessMut;
-use rlst_dense::types::RlstScalar;
-use rlst_dense::types::{RlstError, RlstResult};
-use rlst_sparse::sparse::csr_mat::CsrMatrix;
+use crate::dense::array::DynamicArray;
+use crate::dense::traits::RawAccessMut;
+use crate::dense::types::RlstScalar;
+use crate::dense::types::{RlstError, RlstResult};
+use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use std::fs::File;
 use std::io::Write;
 use std::io::{self, BufRead};
@@ -53,11 +53,11 @@ impl MmIdentifier for f64 {
     const MMTYPE: &'static str = "real";
 }
 
-impl MmIdentifier for rlst_dense::types::c32 {
+impl MmIdentifier for crate::dense::types::c32 {
     const MMTYPE: &'static str = "complex";
 }
 
-impl MmIdentifier for rlst_dense::types::c64 {
+impl MmIdentifier for crate::dense::types::c64 {
     const MMTYPE: &'static str = "complex";
 }
 
@@ -88,7 +88,7 @@ pub struct MatrixMarketInfo {
 /// out with this function.
 pub fn write_coordinate_mm<
     T: RlstScalar + MmIdentifier,
-    Mat: rlst_dense::traits::AijIterator<Item = T> + rlst_dense::traits::Shape<2>,
+    Mat: crate::dense::traits::AijIterator<Item = T> + crate::dense::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -123,7 +123,7 @@ pub fn write_coordinate_mm<
 /// out with this function.
 pub fn write_array_mm<
     T: RlstScalar + MmIdentifier,
-    Mat: rlst_dense::traits::DefaultIterator<Item = T> + rlst_dense::traits::Shape<2>,
+    Mat: crate::dense::traits::DefaultIterator<Item = T> + crate::dense::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -195,7 +195,7 @@ pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2
         }
     }
 
-    let mut mat = rlst_dense::rlst_dynamic_array2!(T, [nrows, ncols]);
+    let mut mat = crate::rlst_dynamic_array2!(T, [nrows, ncols]);
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
     if let Err(e) = res {
