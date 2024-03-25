@@ -1,14 +1,14 @@
 //! Definition of CSC matrices.
 
-use crate::sparse::SparseMatType;
-use rlst_dense::types::RlstResult;
+use crate::dense::types::RlstResult;
+use crate::sparse::sparse::SparseMatType;
 
-use crate::sparse::csr_mat::CsrMatrix;
-use crate::sparse::tools::normalize_aij;
+use crate::dense::traits::AijIterator;
+use crate::dense::traits::Shape;
+use crate::dense::types::RlstScalar;
+use crate::sparse::sparse::csr_mat::CsrMatrix;
+use crate::sparse::sparse::tools::normalize_aij;
 use itertools::Itertools;
-use rlst_dense::traits::AijIterator;
-use rlst_dense::traits::Shape;
-use rlst_dense::types::RlstScalar;
 
 /// A CSC matrix
 #[derive(Clone)]
@@ -205,7 +205,7 @@ impl<Item: RlstScalar> AijIterator for CscMatrix<Item> {
     }
 }
 
-impl<Item: RlstScalar> rlst_dense::traits::Shape<2> for CscMatrix<Item> {
+impl<Item: RlstScalar> crate::dense::traits::Shape<2> for CscMatrix<Item> {
     fn shape(&self) -> [usize; 2] {
         self.shape
     }

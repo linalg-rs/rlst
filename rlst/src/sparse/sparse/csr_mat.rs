@@ -1,12 +1,12 @@
 //! Definition of CSR matrices.
 
-use crate::sparse::SparseMatType;
-use rlst_dense::traits::AijIterator;
-use rlst_dense::types::RlstResult;
+use crate::dense::traits::AijIterator;
+use crate::dense::types::RlstResult;
+use crate::sparse::sparse::SparseMatType;
 
-use crate::sparse::tools::normalize_aij;
-use rlst_dense::traits::Shape;
-use rlst_dense::types::RlstScalar;
+use crate::dense::traits::Shape;
+use crate::dense::types::RlstScalar;
+use crate::sparse::sparse::tools::normalize_aij;
 
 use super::csc_mat::CscMatrix;
 

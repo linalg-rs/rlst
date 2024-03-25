@@ -1,6 +1,6 @@
 //! Tools for sparse matrix handling
-use crate::sparse::SparseMatType;
-use rlst_dense::types::RlstScalar;
+use crate::dense::types::RlstScalar;
+use crate::sparse::sparse::SparseMatType;
 
 /// Normalize an Aij matrix.
 ///

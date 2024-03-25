@@ -1,7 +1,7 @@
 //! Defailt serial index layout
 
-use crate::traits::index_layout::IndexLayout;
-use rlst_dense::types::{RlstError, RlstResult};
+use crate::dense::types::{RlstError, RlstResult};
+use crate::sparse::traits::index_layout::IndexLayout;
 
 /// Default serial index layout
 pub struct DefaultSerialIndexLayout {
