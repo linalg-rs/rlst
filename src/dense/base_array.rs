@@ -116,7 +116,10 @@ impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const N: usize, cons
     type Item = Item;
 
     #[inline]
-    fn get_chunk(&self, chunk_index: usize) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
+    fn get_chunk(
+        &self,
+        chunk_index: usize,
+    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
         let nelements = self.shape().iter().product();
         if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
             for count in 0..chunk.valid_entries {
