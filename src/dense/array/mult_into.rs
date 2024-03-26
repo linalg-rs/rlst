@@ -148,6 +148,7 @@ impl<
         let shapeb = new_shape(arr_b.shape(), transb);
 
         let expected_shape = [shapea[0], shapeb[1]];
+
         if self.shape() != expected_shape {
             self.resize_in_place(expected_shape);
         }

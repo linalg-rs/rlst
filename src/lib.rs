@@ -12,3 +12,10 @@ pub mod threading;
 pub mod operator;
 
 pub use prelude::*;
+
+#[cfg(test)]
+mod test {
+
+    extern crate blas_src;
+    extern crate lapack_src;
+}
