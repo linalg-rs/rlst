@@ -37,6 +37,14 @@ pub type SliceArray<'a, Item, const NDIM: usize> =
 pub type SliceArrayMut<'a, Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
+/// A view onto a matrix
+pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
+    Array<Item, crate::dense::array::views::ArrayView<'a, Item, ArrayImpl, NDIM>, NDIM>;
+
+/// A mutable view onto a matrix
+pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
+    Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
+
 /// The basic tuple type defining an array.
 pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
 where
