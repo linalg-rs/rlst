@@ -107,60 +107,38 @@ impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
     }
 
     fn left_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        if let Some(mat) = self.left_matrices.get(index) {
-            Some(mat.view())
-        } else {
-            None
-        }
+        self.left_matrices.get(index).map(|mat| mat.view())
     }
 
     fn left_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>> {
-        if let Some(mat) = self.left_matrices.get_mut(index) {
-            Some(mat.view_mut())
-        } else {
-            None
-        }
+        self.left_matrices.get_mut(index).map(|mat| mat.view_mut())
     }
 
     fn right_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        if let Some(mat) = self.right_matrices.get(index) {
-            Some(mat.view())
-        } else {
-            None
-        }
+        self.right_matrices.get(index).map(|mat| mat.view())
     }
 
     fn right_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>> {
-        if let Some(mat) = self.right_matrices.get_mut(index) {
-            Some(mat.view_mut())
-        } else {
-            None
-        }
+        self.right_matrices.get_mut(index).map(|mat| mat.view_mut())
     }
 
     fn result_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        if let Some(mat) = self.result_matrices.get(index) {
-            Some(mat.view())
-        } else {
-            None
-        }
+        self.result_matrices.get(index).map(|mat| mat.view())
     }
 
     fn result_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImpl, 2>> {
-        if let Some(mat) = self.result_matrices.get_mut(index) {
-            Some(mat.view_mut())
-        } else {
-            None
-        }
+        self.result_matrices
+            .get_mut(index)
+            .map(|mat| mat.view_mut())
     }
 
     fn evaluate(&mut self) -> RlstResult<()> {
