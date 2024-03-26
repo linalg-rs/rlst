@@ -8,15 +8,20 @@ use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
 use crate::{rlst_dynamic_array2, MultInto, RlstResult, UnsafeRandomAccessMut};
 
-use super::data_container::DataContainer;
-
+/// Batched matrix-matrix products.
+///
+/// Implementations of this trait allow batched matrix-matrix products.
 pub trait BatchedGemm {
+    /// The scalar type.
     type Item: RlstScalar;
+    /// Array implementation type.
     type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item> + Shape<2>;
+    /// Mutable array implementation type.
     type ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
         + UnsafeRandomAccessMut<2, Item = Self::Item>
         + Shape<2>;
 
+    /// Instantiate a batched matrix-matrix product.
     fn with(
         left_dim: (usize, usize),
         right_dim: (usize, usize),
@@ -25,27 +30,34 @@ pub trait BatchedGemm {
         beta: Self::Item,
     ) -> Self;
 
+    /// Access the left matrix with given index.
     fn left_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
 
+    /// Mutably access the left matrix with given index/
     fn left_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
 
+    /// Access the right matrix with given index.
     fn right_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
 
+    /// Mutably access the right matrix with given index.
     fn right_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
 
+    /// Access the result matrix with given index.
     fn result_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
 
+    /// Mutably access the result matrix with given index.
     fn result_matrix_mut(
         &mut self,
         index: usize,
     ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
 
+    /// Evaluate the batched matrix product.
     fn evaluate(&mut self) -> RlstResult<()>;
 }
 
@@ -78,7 +90,7 @@ impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
         let mut right_matrices = Vec::<DynamicArray<Item, 2>>::with_capacity(number_of_matrices);
         let mut result_matrices = Vec::<DynamicArray<Item, 2>>::with_capacity(number_of_matrices);
 
-        for index in 0..number_of_matrices {
+        for _ in 0..number_of_matrices {
             left_matrices.push(rlst_dynamic_array2!(Item, [left_dim.0, left_dim.1]));
             right_matrices.push(rlst_dynamic_array2!(Item, [right_dim.0, right_dim.1]));
             result_matrices.push(rlst_dynamic_array2!(Item, [left_dim.0, right_dim.1]));
