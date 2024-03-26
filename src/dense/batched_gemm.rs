@@ -177,9 +177,6 @@ mod test {
     use crate::dense::traits::DefaultIterator;
     use crate::dense::traits::MultIntoResize;
 
-    extern crate blas_src;
-    extern crate lapack_src;
-
     #[test]
     pub fn test_batched_cpu_gemm() {
         let mut batched_matmul = DefaultCpuBatchedGemm::<f64>::with((2, 3), (3, 5), 2, 1.0, 0.0);
