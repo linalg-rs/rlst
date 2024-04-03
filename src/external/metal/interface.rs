@@ -1,5 +1,7 @@
 //! Interface routines
 
+use std::ffi::c_void;
+
 use super::raw;
 
 #[derive(Clone, Copy)]
@@ -88,7 +90,7 @@ impl MetalDevice {
     }
 
     /// Create a command queue.
-    pub unsafe fn command_queue(&self) -> MetalCommandQueue {
+    pub fn command_queue(&self) -> MetalCommandQueue {
         MetalCommandQueue {
             queue_p: ptr_not_null!(
                 raw::rlst_mtl_device_new_command_queue(self.device_p),
@@ -184,6 +186,20 @@ impl MetalBuffer {
         unsafe {
             std::slice::from_raw_parts(ptr as *const T, self.nbytes / std::mem::size_of::<T>())
         }
+    }
+
+    pub fn raw_ptr(&self) -> *const c_void {
+        ptr_not_null!(
+            raw::rlst_mtl_buffer_contents(self.buffer_p),
+            "Could not access buffer contents"
+        )
+    }
+
+    pub fn raw_ptr_mut(&mut self) -> *mut c_void {
+        ptr_not_null!(
+            raw::rlst_mtl_buffer_contents(self.buffer_p),
+            "Could not access buffer contents"
+        )
     }
 }
 
