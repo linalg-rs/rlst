@@ -241,29 +241,32 @@ impl<'a> BatchedGemm for MetalBatchedGemm<'a> {
 mod test {
 
     use super::*;
+    use crate::external::metal::AutoReleasePool;
 
     #[test]
     fn test_batched_metal_gemm() {
-        let device = MetalDevice::from_default();
-        let command_queue = device.command_queue();
-        let number_of_matrices = 3;
-        let mut batched_gemm = MetalBatchedGemm::new(
-            &device,
-            &command_queue,
-            (3, 5),
-            (5, 4),
-            number_of_matrices,
-            1.0,
-            0.0,
-        );
+        AutoReleasePool::execute(|| {
+            let device = MetalDevice::from_default();
+            let command_queue = device.command_queue();
+            let number_of_matrices = 3;
+            let mut batched_gemm = MetalBatchedGemm::new(
+                &device,
+                &command_queue,
+                (3, 5),
+                (5, 4),
+                number_of_matrices,
+                1.0,
+                0.0,
+            );
 
-        for index in 0..number_of_matrices {
-            let mut left_matrix = batched_gemm.left_matrix_mut(index).unwrap();
-            left_matrix.fill_from_seed_equally_distributed(0);
-            let mut right_matrix = batched_gemm.right_matrix_mut(index).unwrap();
-            right_matrix.fill_from_seed_equally_distributed(1);
-        }
+            for index in 0..number_of_matrices {
+                let mut left_matrix = batched_gemm.left_matrix_mut(index).unwrap();
+                left_matrix.fill_from_seed_equally_distributed(0);
+                let mut right_matrix = batched_gemm.right_matrix_mut(index).unwrap();
+                right_matrix.fill_from_seed_equally_distributed(1);
+            }
 
-        batched_gemm.evaluate().unwrap();
+            batched_gemm.evaluate().unwrap();
+        });
     }
 }

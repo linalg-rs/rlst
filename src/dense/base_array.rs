@@ -46,10 +46,9 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
             let mut largest_index = [0; NDIM];
             largest_index.copy_from_slice(&shape.iter().map(|elem| elem - 1).collect::<Vec<_>>());
             let raw_index = convert_nd_raw(largest_index, stride);
-            assert_eq!(
-                1 + raw_index,
-                data.number_of_elements(),
-                "`data` has {} elements but expected {} elements from shape and stride.",
+            assert!(
+                1 + raw_index <= data.number_of_elements(),
+                "`data` has {} elements but expected at least {} elements from shape and stride.",
                 data.number_of_elements(),
                 1 + raw_index
             );
