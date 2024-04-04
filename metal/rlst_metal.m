@@ -5,6 +5,10 @@ rlst_mtl_autorelease_pool_p rlst_mtl_new_autorelease_pool() {
   return (rlst_mtl_autorelease_pool_p)[[NSAutoreleasePool alloc] init];
 }
 
+void rlst_mtl_autorelease_pool_show_pools() {
+  [NSAutoreleasePool showPools];
+}
+
 void rlst_mtl_autorelease_pool_drain(rlst_mtl_autorelease_pool_p p_pool) {
   [(NSAutoreleasePool *)p_pool drain];
 }

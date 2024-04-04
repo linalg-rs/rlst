@@ -23,6 +23,7 @@ pub enum ResourceOptions {
 #[repr(u32)]
 /// Available Metal data types.
 pub enum MpsDataType {
+    /// Single precision floating point.
     F32 = raw::RLSTMtlMpsDataType_RLST_MTL_MPS_FLOAT32,
 }
 
@@ -37,17 +38,39 @@ macro_rules! ptr_not_null {
 }
 
 /// Holds on Objective-C autorelease pool.
-pub struct AutoReleasePool;
+pub struct AutoReleasePool {
+    pool: *mut raw::rlst_mtl_autorelease_pool_s,
+}
 
 impl AutoReleasePool {
     /// Execute `fun` within an autorelease pool.
-    pub fn execute(fun: impl Fn()) {
+    pub fn execute(mut fun: impl FnMut()) {
         let pool = ptr_not_null!(
             raw::rlst_mtl_new_autorelease_pool(),
             "Could not create AutoReleasePool"
         );
         fun();
         unsafe { raw::rlst_mtl_autorelease_pool_drain(pool) };
+    }
+
+    /// Show available pools
+    pub fn show_pools() {
+        unsafe { raw::rlst_mtl_autorelease_pool_show_pools() };
+    }
+
+    /// Initialize a new autorelease pool.
+    pub fn new() -> Self {
+        Self {
+            pool: ptr_not_null!(
+                raw::rlst_mtl_new_autorelease_pool(),
+                "Could not create AutoReleasePool"
+            ),
+        }
+    }
+
+    /// Drain the autorelease pool.
+    pub fn drain(self) {
+        unsafe { raw::rlst_mtl_autorelease_pool_drain(self.pool) };
     }
 }
 
@@ -100,6 +123,7 @@ impl MetalDevice {
     }
 }
 
+/// Metal Command Queue.
 pub struct MetalCommandQueue {
     queue_p: raw::rlst_mtl_command_queue_p,
 }
@@ -188,6 +212,7 @@ impl MetalBuffer {
         }
     }
 
+    /// Return a raw ptr to the contents.
     pub fn raw_ptr(&self) -> *const c_void {
         ptr_not_null!(
             raw::rlst_mtl_buffer_contents(self.buffer_p),
@@ -195,6 +220,7 @@ impl MetalBuffer {
         )
     }
 
+    /// Return a mutable raw pointer to the contents.
     pub fn raw_ptr_mut(&mut self) -> *mut c_void {
         ptr_not_null!(
             raw::rlst_mtl_buffer_contents(self.buffer_p),
@@ -310,6 +336,7 @@ pub struct MpsMatrix {
 }
 
 impl MpsMatrix {
+    /// Initialize a new Metal Performance Shaders Matrix.
     pub fn new(buffer: MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
         Self {
             matrix_p: ptr_not_null!(

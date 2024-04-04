@@ -50,6 +50,7 @@ typedef struct rlst_mtl_mps_matrix_multiplication_s *rlst_mtl_mps_matrix_multipl
 
 rlst_mtl_autorelease_pool_p rlst_mtl_new_autorelease_pool();
 void rlst_mtl_autorelease_pool_drain(rlst_mtl_autorelease_pool_p p_pool);
+void rlst_mtl_autorelease_pool_show_pools();
 
 /* Device definitions */
 

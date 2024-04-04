@@ -36,6 +36,10 @@ pub trait BatchedGemm {
     fn evaluate(&mut self) -> RlstResult<()>;
 }
 
+/// Batched matrix multiplication on CPU.
+///
+/// This implementation simply uses the available BLAS to perform
+/// each matrix matrix multiplication.
 pub struct DefaultCpuBatchedGemm<Item: RlstScalar> {
     left_matrices: Vec<DynamicArray<Item, 2>>,
     right_matrices: Vec<DynamicArray<Item, 2>>,
@@ -46,6 +50,7 @@ pub struct DefaultCpuBatchedGemm<Item: RlstScalar> {
 }
 
 impl<Item: RlstScalar> DefaultCpuBatchedGemm<Item> {
+    /// Initialize a new COPU batched matrix multiplication.
     pub fn new(
         left_dim: (usize, usize),
         right_dim: (usize, usize),

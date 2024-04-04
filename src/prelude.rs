@@ -31,6 +31,8 @@ pub use crate::dense::traits::{
     RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
+pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
+
 pub use crate::dense::traits::{
     AijIterator, AsMultiIndex, DefaultIterator, DefaultIteratorMut, MultInto, MultIntoResize,
     NumberOfElements, ResizeInPlace, Shape, Stride,
@@ -75,3 +77,12 @@ pub use crate::operator::space::frame::{Frame, VectorFrame};
 pub use crate::operator::{AsApply, OperatorBase};
 pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
 pub use crate::operator::{Element, ElementView, ElementViewMut};
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+pub use crate::external::metal::{
+    batched_gemm::MetalBatchedGemm, interface::ResourceOptions, AutoReleasePool, MetalDevice,
+};
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+pub use crate::rlst_metal_array1;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+pub use crate::rlst_metal_array2;

@@ -3,16 +3,18 @@
 use super::interface::{MetalBuffer, MetalDevice};
 
 /// A container built around Metal buffers.
-pub struct MetalDataContainer {
+pub struct MetalDataBuffer {
+    #[allow(dead_code)]
     metal_buff: MetalBuffer,
     number_of_elements: usize,
     data: *mut f32,
 }
 
-impl MetalDataContainer {
+impl MetalDataBuffer {
+    /// Initialize a new Metal Data Buffer.
     pub fn new(device: &MetalDevice, number_of_elements: usize, options: u32) -> Self {
         let mut buff = device.new_buffer(number_of_elements * std::mem::size_of::<f32>(), options);
-        let data = (buff.raw_ptr_mut() as *mut f32);
+        let data = buff.raw_ptr_mut() as *mut f32;
         Self {
             metal_buff: buff,
             data,
@@ -21,7 +23,7 @@ impl MetalDataContainer {
     }
 }
 
-impl crate::dense::data_container::DataContainer for MetalDataContainer {
+impl crate::dense::data_container::DataContainer for MetalDataBuffer {
     type Item = f32;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -41,7 +43,7 @@ impl crate::dense::data_container::DataContainer for MetalDataContainer {
     }
 }
 
-impl crate::dense::data_container::DataContainerMut for MetalDataContainer {
+impl crate::dense::data_container::DataContainerMut for MetalDataBuffer {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         &mut (*self.data.add(index))
     }

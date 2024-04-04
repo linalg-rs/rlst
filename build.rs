@@ -38,7 +38,12 @@ fn build_metal(out_dir: String) {
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
 
-    if env::var("CARGO_FEATURE_METAL").is_ok() {
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+
+    let use_metal = target_os == "macos" && target_arch == "aarch64";
+
+    if use_metal {
         build_metal(out_dir.clone());
     }
 }

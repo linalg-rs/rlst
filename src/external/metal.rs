@@ -1,3 +1,5 @@
+//! Interface to Apple Metal.
+
 pub mod batched_gemm;
 pub mod interface;
 pub mod metal_array;
@@ -5,4 +7,4 @@ pub mod raw;
 
 pub use interface::AutoReleasePool;
 pub use interface::MetalDevice;
-pub use metal_array::MetalDataContainer;
+pub use metal_array::MetalDataBuffer;

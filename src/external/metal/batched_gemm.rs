@@ -1,38 +1,36 @@
 //! Implementation of Batched Gemm using Metal
 
 use super::interface::{
-    MetalBuffer, MetalCommandQueue, MetalDevice, MpsDataType, MpsMatrix, MpsMatrixDescriptor,
-    MpsMatrixMultiplication,
+    MetalDevice, MpsDataType, MpsMatrix, MpsMatrixDescriptor, MpsMatrixMultiplication,
 };
-use super::raw::RLSTMtlResourceOptions_RLST_MTL_RESOURCE_HAZARD_TRACKING_MODE_TRACKED;
-use crate::dense::array::views::ArrayView;
-use crate::dense::array::views::ArrayViewMut;
-use crate::dense::array::ViewArray;
 use crate::dense::batched_gemm::BatchedGemm;
 use crate::external::metal::interface::ResourceOptions;
+use crate::AutoReleasePool;
+use crate::RlstResult;
+use crate::SliceArrayMut;
 use crate::{BaseArray, SliceArray};
-use crate::{RlstResult, SliceContainerMut};
-use crate::{SliceArrayMut, SliceContainer};
 
-pub struct MetalBatchedGemm<'a> {
+/// Batched matrix multiplication using Apple Metal.
+pub struct MetalBatchedGemm {
     left_matrices: MpsMatrix,
     right_matrices: MpsMatrix,
     result_matrices: MpsMatrix,
     mps_matmat: MpsMatrixMultiplication,
     number_of_matrices: usize,
-    command_queue: &'a MetalCommandQueue,
+    device: MetalDevice,
 }
 
-impl<'a> MetalBatchedGemm<'a> {
+impl MetalBatchedGemm {
+    /// Initialize a new Metal batched Matrix Multiplication.
     pub fn new(
-        device: &MetalDevice,
-        command_queue: &'a MetalCommandQueue,
         left_dim: (usize, usize),
         right_dim: (usize, usize),
         number_of_matrices: usize,
         alpha: f64,
         beta: f64,
     ) -> Self {
+        let device = MetalDevice::from_default();
+
         let left_row_bytes =
             MpsMatrixDescriptor::row_bytes_from_columns(left_dim.1, MpsDataType::F32);
         let right_row_bytes =
@@ -47,7 +45,7 @@ impl<'a> MetalBatchedGemm<'a> {
         let result_matrix_bytes = left_dim.0 * result_row_bytes;
 
         let mps_matmat = MpsMatrixMultiplication::new(
-            device,
+            &device,
             false,
             false,
             left_dim.0,
@@ -107,12 +105,12 @@ impl<'a> MetalBatchedGemm<'a> {
             result_matrices,
             mps_matmat,
             number_of_matrices,
-            command_queue,
+            device,
         }
     }
 }
 
-impl<'a> BatchedGemm for MetalBatchedGemm<'a> {
+impl BatchedGemm for MetalBatchedGemm {
     type Item = f32;
 
     fn left_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>> {
@@ -224,15 +222,19 @@ impl<'a> BatchedGemm for MetalBatchedGemm<'a> {
 
     /// Evaluate the batched matrix product.
     fn evaluate(&mut self) -> RlstResult<()> {
-        let mut command_buffer = self.command_queue.command_buffer();
-        self.mps_matmat.encode_to_command_buffer(
-            &mut command_buffer,
-            &self.left_matrices,
-            &self.right_matrices,
-            &mut self.result_matrices,
-        );
-        command_buffer.commit();
-        command_buffer.wait_until_completed();
+        AutoReleasePool::execute(|| {
+            let command_queue = self.device.command_queue();
+            let mut command_buffer = command_queue.command_buffer();
+            self.mps_matmat.encode_to_command_buffer(
+                &mut command_buffer,
+                &self.left_matrices,
+                &self.right_matrices,
+                &mut self.result_matrices,
+            );
+            command_buffer.commit();
+            command_buffer.wait_until_completed();
+        });
+
         Ok(())
     }
 }
@@ -241,23 +243,18 @@ impl<'a> BatchedGemm for MetalBatchedGemm<'a> {
 mod test {
 
     use super::*;
-    use crate::external::metal::AutoReleasePool;
+    use crate::{
+        empty_array, external::metal::AutoReleasePool, rlst_dynamic_array2, MultIntoResize,
+    };
+
+    use crate::prelude::*;
 
     #[test]
     fn test_batched_metal_gemm() {
         AutoReleasePool::execute(|| {
-            let device = MetalDevice::from_default();
-            let command_queue = device.command_queue();
             let number_of_matrices = 3;
-            let mut batched_gemm = MetalBatchedGemm::new(
-                &device,
-                &command_queue,
-                (3, 5),
-                (5, 4),
-                number_of_matrices,
-                1.0,
-                0.0,
-            );
+            let mut batched_gemm =
+                MetalBatchedGemm::new((3, 5), (5, 4), number_of_matrices, 1.0, 0.0);
 
             for index in 0..number_of_matrices {
                 let mut left_matrix = batched_gemm.left_matrix_mut(index).unwrap();
@@ -267,6 +264,22 @@ mod test {
             }
 
             batched_gemm.evaluate().unwrap();
+
+            for index in 0..number_of_matrices {
+                let mut expected = empty_array();
+                let mut left_matrix = rlst_dynamic_array2!(f32, [3, 5]);
+                let mut right_matrix = rlst_dynamic_array2!(f32, [5, 4]);
+                left_matrix.fill_from(batched_gemm.left_matrix(index).unwrap());
+                right_matrix.fill_from(batched_gemm.right_matrix(index).unwrap());
+                expected
+                    .view_mut()
+                    .simple_mult_into_resize(left_matrix, right_matrix);
+                crate::assert_array_relative_eq!(
+                    batched_gemm.result_matrix(index).unwrap(),
+                    expected,
+                    1E-6
+                );
+            }
         });
     }
 }
