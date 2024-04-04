@@ -1,8 +1,9 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use rlst::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
-use rlst::external::metal::batched_gemm::MetalBatchedGemm;
-use rlst::external::metal::AutoReleasePool;
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use rlst::external::metal::{batched_gemm::MetalBatchedGemm, AutoReleasePool};
 
 const DIM: usize = 5000;
 
