@@ -48,6 +48,11 @@ criterion = { version = "0.3", features = ["html_reports"] }
 paste = "1"
 rand = "0.8.*"
 
+[build-dependencies]
+cc = "1.0"
+bindgen = "0.69"
+
+
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 
@@ -58,6 +63,13 @@ default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 umfpack = ["dep:rlst-umfpack"]
 blis = []
+metal = []
 
 [lints.clippy]
 wildcard_imports = "forbid"
+
+
+[[bench]]
+name = "matrix_multiplication"
+harness = false
+

@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 
 pub mod dense;
+pub mod external;
 pub mod io;
 pub mod sparse;
 

@@ -1,12 +1,11 @@
 //! Interface to batched gemm operations
 
-use crate::dense::array::{DynamicArray, ViewArray, ViewArrayMut};
+use crate::dense::array::DynamicArray;
 use crate::dense::base_array::BaseArray;
-use crate::dense::data_container::VectorContainer;
-use crate::dense::traits::{Shape, UnsafeRandomAccessByValue};
+use crate::dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
 use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
-use crate::{rlst_dynamic_array2, MultInto, RlstResult, UnsafeRandomAccessMut};
+use crate::{rlst_dynamic_array2, MultInto, RlstResult, SliceArray, SliceArrayMut};
 
 /// Batched matrix-matrix products.
 ///
@@ -14,54 +13,34 @@ use crate::{rlst_dynamic_array2, MultInto, RlstResult, UnsafeRandomAccessMut};
 pub trait BatchedGemm {
     /// The scalar type.
     type Item: RlstScalar;
-    /// Array implementation type.
-    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item> + Shape<2>;
-    /// Mutable array implementation type.
-    type ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-        + UnsafeRandomAccessMut<2, Item = Self::Item>
-        + Shape<2>;
-
-    /// Instantiate a batched matrix-matrix product.
-    fn with(
-        left_dim: (usize, usize),
-        right_dim: (usize, usize),
-        number_of_matrices: usize,
-        alpha: Self::Item,
-        beta: Self::Item,
-    ) -> Self;
 
     /// Access the left matrix with given index.
-    fn left_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
+    fn left_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>>;
 
     /// Mutably access the left matrix with given index/
-    fn left_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
+    fn left_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>>;
 
     /// Access the right matrix with given index.
-    fn right_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
+    fn right_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>>;
 
     /// Mutably access the right matrix with given index.
-    fn right_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
+    fn right_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>>;
 
     /// Access the result matrix with given index.
-    fn result_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>>;
+    fn result_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>>;
 
     /// Mutably access the result matrix with given index.
-    fn result_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>>;
+    fn result_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>>;
 
     /// Evaluate the batched matrix product.
     fn evaluate(&mut self) -> RlstResult<()>;
 }
 
-struct DefaultCpuBatchedGemm<Item: RlstScalar> {
+/// Batched matrix multiplication on CPU.
+///
+/// This implementation simply uses the available BLAS to perform
+/// each matrix matrix multiplication.
+pub struct DefaultCpuBatchedGemm<Item: RlstScalar> {
     left_matrices: Vec<DynamicArray<Item, 2>>,
     right_matrices: Vec<DynamicArray<Item, 2>>,
     result_matrices: Vec<DynamicArray<Item, 2>>,
@@ -70,19 +49,14 @@ struct DefaultCpuBatchedGemm<Item: RlstScalar> {
     beta: Item,
 }
 
-impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
-    type Item = Item;
-
-    type ArrayImpl = BaseArray<Item, VectorContainer<Item>, 2>;
-
-    type ArrayImplMut = BaseArray<Item, VectorContainer<Item>, 2>;
-
-    fn with(
+impl<Item: RlstScalar> DefaultCpuBatchedGemm<Item> {
+    /// Initialize a new COPU batched matrix multiplication.
+    pub fn new(
         left_dim: (usize, usize),
         right_dim: (usize, usize),
         number_of_matrices: usize,
-        alpha: Self::Item,
-        beta: Self::Item,
+        alpha: Item,
+        beta: Item,
     ) -> Self {
         assert_eq!(left_dim.1, right_dim.0);
 
@@ -105,40 +79,69 @@ impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
             beta,
         }
     }
+}
 
-    fn left_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        self.left_matrices.get(index).map(|mat| mat.view())
+impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
+    type Item = Item;
+
+    fn left_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>> {
+        self.left_matrices.get(index).map(|mat| {
+            let slice_container = crate::SliceContainer::new(mat.data());
+            SliceArray::new(BaseArray::new_with_stride(
+                slice_container,
+                mat.shape(),
+                mat.stride(),
+            ))
+        })
     }
 
-    fn left_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>> {
-        self.left_matrices.get_mut(index).map(|mat| mat.view_mut())
+    fn left_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>> {
+        self.left_matrices.get_mut(index).map(|mat| {
+            let shape = mat.shape();
+            let stride = mat.stride();
+            let slice_container = crate::SliceContainerMut::new(mat.data_mut());
+            SliceArrayMut::new(BaseArray::new_with_stride(slice_container, shape, stride))
+        })
     }
 
-    fn right_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        self.right_matrices.get(index).map(|mat| mat.view())
+    fn right_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>> {
+        self.right_matrices.get(index).map(|mat| {
+            let slice_container = crate::SliceContainer::new(mat.data());
+            SliceArray::new(BaseArray::new_with_stride(
+                slice_container,
+                mat.shape(),
+                mat.stride(),
+            ))
+        })
     }
 
-    fn right_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImplMut, 2>> {
-        self.right_matrices.get_mut(index).map(|mat| mat.view_mut())
+    fn right_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>> {
+        self.right_matrices.get_mut(index).map(|mat| {
+            let shape = mat.shape();
+            let stride = mat.stride();
+            let slice_container = crate::SliceContainerMut::new(mat.data_mut());
+            SliceArrayMut::new(BaseArray::new_with_stride(slice_container, shape, stride))
+        })
     }
 
-    fn result_matrix(&self, index: usize) -> Option<ViewArray<'_, Self::Item, Self::ArrayImpl, 2>> {
-        self.result_matrices.get(index).map(|mat| mat.view())
+    fn result_matrix(&self, index: usize) -> Option<SliceArray<'_, Self::Item, 2>> {
+        self.result_matrices.get(index).map(|mat| {
+            let slice_container = crate::SliceContainer::new(mat.data());
+            SliceArray::new(BaseArray::new_with_stride(
+                slice_container,
+                mat.shape(),
+                mat.stride(),
+            ))
+        })
     }
 
-    fn result_matrix_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<ViewArrayMut<'_, Self::Item, Self::ArrayImpl, 2>> {
-        self.result_matrices
-            .get_mut(index)
-            .map(|mat| mat.view_mut())
+    fn result_matrix_mut(&mut self, index: usize) -> Option<SliceArrayMut<'_, Self::Item, 2>> {
+        self.result_matrices.get_mut(index).map(|mat| {
+            let shape = mat.shape();
+            let stride = mat.stride();
+            let slice_container = crate::SliceContainerMut::new(mat.data_mut());
+            SliceArrayMut::new(BaseArray::new_with_stride(slice_container, shape, stride))
+        })
     }
 
     fn evaluate(&mut self) -> RlstResult<()> {
@@ -169,7 +172,7 @@ mod test {
 
     #[test]
     pub fn test_batched_cpu_gemm() {
-        let mut batched_matmul = DefaultCpuBatchedGemm::<f64>::with((2, 3), (3, 5), 2, 1.0, 0.0);
+        let mut batched_matmul = DefaultCpuBatchedGemm::<f64>::new((2, 3), (3, 5), 2, 1.0, 0.0);
 
         batched_matmul
             .left_matrix_mut(0)
