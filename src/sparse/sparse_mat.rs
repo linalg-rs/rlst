@@ -6,7 +6,7 @@ pub mod csr_mat;
 pub mod mpi_csr_mat;
 
 pub mod tools;
-#[cfg(feature = "umfpack")]
+#[cfg(feature = "suitesparse")]
 pub mod umfpack;
 
 /// Sparse matrix type

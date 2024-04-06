@@ -13,15 +13,10 @@ You can choose between one of them if you use this work.
 Some optional dependencies of the library have different licenses that
 may change the license of compiled library components. 
 
-We currently use the following dependencies by default:
-
-- [BLIS](https://github.com/flame/blis)
-- [Netlib Lapack](https://github.com/Reference-LAPACK/lapack) (default)
-
-Optionally, [Suitesparse](https://people.engr.tamu.edu/davis/suitesparse.html) 
+The [Suitesparse](https://people.engr.tamu.edu/davis/suitesparse.html) 
 dependencies can be enabled with the `suitesparse`
 feature flag. This enables AMD, CAMD, COLAMD, CCOLAMD, CHOLMOD, UMFPACK,
-which are used in the `rlst-algorithms` package to provide sparse direct solver
+which are used to provide sparse direct solver
 capabilities. UMFPACK is licensed under the GPL 2+ license, which affects any
 code compiled against RLST with the `suitesparse` feature flag.
 

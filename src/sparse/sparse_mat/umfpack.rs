@@ -8,11 +8,12 @@ use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
 use crate::dense::types::*;
 use crate::dense::types::{RlstError, RlstResult};
+use crate::external::umfpack;
 use crate::sparse::sparse_mat::csc_mat::CscMatrix;
-use rlst_umfpack as umfpack;
 
 use super::csr_mat::CsrMatrix;
 
+/// Holds the Umfpack data structures.
 pub struct UmfpackLu<T: RlstScalar> {
     shape: [usize; 2],
     indices: Vec<i32>,
@@ -23,11 +24,12 @@ pub struct UmfpackLu<T: RlstScalar> {
 
 impl<T: RlstScalar> Drop for UmfpackLu<T> {
     fn drop(&mut self) {
-        unsafe { umfpack::umfpack_di_free_numeric(&mut self.numeric) };
+        unsafe { umfpack::raw::umfpack_di_free_numeric(&mut self.numeric) };
     }
 }
 
 impl UmfpackLu<f64> {
+    /// Solve for a given right-hand side.
     pub fn solve<
         ArrayImplX: crate::dense::traits::RandomAccessByValue<1, Item = f64>
             + Shape<1>
@@ -47,9 +49,9 @@ impl UmfpackLu<f64> {
         assert_eq!(x.stride()[0], 1);
 
         let sys = match trans {
-            TransMode::NoTrans => umfpack::UMFPACK_A,
-            TransMode::Trans => umfpack::UMFPACK_Aat,
-            TransMode::ConjTrans => umfpack::UMFPACK_At,
+            TransMode::NoTrans => umfpack::raw::UMFPACK_A,
+            TransMode::Trans => umfpack::raw::UMFPACK_Aat,
+            TransMode::ConjTrans => umfpack::raw::UMFPACK_At,
             _ => panic!("Transpose mode not supported for Umfpack"),
         };
 
@@ -58,7 +60,7 @@ impl UmfpackLu<f64> {
         assert_eq!(rhs.shape()[0], n);
 
         let info = unsafe {
-            umfpack::umfpack_di_solve(
+            umfpack::raw::umfpack_di_solve(
                 sys as i32,
                 self.indptr.as_ptr(),
                 self.indices.as_ptr(),
@@ -80,6 +82,7 @@ impl UmfpackLu<f64> {
 }
 
 impl UmfpackLu<c64> {
+    /// Solve for a given right-hand side.
     pub fn solve<
         ArrayImplX: crate::dense::traits::RandomAccessByValue<1, Item = c64>
             + Shape<1>
@@ -99,9 +102,9 @@ impl UmfpackLu<c64> {
         assert_eq!(x.stride()[0], 1);
 
         let sys = match trans {
-            TransMode::NoTrans => umfpack::UMFPACK_A,
-            TransMode::Trans => umfpack::UMFPACK_Aat,
-            TransMode::ConjTrans => umfpack::UMFPACK_At,
+            TransMode::NoTrans => umfpack::raw::UMFPACK_A,
+            TransMode::Trans => umfpack::raw::UMFPACK_Aat,
+            TransMode::ConjTrans => umfpack::raw::UMFPACK_At,
             _ => panic!("Transpose mode not supported for Umfpack"),
         };
 
@@ -110,7 +113,7 @@ impl UmfpackLu<c64> {
         assert_eq!(rhs.shape()[0], n);
 
         let info = unsafe {
-            umfpack::umfpack_zi_solve(
+            umfpack::raw::umfpack_zi_solve(
                 sys as i32,
                 self.indptr.as_ptr(),
                 self.indices.as_ptr(),
@@ -135,18 +138,27 @@ impl UmfpackLu<c64> {
 }
 
 impl CsrMatrix<f64> {
+    /// Compute the sparse LU decomposition of the matrix.
+    ///
+    /// Note that the sparse matrix is first converted to
+    /// CSC format before computing the LU.
     pub fn into_lu(self) -> RlstResult<UmfpackLu<f64>> {
         self.into_csc().into_lu()
     }
 }
 
 impl CsrMatrix<c64> {
+    /// Compute the sparse LU decomposition of the matrix.
+    ///
+    /// Note that the sparse matrix is first converted to
+    /// CSC format before computing the LU.
     pub fn into_lu(self) -> RlstResult<UmfpackLu<c64>> {
         self.into_csc().into_lu()
     }
 }
 
 impl CscMatrix<f64> {
+    /// Compute the sparse LU decomposition of the matrix.
     pub fn into_lu(self) -> RlstResult<UmfpackLu<f64>> {
         let shape = self.shape();
 
@@ -170,7 +182,7 @@ impl CscMatrix<f64> {
         };
 
         let info = unsafe {
-            umfpack::umfpack_di_symbolic(
+            umfpack::raw::umfpack_di_symbolic(
                 n,
                 n,
                 umfpack_lu.indptr.as_ptr(),
@@ -187,7 +199,7 @@ impl CscMatrix<f64> {
         }
 
         let info = unsafe {
-            umfpack::umfpack_di_numeric(
+            umfpack::raw::umfpack_di_numeric(
                 umfpack_lu.indptr.as_ptr(),
                 umfpack_lu.indices.as_ptr(),
                 umfpack_lu.data.as_ptr(),
@@ -202,13 +214,14 @@ impl CscMatrix<f64> {
             return Err(RlstError::UmfpackError(info));
         }
 
-        unsafe { umfpack::umfpack_di_free_symbolic(&mut symbolic) };
+        unsafe { umfpack::raw::umfpack_di_free_symbolic(&mut symbolic) };
 
         Ok(umfpack_lu)
     }
 }
 
 impl CscMatrix<c64> {
+    /// Compute the sparse LU decomposition of the matrix.
     pub fn into_lu(self) -> RlstResult<UmfpackLu<c64>> {
         let shape = self.shape();
 
@@ -232,7 +245,7 @@ impl CscMatrix<c64> {
         };
 
         let info = unsafe {
-            umfpack::umfpack_zi_symbolic(
+            umfpack::raw::umfpack_zi_symbolic(
                 n,
                 n,
                 umfpack_lu.indptr.as_ptr(),
@@ -250,7 +263,7 @@ impl CscMatrix<c64> {
         }
 
         let info = unsafe {
-            umfpack::umfpack_zi_numeric(
+            umfpack::raw::umfpack_zi_numeric(
                 umfpack_lu.indptr.as_ptr(),
                 umfpack_lu.indices.as_ptr(),
                 umfpack_lu.data.as_ptr() as *const f64,
@@ -266,7 +279,7 @@ impl CscMatrix<c64> {
             return Err(RlstError::UmfpackError(info));
         }
 
-        unsafe { umfpack::umfpack_di_free_symbolic(&mut symbolic) };
+        unsafe { umfpack::raw::umfpack_di_free_symbolic(&mut symbolic) };
 
         Ok(umfpack_lu)
     }
