@@ -179,7 +179,7 @@ fn test_local_index_layout() {
     assert_eq!(index_layout.local2global(2).unwrap(), 2);
 }
 
-#[cfg(feature = "umfpack")]
+#[cfg(feature = "suitesparse")]
 #[test]
 fn test_csc_umfpack_f64() {
     let n = 5;
@@ -213,10 +213,10 @@ fn test_csc_umfpack_f64() {
         .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
         .unwrap();
 
-    rlst::dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
+    rlst::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
 }
 
-#[cfg(feature = "umfpack")]
+#[cfg(feature = "suitesparse")]
 #[test]
 fn test_csc_umfpack_c64() {
     let n = 5;
@@ -250,5 +250,5 @@ fn test_csc_umfpack_c64() {
         .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
         .unwrap();
 
-    rlst::dense::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
+    rlst::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
 }

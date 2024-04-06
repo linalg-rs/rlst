@@ -31,7 +31,6 @@ serde = "1"
 mpi = { version="0.7.0", optional=true }
 mpi-sys = { version="0.2.1", optional=true }
 
-rlst-umfpack = { git = "https://github.com/linalg-rs/rlst-umfpack", optional = true}
 
 
 [target.aarch64-apple-darwin.dev-dependencies]
@@ -51,7 +50,7 @@ rand = "0.8.*"
 [build-dependencies]
 cc = "1.0"
 bindgen = "0.69"
-
+cmake = "*"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]
@@ -61,7 +60,7 @@ rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 strict = []
 default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
-umfpack = ["dep:rlst-umfpack"]
+suitesparse = []
 blis = []
 metal = []
 
