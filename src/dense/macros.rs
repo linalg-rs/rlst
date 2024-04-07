@@ -94,19 +94,17 @@ macro_rules! rlst_dynamic_array5 {
 /// let shape = [5];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice1!(f64, vec.as_slice(), shape);
+/// let arr = rlst_array_from_slice1!(vec.as_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice1!(f64, vec.as_slice(), shape, stride);
+/// let arr = rlst_array_from_slice1!(vec.as_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice1 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 1>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArray::<_, 1>::from_shape_with_stride($slice, $shape, $stride)
     }};
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 1>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArray::<_, 1>::from_shape($slice, $shape)
     }};
 }
 
@@ -119,20 +117,18 @@ macro_rules! rlst_array_from_slice1 {
 /// let shape = [2, 5];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice2!(f64, vec.as_slice(), shape);
+/// let arr = rlst_array_from_slice2!(vec.as_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice2!(f64, vec.as_slice(), shape, stride);
+/// let arr = rlst_array_from_slice2!(vec.as_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice2 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 2>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArray::<_, 2>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 2>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArray::<_, 2>::from_shape($slice, $shape)
     }};
 }
 
@@ -145,20 +141,18 @@ macro_rules! rlst_array_from_slice2 {
 /// let shape = [2, 5, 3];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice3!(f64, vec.as_slice(), shape);
+/// let arr = rlst_array_from_slice3!(vec.as_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice3!(f64, vec.as_slice(), shape, stride);
+/// let arr = rlst_array_from_slice3!(vec.as_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice3 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 3>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArray::<_, 3>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 3>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArray::<_, 3>::from_shape($slice, $shape)
     }};
 }
 
@@ -171,20 +165,18 @@ macro_rules! rlst_array_from_slice3 {
 /// let shape = [2, 5, 3, 2];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice4!(f64, vec.as_slice(), shape);
+/// let arr = rlst_array_from_slice4!(vec.as_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice4!(f64, vec.as_slice(), shape, stride);
+/// let arr = rlst_array_from_slice4!(vec.as_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice4 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 4>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArray::<_, 4>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 4>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArray::<_, 4>::from_shape($slice, $shape)
     }};
 }
 
@@ -197,20 +189,18 @@ macro_rules! rlst_array_from_slice4 {
 /// let shape = [2, 5, 3, 2, 1];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice5!(f64, vec.as_slice(), shape);
+/// let arr = rlst_array_from_slice5!(vec.as_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice5!(f64, vec.as_slice(), shape, stride);
+/// let arr = rlst_array_from_slice5!(vec.as_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice5 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 5>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArray::<_, 5>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArray::<$scalar, 5>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArray::<_, 5>::from_shape($slice, $shape)
     }};
 }
 
@@ -223,20 +213,18 @@ macro_rules! rlst_array_from_slice5 {
 /// let shape = [5];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice_mut1!(f64, vec.as_mut_slice(), shape);
+/// let arr = rlst_array_from_slice_mut1!(vec.as_mut_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice_mut1!(f64, vec.as_mut_slice(), shape, stride);
+/// let arr = rlst_array_from_slice_mut1!(vec.as_mut_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut1 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 1>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 1>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 1>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 1>::from_shape($slice, $shape)
     }};
 }
 
@@ -249,20 +237,18 @@ macro_rules! rlst_array_from_slice_mut1 {
 /// let shape = [2, 5];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice_mut2!(f64, vec.as_mut_slice(), shape);
+/// let arr = rlst_array_from_slice_mut2!(vec.as_mut_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice_mut2!(f64, vec.as_mut_slice(), shape, stride);
+/// let arr = rlst_array_from_slice_mut2!(vec.as_mut_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut2 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 2>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 2>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 2>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 2>::from_shape($slice, $shape)
     }};
 }
 
@@ -275,20 +261,18 @@ macro_rules! rlst_array_from_slice_mut2 {
 /// let shape = [2, 5, 3];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice_mut3!(f64, vec.as_mut_slice(), shape);
+/// let arr = rlst_array_from_slice_mut3!(vec.as_mut_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice_mut3!(f64, vec.as_mut_slice(), shape, stride);
+/// let arr = rlst_array_from_slice_mut3!(vec.as_mut_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut3 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 3>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 3>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 3>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 3>::from_shape($slice, $shape)
     }};
 }
 
@@ -301,20 +285,18 @@ macro_rules! rlst_array_from_slice_mut3 {
 /// let shape = [2, 5, 3, 2];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice_mut4!(f64, vec.as_mut_slice(), shape);
+/// let arr = rlst_array_from_slice_mut4!(vec.as_mut_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice_mut4!(f64, vec.as_mut_slice(), shape, stride);
+/// let arr = rlst_array_from_slice_mut4!(vec.as_mut_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut4 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 4>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 4>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 4>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 4>::from_shape($slice, $shape)
     }};
 }
 
@@ -327,20 +309,18 @@ macro_rules! rlst_array_from_slice_mut4 {
 /// let shape = [2, 5, 3, 2, 1];
 /// let stride = rlst::dense::layout::stride_from_shape(shape);
 /// // Specify no stride (use default stride).
-/// let arr = rlst_array_from_slice_mut5!(f64, vec.as_mut_slice(), shape);
+/// let arr = rlst_array_from_slice_mut5!(vec.as_mut_slice(), shape);
 /// // Specify stride explicitly.
-/// let arr = rlst_array_from_slice_mut5!(f64, vec.as_mut_slice(), shape, stride);
+/// let arr = rlst_array_from_slice_mut5!(vec.as_mut_slice(), shape, stride);
 /// ```
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut5 {
-    ($scalar:ty, $slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 5>::from_shape_with_stride(
-            $slice, $shape, $stride,
-        )
+    ($slice:expr, $shape:expr, $stride:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 5>::from_shape_with_stride($slice, $shape, $stride)
     }};
 
-    ($scalar:ty, $slice:expr, $shape:expr) => {{
-        $crate::dense::array::SliceArrayMut::<$scalar, 5>::from_shape($slice, $shape)
+    ($slice:expr, $shape:expr) => {{
+        $crate::dense::array::SliceArrayMut::<_, 5>::from_shape($slice, $shape)
     }};
 }
 
