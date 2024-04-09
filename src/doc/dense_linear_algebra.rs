@@ -148,3 +148,70 @@
 //! To create a mutable view use instead `arr.view_mut()`. Views are just contianer that hold references to the original array. They implement
 //! all traits that also arrays implement and can be used interchangeably. Hence, of a RLST function takes ownership of an array one can provide
 //! instead a `view` object and the function takes ownership of the view and not of the original array.
+//!
+//! ## Operations on arrays
+//! ### Static lazy evaluation
+//! RLST uses a system of static lazy evaluation for array operations. Consider the following example.
+//! ```
+//! # use rlst::prelude::*;
+//! # let mut rng = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! arr.fill_from_equally_distributed(&mut rng);
+//! let res = 5.0 * arr.view();
+//! ```
+//! The array `res` is not connected with a memory region. It internally takes ownership of a view into `arr` and every random access to that
+//! view is multipltakes ownership of a view into `arr` and every random access to that
+//! view is multiplied by `5.0`. The `res` array implements also all traits that other arrays implement and can be used like any other array.
+//! The only exception is raw access to its memory. Since it does not have its own memory it does not implement the [RawAccess](crate::RawAccess) trait.
+//! To evaluate the operation `5.0 * arr.view()` one creates a new array and fills this array with values as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let mut rng = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let mut res = rlst_dynamic_array2!(f64, [2, 3]);
+//! arr.fill_from_equally_distributed(&mut rng);
+//! res.fill_from(5.0 * arr.view());
+//! ```
+//! The [fill_from](crate::dense::array::Array::fill_from) method iterates through `5.0 * arr.view()` and fills the array `res` with the returned values.
+//! The advantage of this approach is that more complex operations such as `res.fill_from(5.0 * arr1.view() + 3.0 * arr2.view())` only require a single
+//! loop through the data and create no temporary objects. RLST provides [various different methods](#evaluating-arrays-into-other-arrays) to evaluate an
+//! array into another array.
+//!
+//! # Evaluating arrays into other arrays
+//!
+//! To simply fill an array with the values of an other array the method [fill_from](crate::dense::array::Array::fill_from) is provided. See the following example.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # arr2.fill_from(arr1.view());
+//! ```
+//! The [fill_from](crate::dense::array::Array::fill_from) method takes ownership of its arguments. If this is not desired a `view` should passed into the method as
+//! in the example above. The [fill_from](crate::dense::array::Array::fill_from) method assumes that both arrays have the same shape and type. However, they need not
+//! have the same stride. A variant that allows resizing of the target array is given by [fill_from_resize](crate::dense::array::Array::fill_from_resize). With this method
+//! a simple heap allocated copy of an array can be created through
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! let arr2 = empty_array().fill_from_resize(arr1.view());
+//! ```
+//! Instead of `fill_from` the method [sum_into](crate::dense::array::Array::sum_into) can be used to sum the values of one array into another array. This method has no `resize` variant.
+//!
+//! Both `fill_from` and `sum_into` may not be automatically SIMD vectorized by the compiler. The compiler has no assumptions on how the elements of the two arrays are accessed in memory.
+//! To solve this problem a chunked evaluation is possible. Consider the following example.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # arr2.fill_from_chunked::<_, 16>(5.0 * arr1.view());
+//! ```
+//! The chunked evaluation passes through `arr1.view()` in chunks of 16, copying 16 elements at a time into a buffer and then multiplying each element in the buffer by `5.0`. This allows effective
+//! SIMD evaluation but comes at a price of an additional copy operation. The buffer is not heap allocated but lives on the stack and its size is determined as const generic parameter at compile time.
+//! Good sizes are multiples of the SIMD vector length of a CPU. The number of elements in an array does not need to be an exact multiple of the chunk size. This case is handled correctly in RLST.
+//! In summary, the following methods provide evaluation of an array into another array.
+//! - [fill_from](crate::dense::array::Array::fill_from)
+//! - [fill_from_chunked](crate::dense::array::Array::fill_from_chunked)
+//! - [fill_from_resize](crate::dense::array::Array::fill_from_resize)
+//! - [fill_from_chunked_resize](crate::dense::array::Array::fill_from_chunked_resize)
+//! - [sum_into](crate::dense::array::Array::sum_into)
+//! - [sum_into_chunked](crate::dense::array::Array::sum_into_chunked)
