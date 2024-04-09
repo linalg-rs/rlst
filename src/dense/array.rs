@@ -74,6 +74,16 @@ impl<Item: RlstScalar, const NDIM: usize> DynamicArray<Item, NDIM> {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
+
+    /// Create a new heap allocated array from a given shape.
+    pub fn from_shape_with_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(BaseArray::new_with_stride(
+            VectorContainer::new(size),
+            shape,
+            stride,
+        ))
+    }
 }
 
 impl<

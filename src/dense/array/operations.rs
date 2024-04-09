@@ -9,6 +9,7 @@ use super::{
     RandomAccessMut, RawAccessMut, RlstScalar, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::dense::traits::ResizeInPlace;
 
 impl<
         Item: RlstScalar,
@@ -100,6 +101,22 @@ impl<
         }
     }
 
+    /// Fill an array from another array and resize if necessary.
+    pub fn fill_from_resize<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) where
+        Self: ResizeInPlace<NDIM>,
+    {
+        if self.shape() != other.shape() {
+            self.resize_in_place(other.shape());
+        }
+
+        self.fill_from(other)
+    }
+
     /// Fill an array with values from an other arrays using chunks of size `N`.
     pub fn fill_from_chunked<
         Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
@@ -125,6 +142,23 @@ impl<
             }
             chunk_index += 1;
         }
+    }
+
+    /// Fill an array with values from an other arrays using chunks of size `N`. Resize if necessary.
+    pub fn fill_from_chunked_resize<
+        Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const N: usize,
+    >(
+        &mut self,
+        other: Other,
+    ) where
+        Self: ResizeInPlace<NDIM>,
+    {
+        if self.shape() != other.shape() {
+            self.resize_in_place(other.shape());
+        }
+
+        self.fill_from_chunked::<_, N>(other)
     }
 
     /// Sum other array into array.
