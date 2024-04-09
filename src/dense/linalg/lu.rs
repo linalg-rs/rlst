@@ -5,7 +5,7 @@ use crate::dense::traits::{
     RandomAccessByValue, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar};
+use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar, TransMode};
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 
@@ -37,7 +37,7 @@ pub trait MatrixLuDecomposition: Sized {
             + Stride<1>,
     >(
         &self,
-        trans: LuTrans,
+        trans: TransMode,
         rhs: Array<Self::Item, ArrayImplMut, 1>,
     ) -> RlstResult<()>;
 
@@ -51,7 +51,7 @@ pub trait MatrixLuDecomposition: Sized {
             + Stride<2>,
     >(
         &self,
-        trans: LuTrans,
+        trans: TransMode,
         rhs: Array<Self::Item, ArrayImplMut, 2>,
     ) -> RlstResult<()>;
 
@@ -148,16 +148,6 @@ pub trait MatrixLuDecomposition: Sized {
     fn det(&self) -> Self::Item;
 }
 
-/// Transposition modes for solving linear systems via LU decomposition.
-pub enum LuTrans {
-    /// Transpose.
-    Trans,
-    /// No transpose.
-    NoTrans,
-    /// Conjugate transpose.
-    ConjTrans,
-}
-
 /// Container for the LU Decomposition of a matrix.
 pub struct LuDecomposition<
     Item: RlstScalar,
@@ -215,7 +205,7 @@ macro_rules! impl_lu {
                     + Stride<1>,
             >(
                 &self,
-                trans: LuTrans,
+                trans: TransMode,
                 rhs: Array<$scalar, ArrayImplMut, 1>,
             ) -> RlstResult<()> {
                 self.solve_mat(
@@ -231,7 +221,7 @@ macro_rules! impl_lu {
                     + Stride<2>,
             >(
                 &self,
-                trans: LuTrans,
+                trans: TransMode,
                 mut rhs: Array<$scalar, ArrayImplMut, 2>,
             ) -> RlstResult<()> {
                 assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
@@ -250,9 +240,10 @@ macro_rules! impl_lu {
                 assert_lapack_stride(rhs_stride);
 
                 let trans_param = match trans {
-                    LuTrans::NoTrans => b'N',
-                    LuTrans::Trans => b'T',
-                    LuTrans::ConjTrans => b'C',
+                    TransMode::NoTrans => b'N',
+                    TransMode::Trans => b'T',
+                    TransMode::ConjTrans => b'C',
+                    _ => panic!("Transposition mode not supported for LU solve."),
                 };
 
                 let mut info = 0;

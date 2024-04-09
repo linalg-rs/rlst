@@ -99,6 +99,6 @@ impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     }
 
     fn scale_inplace(&mut self, alpha: Self::F) {
-        self.view_mut().scale_in_place(alpha);
+        self.view_mut().scale_inplace(alpha);
     }
 }

@@ -110,7 +110,7 @@ macro_rules! impl_lu_tests {
                     rhs.view_mut().simple_mult_into_resize(arr.view(), x_actual.view());
 
                     let lu = LuDecomposition::<$scalar,_>::new(arr).unwrap();
-                    lu.solve_vec(LuTrans::NoTrans, rhs.view_mut()).unwrap();
+                    lu.solve_vec(TransMode::NoTrans, rhs.view_mut()).unwrap();
 
                     assert_array_relative_eq!(x_actual, rhs, $tol)
                 }

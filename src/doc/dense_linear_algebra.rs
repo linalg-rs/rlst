@@ -177,14 +177,100 @@
 //! loop through the data and create no temporary objects. RLST provides [various different methods](#evaluating-arrays-into-other-arrays) to evaluate an
 //! array into another array.
 //!
+//! ## Multiplication with a scalar
+//!
+//! The following options are available to multiply an array with a scalar.
+//! ```
+//! # use rlst::prelude::*;
+//! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! arr.scale_inplace(5.0);
+//! let res1 = 5.0 * arr.view();
+//! let res2 = arr.view().scalar_mul(5.0);
+//! ```
+//! The method [scale_in_place](crate::Array::scale_inplace) immediately scales in place all elements of the array by the given scalar. The commands
+//! `5.0 * arr` and `arr.view().scalar_mul(5.0)` are identical. They both return a new lazy evaluation object without performing the scalar multiplication.
+//!
+//! ## Negation of an array
+//!
+//! To negate the elements of an array use one of
+//! ```
+//! # use rlst::prelude::*;
+//! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res1 = arr.view().neg();
+//! let res2 = -1.0 * arr.view();
+//! ```
+//! Both operations are identical and return a lazy evaluation object.
+//!
+//! ## Addition and subtraction of arrays.
+//!
+//! To add/subtract arrays use one of
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res1 = arr1.view() + arr2.view();
+//! let res2 = arr1.view().add(arr2.view());
+//! let res3 = arr1.view() - arr2.view();
+//! let res4 = arr1.view().sub(arr2.view());
+//! ```
+//! The add, respectively subtraction operations, are implemented in the same way and return a lazy evaluation object that
+//! represents addition/subtraction of the arrays.
+//!
+//! ## Componentwise multiplication and division
+//!
+//! Componentwise multiplication and division of two arrays is performed as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res1 = arr1.view() * arr2.view();
+//! let res2 = arr1.view() / arr2.view();
+//! ```
+//! Both operations use lazy evaluation.
+//!
+//! ## Transposition of arrays
+//!
+//! Lazy transposition of an array is performed as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res = arr.view().transpose();
+//! ```
+//! For general n-dimensional arrays transposition reverses the order of axes. More general axes permutations are available
+//! through the [permute_axes](crate::Array::permute_axes) method. Note that this method only performs transposition. To take the
+//! complex conjugate transpose use
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res = arr.view().conj().transpose();
+//! ```
+//!
+//! ## Conversion to complex type
+//!
+//! Sometimes it is useful to convert the type of an array to the corresponding complex type. This is done lazily as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res = arr.view().to_complex();
+//! ```
+//!
+//! ## Conjugation of an array
+//!
+//! Lazy complex conjugation of an array is done as below.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! let res = arr.view().conj();
+//! ```
+//!
 //! # Evaluating arrays into other arrays
 //!
 //! To simply fill an array with the values of an other array the method [fill_from](crate::dense::array::Array::fill_from) is provided. See the following example.
 //! ```
 //! # use rlst::prelude::*;
-//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-//! # let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! # arr2.fill_from(arr1.view());
+//! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! arr2.fill_from(arr1.view());
 //! ```
 //! The [fill_from](crate::dense::array::Array::fill_from) method takes ownership of its arguments. If this is not desired a `view` should passed into the method as
 //! in the example above. The [fill_from](crate::dense::array::Array::fill_from) method assumes that both arrays have the same shape and type. However, they need not
@@ -201,9 +287,9 @@
 //! To solve this problem a chunked evaluation is possible. Consider the following example.
 //! ```
 //! # use rlst::prelude::*;
-//! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-//! # let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! # arr2.fill_from_chunked::<_, 16>(5.0 * arr1.view());
+//! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
+//! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
+//! arr2.fill_from_chunked::<_, 16>(5.0 * arr1.view());
 //! ```
 //! The chunked evaluation passes through `arr1.view()` in chunks of 16, copying 16 elements at a time into a buffer and then multiplying each element in the buffer by `5.0`. This allows effective
 //! SIMD evaluation but comes at a price of an additional copy operation. The buffer is not heap allocated but lives on the stack and its size is determined as const generic parameter at compile time.
@@ -215,3 +301,87 @@
 //! - [fill_from_chunked_resize](crate::dense::array::Array::fill_from_chunked_resize)
 //! - [sum_into](crate::dense::array::Array::sum_into)
 //! - [sum_into_chunked](crate::dense::array::Array::sum_into_chunked)
+//!
+//! # Matrix multiplication
+//!
+//! RLST uses its BLAS interface to perform matrix multiplication.
+//! To use matrix products make sure to have a BLAS/Lapack provider as explained [here](crate::doc::initialise_rlst). Furthermore,
+//! because of BLAS only column-major order is supported for matrix products. To convert a matrix to column-major order simply initialise
+//! a new matrix with column-major order (default stride) and evaluate the existing matrix into the new matrix.
+//!
+//! The following operation is the most simple way of multiplying two matrices into a new matrix.
+//!
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
+//! # let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
+//! let res = empty_array().simple_mult_into_resize(arr1.view(), arr2.view());
+//! ```
+//! This multiplies the matrices `arr1` and `arr2` into a new matrix `res`. The method [simple_mult_into_resize](crate::dense::traits::MultIntoResize::simple_mult_into_resize)
+//! resizes the result array if necessary. To multiply multiple arrays one can chain the `simple_mult_into_resize` method.
+//!
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! # let arr1 = rlst_dynamic_array2!(f64, [2, 2]);
+//! # let arr2 = rlst_dynamic_array2!(f64, [2, 2]);
+//! # let arr3 = rlst_dynamic_array2!(f64, [2, 2]);
+//! let res = empty_array().simple_mult_into_resize(
+//!             empty_array().simple_mult_into_resize(arr1.view(), arr2.view()),
+//!             arr3.view()
+//!           );
+//! ```
+//! The rationale behind this interface is that the user may want to store results of the multiplication in stack allocated arrays.
+//! Hence, the matrix multiplication cannot implicitly allocate a new matrix on the heap. For multiplication into matrices
+//! that cannot be resied (e.g. stack allocate matrices) the method [simple_mult_into](crate::dense::traits::MultInto::simple_mult_into)
+//! should be used. This method does not rely on being able to resize an array. However, it panics if the result matrix does not have
+//! correct dimensions.
+//!
+//! A more complete BLAS like interface is provided by the method [mult_into](crate::dense::traits::MultInto::mult_into), which performs
+//! `C = alpha * op(A) * op(B) + beta * C`, for matrices `A`, `B`, and `C`, where `op` is the identity, transpose, or conjugate transpose.
+//!
+//! # LU Decomposition and solving linear systems of equations
+//!
+//! Through its Lapack interface RLST can solve dense linear systems of equations. A linear system of equations is solved as follows.
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
+//! let mut rhs = rlst_dynamic_array1!(f64, [4]);
+//! arr.fill_from_equally_distributed(&mut rand);
+//! let lu = LuDecomposition::<f64, _ >::new(arr).expect("LU Decomposition failed.");
+//! lu.solve_vec(TransMode::NoTrans, rhs.view_mut()).expect("LU solve failed.");
+//! ```
+//! The variable `rhs` is overwritten with the solution to the linear system of equations. For solving with multiple right-hand sides use the
+//! [solve_mat](crate::dense::linalg::lu::MatrixLuDecomposition::solve_mat). Note that the structure [LuDecomposition](crate::dense::linalg::lu::LuDecomposition)
+//! takes ownership of `arr` and overwrites the content of its memory with the LU Decomposition. To obtain the individual factors of the LU decomposition see
+//! the documentation of [MatrixLuDecomposition](crate::dense::linalg::lu::MatrixLuDecomposition).
+//!
+//! # Pivoted QR Decomposition
+//!
+//! The pivted QR decomposition of a matrix `A` is given as `AP=QR`, where `P` is a permutation matrix, `R` is upper triangular, and
+//! `Q` has orthogonal columns. For details see the documentation of [MatrixQrDecomposition](crate::dense::linalg::qr::MatrixQrDecomposition).
+//!
+//! The pivoted QR decomposition of a matrix can be computed as follows.
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
+//! let mut r_mat = rlst_dynamic_array2!(f64, [5, 5]);
+//! let mut p_mat = rlst_dynamic_array2!(f64, [5, 5]);
+//! let mut q_mat = rlst_dynamic_array2!(f64, [8, 5]);
+// ! arr.fill_from_equally_distributed(&mut rand);
+//! let qr = QrDecomposition::<f64, _>::new(arr).expect("QR Decomposition failed");
+//! qr.get_r(r_mat.view_mut());
+//! qr.get_q_alloc(q_mat.view_mut());
+//! qr.get_p(p_mat.view_mut());
+//! ````
+//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
+//! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.

@@ -43,7 +43,7 @@ impl<
     }
 
     /// Multiply all array elements with the scalar `alpha`.
-    pub fn scale_in_place(&mut self, alpha: Item) {
+    pub fn scale_inplace(&mut self, alpha: Item) {
         for elem in self.iter_mut() {
             *elem *= alpha;
         }

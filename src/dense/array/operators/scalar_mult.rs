@@ -85,6 +85,12 @@ impl<
     ) -> Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayScalarMult::new(other, self))
     }
+
+    /// Multiplication by -1.
+    pub fn neg(self) -> Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
+        let minus_one = -<Item as num::One>::one();
+        Array::new(ArrayScalarMult::new(minus_one, self))
+    }
 }
 
 macro_rules! impl_scalar_mult {
