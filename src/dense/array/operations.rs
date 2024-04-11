@@ -1,5 +1,6 @@
 //! Operations on arrays.
-use crate::dense::types::RlstResult;
+use crate::dense::linalg;
+use crate::{dense::types::RlstResult, TransMode};
 use num::Zero;
 
 use crate::dense::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
@@ -371,5 +372,61 @@ impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Sh
             .map(|row| row.norm_1())
             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
             .unwrap()
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + Stride<2>
+            + RawAccessMut<Item = Item>,
+    > Array<Item, ArrayImpl, 2>
+where
+    linalg::lu::LuDecomposition<Item, ArrayImpl>:
+        linalg::lu::MatrixLuDecomposition<Item = Item, ArrayImpl = ArrayImpl>,
+{
+    /// Solve a linear system with a single right-hand side.
+    ///
+    /// The array is overwritten with the LU Decomposition and the right-hand side
+    /// is overwritten with the solution. The solution is also returned.
+    pub fn into_solve_vec<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<1, Item = Item>
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + Shape<1>
+            + Stride<1>,
+    >(
+        self,
+        trans: TransMode,
+        mut rhs: Array<Item, ArrayImplMut, 1>,
+    ) -> RlstResult<Array<Item, ArrayImplMut, 1>> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        ludecomp.solve_vec(trans, rhs.view_mut())?;
+        Ok(rhs)
+    }
+
+    /// Solve a linear system with multiple right-hand sides.
+    ///
+    /// The array is overwritten with the LU Decomposition and the right-hand side
+    /// is overwritten with the solution. The solution is also returned.
+    pub fn into_solve_mat<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<2, Item = Item>
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        self,
+        trans: TransMode,
+        mut rhs: Array<Item, ArrayImplMut, 2>,
+    ) -> RlstResult<Array<Item, ArrayImplMut, 2>> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        ludecomp.solve_mat(trans, rhs.view_mut())?;
+        Ok(rhs)
     }
 }

@@ -362,6 +362,21 @@
 //! takes ownership of `arr` and overwrites the content of its memory with the LU Decomposition. To obtain the individual factors of the LU decomposition see
 //! the documentation of [MatrixLuDecomposition](crate::dense::linalg::lu::MatrixLuDecomposition).
 //!
+//! If only a single solve is required and the LU factors need not be stored a shorter version is available as
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
+//! let mut rhs = rlst_dynamic_array1!(f64, [4]);
+//! arr.fill_from_equally_distributed(&mut rand);
+//! let sol = arr.into_solve_vec(TransMode::NoTrans, rhs).expect("LU solve failed.");
+//! ```
+//! The method [into_solve_vec](crate::dense::array::Array::into_solve_vec) takes ownership of `rhs` and the array `arr`. It returns ownership of `rhs` and
+//! overwrites it with the solution. For convenience `rhs` is then returned again as `sol`. The array `arr` is also overwritten with the LU factors.
+//! A corresponding routine [into_solve_mat](crate::dense::array::Array::into_solve_mat) is available.
+//!
 //! # Pivoted QR Decomposition
 //!
 //! The pivted QR decomposition of a matrix `A` is given as `AP=QR`, where `P` is a permutation matrix, `R` is upper triangular, and
@@ -385,3 +400,7 @@
 //! ````
 //! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
+//!
+//! # Singular value decomposition.
+//!
+//! To compute the singular values of a two-dimensional array `arr` use
