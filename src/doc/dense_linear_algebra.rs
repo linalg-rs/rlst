@@ -1,5 +1,28 @@
 //! An introduction to dense linear algebra with RLST.
 //!
+//! - [Basic operations](#basic-operations)
+//! - [Array allocations](#array-allocations)
+//!    - [Heap based array allocations](#heap-based-array-allocations)
+//!    - [Stack based array allocations](#stack-based-array-allocations)
+//!    - [Arrays from memory slices](#arrays-from-memory-slices)
+//! - [Strides](#strides)
+//! - [Views and mutable views](#views-and-mutable-views)
+//! - [Operations on arrays](#operations-on-arrays)
+//!    - [Static lazy evaluation](#static-lazy-evaluation)
+//!    - [Multiplication with a scalar](#multiplication-with-a-scalar)
+//!    - [Negation of an array](#negation-of-an-array)
+//!    - [Addition and subtraction of arrays](#addition-and-subtraction-of-arrays)
+//!    - [Componentwise multiplication and division](#componentwise-multiplication-and-division)
+//!    - [Transposition of arrays](#transposition-of-arrays)
+//!    - [Conversion to complex type](#conversion-to-complex-type)
+//!    - [Conjugation of an array](#conjugation-of-an-array)
+//! - [Evaluating arrays into other arrays](#evaluating-arrays-into-other-arrays)
+//! - [Matrix multiplication](#matrix-multiplication)
+//! - [LU Decomposition and solving linear systems of equations](#lu-decomposition-and-solving-linear-systems-of-equations)
+//! - [Pivoted QR Decomposition](#pivoted-qr-decomposition)
+//! - [Singular value decomposition](#singular-value-decomposition)
+//! - [Other vector functions](#other-vector-functions)
+//! - [Other matrix functions](#other-matrix-functions)
 //!
 //! # Basic operations
 //!
@@ -121,8 +144,7 @@
 //! let arr = rlst_array_from_slice2!(myvec.as_slice(), [2, 3], stride);
 //! ```
 //!
-//!
-//! ## Strides
+//! # Strides
 //!
 //! The stride of an array denotes how elements are mapped from n-dimensions to 1-dimensional memory locations. Let the stride
 //! be [s1, s2, s3, ..] then an index (a1, a2, a3, ...) is mapped to a 1-dimensional index through `ind = a1 * s1 + a2 * s2 + a3 * s3 + ...`.
@@ -136,7 +158,7 @@
 //! The above array uses a row-major stride, meaning consecutive elements in a row are consecutive in memory.
 //! RLST supports arbitrary strides. However, operations that rely on extenal BLAS or Lapack interfaces require a column-major ordering.
 //!
-//! ## Views and mutable views
+//! # Views and mutable views
 //!
 //! Most operations in RLST take ownership of their arguments. If we want to avoid this we can create `view` objects. A borrowed view is
 //! created as follows.
@@ -201,7 +223,7 @@
 //! ```
 //! Both operations are identical and return a lazy evaluation object.
 //!
-//! ## Addition and subtraction of arrays.
+//! ## Addition and subtraction of arrays
 //!
 //! To add/subtract arrays use one of
 //! ```
@@ -401,6 +423,50 @@
 //! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
 //!
-//! # Singular value decomposition.
+//! # Singular value decomposition
 //!
 //! To compute the singular values of a two-dimensional array `arr` use
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
+//! let mut singvals = rlst_dynamic_array1!(f64, [5]);
+//! arr.into_singular_values_alloc(singvals.data_mut()).unwrap();
+//! ```
+//! This computes the singular values of `arr` into `singvals`. The method [into_singular_values_alloc](crate::MatrixSvd::into_singular_values_alloc)
+//! needs to allocate temporary memory on the heap. This is why it has the ending `_alloc`. To compute the whole
+//! singular value decomposition use the method [into_svd_alloc](crate::MatrixSvd::into_svd_alloc).
+//! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
+//! let mut u = rlst_dynamic_array2!(f64, [8, 5]);
+//! let mut vt = rlst_dynamic_array2!(f64, [5, 5]);
+//! let mut sigma = rlst_dynamic_array1!(f64, [5]);
+//! arr.into_svd_alloc(u.view_mut(), vt.view_mut(), sigma.data_mut(), SvdMode::Reduced).unwrap();
+//! ```
+//! To compute the full SVD use the parameter [SvdMode::Full](crate::SvdMode::Full).
+//!
+//! # Other vector functions
+//!
+//! The following other functions for arrays with a single dimension (i.e. vectors) are provided.
+//! - [inner](crate::Array::inner): Compute the inner product with another vector.
+//! - [norm_1](crate::Array::norm_1): Compute the 1-norm of a vector.
+//! - [norm_2](crate::Array::norm_2): Compute the 2-norm of a vector.
+//! - [norm_inf](crate::Array::norm_inf): Compute the inf-norm of a vector.
+//! - [len](crate::Array::len): Convenience function to return the length of a vector.
+//! - [cross](crate::Array::cross): Compute the cross product with another vector.
+//!
+//! # Other matrix functions
+//!
+//! The following other functions for arrays with two dimensions (i.e. matrices) are provided.
+//! - [norm_1](crate::Array::norm_1): Compute the 1-norm of a matrix.
+//! - [norm_2_alloc](crate::Array::norm_2): Compute the 2-norm of a matrix. This method allocates temporary memory on the heap.
+//! - [norm_fro](crate::Array::norm_fro): Compute the Frobenius norm of a matrix.
+//! - [norm_inf](crate::Array::norm_inf): Compute the inf-norm of a matrix.
+//! - [into_det](crate::Array::into_det): Compute the determinant of a matrix.
+//! - [into_pseudo_inverse_alloc](crate::MatrixPseudoInverse::into_pseudo_inverse_alloc) and [into_pseudo_inverse_resize_alloc](crate::MatrixPseudoInverse::into_pseudo_inverse_resize_alloc) compute the pseudoinverse of a matrix.

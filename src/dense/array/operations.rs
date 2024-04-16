@@ -408,6 +408,24 @@ where
         Ok(rhs)
     }
 
+    /// Compute the determinant of a matrix.
+    ///
+    /// The array is overwritten by the determinant computation.
+    pub fn into_det<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<2, Item = Item>
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        self,
+    ) -> RlstResult<Item> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        Ok(ludecomp.det())
+    }
+
     /// Solve a linear system with multiple right-hand sides.
     ///
     /// The array is overwritten with the LU Decomposition and the right-hand side
