@@ -1,12 +1,15 @@
 //! An introduction to dense linear algebra with RLST.
 //!
-//! - [Basic operations](#basic-operations)
+//! - [Basic concepts](#basic-concepts)
+//! - [Element access](#element-access)
 //! - [Array allocations](#array-allocations)
 //!    - [Heap based array allocations](#heap-based-array-allocations)
 //!    - [Stack based array allocations](#stack-based-array-allocations)
 //!    - [Arrays from memory slices](#arrays-from-memory-slices)
 //! - [Strides](#strides)
 //! - [Views and mutable views](#views-and-mutable-views)
+//! - [Array slicing](#array-slicing)
+//! - [Array iterators](#array-iterators)
 //! - [Operations on arrays](#operations-on-arrays)
 //!    - [Static lazy evaluation](#static-lazy-evaluation)
 //!    - [Multiplication with a scalar](#multiplication-with-a-scalar)
@@ -24,7 +27,7 @@
 //! - [Other vector functions](#other-vector-functions)
 //! - [Other matrix functions](#other-matrix-functions)
 //!
-//! # Basic operations
+//! # Basic concepts
 //!
 //! Let us start by defining a random `(3, 5, 2)` array.
 //! ```
@@ -37,6 +40,7 @@
 //! [rlst_dynamic_array3](crate::rlst_dynamic_array3) is a macro
 //! that initialises a new array on the heap filled with zeros.
 //! The following types are supported: [f32], [f64], [c32](crate::dense::types::c32), [c64](crate::dense::types::c64).
+//!
 //! Let us define a second `(3, 5, 2)` array and do some operations.
 //! ```
 //! # use rlst::prelude::*;
@@ -94,6 +98,23 @@
 //! The method `arr1.view()` creates a `view` object that stores a reference to `arr1`. Ownership is now taken of the `view` object and
 //! not of `arr1`. Ownership rules of Rust naturally extend to `view` objects since they are container that store Rust references. A mutable
 //! view is created through `arr1.view_mut()`.
+//!
+//! # Element access
+//!
+//! To get the value of an element of an array at an arbitrary position the method [get_value](crate::RandomAccessByValue::get_value)
+//! is provided. [get_value](crate::RandomAccessByValue::get_value) does not return a reference but an actual value. It can therefore always be used
+//! even when the array represents a complicated expression. If it is possible to have a reference to an element (i.e. the array is associated
+//! with elements in memory) then direct index notation is also possible. Both are shown below.
+//!
+//! ```
+//! # use rlst::prelude::*;
+//! let mut arr = rlst_dynamic_array3!(f64, [3, 4, 2]);
+//! arr.fill_from_seed_equally_distributed(0);
+//! assert_eq!(arr.get_value([2, 3, 1]).unwrap(), arr[[2, 3, 1]]);
+//! ```
+//! To get a reference to an element use the method [get](crate::RandomAccessByRef::get). A mutable variant is available as [get_mut](crate::RandomAccessMut::get_mut).
+//! These methods by default perform bounds checking. Unsafe variants without bounds checking are available in the traits [UnsafeRandomAccessByRef](crate::UnsafeRandomAccessByRef),
+//! [UnsafeRandomAccessByValue](crate::UnsafeRandomAccessByValue), and [UnsafeRandomAccessMut](crate::UnsafeRandomAccessMut).
 //!
 //! # Array allocations
 //!
@@ -170,6 +191,62 @@
 //! To create a mutable view use instead `arr.view_mut()`. Views are just contianer that hold references to the original array. They implement
 //! all traits that also arrays implement and can be used interchangeably. Hence, of a RLST function takes ownership of an array one can provide
 //! instead a `view` object and the function takes ownership of the view and not of the original array.
+//!
+//! # Array slicing
+//!
+//! RLST allows the slicing of arrays across a given dimension. Given the following array.
+//! ```
+//! # use rlst::prelude::*;
+//! let arr = rlst_dynamic_array3!(f64, [5, 3, 2]);
+//! ```
+//! we can slice at the first index of the second dimension as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let arr = rlst_dynamic_array3!(f64, [5, 3, 2]);
+//! let slice = arr.view().slice(1, 0);
+//! ```
+//! This creates a two dimensional array of dimension `(5, 2)`. Any index `[a, b]` into this array
+//! is mapped to an index `[a, 0, b]` of the original array. A slice is mutable if the original array or view was mutable.
+//! A frequent example is access to a single column or row in a given matrix.
+//! ```
+//! # use rlst::prelude::*;
+//! let arr = rlst_dynamic_array2!(f64, [4, 6]);
+//! // This gives the third column
+//! let slice = arr.view().slice(1, 2);
+//! // This gives the fourth row
+//! let slice = arr.view().slice(0, 3);
+//! ```
+//!
+//! # Array iterators
+//!
+//! The default iterator returns elements of an array in column-major order independent of the underlying stride.
+//! The following example demonstrates the default iterator.
+//! ```
+//! # use rlst::prelude::*;
+//! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! for elem in arr.iter_mut() {
+//!     *elem = 2.0;
+//! }     
+//! ```
+//! This fills all elements of an array with the value `2.0`. It is often useful to get the multi index of an element together
+//! with the element itself. This can be achieved as follows.
+//! ```
+//! # use rlst::prelude::*;
+//! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
+//! # arr.fill_from_seed_equally_distributed(0);
+//! let shape = arr.shape();
+//! for (multi_index, elem) in arr.iter().enumerate().multi_index(shape) {
+//!     assert_eq!(elem, arr[multi_index]);
+//! }
+//! ```
+//! The following iterators are provided by default.
+//! - [iter](crate::DefaultIterator): Default column-major iterator.
+//! - [iter_mut](crate::DefaultIteratorMut::iter_mut): Default mutable column-major iterator.
+//! - [row_iter](crate::Array::row_iter): Iterator over rows of a two-dimensional array.
+//! - [row_iter_mut](crate::Array::row_iter_mut): Mutable iterator over rows of a two-dimensional array.
+//! - [col_iter](crate::Array::col_iter): Iterator over columns of a two-dimensional array.
+//! - [col_iter_mut](crate::Array::col_iter_mut): Mutable iterator over columns of a two-dimensional array.
+//!
 //!
 //! ## Operations on arrays
 //! ### Static lazy evaluation
