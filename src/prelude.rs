@@ -24,6 +24,10 @@ pub use crate::rlst_array_from_slice_mut5;
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
+pub use std::ops::Add;
+pub use std::ops::Neg;
+pub use std::ops::Sub;
+
 pub use crate::dense::gemm::Gemm;
 
 pub use crate::dense::traits::{
@@ -48,7 +52,7 @@ pub use crate::dense::data_container::{
 pub use crate::dense::array::empty_axis::AxisPosition;
 
 pub use crate::dense::linalg::inverse::MatrixInverse;
-pub use crate::dense::linalg::lu::{LuDecomposition, LuTrans, MatrixLuDecomposition};
+pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
 pub use crate::dense::linalg::qr::{MatrixQrDecomposition, QrDecomposition};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};

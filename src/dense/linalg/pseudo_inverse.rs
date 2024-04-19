@@ -140,7 +140,7 @@ macro_rules! impl_pinv {
                 );
 
                 for (col_index, &singval) in singvals.iter().take(index).enumerate() {
-                    v.view_mut().slice(1, col_index).scale_in_place(
+                    v.view_mut().slice(1, col_index).scale_inplace(
                         (<<$scalar as RlstScalar>::Real as One>::one() / singval).into(),
                     );
                 }

@@ -87,6 +87,20 @@ impl<
     }
 }
 
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > std::ops::Neg for Array<Item, ArrayImpl, NDIM>
+{
+    type Output = Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
+
+    fn neg(self) -> Self::Output {
+        let minus_one = -<Item as num::One>::one();
+        Array::new(ArrayScalarMult::new(minus_one, self))
+    }
+}
+
 macro_rules! impl_scalar_mult {
     ($ScalarType:ty) => {
         impl<

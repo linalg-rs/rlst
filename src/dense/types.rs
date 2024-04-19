@@ -413,12 +413,11 @@ impl_scalar!(f64, c64);
 
 /// Transposition Mode.
 #[derive(Clone, Copy, PartialEq)]
-#[repr(u32)]
 pub enum TransMode {
-    /// Complex conjugate of matrix.
-    ConjNoTrans,
     /// No modification of matrix.
     NoTrans,
+    /// Complex conjugate of matrix.
+    ConjNoTrans,
     /// Transposition of matrix.
     Trans,
     /// Conjugate transpose of matrix.

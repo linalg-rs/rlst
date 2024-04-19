@@ -1,5 +1,6 @@
 //! Operations on arrays.
-use crate::dense::types::RlstResult;
+use crate::dense::linalg;
+use crate::{dense::types::RlstResult, TransMode};
 use num::Zero;
 
 use crate::dense::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
@@ -9,6 +10,7 @@ use super::{
     RandomAccessMut, RawAccessMut, RlstScalar, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::dense::traits::ResizeInPlace;
 
 impl<
         Item: RlstScalar,
@@ -42,7 +44,7 @@ impl<
     }
 
     /// Multiply all array elements with the scalar `alpha`.
-    pub fn scale_in_place(&mut self, alpha: Item) {
+    pub fn scale_inplace(&mut self, alpha: Item) {
         for elem in self.iter_mut() {
             *elem *= alpha;
         }
@@ -100,6 +102,22 @@ impl<
         }
     }
 
+    /// Fill an array from another array and resize if necessary.
+    pub fn fill_from_resize<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) where
+        Self: ResizeInPlace<NDIM>,
+    {
+        if self.shape() != other.shape() {
+            self.resize_in_place(other.shape());
+        }
+
+        self.fill_from(other)
+    }
+
     /// Fill an array with values from an other arrays using chunks of size `N`.
     pub fn fill_from_chunked<
         Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
@@ -125,6 +143,23 @@ impl<
             }
             chunk_index += 1;
         }
+    }
+
+    /// Fill an array with values from an other arrays using chunks of size `N`. Resize if necessary.
+    pub fn fill_from_chunked_resize<
+        Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const N: usize,
+    >(
+        &mut self,
+        other: Other,
+    ) where
+        Self: ResizeInPlace<NDIM>,
+    {
+        if self.shape() != other.shape() {
+            self.resize_in_place(other.shape());
+        }
+
+        self.fill_from_chunked::<_, N>(other)
     }
 
     /// Sum other array into array.
@@ -337,5 +372,79 @@ impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Sh
             .map(|row| row.norm_1())
             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
             .unwrap()
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + Stride<2>
+            + RawAccessMut<Item = Item>,
+    > Array<Item, ArrayImpl, 2>
+where
+    linalg::lu::LuDecomposition<Item, ArrayImpl>:
+        linalg::lu::MatrixLuDecomposition<Item = Item, ArrayImpl = ArrayImpl>,
+{
+    /// Solve a linear system with a single right-hand side.
+    ///
+    /// The array is overwritten with the LU Decomposition and the right-hand side
+    /// is overwritten with the solution. The solution is also returned.
+    pub fn into_solve_vec<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<1, Item = Item>
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + Shape<1>
+            + Stride<1>,
+    >(
+        self,
+        trans: TransMode,
+        mut rhs: Array<Item, ArrayImplMut, 1>,
+    ) -> RlstResult<Array<Item, ArrayImplMut, 1>> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        ludecomp.solve_vec(trans, rhs.view_mut())?;
+        Ok(rhs)
+    }
+
+    /// Compute the determinant of a matrix.
+    ///
+    /// The array is overwritten by the determinant computation.
+    pub fn into_det<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<2, Item = Item>
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        self,
+    ) -> RlstResult<Item> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        Ok(ludecomp.det())
+    }
+
+    /// Solve a linear system with multiple right-hand sides.
+    ///
+    /// The array is overwritten with the LU Decomposition and the right-hand side
+    /// is overwritten with the solution. The solution is also returned.
+    pub fn into_solve_mat<
+        ArrayImplMut: RawAccessMut<Item = Item>
+            + UnsafeRandomAccessByValue<2, Item = Item>
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + Shape<2>
+            + Stride<2>,
+    >(
+        self,
+        trans: TransMode,
+        mut rhs: Array<Item, ArrayImplMut, 2>,
+    ) -> RlstResult<Array<Item, ArrayImplMut, 2>> {
+        use linalg::lu::MatrixLuDecomposition;
+
+        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+        ludecomp.solve_mat(trans, rhs.view_mut())?;
+        Ok(rhs)
     }
 }
