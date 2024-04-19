@@ -25,6 +25,7 @@ pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
 pub use std::ops::Add;
+pub use std::ops::Neg;
 pub use std::ops::Sub;
 
 pub use crate::dense::gemm::Gemm;
