@@ -15,8 +15,8 @@
 //!
 //! To learn about the features of RLST please have a look at the following documents.
 //! - [Initialising RLST.](crate::doc::initialise_rlst)
-//! - [An introduction to dense linear algebra with RLST](crate::doc::dense_linear_algebra).
-//! - Sparse matrix operations.
+//! - [An introduction to dense linear algebra with RLST.](crate::doc::dense_linear_algebra).
+//! - [Sparse matrix operations.](crate::doc::sparse_linear_algebra)
 //! - Using the operator interface for iterative solvers.
 //! - Import and export of matrices.
 //! - BLAS dependencies, multithreading, and GPU offloading.

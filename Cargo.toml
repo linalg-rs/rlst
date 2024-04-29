@@ -58,7 +58,7 @@ rustdoc-args = [ "--html-in-header", "katex-header.html" ]
 
 [features]
 strict = []
-default = []
+default = ["suitesparse", "mpi"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 blis = []
