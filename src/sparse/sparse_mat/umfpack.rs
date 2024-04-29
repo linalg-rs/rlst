@@ -4,9 +4,9 @@ use std::ffi::c_void;
 
 use crate::dense::array::Array;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
+use crate::dense::types::c64;
 use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
-use crate::dense::types::*;
 use crate::dense::types::{RlstError, RlstResult};
 use crate::external::umfpack;
 use crate::sparse::sparse_mat::csc_mat::CscMatrix;

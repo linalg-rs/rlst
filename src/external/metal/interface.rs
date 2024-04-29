@@ -396,6 +396,7 @@ impl MpsMatrixMultiplication {
     /// `interior_columns` - The number of columns of `op(A)`.
     /// `alpha` - A double precision parameter.
     /// `beta` - A double precision parameter.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         device: &MetalDevice,
         transpose_left: bool,
