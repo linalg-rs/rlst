@@ -4,6 +4,8 @@
 //! original array. A subview is similar but restricts to a subpart of the original array.
 
 use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
+use crate::external::metal::metal_array::AsRawMetalBufferMut;
+use crate::AsRawMetalBuffer;
 
 use super::Array;
 use crate::dense::traits::{
@@ -86,6 +88,17 @@ impl<
 {
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
+    }
+}
+
+impl<
+        'a,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM> + Stride<NDIM> + AsRawMetalBuffer,
+        const NDIM: usize,
+    > AsRawMetalBuffer for ArrayView<'a, f32, ArrayImpl, NDIM>
+{
+    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer()
     }
 }
 
@@ -287,6 +300,36 @@ impl<
     #[inline]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         self.arr.get_unchecked_mut(multi_index)
+    }
+}
+
+impl<
+        'a,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32>
+            + UnsafeRandomAccessMut<NDIM, Item = f32>
+            + Shape<NDIM>
+            + Stride<NDIM>
+            + AsRawMetalBuffer,
+        const NDIM: usize,
+    > AsRawMetalBuffer for ArrayViewMut<'a, f32, ArrayImpl, NDIM>
+{
+    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer()
+    }
+}
+
+impl<
+        'a,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32>
+            + Shape<NDIM>
+            + Stride<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = f32>
+            + AsRawMetalBufferMut,
+        const NDIM: usize,
+    > AsRawMetalBufferMut for ArrayViewMut<'a, f32, ArrayImpl, NDIM>
+{
+    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer_mut()
     }
 }
 
