@@ -7,6 +7,7 @@ use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::AsRawMetalBufferMut;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::AsRawMetalBuffer;
 
 use super::Array;
