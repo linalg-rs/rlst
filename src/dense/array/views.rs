@@ -93,6 +93,7 @@ impl<
     }
 }
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         'a,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM> + Stride<NDIM> + AsRawMetalBuffer,
@@ -320,6 +321,7 @@ impl<
     }
 }
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         'a,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32>

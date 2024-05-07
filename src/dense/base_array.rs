@@ -176,12 +176,14 @@ impl<Item: RlstScalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM
     }
 }
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<const NDIM: usize> AsRawMetalBuffer for BaseArray<f32, MetalDataBuffer, NDIM> {
     fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
         self.data.metal_buffer()
     }
 }
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<const NDIM: usize> AsRawMetalBufferMut for BaseArray<f32, MetalDataBuffer, NDIM> {
     fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
         self.data.metal_buffer_mut()
