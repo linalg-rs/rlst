@@ -15,8 +15,9 @@ use crate::dense::traits::{
 };
 use crate::dense::types::DataChunk;
 use crate::dense::types::RlstScalar;
-use crate::external::metal::metal_array::AsRawMetalBufferMut;
-use crate::AsRawMetalBuffer;
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
 
 pub mod empty_axis;
 pub mod iterators;
