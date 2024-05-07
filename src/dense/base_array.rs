@@ -13,8 +13,12 @@ use crate::dense::traits::{
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::RlstScalar;
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::AsRawMetalBufferMut;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::MetalDataBuffer;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::AsRawMetalBuffer;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
