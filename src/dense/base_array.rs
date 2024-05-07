@@ -14,6 +14,13 @@ use crate::dense::traits::{
 };
 use crate::dense::types::RlstScalar;
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use crate::external::metal::metal_array::AsRawMetalBufferMut;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use crate::external::metal::MetalDataBuffer;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use crate::AsRawMetalBuffer;
+
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
 /// the shape of the array, and `stride` contains the `stride` of the underlying data.
 pub struct BaseArray<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
@@ -170,5 +177,19 @@ impl<Item: RlstScalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM
         self.data.resize(new_len);
         self.stride = stride_from_shape(shape);
         self.shape = shape;
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<const NDIM: usize> AsRawMetalBuffer for BaseArray<f32, MetalDataBuffer, NDIM> {
+    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
+        self.data.metal_buffer()
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<const NDIM: usize> AsRawMetalBufferMut for BaseArray<f32, MetalDataBuffer, NDIM> {
+    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
+        self.data.metal_buffer_mut()
     }
 }

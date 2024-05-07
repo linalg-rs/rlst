@@ -1,9 +1,11 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use rlst::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
+use rlst::{MultInto, TransMode};
+
+use rand::SeedableRng;
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use rlst::external::metal::{batched_gemm::MetalBatchedGemm, AutoReleasePool};
+use rlst::external::metal::AutoReleasePool;
 
 const DIM: usize = 5000;
 
@@ -13,33 +15,54 @@ extern crate lapack_src;
 pub fn metal_matmul(c: &mut Criterion) {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     AutoReleasePool::execute(|| {
-        let number_of_matrices = 1;
-        let mut batched_gemm =
-            MetalBatchedGemm::new((DIM, DIM), (DIM, DIM), number_of_matrices, 1.0, 0.0);
+        let device = rlst::MetalDevice::from_default();
+        let mut mat_a = rlst::rlst_metal_array2!(&device, f32, [DIM, DIM]);
+        let mut mat_b = rlst::rlst_metal_array2!(&device, f32, [DIM, DIM]);
+        let mut mat_c = rlst::rlst_metal_array2!(&device, f32, [DIM, DIM]);
 
-        for index in 0..number_of_matrices {
-            let mut left_matrix = batched_gemm.left_matrix_mut(index).unwrap();
-            left_matrix.fill_from_seed_equally_distributed(0);
-            let mut right_matrix = batched_gemm.right_matrix_mut(index).unwrap();
-            right_matrix.fill_from_seed_equally_distributed(1);
-        }
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+
+        mat_a.fill_from_equally_distributed(&mut rng);
+        mat_b.fill_from_equally_distributed(&mut rng);
+        mat_c.fill_from_equally_distributed(&mut rng);
 
         c.bench_function("Metal f32 matrix product", |b| {
-            b.iter(|| batched_gemm.evaluate().unwrap())
+            b.iter(|| {
+                mat_c.view_mut().metal_mult_into(
+                    TransMode::NoTrans,
+                    TransMode::NoTrans,
+                    1.0,
+                    mat_a.view(),
+                    mat_b.view(),
+                    0.0,
+                );
+            })
         });
     });
 }
 
 pub fn cpu_matmul(c: &mut Criterion) {
-    let mut batched_gemm = DefaultCpuBatchedGemm::<f32>::new((DIM, DIM), (DIM, DIM), 1, 1.0, 0.0);
+    let mut mat_a = rlst::rlst_dynamic_array2!(f32, [DIM, DIM]);
+    let mut mat_b = rlst::rlst_dynamic_array2!(f32, [DIM, DIM]);
+    let mut mat_c = rlst::rlst_dynamic_array2!(f32, [DIM, DIM]);
 
-    let mut left_matrix = batched_gemm.left_matrix_mut(0).unwrap();
-    left_matrix.fill_from_seed_equally_distributed(0);
-    let mut right_matrix = batched_gemm.right_matrix_mut(0).unwrap();
-    right_matrix.fill_from_seed_equally_distributed(1);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
 
-    c.bench_function("CPU f32 matrix product", |b| {
-        b.iter(|| batched_gemm.evaluate().unwrap())
+    mat_a.fill_from_equally_distributed(&mut rng);
+    mat_b.fill_from_equally_distributed(&mut rng);
+    mat_c.fill_from_equally_distributed(&mut rng);
+
+    c.bench_function("Metal f32 matrix product", |b| {
+        b.iter(|| {
+            mat_c.view_mut().mult_into(
+                TransMode::NoTrans,
+                TransMode::NoTrans,
+                1.0,
+                mat_a.view(),
+                mat_b.view(),
+                0.0,
+            );
+        })
     });
 }
 
