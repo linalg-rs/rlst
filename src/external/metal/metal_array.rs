@@ -10,6 +10,18 @@ pub struct MetalDataBuffer {
     data: *mut f32,
 }
 
+/// Return a raw metal buffer
+pub trait AsRawMetalBuffer {
+    /// Return reference to raw metal buffer.
+    fn metal_buffer(&self) -> &MetalBuffer;
+}
+
+/// Return a mutable raw metal buffer
+pub trait AsRawMetalBufferMut: AsRawMetalBuffer {
+    /// Return mutable reference to raw metal buffer.
+    fn metal_buffer_mut(&mut self) -> &mut MetalBuffer;
+}
+
 impl MetalDataBuffer {
     /// Initialize a new Metal Data Buffer.
     pub fn new(device: &MetalDevice, number_of_elements: usize, options: u32) -> Self {
@@ -17,9 +29,33 @@ impl MetalDataBuffer {
         let data = buff.raw_ptr_mut() as *mut f32;
         Self {
             metal_buff: buff,
-            data,
             number_of_elements,
+            data,
         }
+    }
+}
+
+impl AsRawMetalBuffer for MetalDataBuffer {
+    fn metal_buffer(&self) -> &MetalBuffer {
+        &self.metal_buff
+    }
+}
+
+impl AsRawMetalBufferMut for MetalDataBuffer {
+    fn metal_buffer_mut(&mut self) -> &mut MetalBuffer {
+        &mut self.metal_buff
+    }
+}
+
+impl MetalDataBuffer {
+    /// Return a reference to the metal buffer
+    pub fn metal_buffer(&self) -> &MetalBuffer {
+        &self.metal_buff
+    }
+
+    /// Return a mutable reference to the metal buffer
+    pub fn metal_buffer_mut(&mut self) -> &mut MetalBuffer {
+        &mut self.metal_buff
     }
 }
 
@@ -57,7 +93,7 @@ impl crate::dense::data_container::DataContainerMut for MetalDataBuffer {
 #[macro_export]
 macro_rules! rlst_metal_array1 {
     ($device:expr, f32, $shape:expr) => {{
-        let container = $crate::external::metal::metal_array::MetalDataContainer::new(
+        let container = $crate::external::metal::metal_array::MetalDataBuffer::new(
             $device,
             $shape[0],
             $crate::external::metal::interface::ResourceOptions::HazardTrackingModeUntracked as u32,
@@ -76,7 +112,7 @@ macro_rules! rlst_metal_array1 {
 #[macro_export]
 macro_rules! rlst_metal_array2 {
     ($device:expr, f32, $shape:expr) => {{
-        let container = $crate::external::metal::metal_array::MetalDataContainer::new(
+        let container = $crate::external::metal::metal_array::MetalDataBuffer::new(
             $device,
             $shape.iter().product(),
             $crate::external::metal::interface::ResourceOptions::HazardTrackingModeUntracked as u32,

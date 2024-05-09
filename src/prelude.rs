@@ -84,7 +84,7 @@ pub use crate::operator::{Element, ElementView, ElementViewMut};
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 pub use crate::external::metal::{
-    batched_gemm::MetalBatchedGemm, interface::ResourceOptions, AutoReleasePool, MetalDevice,
+    interface::ResourceOptions, AsRawMetalBuffer, AutoReleasePool, MetalDevice,
 };
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 pub use crate::rlst_metal_array1;

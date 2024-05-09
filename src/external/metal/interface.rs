@@ -329,15 +329,22 @@ impl MpsMatrixDescriptor {
 }
 
 /// Holds a Metal Performance Shaders Matrix.
-pub struct MpsMatrix {
+pub struct MpsMatrix<'a> {
     matrix_p: raw::rlst_mtl_mps_matrix_p,
-    buffer: MetalBuffer,
+    buffer: &'a MetalBuffer,
     descriptor: MpsMatrixDescriptor,
 }
 
-impl MpsMatrix {
+/// Holds a Metal Performance Shaders Matrix.
+pub struct MpsMatrixMut<'a> {
+    matrix_p: raw::rlst_mtl_mps_matrix_p,
+    buffer: &'a mut MetalBuffer,
+    descriptor: MpsMatrixDescriptor,
+}
+
+impl<'a> MpsMatrix<'a> {
     /// Initialize a new Metal Performance Shaders Matrix.
-    pub fn new(buffer: MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
+    pub fn new(buffer: &'a MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
         Self {
             matrix_p: ptr_not_null!(
                 raw::rlst_mtl_mps_matrix(buffer.buffer_p, descriptor.desc),
@@ -350,7 +357,36 @@ impl MpsMatrix {
 
     /// Get the underlying buffer for the matrix.
     pub fn buffer(&self) -> &MetalBuffer {
-        &self.buffer
+        self.buffer
+    }
+
+    /// Get the descriptor of the matrix.
+    pub fn descriptor(&self) -> &MpsMatrixDescriptor {
+        &self.descriptor
+    }
+
+    /// Get a slice of the contents of the matrix.
+    pub fn contents<T: Sized>(&self) -> &[T] {
+        self.buffer.contents()
+    }
+}
+
+impl<'a> MpsMatrixMut<'a> {
+    /// Initialize a new Metal Performance Shaders Matrix.
+    pub fn new(buffer: &'a mut MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
+        Self {
+            matrix_p: ptr_not_null!(
+                raw::rlst_mtl_mps_matrix(buffer.buffer_p, descriptor.desc),
+                "Could not create MpsMatrix."
+            ),
+            buffer,
+            descriptor,
+        }
+    }
+
+    /// Get the underlying buffer for the matrix.
+    pub fn buffer(&self) -> &MetalBuffer {
+        self.buffer
     }
 
     /// Get the descriptor of the matrix.
@@ -369,7 +405,15 @@ impl MpsMatrix {
     }
 }
 
-impl Drop for MpsMatrix {
+impl<'a> Drop for MpsMatrix<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            raw::rlst_mtl_mps_matrix_release(self.matrix_p);
+        }
+    }
+}
+
+impl<'a> Drop for MpsMatrixMut<'a> {
     fn drop(&mut self) {
         unsafe {
             raw::rlst_mtl_mps_matrix_release(self.matrix_p);
@@ -430,7 +474,7 @@ impl MpsMatrixMultiplication {
         command_buffer: &mut MetalCommandBuffer,
         left_matrix: &MpsMatrix,
         right_matrix: &MpsMatrix,
-        result_matrix: &mut MpsMatrix,
+        result_matrix: &mut MpsMatrixMut,
     ) {
         unsafe {
             raw::rlst_mtl_mps_matrix_multiplication_encode_to_command_buffer(
