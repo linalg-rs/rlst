@@ -26,24 +26,26 @@ To make a new release of RLST, follow the following steps:
 
 5) In the `proc-macro` folder:
 
-5a) Run `cargo publish --dry-run`, then run `cargo package --list` and
-    check that no unwanted extras
-    have been included in the release.
+  a) Run `cargo publish --dry-run`, then run `cargo package --list` and
+     check that no unwanted extras
+     have been included in the release.
 
-5b) If everything is working as expected, run `cargo publish`. This will push the new version to
-    crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
-    unsuitable for use.
+  b) If everything is working as expected, run `cargo publish`. This will push the new version to
+     crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
+     unsuitable for use.
 
 6) (Move back to the top rlst folder.) In `Cargo.toml`, for the `rlst-proc-macro` dependency,
    change `path = "proc-macro"` to `version = "[x].[y].[z]`.
 
-7a) Run `cargo publish --dry-run`, then run `cargo package --list` and
-    check that no unwanted extras
-    have been included in the release.
+7) 
 
-7b) If everything is working as expected, run `cargo publish`. This will push the new version to
-    crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
-    unsuitable for use.
+  a) Run `cargo publish --dry-run`, then run `cargo package --list` and
+     check that no unwanted extras
+     have been included in the release.
+
+  b) If everything is working as expected, run `cargo publish`. This will push the new version to
+     crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
+     unsuitable for use.
 
 8) Open a pull request to `main` to update the version numbers in `Cargo.toml` and
    `proc-macro/Cargo.toml` to `[x].[y].[z]-dev`
