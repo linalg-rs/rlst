@@ -17,7 +17,7 @@
 //! - [Initialising RLST.](crate::doc::initialise_rlst)
 //! - [An introduction to dense linear algebra with RLST.](crate::doc::dense_linear_algebra).
 //! - [Sparse matrix operations.](crate::doc::sparse_linear_algebra)
-//! - Using the operator interface for iterative solvers.
+//! - [Using the operator interface for iterative solvers](crate::doc::operator_algebra)
 //! - Import and export of matrices.
 //! - BLAS dependencies, multithreading, and GPU offloading.
 
