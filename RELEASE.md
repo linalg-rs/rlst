@@ -1,0 +1,32 @@
+# Making an RLST release
+
+To make a new release of RLST, follow the following steps:
+
+1) Checkout the branch `release` and merge the branch `main` into the branch `release`:
+   ```bash
+   git checkout release
+   git merge main
+   ```
+
+2) Update the version numbers in `Cargo.toml` and `proc-macro/Cargo.toml`.
+   The version numbers have the format `[x].[y].[z]`. If you are releasing a major
+   version, you should increment `[x]` and set `[y]` and `[z]` to 0.
+   If you are releasing a minor version, you should increment `[y]` and set `[z]`
+   to zero. If you are releasing a bugfix, you should increment `[z]`.
+
+3) Commit you changes and push to GitHub, and check that all the tests on CI pass.
+
+4) Run `cargo login` and copy an API key from https://crates.io/me
+
+5) Run `cargo release --dry-run`.
+
+6) [Create a release on GitHub](https://github.com/linalg-rs/rlst/releases/new). The release tag
+   and title should be `v[x].[y].[z]` (where `[x]`, `[y]` and `[z]` are as in step 2).
+   In the "Describe this release" box, you should bullet point the main changes since the last
+   release.
+
+7) If everything is working as expected, run `cargo release`. This will push the new version to
+   crates.io.
+
+8) Update the version numbers in `Cargo.toml` and `proc-macro/Cargo.toml` to `[x].[y].[z]-dev`
+   and open a pull request to merge these changes into the `main` branch
