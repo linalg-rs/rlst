@@ -34,8 +34,8 @@ To make a new release of RLST, follow the following steps:
       crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
       unsuitable for use.
 
-6) (Move back to the main rlst folder.) In `Cargo.toml`, for the `rlst-proc-macro` dependency,
-   change `path = "proc-macro"` to `version = "[x].[y].[z]`.
+6) (Move back to the main rlst folder.) In `Cargo.toml`, update the `rlst-proc-macro` dependency
+   to `version = "[x].[y].[z]`.
 
 7) In the main rlst folder:
 
