@@ -10,6 +10,11 @@ repository = "https://github.com/linalg-rs/rlst"
 readme = "README.md"
 keywords = ["numerics"]
 categories = ["mathematics", "science"]
+exclude = [
+    "suitesparse-src",
+    "netlib-lapack-src",
+    "blis-src",
+]
 
 [lib]
 name = "rlst"
@@ -67,8 +72,6 @@ metal = []
 [lints.clippy]
 wildcard_imports = "forbid"
 
-
 [[bench]]
 name = "matrix_multiplication"
 harness = false
-

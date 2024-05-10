@@ -18,15 +18,17 @@ To make a new release of RLST, follow the following steps:
 
 4) Run `cargo login` and copy an API key from https://crates.io/me
 
-5) Run `cargo release --dry-run`.
+5) Run `cargo release --dry-run`, then run `cargo package --list` and check that no unwanted extras
+   have been included in the release.
 
-6) [Create a release on GitHub](https://github.com/linalg-rs/rlst/releases/new). The release tag
-   and title should be `v[x].[y].[z]` (where `[x]`, `[y]` and `[z]` are as in step 2).
+6) [Create a release on GitHub](https://github.com/linalg-rs/rlst/releases/new) from the `release` branch.
+   The release tag and title should be `v[x].[y].[z]` (where `[x]`, `[y]` and `[z]` are as in step 2).
    In the "Describe this release" box, you should bullet point the main changes since the last
    release.
 
 7) If everything is working as expected, run `cargo release`. This will push the new version to
-   crates.io.
+   crates.io. Note: this cannot be undone, but you can use `cargo yank` to mark a version as
+   unsuitable for use.
 
 8) Update the version numbers in `Cargo.toml` and `proc-macro/Cargo.toml` to `[x].[y].[z]-dev`
    and open a pull request to merge these changes into the `main` branch
