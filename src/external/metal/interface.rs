@@ -79,6 +79,9 @@ pub struct MetalDevice {
     device_p: raw::rlst_mtl_device_p,
 }
 
+unsafe impl Send for MetalDevice {}
+unsafe impl Sync for MetalDevice {}
+
 impl std::ops::Drop for MetalDevice {
     fn drop(&mut self) {
         unsafe { raw::rlst_mtl_device_release(self.device_p) }

@@ -10,6 +10,9 @@ pub struct MetalDataBuffer {
     data: *mut f32,
 }
 
+unsafe impl Send for MetalBuffer {}
+unsafe impl Sync for MetalBuffer {}
+
 /// Return a raw metal buffer
 pub trait AsRawMetalBuffer {
     /// Return reference to raw metal buffer.
