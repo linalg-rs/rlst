@@ -7,7 +7,6 @@ pub struct MetalDataBuffer {
     #[allow(dead_code)]
     metal_buff: MetalBuffer,
     number_of_elements: usize,
-    data: *mut f32,
 }
 
 unsafe impl Send for MetalBuffer {}
@@ -28,12 +27,10 @@ pub trait AsRawMetalBufferMut: AsRawMetalBuffer {
 impl MetalDataBuffer {
     /// Initialize a new Metal Data Buffer.
     pub fn new(device: &MetalDevice, number_of_elements: usize, options: u32) -> Self {
-        let mut buff = device.new_buffer(number_of_elements * std::mem::size_of::<f32>(), options);
-        let data = buff.raw_ptr_mut() as *mut f32;
+        let buff = device.new_buffer(number_of_elements * std::mem::size_of::<f32>(), options);
         Self {
             metal_buff: buff,
             number_of_elements,
-            data,
         }
     }
 }
@@ -66,11 +63,11 @@ impl crate::dense::data_container::DataContainer for MetalDataBuffer {
     type Item = f32;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
-        *self.data.add(index)
+        self.data()[index]
     }
 
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
-        &(*self.data.add(index))
+        &self.data()[index]
     }
 
     fn number_of_elements(&self) -> usize {
@@ -78,17 +75,27 @@ impl crate::dense::data_container::DataContainer for MetalDataBuffer {
     }
 
     fn data(&self) -> &[Self::Item] {
-        unsafe { std::slice::from_raw_parts(self.data, self.number_of_elements) }
+        unsafe {
+            std::slice::from_raw_parts(
+                self.metal_buff.raw_ptr() as *const f32,
+                self.number_of_elements,
+            )
+        }
     }
 }
 
 impl crate::dense::data_container::DataContainerMut for MetalDataBuffer {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        &mut (*self.data.add(index))
+        &mut self.data_mut()[index]
     }
 
     fn data_mut(&mut self) -> &mut [Self::Item] {
-        unsafe { std::slice::from_raw_parts_mut(self.data, self.number_of_elements) }
+        unsafe {
+            std::slice::from_raw_parts_mut(
+                self.metal_buff.raw_ptr_mut() as *mut f32,
+                self.number_of_elements,
+            )
+        }
     }
 }
 
