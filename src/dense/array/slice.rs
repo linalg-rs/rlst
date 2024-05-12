@@ -1,13 +1,12 @@
 //! Array slicing.
 
-use crate::{
-    dense::{
-        layout::{convert_1d_nd_from_shape, convert_nd_raw},
-        number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
-    },
-    external::metal::metal_array::AsRawMetalBufferMut,
-    AsRawMetalBuffer,
+use crate::dense::{
+    layout::{convert_1d_nd_from_shape, convert_nd_raw},
+    number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
 };
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
 
 use super::{
     empty_chunk, Array, ChunkedAccess, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
