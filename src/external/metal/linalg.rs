@@ -42,19 +42,19 @@ impl<
         beta: f32,
     ) -> Self {
         assert!(
-            is_row_major(&self),
-            "Matrix multiplied into must be row major."
+            is_col_major(&self),
+            "Matrix multiplied into must be column major."
         );
-        assert!(is_row_major(&arr_a), "Matrix `arr_a` must be row major.");
-        assert!(is_row_major(&arr_b), "Matrix `arr_b` must be row major.");
+        assert!(is_col_major(&arr_a), "Matrix `arr_a` must be column major.");
+        assert!(is_col_major(&arr_b), "Matrix `arr_b` must be column major.");
 
         AutoReleasePool::execute(|| {
             let mat_a = as_mps_matrix(&arr_a);
             let mat_b = as_mps_matrix(&arr_b);
 
-            let result_rows = self.shape()[0];
-            let result_columns = self.shape()[1];
-            let interior_columns = arr_a.shape()[1];
+            let result_rows = self.shape()[1];
+            let result_columns = self.shape()[0];
+            let interior_columns = arr_b.shape()[0];
 
             let mut mat_c = as_mps_matrix_mut(&mut self);
 
@@ -77,8 +77,8 @@ impl<
 
             let mat_mult = MpsMatrixMultiplication::new(
                 &device,
-                transa,
                 transb,
+                transa,
                 result_rows,
                 result_columns,
                 interior_columns,
@@ -86,7 +86,7 @@ impl<
                 beta.into(),
             );
 
-            mat_mult.encode_to_command_buffer(&mut command_buffer, &mat_a, &mat_b, &mut mat_c);
+            mat_mult.encode_to_command_buffer(&mut command_buffer, &mat_b, &mat_a, &mut mat_c);
 
             command_buffer.commit();
             command_buffer.wait_until_completed();
@@ -105,20 +105,23 @@ pub fn as_mps_matrix<
 >(
     arr: &Array<f32, ArrayImpl, 2>,
 ) -> MpsMatrix {
+    // We have to reverse rows and columns since
+    // RLST is col major while metal is row major.
+
     let stride = arr.stride();
     let shape = arr.shape();
     let offset = arr.offset() * std::mem::size_of::<f32>();
-    assert_eq!(stride[0], shape[1]);
-    assert_eq!(stride[1], 1);
+    assert_eq!(stride[0], 1);
+    assert_eq!(stride[1], shape[0]);
 
-    let row_bytes = shape[1] * std::mem::size_of::<f32>();
+    let row_bytes = shape[0] * std::mem::size_of::<f32>();
 
     let desc = MpsMatrixDescriptor::new(
-        shape[0],
         shape[1],
+        shape[0],
         1,
         row_bytes,
-        row_bytes * shape[0],
+        row_bytes * shape[1],
         MpsDataType::F32,
     );
 
@@ -138,24 +141,24 @@ pub fn as_mps_matrix_mut<
     let stride = arr.stride();
     let shape = arr.shape();
     let offset = arr.offset() * std::mem::size_of::<f32>();
-    assert_eq!(stride[0], shape[1]);
-    assert_eq!(stride[1], 1);
+    assert_eq!(stride[0], 1);
+    assert_eq!(stride[1], shape[0]);
 
-    let row_bytes = shape[1] * std::mem::size_of::<f32>();
+    let row_bytes = shape[0] * std::mem::size_of::<f32>();
 
     let desc = MpsMatrixDescriptor::new(
-        shape[0],
         shape[1],
+        shape[0],
         1,
         row_bytes,
-        row_bytes * shape[0],
+        row_bytes * shape[1],
         MpsDataType::F32,
     );
 
     MpsMatrixMut::new(arr.metal_buffer_mut(), offset, desc)
 }
 
-fn is_row_major<
+fn is_col_major<
     Item: RlstScalar,
     ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2>,
 >(
@@ -164,7 +167,7 @@ fn is_row_major<
     let stride = arr.stride();
     let shape = arr.shape();
 
-    (stride[0] == shape[1]) && (stride[1] == 1)
+    (stride[1] == shape[0]) && (stride[0] == 1)
 }
 
 #[cfg(test)]
@@ -178,9 +181,9 @@ mod test {
     fn test_metal_mat_mul() {
         let device = MetalDevice::from_default();
 
-        let mut mat_a = rlst_metal_array3!(&device, f32, [2, 3, 4]);
-        let mut mat_b = rlst_metal_array3!(&device, f32, [2, 4, 5]);
-        let mut mat_c = rlst_metal_array3!(&device, f32, [2, 3, 5]);
+        let mut mat_a = rlst_metal_array2!(&device, f32, [3, 4]);
+        let mut mat_b = rlst_metal_array2!(&device, f32, [4, 5]);
+        let mut mat_c = rlst_metal_array2!(&device, f32, [3, 5]);
 
         let mut mat_a_cpu = rlst_dynamic_array2!(f32, [3, 4]);
         let mut mat_b_cpu = rlst_dynamic_array2!(f32, [4, 5]);
@@ -192,16 +195,16 @@ mod test {
         mat_b.fill_from_equally_distributed(&mut rng);
         mat_c.fill_from_equally_distributed(&mut rng);
 
-        mat_a_cpu.fill_from(mat_a.view().slice(0, 1));
-        mat_b_cpu.fill_from(mat_b.view().slice(0, 1));
-        expected.fill_from(mat_c.view().slice(0, 1));
+        mat_a_cpu.fill_from(mat_a.view());
+        mat_b_cpu.fill_from(mat_b.view());
+        expected.fill_from(mat_c.view());
 
-        mat_c.view_mut().slice(0, 1).metal_mult_into(
+        mat_c.view_mut().metal_mult_into(
             TransMode::NoTrans,
             TransMode::NoTrans,
             1.0,
-            mat_a.view().slice(0, 1),
-            mat_b.view().slice(0, 1),
+            mat_a.view(),
+            mat_b.view(),
             0.0,
         );
 
@@ -214,6 +217,6 @@ mod test {
             0.0,
         );
 
-        crate::assert_array_relative_eq!(mat_c.view().slice(0, 1), expected, 1E-6);
+        crate::assert_array_relative_eq!(mat_c.view(), expected, 1E-6);
     }
 }
