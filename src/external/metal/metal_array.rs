@@ -134,3 +134,24 @@ macro_rules! rlst_metal_array2 {
         ))
     }};
 }
+
+/// Create a new three dimensional metal array.
+///
+/// Note, the array uses a row oriented C-style ordering of elements
+/// as opposed to the column oriented Fortray-Style ordering of default
+/// RLST arrays. The reason is the default ordering of matrices for Apple Metal.
+#[macro_export]
+macro_rules! rlst_metal_array3 {
+    ($device:expr, f32, $shape:expr) => {{
+        let container = $crate::external::metal::metal_array::MetalDataBuffer::new(
+            $device,
+            $shape.iter().product(),
+            $crate::external::metal::interface::ResourceOptions::HazardTrackingModeUntracked as u32,
+        );
+        $crate::dense::array::Array::new($crate::dense::base_array::BaseArray::new_with_stride(
+            container,
+            $shape,
+            [$shape[1] * $shape[2], $shape[2], 1],
+        ))
+    }};
+}

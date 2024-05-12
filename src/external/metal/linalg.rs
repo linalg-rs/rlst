@@ -2,8 +2,8 @@
 
 use crate::{
     external::metal::interface::{MpsDataType, MpsMatrixMut},
-    Array, AsRawMetalBuffer, AutoReleasePool, MetalDevice, RlstScalar, Shape, Stride, TransMode,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    Array, AsRawMetalBuffer, AutoReleasePool, MetalDevice, RawAccess, RlstScalar, Shape, Stride,
+    TransMode, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 use super::{
@@ -16,13 +16,22 @@ impl<
             + UnsafeRandomAccessMut<2, Item = f32>
             + Shape<2>
             + Stride<2>
+            + RawAccess<Item = f32>
             + AsRawMetalBufferMut,
     > Array<f32, ArrayImpl, 2>
 {
     /// Multiply `arr_a` x `arr_b` into `self`.
     pub fn metal_mult_into<
-        ArrayImplA: UnsafeRandomAccessByValue<2, Item = f32> + Shape<2> + Stride<2> + AsRawMetalBuffer,
-        ArrayImplB: UnsafeRandomAccessByValue<2, Item = f32> + Shape<2> + Stride<2> + AsRawMetalBuffer,
+        ArrayImplA: UnsafeRandomAccessByValue<2, Item = f32>
+            + Shape<2>
+            + Stride<2>
+            + AsRawMetalBuffer
+            + RawAccess<Item = f32>,
+        ArrayImplB: UnsafeRandomAccessByValue<2, Item = f32>
+            + Shape<2>
+            + Stride<2>
+            + RawAccess<Item = f32>
+            + AsRawMetalBuffer,
     >(
         mut self,
         transa: TransMode,
@@ -88,12 +97,17 @@ impl<
 
 /// Return a Metal Performance Shader Matrix from an array.
 pub fn as_mps_matrix<
-    ArrayImpl: UnsafeRandomAccessByValue<2, Item = f32> + Shape<2> + Stride<2> + AsRawMetalBuffer,
+    ArrayImpl: UnsafeRandomAccessByValue<2, Item = f32>
+        + Shape<2>
+        + Stride<2>
+        + RawAccess<Item = f32>
+        + AsRawMetalBuffer,
 >(
     arr: &Array<f32, ArrayImpl, 2>,
 ) -> MpsMatrix {
     let stride = arr.stride();
     let shape = arr.shape();
+    let offset = arr.offset() * std::mem::size_of::<f32>();
     assert_eq!(stride[0], shape[1]);
     assert_eq!(stride[1], 1);
 
@@ -108,17 +122,22 @@ pub fn as_mps_matrix<
         MpsDataType::F32,
     );
 
-    MpsMatrix::new(arr.metal_buffer(), desc)
+    MpsMatrix::new(arr.metal_buffer(), offset, desc)
 }
 
 /// Return a mutable Metal Performance Shader Matrix from an array.
 pub fn as_mps_matrix_mut<
-    ArrayImpl: UnsafeRandomAccessByValue<2, Item = f32> + Shape<2> + Stride<2> + AsRawMetalBufferMut,
+    ArrayImpl: UnsafeRandomAccessByValue<2, Item = f32>
+        + Shape<2>
+        + Stride<2>
+        + RawAccess<Item = f32>
+        + AsRawMetalBufferMut,
 >(
     arr: &mut Array<f32, ArrayImpl, 2>,
 ) -> MpsMatrixMut {
     let stride = arr.stride();
     let shape = arr.shape();
+    let offset = arr.offset() * std::mem::size_of::<f32>();
     assert_eq!(stride[0], shape[1]);
     assert_eq!(stride[1], 1);
 
@@ -133,7 +152,7 @@ pub fn as_mps_matrix_mut<
         MpsDataType::F32,
     );
 
-    MpsMatrixMut::new(arr.metal_buffer_mut(), desc)
+    MpsMatrixMut::new(arr.metal_buffer_mut(), offset, desc)
 }
 
 fn is_row_major<
@@ -159,9 +178,9 @@ mod test {
     fn test_metal_mat_mul() {
         let device = MetalDevice::from_default();
 
-        let mut mat_a = rlst_metal_array2!(&device, f32, [3, 4]);
-        let mut mat_b = rlst_metal_array2!(&device, f32, [4, 5]);
-        let mut mat_c = rlst_metal_array2!(&device, f32, [3, 5]);
+        let mut mat_a = rlst_metal_array3!(&device, f32, [2, 3, 4]);
+        let mut mat_b = rlst_metal_array3!(&device, f32, [2, 4, 5]);
+        let mut mat_c = rlst_metal_array3!(&device, f32, [2, 3, 5]);
 
         let mut mat_a_cpu = rlst_dynamic_array2!(f32, [3, 4]);
         let mut mat_b_cpu = rlst_dynamic_array2!(f32, [4, 5]);
@@ -173,28 +192,28 @@ mod test {
         mat_b.fill_from_equally_distributed(&mut rng);
         mat_c.fill_from_equally_distributed(&mut rng);
 
-        mat_a_cpu.fill_from(mat_a.view());
-        mat_b_cpu.fill_from(mat_b.view());
-        expected.fill_from(mat_c.view());
+        mat_a_cpu.fill_from(mat_a.view().slice(0, 1));
+        mat_b_cpu.fill_from(mat_b.view().slice(0, 1));
+        expected.fill_from(mat_c.view().slice(0, 1));
 
-        mat_c.view_mut().metal_mult_into(
+        mat_c.view_mut().slice(0, 1).metal_mult_into(
             TransMode::NoTrans,
             TransMode::NoTrans,
-            2.0,
-            mat_a.view(),
-            mat_b.view(),
-            3.0,
+            1.0,
+            mat_a.view().slice(0, 1),
+            mat_b.view().slice(0, 1),
+            0.0,
         );
 
-        expected.view_mut().mult_into_resize(
+        expected.view_mut().mult_into(
             TransMode::NoTrans,
             TransMode::NoTrans,
-            2.0,
+            1.0,
             mat_a_cpu.view(),
             mat_b_cpu.view(),
-            3.0,
+            0.0,
         );
 
-        crate::assert_array_relative_eq!(mat_c, expected, 1E-6);
+        crate::assert_array_relative_eq!(mat_c.view().slice(0, 1), expected, 1E-6);
     }
 }

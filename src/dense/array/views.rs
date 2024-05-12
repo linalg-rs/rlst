@@ -3,7 +3,7 @@
 //! A view onto an array stores a reference to the array and forwards all method calls to the
 //! original array. A subview is similar but restricts to a subpart of the original array.
 
-use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
+use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::AsRawMetalBufferMut;
@@ -121,6 +121,14 @@ impl<
     fn data(&self) -> &[Self::Item] {
         self.arr.data()
     }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.arr.buff_ptr()
+    }
+
+    fn offset(&self) -> usize {
+        self.arr.offset()
+    }
 }
 
 impl<
@@ -218,6 +226,14 @@ impl<
     fn data(&self) -> &[Self::Item] {
         self.arr.data()
     }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.arr.buff_ptr()
+    }
+
+    fn offset(&self) -> usize {
+        self.arr.offset()
+    }
 }
 
 impl<
@@ -234,6 +250,10 @@ impl<
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.arr.data_mut()
+    }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        self.arr.buff_ptr_mut()
     }
 }
 
@@ -395,6 +415,7 @@ impl<
 
 // Basic traits for ArraySubView
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -403,6 +424,30 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
+        const NDIM: usize,
+    > AsRawMetalBuffer for ArraySubView<Item, ArrayImpl, NDIM>
+{
+    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer()
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBufferMut,
+        const NDIM: usize,
+    > AsRawMetalBufferMut for ArraySubView<Item, ArrayImpl, NDIM>
+{
+    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer_mut()
     }
 }
 
@@ -433,6 +478,15 @@ impl<
         let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
 
         &self.arr.data()[start_raw..end_raw]
+    }
+
+    fn offset(&self) -> usize {
+        let raw_offset = convert_nd_raw(self.offset, self.stride());
+        self.arr.offset() + raw_offset
+    }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.arr.buff_ptr()
     }
 }
 
@@ -522,6 +576,10 @@ impl<
 
         &mut self.arr.data_mut()[start_raw..end_raw]
     }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        self.arr.buff_ptr_mut()
+    }
 }
 
 impl<
@@ -599,7 +657,6 @@ fn compute_raw_range<const NDIM: usize>(
     stride: [usize; NDIM],
     shape: [usize; NDIM],
 ) -> (usize, usize) {
-    use crate::dense::layout::convert_nd_raw;
     let start_multi_index = offset;
     let mut end_multi_index = [0; NDIM];
     for (index, value) in end_multi_index.iter_mut().enumerate() {

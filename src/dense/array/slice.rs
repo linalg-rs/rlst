@@ -1,8 +1,12 @@
 //! Array slicing.
 
-use crate::dense::{
-    layout::convert_1d_nd_from_shape,
-    number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
+use crate::{
+    dense::{
+        layout::{convert_1d_nd_from_shape, convert_nd_raw},
+        number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
+    },
+    external::metal::metal_array::AsRawMetalBufferMut,
+    AsRawMetalBuffer,
 };
 
 use super::{
@@ -144,6 +148,55 @@ where
 
         &self.arr.data()[start_raw..end_raw]
     }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.arr.buff_ptr()
+    }
+
+    fn offset(&self) -> usize {
+        let mut orig_index = [0; ADIM];
+        orig_index[self.slice[0]] = self.slice[1];
+        self.arr.offset() + convert_nd_raw(orig_index, self.arr.stride())
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + Stride<ADIM>
+            + AsRawMetalBuffer,
+        const ADIM: usize,
+        const NDIM: usize,
+    > AsRawMetalBuffer for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer()
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + UnsafeRandomAccessMut<ADIM, Item = Item>
+            + Shape<ADIM>
+            + Stride<ADIM>
+            + AsRawMetalBufferMut,
+        const ADIM: usize,
+        const NDIM: usize,
+    > AsRawMetalBufferMut for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
+        self.arr.metal_buffer_mut()
+    }
 }
 
 impl<
@@ -275,6 +328,10 @@ where
             compute_raw_range(self.slice, self.arr.stride(), self.arr.shape());
         &mut self.arr.data_mut()[start_raw..end_raw]
     }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        self.arr.buff_ptr_mut()
+    }
 }
 
 // ////////////////////
@@ -299,7 +356,6 @@ fn compute_raw_range<const NDIM: usize>(
     stride: [usize; NDIM],
     shape: [usize; NDIM],
 ) -> (usize, usize) {
-    use crate::dense::layout::convert_nd_raw;
     let mut start_multi_index = [0; NDIM];
     start_multi_index[slice[0]] = slice[1];
     let mut end_multi_index = shape;
