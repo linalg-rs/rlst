@@ -415,7 +415,6 @@ impl<
 
 // Basic traits for ArraySubView
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
