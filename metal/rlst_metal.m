@@ -125,10 +125,11 @@ unsigned long rlst_mtl_mps_matrix_descriptor_matrix_bytes(rlst_mtl_mps_matrix_de
 
 
 rlst_mtl_mps_matrix_p
-rlst_mtl_mps_matrix(rlst_mtl_buffer_p p_buffer,
+rlst_mtl_mps_matrix(rlst_mtl_buffer_p p_buffer, unsigned long offset,
                     rlst_mtl_mps_matrix_descriptor_p p_desc) {
   return (rlst_mtl_mps_matrix_p)
       [[MPSMatrix alloc] initWithBuffer:(id<MTLBuffer>)p_buffer
+                             offset: offset
                              descriptor:(MPSMatrixDescriptor *)p_desc];
 }
 

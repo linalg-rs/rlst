@@ -30,6 +30,8 @@ pub use std::ops::Sub;
 
 pub use crate::dense::gemm::Gemm;
 
+pub use crate::dense::tools::PrettyPrint;
+
 pub use crate::dense::traits::{
     ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, RawAccess,
     RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
@@ -90,3 +92,5 @@ pub use crate::external::metal::{
 pub use crate::rlst_metal_array1;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 pub use crate::rlst_metal_array2;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+pub use crate::rlst_metal_array3;

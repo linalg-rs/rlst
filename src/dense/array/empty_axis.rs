@@ -136,6 +136,14 @@ where
     fn data(&self) -> &[Self::Item] {
         self.arr.data()
     }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.arr.buff_ptr()
+    }
+
+    fn offset(&self) -> usize {
+        self.arr.offset()
+    }
 }
 
 impl<
@@ -152,6 +160,10 @@ where
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.arr.data_mut()
+    }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        self.arr.buff_ptr_mut()
     }
 }
 

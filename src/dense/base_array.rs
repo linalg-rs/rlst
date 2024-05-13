@@ -151,6 +151,14 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawA
     fn data(&self) -> &[Self::Item] {
         self.data.data()
     }
+
+    fn offset(&self) -> usize {
+        0
+    }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        &self.data.data()[0]
+    }
 }
 
 impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
@@ -158,6 +166,10 @@ impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> R
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data.data_mut()
+    }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        &mut self.data.data_mut()[0]
     }
 }
 
