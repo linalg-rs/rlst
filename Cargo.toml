@@ -1,10 +1,10 @@
 [package]
 name = "rlst"
-version = "0.1.0-dev"
+version = "0.1.1-dev"
 authors = ["The linalg-rs contributors"]
 edition = "2021"
 description = "A Rust native linear algebra library."
-license = "MIT + Apache 2.0"
+license = "MIT / Apache-2.0"
 homepage = "https://github.com/linalg-rs"
 repository = "https://github.com/linalg-rs/rlst"
 readme = "README.md"
@@ -20,7 +20,7 @@ exclude = [
 name = "rlst"
 
 [dependencies]
-rlst-proc-macro = { path = "proc-macro"}
+rlst-proc-macro = { path = "proc-macro" }
 num = { version = "0.4", features = ["serde", "rand"]}
 approx = { version = "0.5", features=["num-complex"] }
 num_cpus = "1"
@@ -50,7 +50,7 @@ lapack-src = { version = "0.9", features = ["netlib"]}
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
 paste = "1"
-rand = "0.8.*"
+rand = "0.8"
 
 [build-dependencies]
 cc = "1.0"
