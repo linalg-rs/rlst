@@ -20,7 +20,7 @@ exclude = [
 name = "rlst"
 
 [dependencies]
-rlst-proc-macro = { version = "0.1.1" }
+rlst-proc-macro = { version = "0.1" }
 num = { version = "0.4", features = ["serde", "rand"]}
 approx = { version = "0.5", features=["num-complex"] }
 num_cpus = "1"
