@@ -1,15 +1,20 @@
 [package]
 name = "rlst"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["The linalg-rs contributors"]
 edition = "2021"
-description = "A Rust native dense linear algebra library."
+description = "A Rust native linear algebra library."
 license = "MIT + Apache 2.0"
 homepage = "https://github.com/linalg-rs"
 repository = "https://github.com/linalg-rs/rlst"
 readme = "README.md"
 keywords = ["numerics"]
 categories = ["mathematics", "science"]
+exclude = [
+    "suitesparse-src",
+    "netlib-lapack-src",
+    "blis-src",
+]
 
 [lib]
 name = "rlst"
@@ -67,8 +72,6 @@ metal = []
 [lints.clippy]
 wildcard_imports = "forbid"
 
-
 [[bench]]
 name = "matrix_multiplication"
 harness = false
-
