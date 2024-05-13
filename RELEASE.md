@@ -19,7 +19,7 @@ To make a new release of RLST, follow the following steps:
 
 3) Commit your changes and push to GitHub, and check that all the tests on CI pass.
 
-4) In the `proc-macro` folder:
+4) If `proc-macro` has changed, in the `proc-macro` folder:
 
     * Run `cargo publish --dry-run`, then run `cargo package --list` and
       check that no unwanted extras
