@@ -90,7 +90,7 @@ unsigned long rlst_mtl_mps_matrix_descriptor_matrix_bytes(rlst_mtl_mps_matrix_de
 
 
 /* MPS Matrix */
-rlst_mtl_mps_matrix_p rlst_mtl_mps_matrix(rlst_mtl_buffer_p p_buffer, rlst_mtl_mps_matrix_descriptor_p p_desc);
+rlst_mtl_mps_matrix_p rlst_mtl_mps_matrix(rlst_mtl_buffer_p p_buffer, unsigned long offset, rlst_mtl_mps_matrix_descriptor_p p_desc);
 void rlst_mtl_mps_matrix_release(rlst_mtl_mps_matrix_p p_matrix);
 
 /* MPS Matrix Multiplication */

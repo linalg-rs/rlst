@@ -82,18 +82,35 @@ pub trait ChunkedAccess<const N: usize> {
 }
 
 /// Get raw access to the underlying data.
+///
+/// There are two ways to get access to the data
+/// - As a slice that contains the data. The first entry of the slice is the
+///   first index of the array.
+/// - As a pointer + offset. The pointer points to the start
+///   of the data buffer and the offset is the index of the first
+///   array element. In most cases this is zero but for subviews, slices,
+///   etc. it may be different from zero.
 pub trait RawAccess {
     /// Item type
     type Item: RlstScalar;
 
     /// Get a slice of the whole data.
     fn data(&self) -> &[Self::Item];
+
+    /// Return a pointer to the start of the underlying buffer.
+    fn buff_ptr(&self) -> *const Self::Item;
+
+    /// Offset of beginning of data from start ptr.
+    fn offset(&self) -> usize;
 }
 
 /// Get mutable raw access to the underlying data.
 pub trait RawAccessMut: RawAccess {
     /// Get a mutable slice of the whole data.
     fn data_mut(&mut self) -> &mut [Self::Item];
+
+    /// Return a pointer to the start of the underlying buffer.
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item;
 }
 
 /// Check if `multi_index` not out of bounds with respect to `shape`.

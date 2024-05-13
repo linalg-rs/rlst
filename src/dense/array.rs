@@ -223,6 +223,14 @@ impl<
     fn data(&self) -> &[Self::Item] {
         self.0.data()
     }
+
+    fn buff_ptr(&self) -> *const Self::Item {
+        self.0.buff_ptr()
+    }
+
+    fn offset(&self) -> usize {
+        self.0.offset()
+    }
 }
 
 impl<
@@ -233,6 +241,10 @@ impl<
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.0.data_mut()
+    }
+
+    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
+        self.0.buff_ptr_mut()
     }
 }
 

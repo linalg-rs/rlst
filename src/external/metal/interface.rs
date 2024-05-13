@@ -79,6 +79,9 @@ pub struct MetalDevice {
     device_p: raw::rlst_mtl_device_p,
 }
 
+unsafe impl Send for MetalDevice {}
+unsafe impl Sync for MetalDevice {}
+
 impl std::ops::Drop for MetalDevice {
     fn drop(&mut self) {
         unsafe { raw::rlst_mtl_device_release(self.device_p) }
@@ -344,10 +347,10 @@ pub struct MpsMatrixMut<'a> {
 
 impl<'a> MpsMatrix<'a> {
     /// Initialize a new Metal Performance Shaders Matrix.
-    pub fn new(buffer: &'a MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
+    pub fn new(buffer: &'a MetalBuffer, offset: usize, descriptor: MpsMatrixDescriptor) -> Self {
         Self {
             matrix_p: ptr_not_null!(
-                raw::rlst_mtl_mps_matrix(buffer.buffer_p, descriptor.desc),
+                raw::rlst_mtl_mps_matrix(buffer.buffer_p, offset as u64, descriptor.desc),
                 "Could not create MpsMatrix."
             ),
             buffer,
@@ -373,10 +376,14 @@ impl<'a> MpsMatrix<'a> {
 
 impl<'a> MpsMatrixMut<'a> {
     /// Initialize a new Metal Performance Shaders Matrix.
-    pub fn new(buffer: &'a mut MetalBuffer, descriptor: MpsMatrixDescriptor) -> Self {
+    pub fn new(
+        buffer: &'a mut MetalBuffer,
+        offset: usize,
+        descriptor: MpsMatrixDescriptor,
+    ) -> Self {
         Self {
             matrix_p: ptr_not_null!(
-                raw::rlst_mtl_mps_matrix(buffer.buffer_p, descriptor.desc),
+                raw::rlst_mtl_mps_matrix(buffer.buffer_p, offset as u64, descriptor.desc),
                 "Could not create MpsMatrix."
             ),
             buffer,
