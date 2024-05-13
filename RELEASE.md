@@ -17,7 +17,7 @@ To make a new release of RLST, follow the following steps:
    If you are releasing a minor version, you should increment `[y]` and set `[z]`
    to zero. If you are releasing a bugfix, you should increment `[z]`.
 
-3) Commit you changes and push to GitHub, and check that all the tests on CI pass.
+3) Commit your changes and push to GitHub, and check that all the tests on CI pass.
 
 4) In the `proc-macro` folder:
 
