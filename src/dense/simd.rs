@@ -6,13 +6,13 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 #[derive(Copy, Clone, Debug)]
-struct SimdFor<T, S> {
+pub struct SimdFor<T, S> {
     pub simd: S,
     __marker: PhantomData<T>,
 }
 
 #[allow(dead_code)]
-impl<T: RealSimd, S: Simd> SimdFor<T, S> {
+impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     #[inline]
     pub fn new(simd: S) -> Self {
         Self {
@@ -103,7 +103,7 @@ impl<T: RealSimd, S: Simd> SimdFor<T, S> {
     }
 
     #[inline(always)]
-    fn deinterleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
+    pub fn deinterleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
         use coe::coerce_static as to;
         match N {
             2 => to(T::simd_deinterleave_2(self.simd, to(value))),
@@ -114,7 +114,7 @@ impl<T: RealSimd, S: Simd> SimdFor<T, S> {
     }
 
     #[inline(always)]
-    fn interleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
+    pub fn interleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
         use coe::coerce_static as to;
         match N {
             2 => to(T::simd_interleave_2(self.simd, to(value))),
@@ -127,7 +127,7 @@ impl<T: RealSimd, S: Simd> SimdFor<T, S> {
 
 /// [`rlst::RlstScalar`] extension trait for SIMD operations.
 #[allow(dead_code)]
-pub trait RealSimd: Pod + Send + Sync + num::Zero + 'static {
+pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// Simd register that has the layout `[Self; N]` for some `N > 0`.
     type Scalars<S: Simd>: Pod + Copy + Send + Sync + Debug + 'static;
     /// Simd mask register that has the layout `[Self; N]` for some `N > 0`.
@@ -326,7 +326,7 @@ pub trait RealSimd: Pod + Send + Sync + num::Zero + 'static {
     }
 }
 
-impl RealSimd for f32 {
+impl RlstSimd for f32 {
     type Scalars<S: Simd> = S::f32s;
     type Mask<S: Simd> = S::m32s;
 
@@ -603,7 +603,7 @@ impl RealSimd for f32 {
     }
 }
 
-impl RealSimd for f64 {
+impl RlstSimd for f64 {
     type Scalars<S: Simd> = S::f64s;
     type Mask<S: Simd> = S::m64s;
 
