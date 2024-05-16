@@ -1,6 +1,7 @@
 //! Basic traits for SIMD Operations
 
 use bytemuck::Pod;
+use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -81,10 +82,10 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     pub fn sin_cos(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
         T::simd_sin_cos(self.simd, value)
     }
-    #[inline(always)]
-    pub fn sin_cos_quarter_circle(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
-        T::simd_sin_cos_quarter_circle(self.simd, value)
-    }
+    // #[inline(always)]
+    // pub fn sin_cos_quarter_circle(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
+    //     T::simd_sin_cos_quarter_circle(self.simd, value)
+    // }
     #[inline(always)]
     pub fn sqrt(self, value: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_sqrt(self.simd, value)
@@ -194,10 +195,10 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
 
     /// Compute the sine and cosine of each element in the register,
     /// assuming that its absolute value is smaller than or equal to `pi / 2`.
-    fn simd_sin_cos_quarter_circle<S: Simd>(
-        simd: S,
-        value: Self::Scalars<S>,
-    ) -> (Self::Scalars<S>, Self::Scalars<S>);
+    // fn simd_sin_cos_quarter_circle<S: Simd>(
+    //     simd: S,
+    //     value: Self::Scalars<S>,
+    // ) -> (Self::Scalars<S>, Self::Scalars<S>);
 
     /// Compute the square root of each element in the register.
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
@@ -435,104 +436,23 @@ impl RlstSimd for f32 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        #[inline(always)]
-        fn div_2pi_mod_1<S: Simd>(simd: S, x: S::f32s) -> S::f32s {
-            #[cfg(target_arch = "x86_64")]
+        let mut s_out = Self::simd_splat(simd, Self::zero());
+        let mut c_out = Self::simd_splat(simd, Self::zero());
+        {
+            let value: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+
+            let c_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut c_out));
+            let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
+
+            for (value, s_out, c_out) in
+                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
             {
-                use coe::coerce_static as to;
-
-                #[cfg(feature = "nightly")]
-                if coe::is_same::<S, pulp::x86::V4>() {
-                    let simd: pulp::x86::V4 = to(simd);
-                    let x = to(x);
-                    let div = simd.div_f32x16(x, simd.splat_f32x16(2.0 * std::f32::consts::PI));
-                    return to(simd.sub_f32x16(div, simd.floor_f32x16(div)));
-                }
-                if coe::is_same::<S, pulp::x86::V3>() {
-                    let simd: pulp::x86::V3 = to(simd);
-                    let x = to(x);
-
-                    let div = simd.div_f32x8(x, simd.splat_f32x8(2.0 * std::f32::consts::PI));
-                    return to(simd.sub_f32x8(div, simd.floor_f32x8(div)));
-                }
+                *s_out = Self::sin(*value);
+                *c_out = Self::cos(*value)
             }
-
-            let mut out = simd.f32s_splat(0.0);
-            {
-                let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-                let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&x));
-
-                for (out, x) in itertools::izip!(out, x) {
-                    let div = x / (2.0 * std::f32::consts::PI);
-                    *out = div - div.floor();
-                }
-            }
-            out
         }
 
-        let x_o2pi = div_2pi_mod_1(simd, value);
-        let flip_y = simd.f32s_greater_than_or_equal(x_o2pi, simd.f32s_splat(0.5));
-        let x_o2pi =
-            simd.m32s_select_f32s(flip_y, simd.f32s_sub(simd.f32s_splat(1.0), x_o2pi), x_o2pi);
-        let flip_x = simd.f32s_greater_than_or_equal(x_o2pi, simd.f32s_splat(0.25));
-        let x_o2pi =
-            simd.m32s_select_f32s(flip_x, simd.f32s_sub(simd.f32s_splat(0.5), x_o2pi), x_o2pi);
-        let swap = simd.f32s_greater_than_or_equal(x_o2pi, simd.f32s_splat(0.125));
-        let x_o2pi =
-            simd.m32s_select_f32s(swap, simd.f32s_sub(simd.f32s_splat(0.25), x_o2pi), x_o2pi);
-
-        let x = simd.f32s_mul(x_o2pi, simd.f32s_splat(2.0 * std::f32::consts::PI));
-        let (sin, cos) = Self::simd_sin_cos_quarter_circle(simd, x);
-        let (sin, cos) = (
-            simd.m32s_select_f32s(swap, cos, sin),
-            simd.m32s_select_f32s(swap, sin, cos),
-        );
-
-        (
-            simd.m32s_select_f32s(flip_y, simd.f32s_neg(sin), sin),
-            simd.m32s_select_f32s(flip_x, simd.f32s_neg(cos), cos),
-        )
-    }
-
-    #[inline(always)]
-    fn simd_sin_cos_quarter_circle<S: Simd>(
-        simd: S,
-        value: Self::Scalars<S>,
-    ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        // constants taken from eve (c++ simd library)
-        const C0: f32 = hexf::hexf32!("0x1.55554ap-5");
-        const C1: f32 = hexf::hexf32!("-0x1.6c0c32p-10");
-        const C2: f32 = hexf::hexf32!("0x1.99eb9cp-16");
-
-        const S0: f32 = hexf::hexf32!("-0x1.555544p-3");
-        const S1: f32 = hexf::hexf32!("0x1.11073ap-7");
-        const S2: f32 = hexf::hexf32!("-0x1.9943f2p-13");
-
-        let x = value;
-        let z = simd.f32s_mul(x, x);
-
-        let c = {
-            let y = simd.f32s_mul_add(
-                simd.f32s_mul_add(simd.f32s_splat(C2), z, simd.f32s_splat(C1)),
-                z,
-                simd.f32s_splat(C0),
-            );
-            simd.f32s_mul_add(
-                simd.f32s_mul_add(y, z, simd.f32s_splat(-0.5)),
-                z,
-                simd.f32s_splat(1.0),
-            )
-        };
-        let s = {
-            let y = simd.f32s_mul_add(
-                simd.f32s_mul_add(simd.f32s_splat(S2), z, simd.f32s_splat(S1)),
-                z,
-                simd.f32s_splat(S0),
-            );
-            simd.f32s_mul_add(simd.f32s_mul(y, z), x, x)
-        };
-
-        (s, c)
+        (s_out, c_out)
     }
 
     #[inline(always)]
@@ -712,110 +632,23 @@ impl RlstSimd for f64 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        #[inline(always)]
-        fn div_2pi_mod_1<S: Simd>(simd: S, x: S::f64s) -> S::f64s {
-            #[cfg(target_arch = "x86_64")]
+        let mut s_out = Self::simd_splat(simd, Self::zero());
+        let mut c_out = Self::simd_splat(simd, Self::zero());
+        {
+            let value: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+
+            let c_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut c_out));
+            let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
+
+            for (value, s_out, c_out) in
+                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
             {
-                use coe::coerce_static as to;
-
-                #[cfg(feature = "nightly")]
-                if coe::is_same::<S, pulp::x86::V4>() {
-                    let simd: pulp::x86::V4 = to(simd);
-                    let x = to(x);
-                    let div = simd.div_f64x8(x, simd.splat_f64x8(2.0 * std::f64::consts::PI));
-                    return to(simd.sub_f64x8(div, simd.floor_f64x8(div)));
-                }
-                if coe::is_same::<S, pulp::x86::V3>() {
-                    let simd: pulp::x86::V3 = to(simd);
-                    let x = to(x);
-
-                    let div = simd.div_f64x4(x, simd.splat_f64x4(2.0 * std::f64::consts::PI));
-                    return to(simd.sub_f64x4(div, simd.floor_f64x4(div)));
-                }
+                *s_out = Self::sin(*value);
+                *c_out = Self::cos(*value)
             }
-
-            let mut out = simd.f64s_splat(0.0);
-            {
-                let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-                let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&x));
-
-                for (out, x) in itertools::izip!(out, x) {
-                    let div = x / (2.0 * std::f64::consts::PI);
-                    *out = div - div.floor();
-                }
-            }
-            out
         }
 
-        let x_o2pi = div_2pi_mod_1(simd, value);
-        let flip_y = simd.f64s_greater_than_or_equal(x_o2pi, simd.f64s_splat(0.5));
-        let x_o2pi =
-            simd.m64s_select_f64s(flip_y, simd.f64s_sub(simd.f64s_splat(1.0), x_o2pi), x_o2pi);
-        let flip_x = simd.f64s_greater_than_or_equal(x_o2pi, simd.f64s_splat(0.25));
-        let x_o2pi =
-            simd.m64s_select_f64s(flip_x, simd.f64s_sub(simd.f64s_splat(0.5), x_o2pi), x_o2pi);
-        let swap = simd.f64s_greater_than_or_equal(x_o2pi, simd.f64s_splat(0.125));
-        let x_o2pi =
-            simd.m64s_select_f64s(swap, simd.f64s_sub(simd.f64s_splat(0.25), x_o2pi), x_o2pi);
-
-        let x = simd.f64s_mul(x_o2pi, simd.f64s_splat(2.0 * std::f64::consts::PI));
-        let (sin, cos) = Self::simd_sin_cos_quarter_circle(simd, x);
-        let (sin, cos) = (
-            simd.m64s_select_f64s(swap, cos, sin),
-            simd.m64s_select_f64s(swap, sin, cos),
-        );
-        (
-            simd.m64s_select_f64s(flip_y, simd.f64s_neg(sin), sin),
-            simd.m64s_select_f64s(flip_x, simd.f64s_neg(cos), cos),
-        )
-    }
-
-    #[inline(always)]
-    fn simd_sin_cos_quarter_circle<S: Simd>(
-        simd: S,
-        value: Self::Scalars<S>,
-    ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        const C0: f64 = hexf::hexf64!("0x1.0000000000000p-1");
-        const C1: f64 = hexf::hexf64!("-0x1.5555555555551p-5");
-        const C2: f64 = hexf::hexf64!("0x1.6c16c16c15d47p-10");
-        const C3: f64 = hexf::hexf64!("-0x1.a01a019ddbcd9p-16");
-        const C4: f64 = hexf::hexf64!("0x1.27e4f8e06d9a5p-22");
-        const C5: f64 = hexf::hexf64!("-0x1.1eea7c1e514d4p-29");
-        const C6: f64 = hexf::hexf64!("0x1.8ff831ad9b219p-37");
-
-        const S0: f64 = hexf::hexf64!("-0x1.5555555555548p-3");
-        const S1: f64 = hexf::hexf64!("0x1.111111110f7d0p-7");
-        const S2: f64 = hexf::hexf64!("-0x1.a01a019bfdf03p-13");
-        const S3: f64 = hexf::hexf64!("0x1.71de3567d4896p-19");
-        const S4: f64 = hexf::hexf64!("-0x1.ae5e5a9291691p-26");
-        const S5: f64 = hexf::hexf64!("0x1.5d8fd1fcf0ec1p-33");
-
-        let x = value;
-        let z = simd.f64s_mul(x, x);
-
-        let c = {
-            let y = simd.f64s_splat(C6);
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C5));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C4));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C3));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C2));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C1));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(C0));
-
-            simd.f64s_mul_add(simd.f64s_neg(y), z, simd.f64s_splat(1.0))
-        };
-        let s = {
-            let y = simd.f64s_splat(S5);
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(S4));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(S3));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(S2));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(S1));
-            let y = simd.f64s_mul_add(z, y, simd.f64s_splat(S0));
-
-            simd.f64s_mul_add(simd.f64s_mul(y, z), x, x)
-        };
-
-        (s, c)
+        (s_out, c_out)
     }
 
     #[inline(always)]
@@ -857,5 +690,42 @@ impl RlstSimd for f64 {
     #[inline(always)]
     fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self {
         simd.f64s_reduce_sum(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::prelude::*;
+
+    #[test]
+    fn test_sin_cos() {
+        let rng = &mut StdRng::seed_from_u64(0);
+        let mut max_err_c = 0.0;
+        let mut max_err_s = 0.0;
+        for _ in 0..1000 {
+            let x = rng.gen::<f32>() * 1000.0;
+            let (s, c) = f32::simd_sin_cos(pulp::Scalar, x);
+            let (s_target, c_target) = x.sin_cos();
+            max_err_c = f32::max(max_err_c, (c - c_target).abs() / c_target.abs());
+            max_err_s = f32::max(max_err_s, (s - s_target).abs() / s_target.abs());
+        }
+
+        assert!(max_err_c <= 1E-4);
+        assert!(max_err_s <= 1E-4);
+
+        let mut max_err_c = 0.0;
+        let mut max_err_s = 0.0;
+
+        for _ in 0..1000 {
+            let x = rng.gen::<f64>() * 1000.0;
+            let (s, c) = f64::simd_sin_cos(pulp::Scalar, x);
+            let (s_target, c_target) = x.sin_cos();
+            max_err_c = f64::max(max_err_c, (c - c_target).abs() / c_target.abs());
+            max_err_s = f64::max(max_err_s, (s - s_target).abs() / s_target.abs());
+        }
+
+        assert!(max_err_c <= 1E-12);
+        assert!(max_err_s <= 1E-12);
     }
 }
