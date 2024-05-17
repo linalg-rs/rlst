@@ -3,6 +3,7 @@
 use bytemuck::Pod;
 use num::Zero;
 use pulp::Simd;
+use std::arch::aarch64::vld3q_f32;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::from_raw_parts;
@@ -245,66 +246,18 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
 
     /// Deinterleaves a register of values `[x0, y0, x1, y1, ...]` to
     /// `[x0, x1, ... y0, y1, ...]`.
-    fn simd_deinterleave_2<S: Simd>(
-        simd: S,
-        value: [Self::Scalars<S>; 2],
-    ) -> [Self::Scalars<S>; 2] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 2];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[i] = x[2 * i];
-                out[n + i] = x[2 * i + 1];
-            }
-        }
-        out
-    }
+    fn simd_deinterleave_2<S: Simd>(simd: S, value: [Self::Scalars<S>; 2])
+        -> [Self::Scalars<S>; 2];
 
     /// Deinterleaves a register of values `[x0, y0, z0, x1, y1, z1, ...]` to
     /// `[x0, x1, ... y0, y1, ..., z0, z1, ...]`.
-    fn simd_deinterleave_3<S: Simd>(
-        simd: S,
-        value: [Self::Scalars<S>; 3],
-    ) -> [Self::Scalars<S>; 3] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 3];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[i] = x[3 * i];
-                out[n + i] = x[3 * i + 1];
-                out[2 * n + i] = x[3 * i + 2];
-            }
-        }
-        out
-    }
+    fn simd_deinterleave_3<S: Simd>(simd: S, value: [Self::Scalars<S>; 3])
+        -> [Self::Scalars<S>; 3];
 
     /// Deinterleaves a register of values `[x0, y0, z0, w0, x1, y1, z1, w1, ...]` to
     /// `[x0, x1, ... y0, y1, ..., z0, z1, ..., w0, w1, ...]`.
-    fn simd_deinterleave_4<S: Simd>(
-        simd: S,
-        value: [Self::Scalars<S>; 4],
-    ) -> [Self::Scalars<S>; 4] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 4];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[i] = x[4 * i];
-                out[n + i] = x[4 * i + 1];
-                out[2 * n + i] = x[4 * i + 2];
-                out[3 * n + i] = x[4 * i + 3];
-            }
-        }
-        out
-    }
+    fn simd_deinterleave_4<S: Simd>(simd: S, value: [Self::Scalars<S>; 4])
+        -> [Self::Scalars<S>; 4];
 
     /// Inverse of [`RealScalar::deinterleave_2`].
     fn simd_interleave_2<S: Simd>(simd: S, value: [Self::Scalars<S>; 2]) -> [Self::Scalars<S>; 2] {
@@ -487,6 +440,94 @@ impl RlstSimd for f32 {
     }
 
     #[inline(always)]
+    fn simd_deinterleave_2<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 2],
+    ) -> [Self::Scalars<S>; 2] {
+        let mut out = [Self::simd_splat(simd, Self::zero()); 2];
+        {
+            #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+            {
+                if coe::is_same::<S, pulp::aarch64::Neon>() {
+                    let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                    return unsafe {
+                        bytemuck::cast(simd.neon.vld2q_f32(value.as_ptr() as *const f32))
+                    };
+                }
+            }
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[2 * i];
+                out[n + i] = x[2 * i + 1];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_deinterleave_3<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 3],
+    ) -> [Self::Scalars<S>; 3] {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                return unsafe {
+                    bytemuck::cast(simd.neon.vld3q_f32(value.as_ptr() as *const f32))
+                };
+            }
+        }
+
+        let mut out = [Self::simd_splat(simd, Self::zero()); 3];
+        {
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[3 * i];
+                out[n + i] = x[3 * i + 1];
+                out[2 * n + i] = x[3 * i + 2];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_deinterleave_4<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 4],
+    ) -> [Self::Scalars<S>; 4] {
+        let mut out = [Self::simd_splat(simd, Self::zero()); 4];
+        {
+            #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+            {
+                if coe::is_same::<S, pulp::aarch64::Neon>() {
+                    let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                    return unsafe {
+                        bytemuck::cast(simd.neon.vld4q_f32(value.as_ptr() as *const f32))
+                    };
+                }
+            }
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[4 * i];
+                out[n + i] = x[4 * i + 1];
+                out[2 * n + i] = x[4 * i + 2];
+                out[3 * n + i] = x[4 * i + 3];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
         #[cfg(target_arch = "x86_64")]
         {
@@ -571,6 +612,17 @@ impl RlstSimd for f32 {
 
     #[inline(always)]
     fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            use coe::coerce_static as to;
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                return simd
+                    .neon
+                    .vaddvq_f32(unsafe { std::mem::transmute(to::<_, pulp::f32x4>(value)) });
+            }
+        }
+
         simd.f32s_reduce_sum(value)
     }
 }
@@ -704,6 +756,94 @@ impl RlstSimd for f64 {
     }
 
     #[inline(always)]
+    fn simd_deinterleave_2<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 2],
+    ) -> [Self::Scalars<S>; 2] {
+        let mut out = [Self::simd_splat(simd, Self::zero()); 2];
+        {
+            #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+            {
+                if coe::is_same::<S, pulp::aarch64::Neon>() {
+                    let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                    return unsafe {
+                        bytemuck::cast(simd.neon.vld2q_f64(value.as_ptr() as *const f64))
+                    };
+                }
+            }
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[2 * i];
+                out[n + i] = x[2 * i + 1];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_deinterleave_3<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 3],
+    ) -> [Self::Scalars<S>; 3] {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                return unsafe {
+                    bytemuck::cast(simd.neon.vld3q_f64(value.as_ptr() as *const f64))
+                };
+            }
+        }
+
+        let mut out = [Self::simd_splat(simd, Self::zero()); 3];
+        {
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[3 * i];
+                out[n + i] = x[3 * i + 1];
+                out[2 * n + i] = x[3 * i + 2];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_deinterleave_4<S: Simd>(
+        simd: S,
+        value: [Self::Scalars<S>; 4],
+    ) -> [Self::Scalars<S>; 4] {
+        let mut out = [Self::simd_splat(simd, Self::zero()); 4];
+        {
+            #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+            {
+                if coe::is_same::<S, pulp::aarch64::Neon>() {
+                    let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                    return unsafe {
+                        bytemuck::cast(simd.neon.vld4q_f64(value.as_ptr() as *const f64))
+                    };
+                }
+            }
+            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
+
+            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for i in 0..n {
+                out[i] = x[4 * i];
+                out[n + i] = x[4 * i + 1];
+                out[2 * n + i] = x[4 * i + 2];
+                out[3 * n + i] = x[4 * i + 3];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
         #[cfg(target_arch = "x86_64")]
         {
@@ -762,6 +902,16 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            use coe::coerce_static as to;
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                return simd
+                    .neon
+                    .vaddvq_f64(unsafe { std::mem::transmute(to::<_, pulp::f64x2>(value)) });
+            }
+        }
         simd.f64s_reduce_sum(value)
     }
 }
