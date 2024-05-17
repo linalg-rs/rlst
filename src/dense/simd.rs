@@ -3,7 +3,6 @@
 use bytemuck::Pod;
 use num::Zero;
 use pulp::Simd;
-use std::arch::aarch64::vld3q_f32;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::from_raw_parts;
@@ -164,7 +163,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
         unsafe {
             (
                 from_raw_parts(data as *const [Self::Scalars<S>; N], div),
-                from_raw_parts(data.add((len - rem)), rem),
+                from_raw_parts(data.add(len - rem), rem),
             )
         }
     }
