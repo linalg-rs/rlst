@@ -5,6 +5,7 @@ use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::slice::from_raw_parts;
 
 #[derive(Copy, Clone, Debug)]
 pub struct SimdFor<T, S> {
@@ -136,6 +137,36 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
 
     /// Splits the slice into a vector and scalar part.
     fn as_simd_slice<S: Simd>(slice: &[Self]) -> (&[Self::Scalars<S>], &[Self]);
+
+    /// Splits an array of arrays into vector and scalar part.
+    ///
+    /// Consider an array of the form [[x1, y1, z1], [x2, y2, z2], ...] and
+    /// a Simd vector length of 4. This function returns a slice, where each
+    /// element is an array of length 12, containing 4 points and a tail containing
+    /// the remainder points. The elements of the head can then be processed with the
+    /// [RlstSimd::deinterleave] function so as to obtain elements of the form
+    /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
+    #[inline(always)]
+    fn as_simd_slice_from_vec<S: Simd, const N: usize>(
+        vec_slice: &[[Self; N]],
+    ) -> (&[[Self::Scalars<S>; N]], &[[Self; N]]) {
+        assert_eq!(
+            core::mem::align_of::<[Self; N]>(),
+            core::mem::align_of::<[Self::Scalars<S>; N]>()
+        );
+        let chunk_size = core::mem::size_of::<Self::Scalars<S>>() / core::mem::size_of::<Self>();
+        let len = vec_slice.len();
+        let data = vec_slice.as_ptr();
+        let div = len / chunk_size;
+        let rem = len % chunk_size;
+
+        unsafe {
+            (
+                from_raw_parts(data as *const [Self::Scalars<S>; N], div),
+                from_raw_parts(data.add((len - rem)), rem),
+            )
+        }
+    }
 
     /// Splits the mutable slice into a vector and scalar part.
     fn as_simd_slice_mut<S: Simd>(slice: &mut [Self]) -> (&mut [Self::Scalars<S>], &mut [Self]);
@@ -514,6 +545,27 @@ impl RlstSimd for f32 {
                 return to(simd.approx_reciprocal_sqrt_f32x8(to(value)));
             }
         }
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            use coe::coerce_static as to;
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                let value: pulp::f32x4 = to(value);
+                let mut res: pulp::f32x4 = unsafe {
+                    std::mem::transmute(simd.neon.vrsqrteq_f32(std::mem::transmute(value)))
+                };
+                for _ in 0..2 {
+                    res = simd.mul_f32x4(res, unsafe {
+                        std::mem::transmute(simd.neon.vrsqrtsq_f32(
+                            std::mem::transmute(value),
+                            std::mem::transmute(simd.mul_f32x4(res, res)),
+                        ))
+                    });
+                }
+                return to(res);
+            }
+        }
+
         Self::simd_approx_recip(simd, Self::simd_sqrt(simd, value))
     }
 
@@ -684,6 +736,27 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        {
+            use coe::coerce_static as to;
+            if coe::is_same::<S, pulp::aarch64::Neon>() {
+                let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
+                let value: pulp::f64x2 = to(value);
+                let mut res: pulp::f64x2 = unsafe {
+                    std::mem::transmute(simd.neon.vrsqrteq_f64(std::mem::transmute(value)))
+                };
+                for _ in 0..3 {
+                    res = simd.mul_f64x2(res, unsafe {
+                        std::mem::transmute(simd.neon.vrsqrtsq_f64(
+                            std::mem::transmute(value),
+                            std::mem::transmute(simd.mul_f64x2(res, res)),
+                        ))
+                    });
+                }
+                return to(res);
+            }
+        }
+
         Self::simd_approx_recip(simd, Self::simd_sqrt(simd, value))
     }
 
