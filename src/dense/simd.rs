@@ -5,7 +5,7 @@ use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::slice::from_raw_parts;
+use std::slice::{from_raw_parts, from_raw_parts_mut};
 
 #[derive(Copy, Clone, Debug)]
 pub struct SimdFor<T, S> {
@@ -164,6 +164,36 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
             (
                 from_raw_parts(data as *const [Self::Scalars<S>; N], div),
                 from_raw_parts(data.add(len - rem), rem),
+            )
+        }
+    }
+
+    /// Splits a mutable array of arrays into vector and scalar part.
+    ///
+    /// Consider an array of the form [[x1, y1, z1], [x2, y2, z2], ...] and
+    /// a Simd vector length of 4. This function returns a slice, where each
+    /// element is an array of length 12, containing 4 points and a tail containing
+    /// the remainder points. The elements of the head can then be processed with the
+    /// [RlstSimd::deinterleave] function so as to obtain elements of the form
+    /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
+    #[inline(always)]
+    fn as_simd_slice_from_vec_mut<S: Simd, const N: usize>(
+        vec_slice: &mut [[Self; N]],
+    ) -> (&mut [[Self::Scalars<S>; N]], &mut [[Self; N]]) {
+        assert_eq!(
+            core::mem::align_of::<[Self; N]>(),
+            core::mem::align_of::<[Self::Scalars<S>; N]>()
+        );
+        let chunk_size = core::mem::size_of::<Self::Scalars<S>>() / core::mem::size_of::<Self>();
+        let len = vec_slice.len();
+        let data = vec_slice.as_mut_ptr();
+        let div = len / chunk_size;
+        let rem = len % chunk_size;
+
+        unsafe {
+            (
+                from_raw_parts_mut(data as *mut [Self::Scalars<S>; N], div),
+                from_raw_parts_mut(data.add(len - rem), rem),
             )
         }
     }
