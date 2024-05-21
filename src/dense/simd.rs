@@ -7,8 +7,11 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
 
+/// A simplified wrapper to call into Simd operations in a type
+/// and architecture independent way.
 #[derive(Copy, Clone, Debug)]
 pub struct SimdFor<T, S> {
+    /// Architecture specific Simd information.
     pub simd: S,
     __marker: PhantomData<T>,
 }
@@ -16,6 +19,7 @@ pub struct SimdFor<T, S> {
 #[allow(dead_code)]
 impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     #[inline]
+    /// Instantiate a new Simd object.
     pub fn new(simd: S) -> Self {
         Self {
             simd,
@@ -23,23 +27,31 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         }
     }
 
+    /// Copy a scalar across all Simd lanes.
     #[inline(always)]
     pub fn splat(self, value: T) -> T::Scalars<S> {
         T::simd_splat(self.simd, value)
     }
 
+    /// Compare for equality.
     #[inline(always)]
     pub fn cmp_eq(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Mask<S> {
         T::simd_cmp_eq(self.simd, lhs, rhs)
     }
+
+    /// Compare for less than.
     #[inline(always)]
     pub fn cmp_lt(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Mask<S> {
         T::simd_cmp_lt(self.simd, lhs, rhs)
     }
+
+    /// Compare for less equal.
     #[inline(always)]
     pub fn cmp_le(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Mask<S> {
         T::simd_cmp_le(self.simd, lhs, rhs)
     }
+
+    /// Select based on bitmask.
     #[inline(always)]
     pub fn select(
         self,
@@ -50,22 +62,31 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         T::simd_select(self.simd, mask, if_true, if_false)
     }
 
+    /// Negate input.
     #[inline(always)]
     pub fn neg(self, value: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_neg(self.simd, value)
     }
+
+    /// Add two Simd vectors.
     #[inline(always)]
     pub fn add(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_add(self.simd, lhs, rhs)
     }
+
+    /// Subtract two Simd vectors.
     #[inline(always)]
     pub fn sub(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_sub(self.simd, lhs, rhs)
     }
+
+    /// Multiply two Simd vectors.
     #[inline(always)]
     pub fn mul(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_mul(self.simd, lhs, rhs)
     }
+
+    /// Multiply `lhs` and `rhs` and add to `acc`.
     #[inline(always)]
     pub fn mul_add(
         self,
@@ -75,10 +96,14 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     ) -> T::Scalars<S> {
         T::simd_mul_add(self.simd, lhs, rhs, acc)
     }
+
+    /// Divide two Simd vectors.
     #[inline(always)]
     pub fn div(self, lhs: T::Scalars<S>, rhs: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_div(self.simd, lhs, rhs)
     }
+
+    /// Compute the sine and cosine of two Simd vectors.
     #[inline(always)]
     pub fn sin_cos(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
         T::simd_sin_cos(self.simd, value)
@@ -87,23 +112,32 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     // pub fn sin_cos_quarter_circle(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
     //     T::simd_sin_cos_quarter_circle(self.simd, value)
     // }
+
+    /// Compute the square root of a Simd vector.
     #[inline(always)]
     pub fn sqrt(self, value: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_sqrt(self.simd, value)
     }
+
+    /// Compute an approximate inverse of a Simd vector.
     #[inline(always)]
     pub fn approx_recip(self, value: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_approx_recip(self.simd, value)
     }
+
+    /// Compute an approximate inverse of a Simd vector.
     #[inline(always)]
     pub fn approx_recip_sqrt(self, value: T::Scalars<S>) -> T::Scalars<S> {
         T::simd_approx_recip_sqrt(self.simd, value)
     }
+
+    /// Sum the elements of a Simd vector.
     #[inline(always)]
     pub fn reduce_add(self, value: T::Scalars<S>) -> T {
         T::simd_reduce_add(self.simd, value)
     }
 
+    /// Deinterleave N Simd vectors.
     #[inline(always)]
     pub fn deinterleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
         use coe::coerce_static as to;
@@ -115,6 +149,8 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         }
     }
 
+    /// Interleave N Simd vectors.
+    #[allow(clippy::type_complexity)]
     #[inline(always)]
     pub fn interleave<const N: usize>(self, value: [T::Scalars<S>; N]) -> [T::Scalars<S>; N] {
         use coe::coerce_static as to;
@@ -146,6 +182,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// the remainder points. The elements of the head can then be processed with the
     /// [RlstSimd::deinterleave] function so as to obtain elements of the form
     /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
+    #[allow(clippy::type_complexity)]
     #[inline(always)]
     fn as_simd_slice_from_vec<S: Simd, const N: usize>(
         vec_slice: &[[Self; N]],
@@ -176,6 +213,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// the remainder points. The elements of the head can then be processed with the
     /// [RlstSimd::deinterleave] function so as to obtain elements of the form
     /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
+    #[allow(clippy::type_complexity)]
     #[inline(always)]
     fn as_simd_slice_from_vec_mut<S: Simd, const N: usize>(
         vec_slice: &mut [[Self; N]],
