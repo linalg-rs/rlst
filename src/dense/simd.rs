@@ -163,7 +163,7 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     }
 }
 
-/// [`rlst::RlstScalar`] extension trait for SIMD operations.
+/// [RlstScalar](crate::RlstScalar) extension trait for SIMD operations.
 #[allow(dead_code)]
 pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// Simd register that has the layout `[Self; N]` for some `N > 0`.
@@ -180,7 +180,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// a Simd vector length of 4. This function returns a slice, where each
     /// element is an array of length 12, containing 4 points and a tail containing
     /// the remainder points. The elements of the head can then be processed with the
-    /// [RlstSimd::deinterleave] function so as to obtain elements of the form
+    /// corresponding `deinterleave` function so as to obtain elements of the form
     /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
     #[allow(clippy::type_complexity)]
     #[inline(always)]
@@ -211,7 +211,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     /// a Simd vector length of 4. This function returns a slice, where each
     /// element is an array of length 12, containing 4 points and a tail containing
     /// the remainder points. The elements of the head can then be processed with the
-    /// [RlstSimd::deinterleave] function so as to obtain elements of the form
+    /// [deinterleave](SimdFor::deinterleave) function so as to obtain elements of the form
     /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
     #[allow(clippy::type_complexity)]
     #[inline(always)]
@@ -326,7 +326,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     fn simd_deinterleave_4<S: Simd>(simd: S, value: [Self::Scalars<S>; 4])
         -> [Self::Scalars<S>; 4];
 
-    /// Inverse of [`RealScalar::deinterleave_2`].
+    /// Inverse of [deinterleave_2](RlstSimd::simd_deinterleave_2).
     fn simd_interleave_2<S: Simd>(simd: S, value: [Self::Scalars<S>; 2]) -> [Self::Scalars<S>; 2] {
         let mut out = [Self::simd_splat(simd, Self::zero()); 2];
         {
@@ -342,7 +342,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
         out
     }
 
-    /// Inverse of [`RealScalar::deinterleave_3`].
+    /// Inverse of [deinterleave_3](RlstSimd::simd_deinterleave_3).
     fn simd_interleave_3<S: Simd>(simd: S, value: [Self::Scalars<S>; 3]) -> [Self::Scalars<S>; 3] {
         let mut out = [Self::simd_splat(simd, Self::zero()); 3];
         {
@@ -359,7 +359,7 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
         out
     }
 
-    /// Inverse of [`RealScalar::deinterleave_4`].
+    /// Inverse of [deinterleave_4](RlstSimd::simd_deinterleave_4).
     fn simd_interleave_4<S: Simd>(simd: S, value: [Self::Scalars<S>; 4]) -> [Self::Scalars<S>; 4] {
         let mut out = [Self::simd_splat(simd, Self::zero()); 4];
         {
