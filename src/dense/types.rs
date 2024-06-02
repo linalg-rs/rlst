@@ -1,5 +1,6 @@
 //! Basic types.
 
+use bytemuck::Pod;
 use thiserror::Error;
 
 /// The Rlst error type.
@@ -97,6 +98,7 @@ pub trait RlstScalar:
     + Sum
     + Product
     + Serialize
+    + Pod
     + Send
     + Sync
     + Gemm

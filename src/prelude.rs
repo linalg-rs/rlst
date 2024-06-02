@@ -61,6 +61,8 @@ pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
 
 pub use crate::dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 
+pub use crate::dense::simd::{RlstSimd, SimdFor};
+
 #[cfg(feature = "mpi")]
 pub use crate::sparse::index_layout::DefaultMpiIndexLayout;
 
