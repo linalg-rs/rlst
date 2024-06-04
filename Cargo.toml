@@ -38,7 +38,7 @@ pulp = { version = "0.18.12" }
 bytemuck = "1.16.0"
 hexf = "0.2.1"
 
-mpi = { version="0.7.0", optional=true }
+mpi = { version="0.8.0", optional=true }
 mpi-sys = { version="0.2.1", optional=true }
 
 
@@ -64,7 +64,7 @@ cmake = "0.1"
 
 [features]
 strict = []
-default = []
+default = ["mpi"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 blis = []

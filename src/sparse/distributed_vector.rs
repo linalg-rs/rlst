@@ -1,19 +1,23 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
+use std::cell::{Ref, RefCell, RefMut};
+
 use crate::sparse::traits::index_layout::IndexLayout;
 
 use crate::dense::array::DynamicArray;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
-use crate::dense::types::{RlstResult, RlstScalar};
-use crate::rlst_dynamic_array1;
+use crate::dense::types::RlstScalar;
+use crate::{rlst_dynamic_array1, Array, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{Communicator, Equivalence, Root};
+use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
+use mpi::Rank;
 
 use crate::sparse::index_layout::DefaultMpiIndexLayout;
 
 /// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
     index_layout: &'a DefaultMpiIndexLayout<'a, C>,
-    local: DynamicArray<Item, 1>,
+    local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
+                                           // But this would be disallowed by Rust's static borrow checker.
 }
 
 impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
@@ -21,105 +25,148 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
-            local: rlst_dynamic_array1!(Item, [index_layout.number_of_local_indices()]),
+            local: RefCell::new(rlst_dynamic_array1!(
+                Item,
+                [index_layout.number_of_local_indices()]
+            )),
         }
     }
     /// Local part
-    pub fn local(&self) -> &DynamicArray<Item, 1> {
-        &self.local
+    pub fn local(&self) -> Ref<'_, DynamicArray<Item, 1>> {
+        //Array<Item, ArrayView<'_, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> {
+        self.local.borrow()
     }
 
     /// Mutable local part
-    pub fn local_mut(&mut self) -> &mut DynamicArray<Item, 1> {
-        &mut self.local
+    pub fn local_mut(&self) -> RefMut<DynamicArray<Item, 1>> {
+        // The data is behind a RefCell, so do not require mutable reference to self.
+        self.local.borrow_mut()
     }
 
-    /// Send to root
-    pub fn to_root(&self) -> Option<DynamicArray<Item, 1>> {
-        let comm = self.index_layout().comm();
-        let root_process = comm.process_at_rank(0);
+    /// Gather `Self` to all processes and store in `arr`.
+    pub fn gather_to_all<
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandomAccessMut<1>
+            + RawAccessMut<Item = Item>,
+    >(
+        &self,
+        mut arr: Array<Item, ArrayImpl, 1>,
+    ) {
+        let comm = self.index_layout.comm();
+        assert_eq!(self.index_layout.number_of_global_indices(), arr.shape()[0]);
 
-        if comm.rank() == 0 {
-            let counts: Vec<i32> = (0..comm.size())
-                .map(|index| {
-                    let index_range = self.index_layout.index_range(index as usize).unwrap();
-                    (index_range.1 - index_range.0) as i32
-                })
-                .collect();
-            let displacements: Vec<i32> = (0..comm.size())
-                .map(|index| {
-                    let index_range = self.index_layout.index_range(index as usize).unwrap();
-                    index_range.0 as i32
-                })
-                .collect();
-            let global_dim = self.index_layout().number_of_global_indices();
+        let this_process = comm.this_process();
 
-            let mut vec = rlst_dynamic_array1!(Item, [global_dim]);
-
-            let mut partition = PartitionMut::new(vec.data_mut(), counts, displacements);
-
-            root_process.gather_varcount_into_root(self.local.data(), &mut partition);
-
-            Some(vec)
-        } else {
-            root_process.gather_varcount_into(self.local.data());
-            None
-        }
-    }
-
-    /// Create from root
-    pub fn from_root(
-        index_layout: &'a DefaultMpiIndexLayout<'a, C>,
-        other: &Option<DynamicArray<Item, 1>>,
-    ) -> RlstResult<Self> {
-        let comm = index_layout.comm();
         let counts: Vec<i32> = (0..comm.size())
             .map(|index| {
-                let index_range = index_layout.index_range(index as usize).unwrap();
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
                 (index_range.1 - index_range.0) as i32
             })
             .collect();
         let displacements: Vec<i32> = (0..comm.size())
             .map(|index| {
-                let index_range = index_layout.index_range(index as usize).unwrap();
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
                 index_range.0 as i32
             })
             .collect();
 
-        let mut distributed_vec = Self::new(index_layout);
+        let mut partition = PartitionMut::new(arr.data_mut(), counts, displacements);
 
-        //let mut recvbuf = vec![T::zero(); index_layout.number_of_local_indices()];
-
-        let root_process = comm.process_at_rank(0);
-        if comm.rank() == 0 {
-            assert!(other.is_some(), "`other` has a `none` value.");
-            let other = other.as_ref().unwrap();
-            let local_dim = other.shape()[0];
-
-            assert!(
-                index_layout.number_of_global_indices() == local_dim,
-                "Index Layout has {} dofs but `other` has {} elements",
-                index_layout.number_of_global_indices(),
-                local_dim
-            );
-
-            let mut data = vec![Item::zero(); local_dim];
-
-            for (index, item) in data.iter_mut().enumerate() {
-                *item = other[[index]];
-            }
-            let partition = Partition::new(data.as_slice(), counts, displacements);
-
-            root_process.scatter_varcount_into_root(&partition, distributed_vec.local.data_mut());
-        } else {
-            assert!(other.is_none(), "`other` has a `Some` value.");
-            root_process.scatter_varcount_into(distributed_vec.local_mut().data_mut());
-        }
-
-        Ok(distributed_vec)
+        this_process.all_gather_varcount_into(self.local().data(), &mut partition);
     }
 
-    fn index_layout(&self) -> &DefaultMpiIndexLayout<'a, C> {
+    /// Send vector to a given rank (call this from the root)
+    pub fn gather_to_rank_root<
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandomAccessMut<1>
+            + RawAccessMut<Item = Item>,
+    >(
+        &self,
+        mut arr: Array<Item, ArrayImpl, 1>,
+    ) {
+        let comm = self.index_layout().comm();
+        let my_process = comm.this_process();
+
+        let global_dim = self.index_layout().number_of_global_indices();
+
+        assert_eq!(arr.shape()[0], global_dim);
+
+        let counts: Vec<i32> = (0..comm.size())
+            .map(|index| {
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                (index_range.1 - index_range.0) as i32
+            })
+            .collect();
+
+        let displacements: Vec<i32> = (0..comm.size())
+            .map(|index| {
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                index_range.0 as i32
+            })
+            .collect();
+
+        let mut partition = PartitionMut::new(arr.data_mut(), counts, displacements);
+
+        my_process.gather_varcount_into_root(self.local().data(), &mut partition);
+    }
+
+    /// Send vector to a given rank (call this from the root)
+    pub fn gather_to_rank(&self, target_rank: usize) {
+        let target_process = self
+            .index_layout()
+            .comm()
+            .process_at_rank(target_rank as Rank);
+
+        target_process.gather_varcount_into(self.local().data());
+    }
+
+    /// Create from root
+    pub fn scatter_from_root<
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandomAccessMut<1>
+            + RawAccessMut<Item = Item>,
+    >(
+        &mut self,
+        arr: Array<Item, ArrayImpl, 1>,
+    ) {
+        let comm = self.index_layout.comm();
+
+        let root_process = comm.this_process();
+
+        assert_eq!(arr.shape()[0], self.index_layout.number_of_global_indices());
+        let counts: Vec<i32> = (0..comm.size())
+            .map(|index| {
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                (index_range.1 - index_range.0) as i32
+            })
+            .collect();
+        let displacements: Vec<i32> = (0..comm.size())
+            .map(|index| {
+                let index_range = self.index_layout.index_range(index as usize).unwrap();
+                index_range.0 as i32
+            })
+            .collect();
+
+        let partition = Partition::new(arr.data(), counts, displacements);
+
+        root_process.scatter_varcount_into_root(&partition, self.local_mut().data_mut());
+    }
+
+    /// Create from root
+    pub fn scatter_from(&mut self, source_rank: usize) {
+        let source_process = self
+            .index_layout()
+            .comm()
+            .process_at_rank(source_rank as Rank);
+
+        source_process.scatter_varcount_into(self.local_mut().data_mut());
+    }
+
+    /// Return the index layout.
+    pub fn index_layout(&self) -> &DefaultMpiIndexLayout<'a, C> {
         self.index_layout
     }
 }
