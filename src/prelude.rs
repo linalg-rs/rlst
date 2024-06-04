@@ -64,10 +64,10 @@ pub use crate::dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 pub use crate::dense::simd::{RlstSimd, SimdFor};
 
 #[cfg(feature = "mpi")]
-pub use crate::sparse::index_layout::DefaultMpiIndexLayout;
-
-#[cfg(feature = "mpi")]
-pub use crate::sparse::sparse_mat::mpi_csr_mat::MpiCsrMatrix;
+pub use crate::sparse::{
+    distributed_vector::DistributedVector, index_layout::DefaultMpiIndexLayout,
+    sparse_mat::mpi_csr_mat::MpiCsrMatrix,
+};
 
 pub use crate::sparse::index_layout::DefaultSerialIndexLayout;
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;

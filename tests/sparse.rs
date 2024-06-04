@@ -147,7 +147,7 @@ fn test_distributed_index_set() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
 
-    let index_layout = DefaultMpiIndexLayout::new(14, &world);
+    let index_layout = DefaultMpiIndexLayout::new(14, 1, &world);
 
     // Test that the range is correct on rank 0
     assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));

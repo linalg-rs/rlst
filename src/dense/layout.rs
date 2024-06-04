@@ -32,7 +32,7 @@ pub fn check_multi_index_in_bounds<const N: usize>(
 }
 
 /// Convert a multi-index into a 1d index.
-#[inline]
+#[inline(always)]
 pub fn convert_nd_raw<const NDIM: usize>(
     multi_index: [usize; NDIM],
     stride: [usize; NDIM],
@@ -47,7 +47,7 @@ pub fn convert_nd_raw<const NDIM: usize>(
 }
 
 /// Convert a 1d index into a multi-index.
-#[inline]
+#[inline(always)]
 pub fn convert_1d_nd_from_shape<const NDIM: usize>(
     mut index: usize,
     shape: [usize; NDIM],

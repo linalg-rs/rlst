@@ -13,7 +13,8 @@ pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
 
 impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     /// Crate new
-    pub fn new(size: usize, comm: &'a C) -> Self {
+    pub fn new(nchunks: usize, chunk_size: usize, comm: &'a C) -> Self {
+        let size = nchunks * chunk_size;
         let comm_size = comm.size() as usize;
 
         assert!(
@@ -27,16 +28,16 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
         // Each process computes it from its own rank and the number of MPI processes in
         // the communicator
 
-        if size <= comm_size {
-            // If we have fewer indices than ranks simply
-            // give one index to each rank until filled up.
+        if nchunks <= comm_size {
+            // If we have fewer chunks than ranks simply
+            // give chunk_size indices to each rank until filled up.
             // Then fill the rest with None.
 
-            for (index, item) in counts.iter_mut().enumerate().take(size) {
-                *item = index;
+            for (index, item) in counts.iter_mut().enumerate().take(nchunks) {
+                *item = index * chunk_size;
             }
 
-            for item in counts.iter_mut().take(comm_size).skip(size) {
+            for item in counts.iter_mut().take(comm_size).skip(nchunks) {
                 *item = size;
             }
 
@@ -55,8 +56,8 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
             // 3 -> (8, 10)
             // 4 -> (10, 12)
 
-            let chunk = size / comm_size;
-            let remainder = size % comm_size;
+            let chunks_per_rank = nchunks / comm_size;
+            let remainder = nchunks % comm_size;
             let mut count = 0;
             let mut new_count;
 
@@ -64,11 +65,11 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
                 if index < remainder {
                     // Add one remainder index to the first
                     // indices.
-                    new_count = count + chunk + 1;
+                    new_count = count + chunks_per_rank * chunk_size + chunk_size;
                 } else {
                     // When the remainder is used up just
                     // add chunk size indices to each rank.
-                    new_count = count + chunk;
+                    new_count = count + chunks_per_rank * chunk_size;
                 }
                 counts[1 + index] = new_count;
                 count = new_count;
