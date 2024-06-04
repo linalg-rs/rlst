@@ -64,7 +64,7 @@ cmake = "0.1"
 
 [features]
 strict = []
-default = ["mpi"]
+default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 blis = []
@@ -76,3 +76,20 @@ wildcard_imports = "forbid"
 [[bench]]
 name = "matrix_multiplication"
 harness = false
+
+
+[[example]]
+name = "mpi_gather_to_all_vector"
+required-features = ["mpi"]
+
+[[example]]
+name = "mpi_gather_vector"
+required-features = ["mpi"]
+
+[[example]]
+name = "mpi_index_set"
+required-features = ["mpi"]
+
+[[example]]
+name = "mpi_scatter_vector"
+required-features = ["mpi"]
