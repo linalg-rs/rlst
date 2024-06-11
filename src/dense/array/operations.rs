@@ -228,6 +228,11 @@ impl<
             acc + self.get_value([index; NDIM]).unwrap()
         })
     }
+
+    /// Return the sum of the elements.
+    pub fn sum(self) -> Item {
+        self.iter().sum()
+    }
 }
 
 impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
@@ -457,7 +462,7 @@ impl<
     > Array<Item, ArrayImpl, 2>
 {
     /// Update self += u * v^T, with u and v vectors.
-    pub fn rank1_update_inplace<
+    pub fn rank1_sum_inplace<
         ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
         ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
     >(
@@ -471,6 +476,25 @@ impl<
         for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
             for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
                 *elem += v_elem * u_elem;
+            }
+        }
+    }
+
+    /// Update self *= u * v^T, with u and v vectors.
+    pub fn rank1_cmp_product_inplace<
+        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    >(
+        &mut self,
+        u: Array<Item, ArrayImpl1, 1>,
+        v: Array<Item, ArrayImpl2, 1>,
+    ) {
+        assert_eq!(self.shape()[0], u.shape()[0]);
+        assert_eq!(self.shape()[1], v.shape()[0]);
+
+        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
+            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
+                *elem *= v_elem * u_elem;
             }
         }
     }
