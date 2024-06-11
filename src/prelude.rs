@@ -39,6 +39,8 @@ pub use crate::dense::traits::{
 
 pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
 
+pub use crate::dense::linalg::LinAlg;
+
 pub use crate::dense::traits::{
     AijIterator, AsMultiIndex, DefaultIterator, DefaultIteratorMut, MultInto, MultIntoResize,
     NumberOfElements, ResizeInPlace, Shape, Stride,

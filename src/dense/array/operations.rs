@@ -448,3 +448,30 @@ where
         Ok(rhs)
     }
 }
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Item>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Update self += u * v^T, with u and v vectors.
+    pub fn rank1_update_inplace<
+        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    >(
+        &mut self,
+        u: Array<Item, ArrayImpl1, 1>,
+        v: Array<Item, ArrayImpl2, 1>,
+    ) {
+        assert_eq!(self.shape()[0], u.shape()[0]);
+        assert_eq!(self.shape()[1], v.shape()[0]);
+
+        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
+            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
+                *elem += v_elem * u_elem;
+            }
+        }
+    }
+}
