@@ -12,6 +12,19 @@ macro_rules! build_dep {
     }};
 }
 
+fn build_lapack() {
+    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let lapack = Config::new("lapack")
+        .define("CMAKE_PREFIX_PATH", out_dir.clone())
+        .build();
+    let out_path = PathBuf::from(out_dir.clone());
+    let out_path = out_path.join("lib/libblas.a");
+    std::fs::remove_file(out_path).unwrap();
+
+    println!("cargo:rustc-link-search={}", lapack.join("lib").display());
+    println!("cargo:rustc-link-lib=static=lapack");
+}
+
 fn build_metal(out_dir: String) {
     cc::Build::new()
         .file("metal/rlst_metal.m")
@@ -119,6 +132,11 @@ fn main() {
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
     }
+
+    if std::env::var("CARGO_FEATURE_LAPACK").is_ok() {
+        build_lapack();
+    }
+
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
     println!("cargo:rerun-if-changed=build.rs");
 }
