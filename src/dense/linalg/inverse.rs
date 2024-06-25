@@ -19,8 +19,6 @@ use super::assert_lapack_stride;
 /// The following command computes the inverse of an array `a`. The content
 /// of `a` is replaced by the inverse.
 /// ```
-/// # extern crate blas_src;
-/// # extern crate lapack_src;   
 /// # use rlst::rlst_dynamic_array2;
 /// # use rlst::dense::linalg::inverse::MatrixInverse;
 /// # let mut a = rlst_dynamic_array2!(f64, [3, 3]);

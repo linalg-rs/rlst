@@ -58,7 +58,7 @@ default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 internal_blis = []
-system_openblas = []
+disable_system_blas_lapack = []
 metal = []
 
 [lints.clippy]

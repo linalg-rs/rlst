@@ -54,7 +54,7 @@ fn build_internal_blis() {
     }
 
     let dst = cmake::Config::new("lapack")
-        .define("BUILD_SHARED_LIBS", "OFF")
+        .define("BUILD_SHARED_LIBS", "ON")
         .define("LAPACKE", "OFF")
         .define("BLA_VENDOR", "FLAME")
         .define("CMAKE_PREFIX_PATH", dst.display().to_string())
@@ -63,8 +63,8 @@ fn build_internal_blis() {
         .build();
 
     println!("cargo:rustc-link-search={}", dst.join("lib").display());
-    println!("cargo:rustc-link-lib=static=lapack");
-    println!("cargo:rustc-link-lib=static=blis");
+    println!("cargo:rustc-link-lib=lapack");
+    println!("cargo:rustc-link-lib=blis");
 
     if cfg!(target_os = "macos") {
         println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
@@ -172,7 +172,19 @@ fn main() {
 
     let use_metal = target_os == "macos" && target_arch == "aarch64";
 
-    let use_accelerate = target_os == "macos";
+    let use_system_blas_lapack = std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK").is_err()
+        || std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_err();
+
+    if use_system_blas_lapack {
+        if target_os == "macos" {
+            println!("cargo:rustc-link-lib=framework=Accelerate");
+        }
+
+        if target_os == "linux" {
+            println!("cargo:rustc-link-lib=blas");
+            println!("cargo:rustc-link-lib=lapack");
+        }
+    }
 
     if use_metal {
         build_metal(out_dir.clone());
@@ -184,14 +196,6 @@ fn main() {
 
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
-    }
-
-    if use_accelerate {
-        println!("cargo:rustc-link-lib=framework=Accelerate");
-    }
-
-    if std::env::var("CARGO_FEATURE_SYSTEM_OPENBLAS").is_ok() {
-        println!("cargo:rustc-link-lib=openblas");
     }
 
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
