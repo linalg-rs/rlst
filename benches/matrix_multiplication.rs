@@ -9,9 +9,6 @@ use rlst::external::metal::AutoReleasePool;
 
 const DIM: usize = 5000;
 
-extern crate blas_src;
-extern crate lapack_src;
-
 pub fn metal_matmul(c: &mut Criterion) {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     AutoReleasePool::execute(|| {

@@ -1,5 +1,7 @@
 use std::env;
+use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 use cmake::Config;
 
@@ -10,6 +12,64 @@ macro_rules! build_dep {
             .define("CMAKE_PREFIX_PATH", out_dir)
             .build()
     }};
+}
+
+fn build_internal_blis() {
+    let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let build = dst.join("build_blis");
+    let _ = fs::create_dir(&build);
+
+    let configure = PathBuf::from("blis")
+        .join("configure")
+        .canonicalize()
+        .unwrap();
+    let mut config_command = Command::new("sh");
+    config_command
+        .args(["-c", "exec \"$0\" \"$@\""])
+        .arg(configure);
+    config_command.arg(format!("--prefix={}", dst.display()));
+    config_command.arg("--enable-threading=pthreads");
+    config_command.args(["--enable-cblas", "auto"]);
+    let status = match config_command.current_dir(&build).status() {
+        Ok(status) => status,
+        Err(e) => panic!("Could not execute configure command with error {}", e),
+    };
+    if !status.success() {
+        panic!("Configure command failed with error {}", status);
+    }
+
+    let make_flags = env::var_os("CARGO_MAKEFLAGS").unwrap();
+    let mut build_command = Command::new("sh");
+    build_command
+        .args(["-c", "exec \"$0\" \"$@\""])
+        .args(["make", "install"]);
+    build_command.env("MAKEFLAGS", make_flags);
+
+    let status = match build_command.current_dir(&build).status() {
+        Ok(status) => status,
+        Err(e) => panic!("Could not execute build command with error {}", e),
+    };
+    if !status.success() {
+        panic!("Build command failed with error {}", status);
+    }
+
+    let dst = cmake::Config::new("lapack")
+        .define("BUILD_SHARED_LIBS", "OFF")
+        .define("LAPACKE", "OFF")
+        .define("BLA_VENDOR", "FLAME")
+        .define("CMAKE_PREFIX_PATH", dst.display().to_string())
+        .define("USE_OPTIMIZED_BLAS", "ON")
+        .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+        .build();
+
+    println!("cargo:rustc-link-search={}", dst.join("lib").display());
+    println!("cargo:rustc-link-lib=static=lapack");
+    println!("cargo:rustc-link-lib=static=blis");
+
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
+    }
+    println!("cargo:rustc-link-lib=dylib=gfortran");
 }
 
 fn build_metal(out_dir: String) {
@@ -112,13 +172,28 @@ fn main() {
 
     let use_metal = target_os == "macos" && target_arch == "aarch64";
 
+    let use_accelerate = target_os == "macos";
+
     if use_metal {
         build_metal(out_dir.clone());
+    }
+
+    if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() {
+        build_internal_blis();
     }
 
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
     }
+
+    if use_accelerate {
+        println!("cargo:rustc-link-lib=framework=Accelerate");
+    }
+
+    if std::env::var("CARGO_FEATURE_SYSTEM_OPENBLAS").is_ok() {
+        println!("cargo:rustc-link-lib=openblas");
+    }
+
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
     println!("cargo:rerun-if-changed=build.rs");
 }
