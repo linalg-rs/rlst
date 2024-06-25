@@ -63,8 +63,8 @@ fn build_internal_blis() {
         .build();
 
     println!("cargo:rustc-link-search={}", dst.join("lib").display());
-    println!("cargo:rustc-link-lib=lapack");
-    println!("cargo:rustc-link-lib=blis");
+    println!("cargo:rustc-link-lib=static=lapack");
+    println!("cargo:rustc-link-lib=dylib=blis");
 
     if cfg!(target_os = "macos") {
         println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
