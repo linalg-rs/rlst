@@ -22,6 +22,7 @@ fn build_lapack() {
     std::fs::remove_file(out_path).unwrap();
 
     println!("cargo:rustc-link-search={}", lapack.join("lib").display());
+    println!("cargo:rustc-link-lib=dylib=gfortran");
     println!("cargo:rustc-link-lib=static=lapack");
 }
 
