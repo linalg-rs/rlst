@@ -12,29 +12,6 @@ macro_rules! build_dep {
     }};
 }
 
-fn build_lapack() {
-    use glob::glob;
-
-    let mut build = cc::Build::new();
-
-    for path in glob("lapack/*.c").unwrap() {
-        match path {
-            Ok(path) => {
-                build.file(path);
-            }
-            Err(e) => {
-                println!("cargo:warning={:#?}", e);
-            }
-        }
-    }
-
-    build.warnings(false).compile("lapack");
-    println!("cargo:rustc-link-lib=static=lapack");
-    println!("cargo:rustc-link-lib=dylib=quadmath");
-
-    // cc::Build::new().files(glob("lapack/*.c")).compile("lapack");
-}
-
 fn build_metal(out_dir: String) {
     cc::Build::new()
         .file("metal/rlst_metal.m")
@@ -142,11 +119,6 @@ fn main() {
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
     }
-
-    if std::env::var("CARGO_FEATURE_LAPACK").is_ok() {
-        build_lapack();
-    }
-
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
     println!("cargo:rerun-if-changed=build.rs");
 }

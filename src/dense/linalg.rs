@@ -1,6 +1,11 @@
 //! Linear algebra routines
 
-use crate::{MatrixInverse, RlstScalar};
+use crate::{
+    Array, MatrixInverse, MatrixPseudoInverse, MatrixQrDecomposition, MatrixSvd, RlstScalar, Shape,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+};
+
+use super::array::views::ArrayViewMut;
 
 pub mod inverse;
 pub mod lu;

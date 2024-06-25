@@ -32,4 +32,5 @@
 //! following two lines, e.g. in your `lib.rs` or `main.rs` file.
 //! ```
 //! extern crate blas_src;
+//! extern crate lapack_src;
 //! ````

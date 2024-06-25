@@ -15,7 +15,6 @@ use crate::dense::traits::{
 };
 use crate::dense::types::RlstScalar;
 
-/// Stores a flattened 1d view onto an array.
 pub struct ArrayFlatView<
     'a,
     Item: RlstScalar,
@@ -32,9 +31,6 @@ impl<
         const NDIM: usize,
     > ArrayFlatView<'a, Item, ArrayImpl, NDIM>
 {
-    /// Create a new flattened few.
-    ///
-    /// Use [`arr.flattened`](crate::dense::array::Array::flattened) instead.
     pub fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { arr }
     }
@@ -157,9 +153,6 @@ impl<
         const NDIM: usize,
     > ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
 {
-    /// Create a new mutable flattened view.
-    ///
-    /// Use [`arr.flattened_mut()`](crate::dense::array::Array::flattened_mut)
     pub fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
         Self { arr }
     }

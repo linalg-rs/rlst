@@ -1,6 +1,7 @@
 //! Tests for the operator interface
 
 extern crate blas_src;
+extern crate lapack_src;
 
 use num::traits::{One, Zero};
 use rand::Rng;
