@@ -1,7 +1,6 @@
 //! Example of batched matrix multiplication
 
 extern crate blas_src;
-extern crate lapack_src;
 
 fn main() {
     //     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]

@@ -41,5 +41,4 @@ pub use prelude::*;
 mod test {
 
     extern crate blas_src;
-    extern crate lapack_src;
 }

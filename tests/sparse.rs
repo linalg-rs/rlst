@@ -1,7 +1,6 @@
 use rlst::prelude::*;
 
 extern crate blas_src;
-extern crate lapack_src;
 
 #[test]
 fn test_csc_from_aij() {
