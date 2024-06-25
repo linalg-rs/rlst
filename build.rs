@@ -172,8 +172,14 @@ fn main() {
 
     let use_metal = target_os == "macos" && target_arch == "aarch64";
 
-    let use_system_blas_lapack = std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK").is_err()
-        || std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_err();
+    let mut use_system_blas_lapack = std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK")
+        .is_err()
+        && std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_err();
+
+    if target_os == "macos" && !use_system_blas_lapack {
+        println!("cargo:warning=Reverting to Accelerate as BLAS/Lapack provider on Mac OS.");
+        use_system_blas_lapack = true
+    }
 
     if use_system_blas_lapack {
         if target_os == "macos" {
@@ -190,7 +196,7 @@ fn main() {
         build_metal(out_dir.clone());
     }
 
-    if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() {
+    if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() && target_os != "macos" {
         build_internal_blis();
     }
 
