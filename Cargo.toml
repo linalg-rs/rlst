@@ -59,6 +59,7 @@ rand = "0.8"
 cc = "1.0"
 bindgen = "0.69"
 cmake = "0.1"
+glob = "0.3"
 
 [features]
 strict = []

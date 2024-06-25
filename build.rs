@@ -13,17 +13,25 @@ macro_rules! build_dep {
 }
 
 fn build_lapack() {
-    let out_dir = std::env::var("OUT_DIR").unwrap();
-    let lapack = Config::new("lapack")
-        .define("CMAKE_PREFIX_PATH", out_dir.clone())
-        .build();
-    let out_path = PathBuf::from(out_dir.clone());
-    let out_path = out_path.join("lib/libblas.a");
-    std::fs::remove_file(out_path).unwrap();
+    use glob::glob;
 
-    println!("cargo:rustc-link-search={}", lapack.join("lib").display());
-    println!("cargo:rustc-link-lib=dylib=gfortran");
+    let mut build = cc::Build::new();
+
+    for path in glob("lapack/*.c").unwrap() {
+        match path {
+            Ok(path) => {
+                build.file(path);
+            }
+            Err(e) => {
+                println!("cargo:warning={:#?}", e);
+            }
+        }
+    }
+
+    build.compile("lapack");
     println!("cargo:rustc-link-lib=static=lapack");
+
+    // cc::Build::new().files(glob("lapack/*.c")).compile("lapack");
 }
 
 fn build_metal(out_dir: String) {

@@ -1,0 +1,781 @@
+#define len_trim__(cad,len) ({                           integer _r=0,i;                           for(i=0; i<(len) && (cad)[i]; i++)                             if((cad)[i] != ' ') _r=i;                           _r+1; })
+#define ceiling_(a) (myceil(*(a)))
+#define myceil(a) (sizeof(a) == sizeof(float) ? ceilf(a) : ceil(a))
+#include <math.h>
+/*  -- translated by f2c (version 20200916).
+   You must link the resulting object file with libf2c:
+	on Microsoft Windows system, link with libf2c.lib;
+	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+	or, if you install libf2c.a in a standard place, with -lf2c -lm
+	-- in that order, at the end of the command line, as in
+		cc *.o -lf2c -lm
+	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+
+		http://www.netlib.org/f2c/libf2c.zip
+*/
+
+#define __LAPACK_PRECISION_HALF
+#include "f2c.h"
+
+/* Table of constant values */
+
+static integer c__6 = 6;
+static integer c_n1 = -1;
+static integer c__9 = 9;
+static integer c__0 = 0;
+static integer c__1 = 1;
+static halfreal c_b82 = 0.;
+
+/* > \brief <b> DGELSD computes the minimum-norm solution to a linear least squares problem for GE matrices</b
+> */
+
+/*  =========== DOCUMENTATION =========== */
+
+/* Online html documentation available at */
+/*            http://www.netlib.org/lapack/explore-html/ */
+
+/* > \htmlonly */
+/* > Download DGELSD + dependencies */
+/* > <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/dgelsd.
+f"> */
+/* > [TGZ]</a> */
+/* > <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/dgelsd.
+f"> */
+/* > [ZIP]</a> */
+/* > <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/dgelsd.
+f"> */
+/* > [TXT]</a> */
+/* > \endhtmlonly */
+
+/*  Definition: */
+/*  =========== */
+
+/*       SUBROUTINE DGELSD( M, N, NRHS, A, LDA, B, LDB, S, RCOND, RANK, */
+/*                          WORK, LWORK, IWORK, INFO ) */
+
+/*       INTEGER            INFO, LDA, LDB, LWORK, M, N, NRHS, RANK */
+/*       DOUBLE PRECISION   RCOND */
+/*       INTEGER            IWORK( * ) */
+/*       DOUBLE PRECISION   A( LDA, * ), B( LDB, * ), S( * ), WORK( * ) */
+
+
+/* > \par Purpose: */
+/*  ============= */
+/* > */
+/* > \verbatim */
+/* > */
+/* > DGELSD computes the minimum-norm solution to a doublereal linear least */
+/* > squares problem: */
+/* >     minimize 2-norm(| b - A*x |) */
+/* > using the singular value decomposition (SVD) of A. A is an M-by-N */
+/* > matrix which may be rank-deficient. */
+/* > */
+/* > Several right hand side vectors b and solution vectors x can be */
+/* > handled in a single call; they are stored as the columns of the */
+/* > M-by-NRHS right hand side matrix B and the N-by-NRHS solution */
+/* > matrix X. */
+/* > */
+/* > The problem is solved in three steps: */
+/* > (1) Reduce the coefficient matrix A to bidiagonal form with */
+/* >     Householder transformations, reducing the original problem */
+/* >     into a "bidiagonal least squares problem" (BLS) */
+/* > (2) Solve the BLS using a divide and conquer approach. */
+/* > (3) Apply back all the Householder transformations to solve */
+/* >     the original least squares problem. */
+/* > */
+/* > The effective rank of A is determined by treating as zero those */
+/* > singular values which are less than RCOND times the largest singular */
+/* > value. */
+/* > */
+/* > The divide and conquer algorithm makes very mild assumptions about */
+/* > floating point arithmetic. It will work on machines with a guard */
+/* > digit in add/subtract, or on those binary machines without guard */
+/* > digits which subtract like the Cray X-MP, Cray Y-MP, Cray C-90, or */
+/* > Cray-2. It could conceivably fail on hexadecimal or decimal machines */
+/* > without guard digits, but we know of none. */
+/* > \endverbatim */
+
+/*  Arguments: */
+/*  ========== */
+
+/* > \param[in] M */
+/* > \verbatim */
+/* >          M is INTEGER */
+/* >          The number of rows of A. M >= 0. */
+/* > \endverbatim */
+/* > */
+/* > \param[in] N */
+/* > \verbatim */
+/* >          N is INTEGER */
+/* >          The number of columns of A. N >= 0. */
+/* > \endverbatim */
+/* > */
+/* > \param[in] NRHS */
+/* > \verbatim */
+/* >          NRHS is INTEGER */
+/* >          The number of right hand sides, i.e., the number of columns */
+/* >          of the matrices B and X. NRHS >= 0. */
+/* > \endverbatim */
+/* > */
+/* > \param[in,out] A */
+/* > \verbatim */
+/* >          A is DOUBLE PRECISION array, dimension (LDA,N) */
+/* >          On entry, the M-by-N matrix A. */
+/* >          On exit, A has been destroyed. */
+/* > \endverbatim */
+/* > */
+/* > \param[in] LDA */
+/* > \verbatim */
+/* >          LDA is INTEGER */
+/* >          The leading dimension of the array A.  LDA >= f2cmax(1,M). */
+/* > \endverbatim */
+/* > */
+/* > \param[in,out] B */
+/* > \verbatim */
+/* >          B is DOUBLE PRECISION array, dimension (LDB,NRHS) */
+/* >          On entry, the M-by-NRHS right hand side matrix B. */
+/* >          On exit, B is overwritten by the N-by-NRHS solution */
+/* >          matrix X.  If m >= n and RANK = n, the residual */
+/* >          sum-of-squares for the solution in the i-th column is given */
+/* >          by the sum of squares of elements n+1:m in that column. */
+/* > \endverbatim */
+/* > */
+/* > \param[in] LDB */
+/* > \verbatim */
+/* >          LDB is INTEGER */
+/* >          The leading dimension of the array B. LDB >= f2cmax(1,f2cmax(M,N)). */
+/* > \endverbatim */
+/* > */
+/* > \param[out] S */
+/* > \verbatim */
+/* >          S is DOUBLE PRECISION array, dimension (f2cmin(M,N)) */
+/* >          The singular values of A in decreasing order. */
+/* >          The condition number of A in the 2-norm = S(1)/S(f2cmin(m,n)). */
+/* > \endverbatim */
+/* > */
+/* > \param[in] RCOND */
+/* > \verbatim */
+/* >          RCOND is DOUBLE PRECISION */
+/* >          RCOND is used to determine the effective rank of A. */
+/* >          Singular values S(i) <= RCOND*S(1) are treated as zero. */
+/* >          If RCOND < 0, machine precision is used instead. */
+/* > \endverbatim */
+/* > */
+/* > \param[out] RANK */
+/* > \verbatim */
+/* >          RANK is INTEGER */
+/* >          The effective rank of A, i.e., the number of singular values */
+/* >          which are greater than RCOND*S(1). */
+/* > \endverbatim */
+/* > */
+/* > \param[out] WORK */
+/* > \verbatim */
+/* >          WORK is DOUBLE PRECISION array, dimension (MAX(1,LWORK)) */
+/* >          On exit, if INFO = 0, WORK(1) returns the optimal LWORK. */
+/* > \endverbatim */
+/* > */
+/* > \param[in] LWORK */
+/* > \verbatim */
+/* >          LWORK is INTEGER */
+/* >          The dimension of the array WORK. LWORK must be at least 1. */
+/* >          The exact minimum amount of workspace needed depends on M, */
+/* >          N and NRHS. As long as LWORK is at least */
+/* >              12*N + 2*N*SMLSIZ + 8*N*NLVL + N*NRHS + (SMLSIZ+1)**2, */
+/* >          if M is greater than or equal to N or */
+/* >              12*M + 2*M*SMLSIZ + 8*M*NLVL + M*NRHS + (SMLSIZ+1)**2, */
+/* >          if M is less than N, the code will execute correctly. */
+/* >          SMLSIZ is returned by ILAENV and is equal to the maximum */
+/* >          size of the subproblems at the bottom of the computation */
+/* >          tree (usually about 25), and */
+/* >             NLVL = MAX( 0, INT( LOG_2( MIN( M,N )/(SMLSIZ+1) ) ) + 1 ) */
+/* >          For good performance, LWORK should generally be larger. */
+/* > */
+/* >          If LWORK = -1, then a workspace query is assumed; the routine */
+/* >          only calculates the optimal size of the WORK array, returns */
+/* >          this value as the first entry of the WORK array, and no error */
+/* >          message related to LWORK is issued by XERBLA. */
+/* > \endverbatim */
+/* > */
+/* > \param[out] IWORK */
+/* > \verbatim */
+/* >          IWORK is INTEGER array, dimension (MAX(1,LIWORK)) */
+/* >          LIWORK >= f2cmax(1, 3 * MINMN * NLVL + 11 * MINMN), */
+/* >          where MINMN = MIN( M,N ). */
+/* >          On exit, if INFO = 0, IWORK(1) returns the minimum LIWORK. */
+/* > \endverbatim */
+/* > */
+/* > \param[out] INFO */
+/* > \verbatim */
+/* >          INFO is INTEGER */
+/* >          = 0:  successful exit */
+/* >          < 0:  if INFO = -i, the i-th argument had an illegal value. */
+/* >          > 0:  the algorithm for computing the SVD failed to converge; */
+/* >                if INFO = i, i off-diagonal elements of an intermediate */
+/* >                bidiagonal form did not converge to zero. */
+/* > \endverbatim */
+
+/*  Authors: */
+/*  ======== */
+
+/* > \author Univ. of Tennessee */
+/* > \author Univ. of California Berkeley */
+/* > \author Univ. of Colorado Denver */
+/* > \author NAG Ltd. */
+
+/* > \date June 2017 */
+
+/* > \ingroup doubleGEsolve */
+
+/* > \par Contributors: */
+/*  ================== */
+/* > */
+/* >     Ming Gu and Ren-Cang Li, Computer Science Division, University of */
+/* >       California at Berkeley, USA \n */
+/* >     Osni Marques, LBNL/NERSC, USA \n */
+
+/*  ===================================================================== */
+void  hgelsd_(integer *m, integer *n, integer *nrhs, 
+	halfreal *a, integer *lda, halfreal *b, integer *ldb, halfreal *
+	s, halfreal *rcond, integer *rank, halfreal *work, integer *lwork,
+	 integer *iwork, integer *info)
+{
+    /* System generated locals */
+    integer a_dim1, a_offset, b_dim1, b_offset, i__1, i__2, i__3, i__4;
+
+    /* Local variables */
+    integer ie, il, mm;
+    halfreal eps, anrm, bnrm;
+    integer itau, nlvl, iascl, ibscl;
+    halfreal sfmin;
+    integer minmn, maxmn, itaup, itauq, mnthr, nwork;
+    extern void  hlabad_(halfreal *, halfreal *), hgebrd_(
+	    integer *, integer *, halfreal *, integer *, halfreal *, 
+	    halfreal *, halfreal *, halfreal *, halfreal *, integer *,
+	     integer *);
+    extern halfreal hlamch_(char *), hlange_(char *, integer *, 
+	    integer *, halfreal *, integer *, halfreal *);
+    extern void  hgelqf_(integer *, integer *, halfreal *, 
+	    integer *, halfreal *, halfreal *, integer *, integer *), 
+	    hlalsd_(char *, integer *, integer *, integer *, halfreal *, 
+	    halfreal *, halfreal *, integer *, halfreal *, integer *, 
+	    halfreal *, integer *, integer *), hlascl_(char *, 
+	    integer *, integer *, halfreal *, halfreal *, integer *, 
+	    integer *, halfreal *, integer *, integer *), hgeqrf_(
+	    integer *, integer *, halfreal *, integer *, halfreal *, 
+	    halfreal *, integer *, integer *), hlacpy_(char *, integer *, 
+	    integer *, halfreal *, integer *, halfreal *, integer *), hlaset_(char *, integer *, integer *, halfreal *, 
+	    halfreal *, halfreal *, integer *), xerbla_(char *, 
+	    integer *);
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+	    integer *, integer *, ftnlen, ftnlen);
+    halfreal bignum;
+    extern void  hormbr_(char *, char *, char *, integer *, 
+	    integer *, integer *, halfreal *, integer *, halfreal *, 
+	    halfreal *, integer *, halfreal *, integer *, integer *);
+    integer wlalsd;
+    extern void  hormlq_(char *, char *, integer *, integer *, 
+	    integer *, halfreal *, integer *, halfreal *, halfreal *, 
+	    integer *, halfreal *, integer *, integer *);
+    integer ldwork;
+    extern void  hormqr_(char *, char *, integer *, integer *, 
+	    integer *, halfreal *, integer *, halfreal *, halfreal *, 
+	    integer *, halfreal *, integer *, integer *);
+    integer liwork, minwrk, maxwrk;
+    halfreal smlnum;
+    logical lquery;
+    integer smlsiz;
+
+
+/*  -- LAPACK driver routine (version 3.7.1) -- */
+/*  -- LAPACK is a software package provided by Univ. of Tennessee,    -- */
+/*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+/*     June 2017 */
+
+
+/*  ===================================================================== */
+
+
+/*     Test the input arguments. */
+
+    /* Parameter adjustments */
+    a_dim1 = *lda;
+    a_offset = 1 + a_dim1;
+    a -= a_offset;
+    b_dim1 = *ldb;
+    b_offset = 1 + b_dim1;
+    b -= b_offset;
+    --s;
+    --work;
+    --iwork;
+
+    /* Function Body */
+    *info = 0;
+    minmn = f2cmin(*m,*n);
+    maxmn = f2cmax(*m,*n);
+    mnthr = ilaenv_(&c__6, "DGELSD", " ", m, n, nrhs, &c_n1, (ftnlen)6, (
+	    ftnlen)1);
+    lquery = *lwork == -1;
+    if (*m < 0) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*nrhs < 0) {
+	*info = -3;
+    } else if (*lda < f2cmax(1,*m)) {
+	*info = -5;
+    } else if (*ldb < f2cmax(1,maxmn)) {
+	*info = -7;
+    }
+
+    smlsiz = ilaenv_(&c__9, "DGELSD", " ", &c__0, &c__0, &c__0, &c__0, (
+	    ftnlen)6, (ftnlen)1);
+
+/*     Compute workspace. */
+/*     (Note: Comments in the code beginning "Workspace:" describe the */
+/*     minimal amount of workspace needed at that point in the code, */
+/*     as well as the preferred amount for good performance. */
+/*     NB refers to the optimal block size for the immediately */
+/*     following subroutine, as returned by ILAENV.) */
+
+    minwrk = 1;
+    liwork = 1;
+    minmn = f2cmax(1,minmn);
+/* Computing MAX */
+    i__1 = (integer) (M(log)((halfreal) minmn / (halfreal) (smlsiz + 1)) / 
+	    M(log)(2.)) + 1;
+    nlvl = f2cmax(i__1,0);
+
+    if (*info == 0) {
+	maxwrk = 0;
+	liwork = minmn * 3 * nlvl + minmn * 11;
+	mm = *m;
+	if (*m >= *n && *m >= mnthr) {
+
+/*           Path 1a - overdetermined, with many more rows than columns. */
+
+	    mm = *n;
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n + *n * ilaenv_(&c__1, "DGEQRF", " ", m, 
+		    n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
+	    maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n + *nrhs * ilaenv_(&c__1, "DORMQR", "LT", 
+		    m, nrhs, n, &c_n1, (ftnlen)6, (ftnlen)2);
+	    maxwrk = f2cmax(i__1,i__2);
+	}
+	if (*m >= *n) {
+
+/*           Path 1 - overdetermined or exactly determined. */
+
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n * 3 + (mm + *n) * ilaenv_(&c__1, "DGEBRD"
+		    , " ", &mm, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
+	    maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n * 3 + *nrhs * ilaenv_(&c__1, "DORMBR", 
+		    "QLT", &mm, nrhs, n, &c_n1, (ftnlen)6, (ftnlen)3);
+	    maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n * 3 + (*n - 1) * ilaenv_(&c__1, "DORMBR",
+		     "PLN", n, nrhs, n, &c_n1, (ftnlen)6, (ftnlen)3);
+	    maxwrk = f2cmax(i__1,i__2);
+/* Computing 2nd power */
+	    i__1 = smlsiz + 1;
+	    wlalsd = *n * 9 + (*n << 1) * smlsiz + (*n << 3) * nlvl + *n * *
+		    nrhs + i__1 * i__1;
+/* Computing MAX */
+	    i__1 = maxwrk, i__2 = *n * 3 + wlalsd;
+	    maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+	    i__1 = *n * 3 + mm, i__2 = *n * 3 + *nrhs, i__1 = f2cmax(i__1,i__2), 
+		    i__2 = *n * 3 + wlalsd;
+	    minwrk = f2cmax(i__1,i__2);
+	}
+	if (*n > *m) {
+/* Computing 2nd power */
+	    i__1 = smlsiz + 1;
+	    wlalsd = *m * 9 + (*m << 1) * smlsiz + (*m << 3) * nlvl + *m * *
+		    nrhs + i__1 * i__1;
+	    if (*n >= mnthr) {
+
+/*              Path 2a - underdetermined, with many more columns */
+/*              than rows. */
+
+		maxwrk = *m + *m * ilaenv_(&c__1, "DGELQF", " ", m, n, &c_n1, 
+			&c_n1, (ftnlen)6, (ftnlen)1);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * *m + (*m << 2) + (*m << 1) * 
+			ilaenv_(&c__1, "DGEBRD", " ", m, m, &c_n1, &c_n1, (
+			ftnlen)6, (ftnlen)1);
+		maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * *m + (*m << 2) + *nrhs * ilaenv_(&
+			c__1, "DORMBR", "QLT", m, nrhs, m, &c_n1, (ftnlen)6, (
+			ftnlen)3);
+		maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * *m + (*m << 2) + (*m - 1) * 
+			ilaenv_(&c__1, "DORMBR", "PLN", m, nrhs, m, &c_n1, (
+			ftnlen)6, (ftnlen)3);
+		maxwrk = f2cmax(i__1,i__2);
+		if (*nrhs > 1) {
+/* Computing MAX */
+		    i__1 = maxwrk, i__2 = *m * *m + *m + *m * *nrhs;
+		    maxwrk = f2cmax(i__1,i__2);
+		} else {
+/* Computing MAX */
+		    i__1 = maxwrk, i__2 = *m * *m + (*m << 1);
+		    maxwrk = f2cmax(i__1,i__2);
+		}
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m + *nrhs * ilaenv_(&c__1, "DORMLQ", 
+			"LT", n, nrhs, m, &c_n1, (ftnlen)6, (ftnlen)2);
+		maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * *m + (*m << 2) + wlalsd;
+		maxwrk = f2cmax(i__1,i__2);
+/*     XXX: Ensure the Path 2a case below is triggered.  The workspace */
+/*     calculation should use queries for all routines eventually. */
+/* Computing MAX */
+/* Computing MAX */
+		i__3 = *m, i__4 = (*m << 1) - 4, i__3 = f2cmax(i__3,i__4), i__3 =
+			 f2cmax(i__3,*nrhs), i__4 = *n - *m * 3;
+		i__1 = maxwrk, i__2 = (*m << 2) + *m * *m + f2cmax(i__3,i__4);
+		maxwrk = f2cmax(i__1,i__2);
+	    } else {
+
+/*              Path 2 - remaining underdetermined cases. */
+
+		maxwrk = *m * 3 + (*n + *m) * ilaenv_(&c__1, "DGEBRD", " ", m,
+			 n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * 3 + *nrhs * ilaenv_(&c__1, "DORMBR"
+			, "QLT", m, nrhs, n, &c_n1, (ftnlen)6, (ftnlen)3);
+		maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * 3 + *m * ilaenv_(&c__1, "DORMBR", 
+			"PLN", n, nrhs, m, &c_n1, (ftnlen)6, (ftnlen)3);
+		maxwrk = f2cmax(i__1,i__2);
+/* Computing MAX */
+		i__1 = maxwrk, i__2 = *m * 3 + wlalsd;
+		maxwrk = f2cmax(i__1,i__2);
+	    }
+/* Computing MAX */
+	    i__1 = *m * 3 + *nrhs, i__2 = *m * 3 + *m, i__1 = f2cmax(i__1,i__2), 
+		    i__2 = *m * 3 + wlalsd;
+	    minwrk = f2cmax(i__1,i__2);
+	}
+	minwrk = f2cmin(minwrk,maxwrk);
+	work[1] = (halfreal) maxwrk;
+	iwork[1] = liwork;
+	if (*lwork < minwrk && ! lquery) {
+	    *info = -12;
+	}
+    }
+
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DGELSD", &i__1);
+	return;
+    } else if (lquery) {
+	goto L10;
+    }
+
+/*     Quick return if possible. */
+
+    if (*m == 0 || *n == 0) {
+	*rank = 0;
+	return;
+    }
+
+/*     Get machine parameters. */
+
+    eps = hlamch_("P");
+    sfmin = hlamch_("S");
+    smlnum = sfmin / eps;
+    bignum = 1. / smlnum;
+    hlabad_(&smlnum, &bignum);
+
+/*     Scale A if f2cmax entry outside range [SMLNUM,BIGNUM]. */
+
+    anrm = hlange_("M", m, n, &a[a_offset], lda, &work[1]);
+    iascl = 0;
+    if (anrm > 0. && anrm < smlnum) {
+
+/*        Scale matrix norm up to SMLNUM. */
+
+	hlascl_("G", &c__0, &c__0, &anrm, &smlnum, m, n, &a[a_offset], lda, 
+		info);
+	iascl = 1;
+    } else if (anrm > bignum) {
+
+/*        Scale matrix norm down to BIGNUM. */
+
+	hlascl_("G", &c__0, &c__0, &anrm, &bignum, m, n, &a[a_offset], lda, 
+		info);
+	iascl = 2;
+    } else if (anrm == 0.) {
+
+/*        Matrix all zero. Return zero solution. */
+
+	i__1 = f2cmax(*m,*n);
+	hlaset_("F", &i__1, nrhs, &c_b82, &c_b82, &b[b_offset], ldb);
+	hlaset_("F", &minmn, &c__1, &c_b82, &c_b82, &s[1], &c__1);
+	*rank = 0;
+	goto L10;
+    }
+
+/*     Scale B if f2cmax entry outside range [SMLNUM,BIGNUM]. */
+
+    bnrm = hlange_("M", m, nrhs, &b[b_offset], ldb, &work[1]);
+    ibscl = 0;
+    if (bnrm > 0. && bnrm < smlnum) {
+
+/*        Scale matrix norm up to SMLNUM. */
+
+	hlascl_("G", &c__0, &c__0, &bnrm, &smlnum, m, nrhs, &b[b_offset], ldb,
+		 info);
+	ibscl = 1;
+    } else if (bnrm > bignum) {
+
+/*        Scale matrix norm down to BIGNUM. */
+
+	hlascl_("G", &c__0, &c__0, &bnrm, &bignum, m, nrhs, &b[b_offset], ldb,
+		 info);
+	ibscl = 2;
+    }
+
+/*     If M < N make sure certain entries of B are zero. */
+
+    if (*m < *n) {
+	i__1 = *n - *m;
+	hlaset_("F", &i__1, nrhs, &c_b82, &c_b82, &b[*m + 1 + b_dim1], ldb);
+    }
+
+/*     Overdetermined case. */
+
+    if (*m >= *n) {
+
+/*        Path 1 - overdetermined or exactly determined. */
+
+	mm = *m;
+	if (*m >= mnthr) {
+
+/*           Path 1a - overdetermined, with many more rows than columns. */
+
+	    mm = *n;
+	    itau = 1;
+	    nwork = itau + *n;
+
+/*           Compute A=Q*R. */
+/*           (Workspace: need 2*N, prefer N+N*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hgeqrf_(m, n, &a[a_offset], lda, &work[itau], &work[nwork], &i__1,
+		     info);
+
+/*           Multiply B by transpose(Q). */
+/*           (Workspace: need N+NRHS, prefer N+NRHS*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormqr_("L", "T", m, nrhs, n, &a[a_offset], lda, &work[itau], &b[
+		    b_offset], ldb, &work[nwork], &i__1, info);
+
+/*           Zero out below R. */
+
+	    if (*n > 1) {
+		i__1 = *n - 1;
+		i__2 = *n - 1;
+		hlaset_("L", &i__1, &i__2, &c_b82, &c_b82, &a[a_dim1 + 2], 
+			lda);
+	    }
+	}
+
+	ie = 1;
+	itauq = ie + *n;
+	itaup = itauq + *n;
+	nwork = itaup + *n;
+
+/*        Bidiagonalize R in A. */
+/*        (Workspace: need 3*N+MM, prefer 3*N+(MM+N)*NB) */
+
+	i__1 = *lwork - nwork + 1;
+	hgebrd_(&mm, n, &a[a_offset], lda, &s[1], &work[ie], &work[itauq], &
+		work[itaup], &work[nwork], &i__1, info);
+
+/*        Multiply B by transpose of left bidiagonalizing vectors of R. */
+/*        (Workspace: need 3*N+NRHS, prefer 3*N+NRHS*NB) */
+
+	i__1 = *lwork - nwork + 1;
+	hormbr_("Q", "L", "T", &mm, nrhs, n, &a[a_offset], lda, &work[itauq], 
+		&b[b_offset], ldb, &work[nwork], &i__1, info);
+
+/*        Solve the bidiagonal least squares problem. */
+
+	hlalsd_("U", &smlsiz, n, nrhs, &s[1], &work[ie], &b[b_offset], ldb, 
+		rcond, rank, &work[nwork], &iwork[1], info);
+	if (*info != 0) {
+	    goto L10;
+	}
+
+/*        Multiply B by right bidiagonalizing vectors of R. */
+
+	i__1 = *lwork - nwork + 1;
+	hormbr_("P", "L", "N", n, nrhs, n, &a[a_offset], lda, &work[itaup], &
+		b[b_offset], ldb, &work[nwork], &i__1, info);
+
+    } else /* if(complicated condition) */ {
+/* Computing MAX */
+	i__1 = *m, i__2 = (*m << 1) - 4, i__1 = f2cmax(i__1,i__2), i__1 = f2cmax(
+		i__1,*nrhs), i__2 = *n - *m * 3, i__1 = f2cmax(i__1,i__2);
+	if (*n >= mnthr && *lwork >= (*m << 2) + *m * *m + f2cmax(i__1,wlalsd)) {
+
+/*        Path 2a - underdetermined, with many more columns than rows */
+/*        and sufficient workspace for an efficient algorithm. */
+
+	    ldwork = *m;
+/* Computing MAX */
+/* Computing MAX */
+	    i__3 = *m, i__4 = (*m << 1) - 4, i__3 = f2cmax(i__3,i__4), i__3 = 
+		    f2cmax(i__3,*nrhs), i__4 = *n - *m * 3;
+	    i__1 = (*m << 2) + *m * *lda + f2cmax(i__3,i__4), i__2 = *m * *lda + 
+		    *m + *m * *nrhs, i__1 = f2cmax(i__1,i__2), i__2 = (*m << 2) 
+		    + *m * *lda + wlalsd;
+	    if (*lwork >= f2cmax(i__1,i__2)) {
+		ldwork = *lda;
+	    }
+	    itau = 1;
+	    nwork = *m + 1;
+
+/*        Compute A=L*Q. */
+/*        (Workspace: need 2*M, prefer M+M*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hgelqf_(m, n, &a[a_offset], lda, &work[itau], &work[nwork], &i__1,
+		     info);
+	    il = nwork;
+
+/*        Copy L to WORK(IL), zeroing out above its diagonal. */
+
+	    hlacpy_("L", m, m, &a[a_offset], lda, &work[il], &ldwork);
+	    i__1 = *m - 1;
+	    i__2 = *m - 1;
+	    hlaset_("U", &i__1, &i__2, &c_b82, &c_b82, &work[il + ldwork], &
+		    ldwork);
+	    ie = il + ldwork * *m;
+	    itauq = ie + *m;
+	    itaup = itauq + *m;
+	    nwork = itaup + *m;
+
+/*        Bidiagonalize L in WORK(IL). */
+/*        (Workspace: need M*M+5*M, prefer M*M+4*M+2*M*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hgebrd_(m, m, &work[il], &ldwork, &s[1], &work[ie], &work[itauq], 
+		    &work[itaup], &work[nwork], &i__1, info);
+
+/*        Multiply B by transpose of left bidiagonalizing vectors of L. */
+/*        (Workspace: need M*M+4*M+NRHS, prefer M*M+4*M+NRHS*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormbr_("Q", "L", "T", m, nrhs, m, &work[il], &ldwork, &work[
+		    itauq], &b[b_offset], ldb, &work[nwork], &i__1, info);
+
+/*        Solve the bidiagonal least squares problem. */
+
+	    hlalsd_("U", &smlsiz, m, nrhs, &s[1], &work[ie], &b[b_offset], 
+		    ldb, rcond, rank, &work[nwork], &iwork[1], info);
+	    if (*info != 0) {
+		goto L10;
+	    }
+
+/*        Multiply B by right bidiagonalizing vectors of L. */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormbr_("P", "L", "N", m, nrhs, m, &work[il], &ldwork, &work[
+		    itaup], &b[b_offset], ldb, &work[nwork], &i__1, info);
+
+/*        Zero out below first M rows of B. */
+
+	    i__1 = *n - *m;
+	    hlaset_("F", &i__1, nrhs, &c_b82, &c_b82, &b[*m + 1 + b_dim1], 
+		    ldb);
+	    nwork = itau + *m;
+
+/*        Multiply transpose(Q) by B. */
+/*        (Workspace: need M+NRHS, prefer M+NRHS*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormlq_("L", "T", n, nrhs, m, &a[a_offset], lda, &work[itau], &b[
+		    b_offset], ldb, &work[nwork], &i__1, info);
+
+	} else {
+
+/*        Path 2 - remaining underdetermined cases. */
+
+	    ie = 1;
+	    itauq = ie + *m;
+	    itaup = itauq + *m;
+	    nwork = itaup + *m;
+
+/*        Bidiagonalize A. */
+/*        (Workspace: need 3*M+N, prefer 3*M+(M+N)*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hgebrd_(m, n, &a[a_offset], lda, &s[1], &work[ie], &work[itauq], &
+		    work[itaup], &work[nwork], &i__1, info);
+
+/*        Multiply B by transpose of left bidiagonalizing vectors. */
+/*        (Workspace: need 3*M+NRHS, prefer 3*M+NRHS*NB) */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormbr_("Q", "L", "T", m, nrhs, n, &a[a_offset], lda, &work[itauq]
+		    , &b[b_offset], ldb, &work[nwork], &i__1, info);
+
+/*        Solve the bidiagonal least squares problem. */
+
+	    hlalsd_("L", &smlsiz, m, nrhs, &s[1], &work[ie], &b[b_offset], 
+		    ldb, rcond, rank, &work[nwork], &iwork[1], info);
+	    if (*info != 0) {
+		goto L10;
+	    }
+
+/*        Multiply B by right bidiagonalizing vectors of A. */
+
+	    i__1 = *lwork - nwork + 1;
+	    hormbr_("P", "L", "N", n, nrhs, m, &a[a_offset], lda, &work[itaup]
+		    , &b[b_offset], ldb, &work[nwork], &i__1, info);
+
+	}
+    }
+
+/*     Undo scaling. */
+
+    if (iascl == 1) {
+	hlascl_("G", &c__0, &c__0, &anrm, &smlnum, n, nrhs, &b[b_offset], ldb,
+		 info);
+	hlascl_("G", &c__0, &c__0, &smlnum, &anrm, &minmn, &c__1, &s[1], &
+		minmn, info);
+    } else if (iascl == 2) {
+	hlascl_("G", &c__0, &c__0, &anrm, &bignum, n, nrhs, &b[b_offset], ldb,
+		 info);
+	hlascl_("G", &c__0, &c__0, &bignum, &anrm, &minmn, &c__1, &s[1], &
+		minmn, info);
+    }
+    if (ibscl == 1) {
+	hlascl_("G", &c__0, &c__0, &smlnum, &bnrm, n, nrhs, &b[b_offset], ldb,
+		 info);
+    } else if (ibscl == 2) {
+	hlascl_("G", &c__0, &c__0, &bignum, &bnrm, n, nrhs, &b[b_offset], ldb,
+		 info);
+    }
+
+L10:
+    work[1] = (halfreal) maxwrk;
+    iwork[1] = liwork;
+    return;
+
+/*     End of DGELSD */
+
+} /* hgelsd_ */
+
