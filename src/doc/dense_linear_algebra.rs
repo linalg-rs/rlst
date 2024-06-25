@@ -412,7 +412,6 @@
 //!
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
@@ -423,7 +422,6 @@
 //!
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [2, 2]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [2, 2]);
@@ -447,7 +445,6 @@
 //! Through its Lapack interface RLST can solve dense linear systems of equations. A linear system of equations is solved as follows.
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
@@ -464,7 +461,6 @@
 //! If only a single solve is required and the LU factors need not be stored a shorter version is available as
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
@@ -484,7 +480,6 @@
 //! The pivoted QR decomposition of a matrix can be computed as follows.
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
@@ -505,7 +500,6 @@
 //! To compute the singular values of a two-dimensional array `arr` use
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
@@ -517,7 +511,6 @@
 //! singular value decomposition use the method [into_svd_alloc](crate::MatrixSvd::into_svd_alloc).
 //! ```
 //! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
