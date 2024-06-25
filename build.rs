@@ -54,7 +54,7 @@ fn build_internal_blis() {
     }
 
     let dst = cmake::Config::new("lapack")
-        .define("BUILD_SHARED_LIBS", "ON")
+        .define("BUILD_SHARED_LIBS", "OFF")
         .define("LAPACKE", "OFF")
         .define("BLA_VENDOR", "FLAME")
         .define("CMAKE_PREFIX_PATH", dst.display().to_string())
