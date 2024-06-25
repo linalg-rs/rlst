@@ -30,6 +30,7 @@ fn build_lapack() {
 
     build.compile("lapack");
     println!("cargo:rustc-link-lib=static=lapack");
+    println!("cargo:rustc-link-lib=dylib=quadmath");
 
     // cc::Build::new().files(glob("lapack/*.c")).compile("lapack");
 }
