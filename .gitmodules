@@ -1,3 +1,6 @@
 [submodule "suitesparse"]
 	path = suitesparse
 	url = https://github.com/DrTimothyAldenDavis/SuiteSparse.git
+[submodule "lapack"]
+	path = lapack
+	url = https://github.com/Reference-LAPACK/lapack.git
