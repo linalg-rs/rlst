@@ -28,7 +28,7 @@ fn build_lapack() {
         }
     }
 
-    build.compile("lapack");
+    build.warnings(false).compile("lapack");
     println!("cargo:rustc-link-lib=static=lapack");
     println!("cargo:rustc-link-lib=dylib=quadmath");
 
