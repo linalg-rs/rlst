@@ -77,6 +77,13 @@ wildcard_imports = "forbid"
 name = "matrix_multiplication"
 harness = false
 
+[[bench]]
+name = "inverse_sqrt_f64"
+harness = false
+
+[[bench]]
+name = "inverse_sqrt_f32"
+harness = false
 
 [[example]]
 name = "mpi_gather_to_all_vector"
