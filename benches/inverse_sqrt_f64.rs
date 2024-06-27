@@ -2,11 +2,7 @@
 use std::hint::black_box;
 
 use bytemuck;
-use coe::coerce_static as to;
 use criterion::{criterion_group, criterion_main, Criterion};
-use pulp::{self, Scalar, Simd};
-use rand::SeedableRng;
-use rlst::RlstSimd;
 
 #[cfg(target_arch = "x86_64")]
 pub fn one_div_sqrt_f64(c: &mut Criterion) {
@@ -15,7 +11,7 @@ pub fn one_div_sqrt_f64(c: &mut Criterion) {
     let simd_for = rlst::dense::simd::SimdFor::<f64, _>::new(simd);
 
     let one = simd_for.splat(1.0);
-    let vals: [f64; 8] = [1.0, 2.0, 3.0, 4.0];
+    let vals: [f64; 4] = [1.0, 2.0, 3.0, 4.0];
 
     c.bench_function("1 / sqrt(x)", |b| {
         b.iter(|| {
@@ -60,5 +56,10 @@ pub fn approx_rsqrt_f64(c: &mut Criterion) {
     });
 }
 
+#[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
 criterion_group!(benches, one_div_sqrt_f64, approx_rsqrt_f64);
+
+#[cfg(target_arch = "x86_64")]
+criterion_group!(benches, one_div_sqrt_f64);
+
 criterion_main!(benches);
