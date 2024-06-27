@@ -48,10 +48,12 @@ pub fn one_div_sqrt_f32(c: &mut Criterion) {
 
     c.bench_function("1 / sqrt(x)", |b| {
         b.iter(|| {
-            black_box(simd_for.div(
-                black_box(one),
-                black_box(simd_for.sqrt(bytemuck::cast(vals))),
-            ));
+            for _ in 0..1000 {
+                black_box(simd_for.div(
+                    black_box(one),
+                    black_box(simd_for.sqrt(bytemuck::cast(vals))),
+                ));
+            }
         })
     });
 }
@@ -64,7 +66,11 @@ pub fn approx_rsqrt_f32(c: &mut Criterion) {
     let vals: [f32; 4] = [1.0, 2.0, 3.0, 4.0];
 
     c.bench_function("approx_rsqrt", |b| {
-        b.iter(|| black_box(simd_for.approx_recip_sqrt(black_box(bytemuck::cast(vals)))))
+        b.iter(|| {
+            for _ in 0..1000 {
+                black_box(simd_for.approx_recip_sqrt(black_box(bytemuck::cast(vals))));
+            }
+        })
     });
 }
 
