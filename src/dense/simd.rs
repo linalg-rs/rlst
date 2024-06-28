@@ -986,6 +986,7 @@ impl RlstSimd for f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
     use rand::prelude::*;
 
     #[test]
@@ -1017,5 +1018,68 @@ mod tests {
 
         assert!(max_err_c <= 1E-12);
         assert!(max_err_s <= 1E-12);
+    }
+
+    #[test]
+    fn test_inv_sqrt() {
+        let nsamples = 10000;
+        let eps_f32 = 1E-6;
+        let eps_f64 = 1E-14;
+
+        let rng = &mut StdRng::seed_from_u64(0);
+
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3].sqrt(), epsilon = eps_f32);
+
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1].sqrt(), epsilon = eps_f64);
+        }
+        #[cfg(target_arch = "x86_64")]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 8] = [
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            ];
+            let sample_f64: [f64; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.4, 1.0 / sample_f32[4].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.5, 1.0 / sample_f32[5].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.6, 1.0 / sample_f32[6].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(res_f32.7, 1.0 / sample_f32[7].sqrt(), epsilon = eps_f32);
+
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[2].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[3].sqrt(), epsilon = eps_f64);
+        }
     }
 }
