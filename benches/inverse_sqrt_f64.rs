@@ -15,10 +15,12 @@ pub fn one_div_sqrt_f64(c: &mut Criterion) {
 
     c.bench_function("1 / sqrt(x)", |b| {
         b.iter(|| {
-            black_box(simd_for.div(
-                black_box(one),
-                black_box(simd_for.sqrt(bytemuck::cast(vals))),
-            ));
+            for _ in 0..1000 {
+                black_box(simd_for.div(
+                    black_box(one),
+                    black_box(simd_for.sqrt(bytemuck::cast(vals))),
+                ));
+            }
         })
     });
 }
@@ -34,10 +36,12 @@ pub fn one_div_sqrt_f64(c: &mut Criterion) {
 
     c.bench_function("1 / sqrt(x)", |b| {
         b.iter(|| {
-            black_box(simd_for.div(
-                black_box(one),
-                black_box(simd_for.sqrt(bytemuck::cast(vals))),
-            ));
+            for _ in 0..1000 {
+                black_box(simd_for.div(
+                    black_box(one),
+                    black_box(simd_for.sqrt(bytemuck::cast(vals))),
+                ));
+            }
         })
     });
 }
@@ -51,7 +55,9 @@ pub fn approx_rsqrt_f64(c: &mut Criterion) {
 
     c.bench_function("approx_rsqrt", |b| {
         b.iter(|| {
-            black_box(simd_for.approx_recip_sqrt(black_box(bytemuck::cast(vals))));
+            for _ in 0..1000 {
+                black_box(simd_for.approx_recip_sqrt(black_box(bytemuck::cast(vals))));
+            }
         })
     });
 }
