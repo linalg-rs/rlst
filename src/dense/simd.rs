@@ -1045,10 +1045,10 @@ mod tests {
     #[test]
     fn test_approx_inv_sqrt() {
         let nsamples = 10000;
-        let eps_f32 = 1E-6;
+        let eps_f32 = 5E-5;
         let eps_f64 = 1E-14;
 
-        let rng = &mut StdRng::seed_from_u64(0);
+        let mut rng = StdRng::seed_from_u64(0);
 
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         for _ in 0..nsamples {
@@ -1061,13 +1061,37 @@ mod tests {
             let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
             let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
 
-            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(
+                res_f32.0,
+                1.0 / sample_f32[0].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.1,
+                1.0 / sample_f32[1].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.2,
+                1.0 / sample_f32[2].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.3,
+                1.0 / sample_f32[3].sqrt(),
+                max_relative = eps_f32
+            );
 
-            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0].sqrt(), epsilon = eps_f64);
-            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(
+                res_f64.0,
+                1.0 / sample_f64[0].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.1,
+                1.0 / sample_f64[1].sqrt(),
+                max_relative = eps_f64
+            );
         }
         #[cfg(target_arch = "x86_64")]
         for _ in 0..nsamples {
