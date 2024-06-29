@@ -25,6 +25,7 @@ pub mod mult_into;
 pub mod operations;
 pub mod operators;
 pub mod random;
+pub mod rank1_array;
 pub mod slice;
 pub mod views;
 

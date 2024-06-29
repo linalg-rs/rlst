@@ -172,6 +172,18 @@ impl<
         }
     }
 
+    /// Componentwise multiply other array into array.
+    pub fn cmp_mult_into<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) {
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item *= other_item;
+        }
+    }
+
     /// Chunked summation into array.
     pub fn sum_into_chunked<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
@@ -193,6 +205,42 @@ impl<
 
             for data_index in 0..chunk.valid_entries {
                 my_chunk.data[data_index] += chunk.data[data_index];
+            }
+
+            for data_index in 0..chunk.valid_entries {
+                unsafe {
+                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
+                        data_index + data_start,
+                        self.shape(),
+                    )) = my_chunk.data[data_index];
+                }
+            }
+
+            chunk_index += 1;
+        }
+    }
+
+    /// Chunked componentwise multiplication into array.
+    pub fn cmp_mult_into_chunked<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const N: usize,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) where
+        Self: ChunkedAccess<N, Item = Item>,
+    {
+        assert_eq!(self.shape(), other.shape());
+
+        let mut chunk_index = 0;
+
+        while let (Some(mut my_chunk), Some(chunk)) =
+            (self.get_chunk(chunk_index), other.get_chunk(chunk_index))
+        {
+            let data_start = chunk.start_index;
+
+            for data_index in 0..chunk.valid_entries {
+                my_chunk.data[data_index] *= chunk.data[data_index];
             }
 
             for data_index in 0..chunk.valid_entries {

@@ -1,5 +1,14 @@
 //! The macros defined here make it easy to create new matrices and vectors.
 
+/// Create a new rank1 array of the form `u x v^T`.
+///
+#[macro_export]
+macro_rules! rlst_rank1_array {
+    ($u:expr, $v:expr) => {
+        $crate::dense::array::rank1_array::Rank1Array::rank1_array($u, $v)
+    };
+}
+
 /// Create a new two one dimensional heap allocated array.
 ///
 /// A heap allocated array has a size that is determined at runtime.
