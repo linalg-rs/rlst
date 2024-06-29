@@ -622,55 +622,38 @@ impl RlstSimd for f32 {
 
     #[inline(always)]
     fn simd_approx_recip<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        // #[cfg(target_arch = "x86_64")]
-        // {
-        //     use coe::coerce_static as to;
-        //     #[cfg(feature = "nightly")]
-        //     if coe::is_same::<S, pulp::x86::V4>() {
-        //         let simd: pulp::x86::V4 = to(simd);
-        //         return to(simd.avx512f._mm512_rcp14_ps(to(value)));
-        //     }
-        //     if coe::is_same::<S, pulp::x86::V3>() {
-        //         let simd: pulp::x86::V3 = to(simd);
-        //         return to(simd.approx_reciprocal_f32x8(to(value)));
-        //     }
-        // }
+        #[cfg(target_arch = "x86_64")]
+        {
+            use coe::coerce_static as to;
+            #[cfg(feature = "nightly")]
+            if coe::is_same::<S, pulp::x86::V4>() {
+                let simd: pulp::x86::V4 = to(simd);
+                return to(simd.avx512f._mm512_rcp14_ps(to(value)));
+            }
+            if coe::is_same::<S, pulp::x86::V3>() {
+                let simd: pulp::x86::V3 = to(simd);
+                return to(simd.approx_reciprocal_f32x8(to(value)));
+            }
+        }
         simd.f32s_div(simd.f32s_splat(1.0), value)
     }
 
     #[inline(always)]
     fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        // #[cfg(target_arch = "x86_64")]
-        // {
-        //     // The following is a Newton-Raphson iteration on the
-        //     // AVX approximate inverse sqrt implementation since that
-        //     // does not give enough digits of accuracy. However, the timings
-        //     // are barely better then just doing the exact one / sqrt. So commenting it out.
-        //     use coe::coerce_static as to;
-        //     // #[cfg(feature = "nightly")]
-        //     // if coe::is_same::<S, pulp::x86::V4>() {
-        //     //     let simd: pulp::x86::V4 = to(simd);
-        //     //     return to(simd.avx512f._mm512_rsqrt14_ps(to(value)));
-        //     // }
-        //     if coe::is_same::<S, pulp::x86::V3>() {
-        //         let simd: pulp::x86::V3 = to(simd);
-        //         // Initial approximation
-        //         let value = to(value);
-        //         let mut x = simd.approx_reciprocal_sqrt_f32x8(value);
-        //         let minus_half_value = simd.mul_f32x8(simd.splat_f32x8(-0.5), value);
-        //         let three_half = simd.splat_f32x8(1.5);
+        #[cfg(target_arch = "x86_64")]
+        {
+            use coe::coerce_static as to;
+            #[cfg(feature = "nightly")]
+            if coe::is_same::<S, pulp::x86::V4>() {
+                let simd: pulp::x86::V4 = to(simd);
+                return to(simd.avx512f._mm512_rsqrt14_ps(to(value)));
+            }
+            if coe::is_same::<S, pulp::x86::V3>() {
+                let simd: pulp::x86::V3 = to(simd);
+                return to(simd.approx_reciprocal_sqrt_f32x8(to(value)));
+            }
+        }
 
-        //         for _ in 0..2 {
-        //             x = simd.mul_f32x8(
-        //                 x,
-        //                 simd.mul_add_f32x8(minus_half_value, simd.mul_f32x8(x, x), three_half),
-        //             );
-        //         }
-        //         return to(x);
-        //     } else {
-        //         panic!("Unsupported Simd instruction set.");
-        //     }
-        // }
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
             use coe::coerce_static as to;
@@ -1045,7 +1028,7 @@ mod tests {
     #[test]
     fn test_approx_inv_sqrt() {
         let nsamples = 10000;
-        let eps_f32 = 5E-5;
+        let eps_f32 = 1E-6;
         let eps_f64 = 1E-14;
 
         let mut rng = StdRng::seed_from_u64(0);
@@ -1113,19 +1096,67 @@ mod tests {
             let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
             let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
 
-            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.4, 1.0 / sample_f32[4].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.5, 1.0 / sample_f32[5].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.6, 1.0 / sample_f32[6].sqrt(), epsilon = eps_f32);
-            assert_relative_eq!(res_f32.7, 1.0 / sample_f32[7].sqrt(), epsilon = eps_f32);
+            assert_relative_eq!(
+                res_f32.0,
+                1.0 / sample_f32[0].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.1,
+                1.0 / sample_f32[1].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.2,
+                1.0 / sample_f32[2].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.3,
+                1.0 / sample_f32[3].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.4,
+                1.0 / sample_f32[4].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.5,
+                1.0 / sample_f32[5].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.6,
+                1.0 / sample_f32[6].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.7,
+                1.0 / sample_f32[7].sqrt(),
+                max_relative = eps_f32
+            );
 
-            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0].sqrt(), epsilon = eps_f64);
-            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1].sqrt(), epsilon = eps_f64);
-            assert_relative_eq!(res_f64.2, 1.0 / sample_f64[2].sqrt(), epsilon = eps_f64);
-            assert_relative_eq!(res_f64.3, 1.0 / sample_f64[3].sqrt(), epsilon = eps_f64);
+            assert_relative_eq!(
+                res_f64.0,
+                1.0 / sample_f64[0].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.1,
+                1.0 / sample_f64[1].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.2,
+                1.0 / sample_f64[2].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.3,
+                1.0 / sample_f64[3].sqrt(),
+                max_relative = eps_f64
+            );
         }
     }
 
@@ -1148,13 +1179,13 @@ mod tests {
             let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
             let res_f64 = simd_for.approx_recip(bytemuck::cast(sample_f64));
 
-            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], epsilon = eps_f32);
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], max_relative = eps_f32);
 
-            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], epsilon = eps_f64);
-            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], epsilon = eps_f64);
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], max_relative = eps_f64);
         }
         #[cfg(target_arch = "x86_64")]
         for _ in 0..nsamples {
@@ -1176,19 +1207,19 @@ mod tests {
             let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
             let res_f64 = simd_for.approx_recip(bytemuck::cast(sample_f64));
 
-            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.4, 1.0 / sample_f32[4], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.5, 1.0 / sample_f32[5], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.6, 1.0 / sample_f32[6], epsilon = eps_f32);
-            assert_relative_eq!(res_f32.7, 1.0 / sample_f32[7], epsilon = eps_f32);
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.4, 1.0 / sample_f32[4], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.5, 1.0 / sample_f32[5], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.6, 1.0 / sample_f32[6], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.7, 1.0 / sample_f32[7], max_relative = eps_f32);
 
-            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], epsilon = eps_f64);
-            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], epsilon = eps_f64);
-            assert_relative_eq!(res_f64.2, 1.0 / sample_f64[2], epsilon = eps_f64);
-            assert_relative_eq!(res_f64.3, 1.0 / sample_f64[3], epsilon = eps_f64);
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.2, 1.0 / sample_f64[2], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.3, 1.0 / sample_f64[3], max_relative = eps_f64);
         }
     }
 }
