@@ -25,6 +25,22 @@ pub fn one_div_sqrt_f64(c: &mut Criterion) {
     });
 }
 
+#[cfg(target_arch = "x86_64")]
+pub fn approx_rsqrt_f64(c: &mut Criterion) {
+    let simd = pulp::x86::V3::try_new().unwrap();
+
+    let simd_for = rlst::dense::simd::SimdFor::<f32, _>::new(simd);
+    let vals: [f64; 4] = [1.0, 2.0, 3.0, 4.0];
+
+    c.bench_function("approx_rsqrt", |b| {
+        b.iter(|| {
+            for _ in 0..1000 {
+                black_box(simd_for.approx_recip_sqrt(black_box(bytemuck::cast(vals))));
+            }
+        })
+    });
+}
+
 #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
 pub fn one_div_sqrt_f64(c: &mut Criterion) {
     let simd = pulp::aarch64::Neon::try_new().unwrap();
@@ -62,10 +78,6 @@ pub fn approx_rsqrt_f64(c: &mut Criterion) {
     });
 }
 
-#[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
 criterion_group!(benches, one_div_sqrt_f64, approx_rsqrt_f64);
-
-#[cfg(target_arch = "x86_64")]
-criterion_group!(benches, one_div_sqrt_f64);
 
 criterion_main!(benches);

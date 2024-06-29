@@ -2,7 +2,7 @@
 
 use bytemuck::Pod;
 use num::Zero;
-use pulp::Simd;
+use pulp::{f32x4, f64x4, Simd};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
@@ -960,6 +960,35 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        use coe::coerce_static as to;
+        #[cfg(target_arch = "x86_64")]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let simd: pulp::x86::V3 = to(simd);
+
+            // For the initial approximation convert to f32 and use the f32 routine
+            let value_f32 = bytemuck::cast::<_, [f64; 4]>(value);
+            let value_f32: f32x4 = bytemuck::cast([
+                value_f32[0] as f32,
+                value_f32[1] as f32,
+                value_f32[2] as f32,
+                value_f32[3] as f32,
+            ]);
+
+            let x = simd.approx_reciprocal_sqrt_f32x4(value_f32);
+            let mut x: f64x4 = bytemuck::cast([x.0 as f64, x.1 as f64, x.2 as f64, x.3 as f64]);
+
+            let minus_half_value = simd.mul_f64x4(simd.splat_f64x4(-0.5), bytemuck::cast(value));
+            let three_half = simd.splat_f64x4(1.5);
+
+            for _ in 0..2 {
+                x = simd.mul_f64x4(
+                    x,
+                    simd.mul_add_f64x4(minus_half_value, simd.mul_f64x4(x, x), three_half),
+                );
+            }
+            return to(x);
+        }
+
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
             use coe::coerce_static as to;
