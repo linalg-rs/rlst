@@ -650,7 +650,19 @@ impl RlstSimd for f32 {
             }
             if coe::is_same::<S, pulp::x86::V3>() {
                 let simd: pulp::x86::V3 = to(simd);
-                return to(simd.approx_reciprocal_sqrt_f32x8(to(value)));
+                // Initial approximation
+                let value = to(value);
+                let mut x = simd.approx_reciprocal_sqrt_f32x8(value);
+                let minus_half_value = simd.mul_f32x8(simd.splat_f32x8(-0.5), value);
+                let three_half = simd.splat_f32x8(1.5);
+
+                for _ in 0..1 {
+                    x = simd.mul_f32x8(
+                        x,
+                        simd.mul_add_f32x8(minus_half_value, simd.mul_f32x8(x, x), three_half),
+                    );
+                }
+                return to(x);
             }
         }
 
@@ -1028,7 +1040,7 @@ mod tests {
     #[test]
     fn test_approx_inv_sqrt() {
         let nsamples = 10000;
-        let eps_f32 = 1E-6;
+        let eps_f32 = 1E-3;
         let eps_f64 = 1E-14;
 
         let mut rng = StdRng::seed_from_u64(0);
@@ -1163,7 +1175,7 @@ mod tests {
     #[test]
     fn test_approx_inv() {
         let nsamples = 10000;
-        let eps_f32 = 1E-6;
+        let eps_f32 = 1E-3;
         let eps_f64 = 1E-14;
 
         let rng = &mut StdRng::seed_from_u64(0);

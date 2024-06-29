@@ -422,8 +422,7 @@ mod test {
 
     use rand::SeedableRng;
 
-    use super::*;
-    use crate::{assert_array_abs_diff_eq, assert_array_relative_eq, prelude::*};
+    use crate::{assert_array_relative_eq, prelude::*};
 
     #[test]
     fn test_rank1_update_sum_f32() {

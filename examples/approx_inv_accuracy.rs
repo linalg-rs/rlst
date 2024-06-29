@@ -1,7 +1,4 @@
 //! Test the accuracy of the inverse sqrt
-use bytemuck::Pod;
-use num::Zero;
-use pulp::Simd;
 
 const NSAMPLES: usize = 10000;
 use rand::prelude::*;
@@ -85,10 +82,10 @@ fn main() {
         ];
         let sample_f64: [f64; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
 
-        let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+        let simd_for = SimdFor::<f32, _>::new(pulp::x86::V3::try_new().unwrap());
         let res_f32 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f32));
 
-        let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+        let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
         let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
 
         let res_f32: [f32; 8] = bytemuck::cast(res_f32);
