@@ -60,7 +60,7 @@ pub use crate::dense::array::empty_axis::AxisPosition;
 pub use crate::dense::linalg::inverse::MatrixInverse;
 pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
-pub use crate::dense::linalg::qr::{MatrixQrDecomposition, QrDecomposition};
+pub use crate::dense::linalg::qr::{MatrixQr, QrDecomposition};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
 
 pub use crate::dense::array::rank1_array::Rank1Array;

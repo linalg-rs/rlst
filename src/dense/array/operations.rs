@@ -1,9 +1,10 @@
 //! Operations on arrays.
 use crate::dense::linalg;
+use crate::MatrixSvd;
 use crate::{dense::types::RlstResult, TransMode};
 use num::Zero;
 
-use crate::dense::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
+use crate::dense::layout::convert_1d_nd_from_shape;
 
 use super::{
     Array, ChunkedAccess, DefaultIterator, DefaultIteratorMut, RandomAccessByValue,
