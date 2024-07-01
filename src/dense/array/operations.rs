@@ -381,7 +381,7 @@ impl<
             + RawAccessMut<Item = Item>,
     > Array<Item, ArrayImpl, 2>
 where
-    Self: MatrixSvd<Item = Item>,
+    Item: MatrixSvd,
 {
     /// Compute the 2-norm of a matrix.
     ///

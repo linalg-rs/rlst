@@ -5,8 +5,6 @@ use crate::{
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
-use super::array::views::ArrayViewMut;
-
 pub mod inverse;
 pub mod lu;
 pub mod pseudo_inverse;
@@ -23,9 +21,9 @@ pub fn assert_lapack_stride(stride: [usize; 2]) {
 }
 
 /// Marker trait for objects that support Matrix decompositions.
-pub trait LinAlg: MatrixInverse + MatrixQr {}
+pub trait LinAlg: MatrixInverse + MatrixQr + MatrixSvd {}
 
-impl<T: RlstScalar + MatrixInverse + MatrixQr> LinAlg for T {}
+impl<T: RlstScalar + MatrixInverse + MatrixQr + MatrixSvd> LinAlg for T {}
 
 // // Implementation of LinAlg Decomposition traits for views
 
