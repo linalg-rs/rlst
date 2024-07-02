@@ -975,7 +975,8 @@ impl RlstSimd for f64 {
             ]);
 
             let x = simd.approx_reciprocal_sqrt_f32x4(value_f32);
-            let mut x: f64x4 = bytemuck::cast([x.0 as f64, x.1 as f64, x.2 as f64, x.3 as f64]);
+            let mut x: pulp::f64x4 =
+                bytemuck::cast([x.0 as f64, x.1 as f64, x.2 as f64, x.3 as f64]);
 
             let minus_half_value = simd.mul_f64x4(simd.splat_f64x4(-0.5), bytemuck::cast(value));
             let three_half = simd.splat_f64x4(1.5);
@@ -1069,8 +1070,8 @@ mod tests {
     #[test]
     fn test_approx_inv_sqrt() {
         let nsamples = 10000;
-        let eps_f32 = 1E-3;
-        let eps_f64 = 1E-14;
+        let eps_f32 = 1E-5;
+        let eps_f64 = 1E-13;
 
         let mut rng = StdRng::seed_from_u64(0);
 

@@ -136,6 +136,8 @@ fn build_umfpack(out_dir: String) {
     // On Linux OpenMP is automatically enabled. Need to link against
     // gomp library.
     if cfg!(target_os = "linux") {
+        println!("cargo:rustc-link-lib=dylib=lapack");
+        println!("cargo:rustc-link-lib=dylib=blas");
         println!("cargo:rustc-link-lib=dylib=gomp");
     }
 
