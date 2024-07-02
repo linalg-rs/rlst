@@ -30,7 +30,3 @@
 //! You will also need to include somewhere in your library a reference to the Blas/Lapack source packages. Otherwise,
 //! the corresponding symbols may not be linked to your compilation, leading to missing symbol errors when compiling. To do this add the
 //! following two lines, e.g. in your `lib.rs` or `main.rs` file.
-//! ```
-//! extern crate blas_src;
-//! extern crate lapack_src;
-//! ````

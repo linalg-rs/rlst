@@ -21,6 +21,8 @@ pub use crate::rlst_array_from_slice_mut3;
 pub use crate::rlst_array_from_slice_mut4;
 pub use crate::rlst_array_from_slice_mut5;
 
+pub use crate::rlst_rank1_array;
+
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
@@ -39,6 +41,8 @@ pub use crate::dense::traits::{
 
 pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
 
+pub use crate::dense::linalg::LinAlg;
+
 pub use crate::dense::traits::{
     AijIterator, AsMultiIndex, DefaultIterator, DefaultIteratorMut, MultInto, MultIntoResize,
     NumberOfElements, ResizeInPlace, Shape, Stride,
@@ -56,8 +60,10 @@ pub use crate::dense::array::empty_axis::AxisPosition;
 pub use crate::dense::linalg::inverse::MatrixInverse;
 pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
-pub use crate::dense::linalg::qr::{MatrixQrDecomposition, QrDecomposition};
+pub use crate::dense::linalg::qr::{MatrixQr, QrDecomposition};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
+
+pub use crate::dense::array::rank1_array::Rank1Array;
 
 pub use crate::dense::array::{DynamicArray, SliceArray, SliceArrayMut};
 

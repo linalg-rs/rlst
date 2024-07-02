@@ -1,5 +1,7 @@
 //! Gather a vector to all ranks.
 
+mod approx_inv_sqrt_accuracy;
+
 use approx::assert_relative_eq;
 
 use mpi::traits::*;

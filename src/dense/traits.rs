@@ -2,10 +2,6 @@
 
 pub mod accessors;
 
-pub use crate::dense::linalg::{
-    inverse::MatrixInverse, lu::MatrixLuDecomposition, pseudo_inverse::MatrixPseudoInverse,
-    qr::MatrixQrDecomposition, svd::MatrixSvd,
-};
 pub use accessors::*;
 
 use crate::dense::types::RlstScalar;

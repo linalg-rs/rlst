@@ -25,6 +25,7 @@ pub mod mult_into;
 pub mod operations;
 pub mod operators;
 pub mod random;
+pub mod rank1_array;
 pub mod slice;
 pub mod views;
 
@@ -107,7 +108,7 @@ impl<
     > UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    #[inline]
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.0.get_value_unchecked(multi_index)
     }
@@ -121,7 +122,7 @@ impl<
     > ChunkedAccess<N> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    #[inline]
+    #[inline(always)]
     fn get_chunk(
         &self,
         chunk_index: usize,
@@ -139,7 +140,7 @@ impl<
     > UnsafeRandomAccessByRef<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    #[inline]
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         self.0.get_unchecked(multi_index)
     }
@@ -154,7 +155,7 @@ impl<
     > UnsafeRandomAccessMut<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    #[inline]
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         self.0.get_unchecked_mut(multi_index)
     }
@@ -169,7 +170,7 @@ impl<
     > std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
     type Output = Item;
-    #[inline]
+    #[inline(always)]
     fn index(&self, index: [usize; NDIM]) -> &Self::Output {
         self.0.get(index).unwrap()
     }
@@ -184,7 +185,7 @@ impl<
         const NDIM: usize,
     > std::ops::IndexMut<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
-    #[inline]
+    #[inline(always)]
     fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
         self.0.get_mut(index).unwrap()
     }

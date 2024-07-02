@@ -1,9 +1,10 @@
 //! Operations on arrays.
 use crate::dense::linalg;
+use crate::MatrixSvd;
 use crate::{dense::types::RlstResult, TransMode};
 use num::Zero;
 
-use crate::dense::{layout::convert_1d_nd_from_shape, traits::MatrixSvd};
+use crate::dense::layout::convert_1d_nd_from_shape;
 
 use super::{
     Array, ChunkedAccess, DefaultIterator, DefaultIteratorMut, RandomAccessByValue,
@@ -172,6 +173,18 @@ impl<
         }
     }
 
+    /// Componentwise multiply other array into array.
+    pub fn cmp_mult_into<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) {
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item *= other_item;
+        }
+    }
+
     /// Chunked summation into array.
     pub fn sum_into_chunked<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
@@ -207,6 +220,42 @@ impl<
             chunk_index += 1;
         }
     }
+
+    /// Chunked componentwise multiplication into array.
+    pub fn cmp_mult_into_chunked<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        const N: usize,
+    >(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) where
+        Self: ChunkedAccess<N, Item = Item>,
+    {
+        assert_eq!(self.shape(), other.shape());
+
+        let mut chunk_index = 0;
+
+        while let (Some(mut my_chunk), Some(chunk)) =
+            (self.get_chunk(chunk_index), other.get_chunk(chunk_index))
+        {
+            let data_start = chunk.start_index;
+
+            for data_index in 0..chunk.valid_entries {
+                my_chunk.data[data_index] *= chunk.data[data_index];
+            }
+
+            for data_index in 0..chunk.valid_entries {
+                unsafe {
+                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
+                        data_index + data_start,
+                        self.shape(),
+                    )) = my_chunk.data[data_index];
+                }
+            }
+
+            chunk_index += 1;
+        }
+    }
 }
 
 impl<
@@ -227,6 +276,11 @@ impl<
         (0..k).fold(<Item as Zero>::zero(), |acc, index| {
             acc + self.get_value([index; NDIM]).unwrap()
         })
+    }
+
+    /// Return the sum of the elements.
+    pub fn sum(self) -> Item {
+        self.iter().sum()
     }
 }
 
@@ -327,7 +381,7 @@ impl<
             + RawAccessMut<Item = Item>,
     > Array<Item, ArrayImpl, 2>
 where
-    Self: MatrixSvd<Item = Item>,
+    Item: MatrixSvd,
 {
     /// Compute the 2-norm of a matrix.
     ///
@@ -446,5 +500,51 @@ where
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
         ludecomp.solve_mat(trans, rhs.view_mut())?;
         Ok(rhs)
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Item>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Update self += u * v^T, with u and v vectors.
+    pub fn rank1_sum_inplace<
+        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    >(
+        &mut self,
+        u: Array<Item, ArrayImpl1, 1>,
+        v: Array<Item, ArrayImpl2, 1>,
+    ) {
+        assert_eq!(self.shape()[0], u.shape()[0]);
+        assert_eq!(self.shape()[1], v.shape()[0]);
+
+        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
+            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
+                *elem += v_elem * u_elem;
+            }
+        }
+    }
+
+    /// Update self *= u * v^T, with u and v vectors.
+    pub fn rank1_cmp_product_inplace<
+        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    >(
+        &mut self,
+        u: Array<Item, ArrayImpl1, 1>,
+        v: Array<Item, ArrayImpl2, 1>,
+    ) {
+        assert_eq!(self.shape()[0], u.shape()[0]);
+        assert_eq!(self.shape()[1], v.shape()[0]);
+
+        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
+            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
+                *elem *= v_elem * u_elem;
+            }
+        }
     }
 }

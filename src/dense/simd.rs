@@ -650,9 +650,22 @@ impl RlstSimd for f32 {
             }
             if coe::is_same::<S, pulp::x86::V3>() {
                 let simd: pulp::x86::V3 = to(simd);
-                return to(simd.approx_reciprocal_sqrt_f32x8(to(value)));
+                // Initial approximation
+                let value = to(value);
+                let mut x = simd.approx_reciprocal_sqrt_f32x8(value);
+                let minus_half_value = simd.mul_f32x8(simd.splat_f32x8(-0.5), value);
+                let three_half = simd.splat_f32x8(1.5);
+
+                for _ in 0..1 {
+                    x = simd.mul_f32x8(
+                        x,
+                        simd.mul_add_f32x8(minus_half_value, simd.mul_f32x8(x, x), three_half),
+                    );
+                }
+                return to(x);
             }
         }
+
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
             use coe::coerce_static as to;
@@ -674,7 +687,11 @@ impl RlstSimd for f32 {
             }
         }
 
-        Self::simd_approx_recip(simd, Self::simd_sqrt(simd, value))
+        Self::simd_div(
+            simd,
+            Self::simd_splat(simd, 1.0),
+            Self::simd_sqrt(simd, value),
+        )
     }
 
     #[inline(always)]
@@ -943,6 +960,36 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(target_arch = "x86_64")]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            use coe::coerce_static as to;
+            let simd: pulp::x86::V3 = to(simd);
+
+            // For the initial approximation convert to f32 and use the f32 routine
+            let value_f32 = bytemuck::cast::<_, [f64; 4]>(value);
+            let value_f32: pulp::f32x4 = bytemuck::cast([
+                value_f32[0] as f32,
+                value_f32[1] as f32,
+                value_f32[2] as f32,
+                value_f32[3] as f32,
+            ]);
+
+            let x = simd.approx_reciprocal_sqrt_f32x4(value_f32);
+            let mut x: pulp::f64x4 =
+                bytemuck::cast([x.0 as f64, x.1 as f64, x.2 as f64, x.3 as f64]);
+
+            let minus_half_value = simd.mul_f64x4(simd.splat_f64x4(-0.5), bytemuck::cast(value));
+            let three_half = simd.splat_f64x4(1.5);
+
+            for _ in 0..2 {
+                x = simd.mul_f64x4(
+                    x,
+                    simd.mul_add_f64x4(minus_half_value, simd.mul_f64x4(x, x), three_half),
+                );
+            }
+            return to(x);
+        }
+
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
             use coe::coerce_static as to;
@@ -986,6 +1033,7 @@ impl RlstSimd for f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
     use rand::prelude::*;
 
     #[test]
@@ -1017,5 +1065,203 @@ mod tests {
 
         assert!(max_err_c <= 1E-12);
         assert!(max_err_s <= 1E-12);
+    }
+
+    #[test]
+    fn test_approx_inv_sqrt() {
+        let nsamples = 10000;
+        let eps_f32 = 1E-5;
+        let eps_f64 = 1E-13;
+
+        let mut rng = StdRng::seed_from_u64(0);
+
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(
+                res_f32.0,
+                1.0 / sample_f32[0].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.1,
+                1.0 / sample_f32[1].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.2,
+                1.0 / sample_f32[2].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.3,
+                1.0 / sample_f32[3].sqrt(),
+                max_relative = eps_f32
+            );
+
+            assert_relative_eq!(
+                res_f64.0,
+                1.0 / sample_f64[0].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.1,
+                1.0 / sample_f64[1].sqrt(),
+                max_relative = eps_f64
+            );
+        }
+        #[cfg(target_arch = "x86_64")]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 8] = [
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            ];
+            let sample_f64: [f64; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip_sqrt(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(
+                res_f32.0,
+                1.0 / sample_f32[0].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.1,
+                1.0 / sample_f32[1].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.2,
+                1.0 / sample_f32[2].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.3,
+                1.0 / sample_f32[3].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.4,
+                1.0 / sample_f32[4].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.5,
+                1.0 / sample_f32[5].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.6,
+                1.0 / sample_f32[6].sqrt(),
+                max_relative = eps_f32
+            );
+            assert_relative_eq!(
+                res_f32.7,
+                1.0 / sample_f32[7].sqrt(),
+                max_relative = eps_f32
+            );
+
+            assert_relative_eq!(
+                res_f64.0,
+                1.0 / sample_f64[0].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.1,
+                1.0 / sample_f64[1].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.2,
+                1.0 / sample_f64[2].sqrt(),
+                max_relative = eps_f64
+            );
+            assert_relative_eq!(
+                res_f64.3,
+                1.0 / sample_f64[3].sqrt(),
+                max_relative = eps_f64
+            );
+        }
+    }
+
+    #[test]
+    fn test_approx_inv() {
+        let nsamples = 10000;
+        let eps_f32 = 1E-3;
+        let eps_f64 = 1E-14;
+
+        let rng = &mut StdRng::seed_from_u64(0);
+
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], max_relative = eps_f32);
+
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], max_relative = eps_f64);
+        }
+        #[cfg(target_arch = "x86_64")]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 8] = [
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            ];
+            let sample_f64: [f64; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f32 = simd_for.approx_recip(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::x86::V3::try_new().unwrap());
+            let res_f64 = simd_for.approx_recip(bytemuck::cast(sample_f64));
+
+            assert_relative_eq!(res_f32.0, 1.0 / sample_f32[0], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.1, 1.0 / sample_f32[1], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.2, 1.0 / sample_f32[2], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.3, 1.0 / sample_f32[3], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.4, 1.0 / sample_f32[4], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.5, 1.0 / sample_f32[5], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.6, 1.0 / sample_f32[6], max_relative = eps_f32);
+            assert_relative_eq!(res_f32.7, 1.0 / sample_f32[7], max_relative = eps_f32);
+
+            assert_relative_eq!(res_f64.0, 1.0 / sample_f64[0], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.2, 1.0 / sample_f64[2], max_relative = eps_f64);
+            assert_relative_eq!(res_f64.3, 1.0 / sample_f64[3], max_relative = eps_f64);
+        }
     }
 }

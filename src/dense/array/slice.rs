@@ -289,7 +289,6 @@ impl<
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
-            + UnsafeRandomAccessByRef<ADIM, Item = Item>
             + UnsafeRandomAccessMut<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,

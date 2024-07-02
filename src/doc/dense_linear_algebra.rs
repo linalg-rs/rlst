@@ -411,8 +411,6 @@
 //! The following operation is the most simple way of multiplying two matrices into a new matrix.
 //!
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
@@ -422,8 +420,6 @@
 //! resizes the result array if necessary. To multiply multiple arrays one can chain the `simple_mult_into_resize` method.
 //!
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [2, 2]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [2, 2]);
@@ -446,8 +442,6 @@
 //!
 //! Through its Lapack interface RLST can solve dense linear systems of equations. A linear system of equations is solved as follows.
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
@@ -463,8 +457,6 @@
 //!
 //! If only a single solve is required and the LU factors need not be stored a shorter version is available as
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
@@ -479,12 +471,10 @@
 //! # Pivoted QR Decomposition
 //!
 //! The pivted QR decomposition of a matrix `A` is given as `AP=QR`, where `P` is a permutation matrix, `R` is upper triangular, and
-//! `Q` has orthogonal columns. For details see the documentation of [MatrixQrDecomposition](crate::dense::linalg::qr::MatrixQrDecomposition).
+//! `Q` has orthogonal columns. For details see the documentation of [MatrixQrDecomposition](crate::dense::linalg::qr::MatrixQr).
 //!
 //! The pivoted QR decomposition of a matrix can be computed as follows.
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
@@ -497,15 +487,13 @@
 //! qr.get_q_alloc(q_mat.view_mut());
 //! qr.get_p(p_mat.view_mut());
 //! ````
-//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
+//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::QrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
 //!
 //! # Singular value decomposition
 //!
 //! To compute the singular values of a two-dimensional array `arr` use
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
@@ -516,8 +504,6 @@
 //! needs to allocate temporary memory on the heap. This is why it has the ending `_alloc`. To compute the whole
 //! singular value decomposition use the method [into_svd_alloc](crate::MatrixSvd::into_svd_alloc).
 //! ```
-//! # extern crate blas_src;
-//! # extern crate lapack_src;
 //! # use rlst::prelude::*;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [8, 5]);
