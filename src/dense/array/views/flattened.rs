@@ -17,7 +17,7 @@ use crate::dense::types::RlstScalar;
 
 /// A flattened view onto an array.
 ///
-/// Use the funtion [arr.flattened()](crate::dense::array::Array::flattened) instead.
+/// Use the funtion [arr.flattened()](crate::Array::view_flat) instead.
 pub struct ArrayFlatView<
     'a,
     Item: RlstScalar,
@@ -138,7 +138,7 @@ impl<
 
 /// A flattened view onto an array.
 ///
-/// Use the funtion [arr.flattened_mut()](crate::dense::array::Array::flattened_mut) instead.
+/// Use the funtion [arr.flattened_mut()](crate::Array::view_flat_mut) instead.
 pub struct ArrayFlatViewMut<
     'a,
     Item: RlstScalar,

@@ -471,7 +471,7 @@
 //! # Pivoted QR Decomposition
 //!
 //! The pivted QR decomposition of a matrix `A` is given as `AP=QR`, where `P` is a permutation matrix, `R` is upper triangular, and
-//! `Q` has orthogonal columns. For details see the documentation of [MatrixQrDecomposition](crate::dense::linalg::qr::MatrixQrDecomposition).
+//! `Q` has orthogonal columns. For details see the documentation of [MatrixQrDecomposition](crate::dense::linalg::qr::MatrixQr).
 //!
 //! The pivoted QR decomposition of a matrix can be computed as follows.
 //! ```
@@ -487,7 +487,7 @@
 //! qr.get_q_alloc(q_mat.view_mut());
 //! qr.get_p(p_mat.view_mut());
 //! ````
-//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
+//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::QrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
 //!
 //! # Singular value decomposition
