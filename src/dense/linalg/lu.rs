@@ -9,6 +9,41 @@ use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar, TransMode
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 
+/// Compute an LU decomposition from a given two-dimensional array.
+pub trait MatrixLu: RlstScalar {
+    /// Compute the matrix inverse
+    fn into_lu_alloc<
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self>,
+    >(
+        arr: Array<Self, ArrayImpl, 2>,
+    ) -> RlstResult<LuDecomposition<Self, ArrayImpl>>;
+}
+
+macro_rules! implement_into_lu {
+    ($scalar:ty) => {
+        impl MatrixLu for $scalar {
+            fn into_lu_alloc<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = Self>,
+            >(
+                arr: Array<Self, ArrayImpl, 2>,
+            ) -> RlstResult<LuDecomposition<Self, ArrayImpl>> {
+                LuDecomposition::<$scalar, ArrayImpl>::new(arr)
+            }
+        }
+    };
+}
+
+implement_into_lu!(f32);
+implement_into_lu!(f64);
+implement_into_lu!(c32);
+implement_into_lu!(c64);
+
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined

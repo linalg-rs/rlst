@@ -1,9 +1,8 @@
 //! Linear algebra routines
 
-use crate::{
-    Array, MatrixInverse, MatrixPseudoInverse, MatrixQr, MatrixSvd, RlstScalar, Shape,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
-};
+use crate::{MatrixInverse, MatrixPseudoInverse, MatrixQr, MatrixSvd, RlstScalar};
+
+use self::lu::MatrixLu;
 
 pub mod inverse;
 pub mod lu;
@@ -21,9 +20,12 @@ pub fn assert_lapack_stride(stride: [usize; 2]) {
 }
 
 /// Marker trait for objects that support Matrix decompositions.
-pub trait LinAlg: MatrixInverse + MatrixQr + MatrixSvd {}
+pub trait LinAlg: MatrixInverse + MatrixQr + MatrixSvd + MatrixLu + MatrixPseudoInverse {}
 
-impl<T: RlstScalar + MatrixInverse + MatrixQr + MatrixSvd> LinAlg for T {}
+impl<T: RlstScalar + MatrixInverse + MatrixQr + MatrixSvd + MatrixLu + MatrixPseudoInverse> LinAlg
+    for T
+{
+}
 
 // // Implementation of LinAlg Decomposition traits for views
 

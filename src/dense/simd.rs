@@ -2,7 +2,7 @@
 
 use bytemuck::Pod;
 use num::Zero;
-use pulp::{f32x4, f64x4, Simd};
+use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
@@ -960,14 +960,14 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        use coe::coerce_static as to;
         #[cfg(target_arch = "x86_64")]
         if coe::is_same::<S, pulp::x86::V3>() {
+            use coe::coerce_static as to;
             let simd: pulp::x86::V3 = to(simd);
 
             // For the initial approximation convert to f32 and use the f32 routine
             let value_f32 = bytemuck::cast::<_, [f64; 4]>(value);
-            let value_f32: f32x4 = bytemuck::cast([
+            let value_f32: pulp::f32x4 = bytemuck::cast([
                 value_f32[0] as f32,
                 value_f32[1] as f32,
                 value_f32[2] as f32,
