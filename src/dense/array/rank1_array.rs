@@ -128,7 +128,7 @@ impl<
     > Rank1Array<Item, ArrayImplU, ArrayImplV>
 {
     /// Return a new rank1 array that implements `u x v^T`
-    pub fn rank1_array(
+    pub fn new_array(
         u: Array<Item, ArrayImplU, 1>,
         v: Array<Item, ArrayImplV, 1>,
     ) -> Array<Item, Rank1Array<Item, ArrayImplU, ArrayImplV>, 2> {

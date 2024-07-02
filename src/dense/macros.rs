@@ -5,7 +5,7 @@
 #[macro_export]
 macro_rules! rlst_rank1_array {
     ($u:expr, $v:expr) => {
-        $crate::dense::array::rank1_array::Rank1Array::rank1_array($u, $v)
+        $crate::dense::array::rank1_array::Rank1Array::new_array($u, $v)
     };
 }
 
