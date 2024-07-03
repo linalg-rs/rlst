@@ -3,7 +3,7 @@
 use crate::dense::array::{views, Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::dense::traits::AsMultiIndex;
-use crate::dense::types::RlstScalar;
+use crate::dense::types::RlstBase;
 
 use super::slice::ArraySlice;
 
@@ -12,7 +12,7 @@ use super::slice::ArraySlice;
 /// This iterator returns elements of an array in standard column major order.
 pub struct ArrayDefaultIterator<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -25,7 +25,7 @@ pub struct ArrayDefaultIterator<
 /// Mutable default iterator. Like [ArrayDefaultIterator] but with mutable access.
 pub struct ArrayDefaultIteratorMut<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
         + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -65,7 +65,7 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, ND
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
@@ -82,7 +82,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -102,7 +102,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > std::iter::Iterator for ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
@@ -127,7 +127,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + Shape<NDIM>,
@@ -150,7 +150,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
@@ -164,7 +164,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -182,7 +182,7 @@ impl<
 /// Row iterator
 pub struct RowIterator<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -194,7 +194,7 @@ pub struct RowIterator<
 /// Mutable row iterator
 pub struct RowIteratorMut<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
         + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -205,7 +205,7 @@ pub struct RowIteratorMut<
     current_row: usize,
 }
 
-impl<'a, Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
+impl<'a, Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     std::iter::Iterator for RowIterator<'a, Item, ArrayImpl, 2>
 {
     type Item = Array<Item, ArraySlice<Item, views::ArrayView<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
@@ -221,7 +221,7 @@ impl<'a, Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> 
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + UnsafeRandomAccessMut<2, Item = Item>
             + Shape<2>,
@@ -243,7 +243,7 @@ impl<
     }
 }
 
-impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
+impl<Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     Array<Item, ArrayImpl, 2>
 {
     /// Return a row iterator for a two-dimensional array.
@@ -257,7 +257,7 @@ impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Sh
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Item>,
@@ -277,7 +277,7 @@ impl<
 /// Column iterator
 pub struct ColIterator<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -289,7 +289,7 @@ pub struct ColIterator<
 /// Mutable column iterator
 pub struct ColIteratorMut<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
         + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -300,7 +300,7 @@ pub struct ColIteratorMut<
     current_col: usize,
 }
 
-impl<'a, Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
+impl<'a, Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     std::iter::Iterator for ColIterator<'a, Item, ArrayImpl, 2>
 {
     type Item = Array<Item, ArraySlice<Item, views::ArrayView<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
@@ -316,7 +316,7 @@ impl<'a, Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> 
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + UnsafeRandomAccessMut<2, Item = Item>
             + Shape<2>,
@@ -338,7 +338,7 @@ impl<
     }
 }
 
-impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
+impl<Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     Array<Item, ArrayImpl, 2>
 {
     /// Return a column iterator for a two-dimensional array.
@@ -352,7 +352,7 @@ impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Sh
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Item>,

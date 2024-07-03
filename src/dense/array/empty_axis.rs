@@ -1,9 +1,12 @@
 //! Extend an array by an empty axis either at the front or back.
 
-use crate::dense::number_types::{IsSmallerByOne, NumberType};
+use crate::dense::{
+    number_types::{IsSmallerByOne, NumberType},
+    types::RlstBase,
+};
 
 use super::{
-    Array, ChunkedAccess, DataChunk, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
+    Array, ChunkedAccess, DataChunk, RawAccess, RawAccessMut, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
@@ -18,7 +21,7 @@ pub enum AxisPosition {
 
 /// Array implementation that provides an appended empty axis.
 pub struct ArrayAppendAxis<
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
     const ADIM: usize,
     const NDIM: usize,
@@ -30,7 +33,7 @@ pub struct ArrayAppendAxis<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -45,7 +48,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -62,7 +65,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>,
@@ -81,7 +84,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessMut<ADIM, Item = Item>,
@@ -100,7 +103,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -121,7 +124,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccess<Item = Item>
@@ -147,7 +150,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccessMut<Item = Item>
@@ -168,7 +171,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -195,7 +198,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
     > Array<Item, ArrayImpl, ADIM>
@@ -213,7 +216,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + Stride<ADIM>

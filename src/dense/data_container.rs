@@ -10,13 +10,12 @@
 //! - [SliceContainerMut] - Like [SliceContainer] but provides also mutable access.
 //!
 
-use crate::dense::types::RlstScalar;
-use num::Zero;
+use super::types::RlstBase;
 
 /// Defines the basic behaviour of a data container.
 pub trait DataContainer {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
 
     /// Access the container unchecked.
     ///
@@ -59,7 +58,7 @@ pub trait ResizeableDataContainerMut: DataContainerMut {
 
 /// A container that uses dynamic vectors.
 #[derive(Clone)]
-pub struct VectorContainer<Item: RlstScalar> {
+pub struct VectorContainer<Item: RlstBase> {
     data: Vec<Item>,
 }
 
@@ -68,61 +67,61 @@ pub struct VectorContainer<Item: RlstScalar> {
 /// The size of this container needs to be known at compile time.
 /// It is useful for data structures that should be stack allocated.
 #[derive(Clone)]
-pub struct ArrayContainer<Item: RlstScalar, const N: usize> {
+pub struct ArrayContainer<Item: RlstBase, const N: usize> {
     data: [Item; N],
 }
 
 /// A container that takes a reference to a slice.
-pub struct SliceContainer<'a, Item: RlstScalar> {
+pub struct SliceContainer<'a, Item: RlstBase> {
     data: &'a [Item],
 }
 
 /// A container that takes a mutable reference to a slice.
-pub struct SliceContainerMut<'a, Item: RlstScalar> {
+pub struct SliceContainerMut<'a, Item: RlstBase> {
     data: &'a mut [Item],
 }
 
-impl<Item: RlstScalar> VectorContainer<Item> {
+impl<Item: RlstBase> VectorContainer<Item> {
     /// New vector container by specifying the number of elements.
     ///
     /// The container is initialized with zeros by default.
     pub fn new(nelems: usize) -> VectorContainer<Item> {
         VectorContainer::<Item> {
-            data: vec![num::cast::<f64, Item>(0.0).unwrap(); nelems],
+            data: vec![<Item as Default>::default(); nelems],
         }
     }
 }
 
-impl<Item: RlstScalar, const N: usize> ArrayContainer<Item, N> {
+impl<Item: RlstBase, const N: usize> ArrayContainer<Item, N> {
     /// New array container
     pub fn new() -> ArrayContainer<Item, N> {
         ArrayContainer::<Item, N> {
-            data: [num::cast::<f64, Item>(0.0).unwrap(); N],
+            data: [<Item as Default>::default(); N],
         }
     }
 }
 
-impl<Item: RlstScalar, const N: usize> Default for ArrayContainer<Item, N> {
+impl<Item: RlstBase, const N: usize> Default for ArrayContainer<Item, N> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, Item: RlstScalar> SliceContainer<'a, Item> {
+impl<'a, Item: RlstBase> SliceContainer<'a, Item> {
     /// New slice container from a reference.
     pub fn new(slice: &'a [Item]) -> SliceContainer<Item> {
         SliceContainer::<Item> { data: slice }
     }
 }
 
-impl<'a, Item: RlstScalar> SliceContainerMut<'a, Item> {
+impl<'a, Item: RlstBase> SliceContainerMut<'a, Item> {
     /// New mutable slice container from mutable reference.
     pub fn new(slice: &'a mut [Item]) -> SliceContainerMut<Item> {
         SliceContainerMut::<Item> { data: slice }
     }
 }
 
-impl<Item: RlstScalar> DataContainer for VectorContainer<Item> {
+impl<Item: RlstBase> DataContainer for VectorContainer<Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -144,7 +143,7 @@ impl<Item: RlstScalar> DataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item: RlstScalar> DataContainerMut for VectorContainer<Item> {
+impl<Item: RlstBase> DataContainerMut for VectorContainer<Item> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)
@@ -155,13 +154,13 @@ impl<Item: RlstScalar> DataContainerMut for VectorContainer<Item> {
     }
 }
 
-impl<Item: RlstScalar> ResizeableDataContainerMut for VectorContainer<Item> {
+impl<Item: RlstBase> ResizeableDataContainerMut for VectorContainer<Item> {
     fn resize(&mut self, new_len: usize) {
-        self.data.resize(new_len, <Item as Zero>::zero());
+        self.data.resize(new_len, <Item as Default>::default());
     }
 }
 
-impl<Item: RlstScalar, const N: usize> DataContainer for ArrayContainer<Item, N> {
+impl<Item: RlstBase, const N: usize> DataContainer for ArrayContainer<Item, N> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -183,7 +182,7 @@ impl<Item: RlstScalar, const N: usize> DataContainer for ArrayContainer<Item, N>
     }
 }
 
-impl<Item: RlstScalar, const N: usize> DataContainerMut for ArrayContainer<Item, N> {
+impl<Item: RlstBase, const N: usize> DataContainerMut for ArrayContainer<Item, N> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)
@@ -194,7 +193,7 @@ impl<Item: RlstScalar, const N: usize> DataContainerMut for ArrayContainer<Item,
     }
 }
 
-impl<'a, Item: RlstScalar> DataContainer for SliceContainer<'a, Item> {
+impl<'a, Item: RlstBase> DataContainer for SliceContainer<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -216,7 +215,7 @@ impl<'a, Item: RlstScalar> DataContainer for SliceContainer<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> DataContainer for SliceContainerMut<'a, Item> {
+impl<'a, Item: RlstBase> DataContainer for SliceContainerMut<'a, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -238,7 +237,7 @@ impl<'a, Item: RlstScalar> DataContainer for SliceContainerMut<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> DataContainerMut for SliceContainerMut<'a, Item> {
+impl<'a, Item: RlstBase> DataContainerMut for SliceContainerMut<'a, Item> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)

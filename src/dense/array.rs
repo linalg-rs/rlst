@@ -14,10 +14,11 @@ use crate::dense::traits::{
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::DataChunk;
-use crate::dense::types::RlstScalar;
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
+
+use super::types::RlstBase;
 
 pub mod empty_axis;
 pub mod iterators;
@@ -52,11 +53,11 @@ pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
 /// The basic tuple type defining an array.
 pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
 where
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>;
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -72,7 +73,7 @@ impl<
     }
 }
 
-impl<Item: RlstScalar, const NDIM: usize> DynamicArray<Item, NDIM> {
+impl<Item: RlstBase, const NDIM: usize> DynamicArray<Item, NDIM> {
     /// Create a new heap allocated array from a given shape.
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
@@ -91,7 +92,7 @@ impl<Item: RlstScalar, const NDIM: usize> DynamicArray<Item, NDIM> {
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for Array<Item, ArrayImpl, NDIM>
@@ -102,7 +103,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
@@ -115,7 +116,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -132,7 +133,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -147,7 +148,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -162,7 +163,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -177,7 +178,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
@@ -192,7 +193,7 @@ impl<
 }
 
 /// Create an empty chunk.
-pub(crate) fn empty_chunk<const N: usize, Item: RlstScalar>(
+pub(crate) fn empty_chunk<const N: usize, Item: RlstBase>(
     chunk_index: usize,
     nelements: usize,
 ) -> Option<DataChunk<Item, N>> {
@@ -207,14 +208,14 @@ pub(crate) fn empty_chunk<const N: usize, Item: RlstScalar>(
         N
     };
     Some(DataChunk {
-        data: [<Item as num::Zero>::zero(); N],
+        data: [<Item as Default>::default(); N],
         start_index,
         valid_entries,
     })
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccess<Item = Item>,
         const NDIM: usize,
     > RawAccess for Array<Item, ArrayImpl, NDIM>
@@ -235,7 +236,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccessMut<Item = Item>,
         const NDIM: usize,
     > RawAccessMut for Array<Item, ArrayImpl, NDIM>
@@ -250,7 +251,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > NumberOfElements for Array<Item, ArrayImpl, NDIM>
@@ -261,7 +262,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
     > Stride<NDIM> for Array<Item, ArrayImpl, NDIM>
@@ -272,7 +273,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ResizeInPlace<NDIM>,
         const NDIM: usize,
     > ResizeInPlace<NDIM> for Array<Item, ArrayImpl, NDIM>
@@ -286,13 +287,13 @@ impl<
 ///
 /// Empty arrays serve as convenient containers for input into functions that
 /// resize an array before filling it with data.
-pub fn empty_array<Item: RlstScalar, const NDIM: usize>() -> DynamicArray<Item, NDIM> {
+pub fn empty_array<Item: RlstBase, const NDIM: usize>() -> DynamicArray<Item, NDIM> {
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
 }
 
-impl<'a, Item: RlstScalar, const NDIM: usize> SliceArray<'a, Item, NDIM> {
+impl<'a, Item: RlstBase, const NDIM: usize> SliceArray<'a, Item, NDIM> {
     /// Create a new array from a slice with a given `shape`.
     ///
     /// The `stride` is automatically assumed to be column major.
@@ -314,7 +315,7 @@ impl<'a, Item: RlstScalar, const NDIM: usize> SliceArray<'a, Item, NDIM> {
     }
 }
 
-impl<'a, Item: RlstScalar, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
+impl<'a, Item: RlstBase, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
     /// Create a new array from a slice with a given `shape`.
     ///
     /// The `stride` is automatically assumed to be column major.
@@ -337,7 +338,7 @@ impl<'a, Item: RlstScalar, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > std::fmt::Debug for Array<Item, ArrayImpl, NDIM>
@@ -354,7 +355,7 @@ impl<
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
         const NDIM: usize,
     > AsRawMetalBuffer for Array<Item, ArrayImpl, NDIM>
@@ -366,7 +367,7 @@ impl<
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBufferMut,
         const NDIM: usize,
     > AsRawMetalBufferMut for Array<Item, ArrayImpl, NDIM>

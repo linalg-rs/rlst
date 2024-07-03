@@ -1,10 +1,13 @@
 //! Implementation of array addition
 
-use crate::dense::array::{Array, ChunkedAccess, RlstScalar, Shape, UnsafeRandomAccessByValue};
+use crate::dense::{
+    array::{Array, ChunkedAccess, Shape, UnsafeRandomAccessByValue},
+    types::RlstNum,
+};
 
 /// Component-wise product
 pub struct CmpWiseProduct<
-    Item: RlstScalar,
+    Item: RlstNum,
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
@@ -14,7 +17,7 @@ pub struct CmpWiseProduct<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
@@ -40,7 +43,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
@@ -55,7 +58,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
@@ -83,7 +86,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
@@ -95,7 +98,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,

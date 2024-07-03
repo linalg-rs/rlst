@@ -6,7 +6,7 @@ use crate::dense::{
 };
 
 /// Addition
-pub struct ArrayAddition<
+pub struct ArraySubtraction<
     Item: RlstNum,
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -21,7 +21,7 @@ impl<
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>
+    > ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
     /// Create new
     pub fn new(
@@ -31,7 +31,7 @@ impl<
         assert_eq!(
             operator1.shape(),
             operator2.shape(),
-            "In op1 + op2 shapes not identical. op1.shape = {:#?}, op2.shape = {:#?}",
+            "In op1 - op2 shapes not identical. op1.shape = {:#?}, op2.shape = {:#?}",
             operator1.shape(),
             operator2.shape()
         );
@@ -47,13 +47,13 @@ impl<
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
     type Item = Item;
     #[inline]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.operator1.get_value_unchecked(multi_index)
-            + self.operator2.get_value_unchecked(multi_index)
+            - self.operator2.get_value_unchecked(multi_index)
     }
 }
 
@@ -63,7 +63,7 @@ impl<
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>
+    > ChunkedAccess<N> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -76,7 +76,7 @@ impl<
             self.operator2.get_chunk(chunk_index),
         ) {
             for (elem1, &elem2) in chunk1.data.iter_mut().zip(chunk2.data.iter()) {
-                *elem1 += elem2;
+                *elem1 -= elem2;
             }
             Some(chunk1)
         } else {
@@ -90,7 +90,7 @@ impl<
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > Shape<NDIM> for ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>
+    > Shape<NDIM> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator1.shape()
@@ -102,12 +102,12 @@ impl<
         ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > std::ops::Add<Array<Item, ArrayImpl2, NDIM>> for Array<Item, ArrayImpl1, NDIM>
+    > std::ops::Sub<Array<Item, ArrayImpl2, NDIM>> for Array<Item, ArrayImpl1, NDIM>
 {
-    type Output = Array<Item, ArrayAddition<Item, ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
+    type Output = Array<Item, ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
 
-    fn add(self, rhs: Array<Item, ArrayImpl2, NDIM>) -> Self::Output {
-        Array::new(ArrayAddition {
+    fn sub(self, rhs: Array<Item, ArrayImpl2, NDIM>) -> Self::Output {
+        Array::new(ArraySubtraction {
             operator1: self,
             operator2: rhs,
         })

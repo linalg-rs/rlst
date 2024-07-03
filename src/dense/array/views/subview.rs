@@ -12,11 +12,11 @@ use crate::dense::traits::{
     ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::RlstScalar;
+use crate::dense::types::RlstBase;
 
 /// Subview of an array
 pub struct ArraySubView<
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -26,7 +26,7 @@ pub struct ArraySubView<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArraySubView<Item, ArrayImpl, NDIM>
@@ -54,7 +54,7 @@ impl<
 // Basic traits for ArraySubView
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -66,7 +66,7 @@ impl<
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
         const NDIM: usize,
     > AsRawMetalBuffer for ArraySubView<Item, ArrayImpl, NDIM>
@@ -78,7 +78,7 @@ impl<
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBufferMut,
         const NDIM: usize,
     > AsRawMetalBufferMut for ArraySubView<Item, ArrayImpl, NDIM>
@@ -89,7 +89,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
     > Stride<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -100,7 +100,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + RawAccess<Item = Item>
@@ -128,7 +128,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -143,7 +143,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -160,7 +160,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -196,7 +196,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -219,7 +219,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
