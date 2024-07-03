@@ -554,7 +554,7 @@ fn test_integer_array() {
     arr[[1, 2]] = 5;
 
     let mut arr2 = empty_array();
-    arr2.fill_from_resize((2 as usize) * arr);
+    arr2.fill_from_resize(2 * arr);
 
     assert_eq!(arr2[[0, 1]], 4);
     assert_eq!(arr2[[1, 2]], 10);
