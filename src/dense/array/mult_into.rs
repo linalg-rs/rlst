@@ -6,9 +6,11 @@ use crate::dense::traits::MultIntoResize;
 pub use crate::dense::types::TransMode;
 
 use super::{
-    empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, RlstScalar, Shape,
-    Stride, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+
+use crate::dense::types::RlstScalar;
 
 impl<
         Item: RlstScalar,

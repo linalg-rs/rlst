@@ -546,6 +546,20 @@ fn matrix_multiply_compare<Item: RlstScalar>(
     }
 }
 
+#[test]
+fn test_integer_array() {
+    let mut arr = rlst_dynamic_array2!(usize, [2, 3]);
+
+    arr[[0, 1]] = 2;
+    arr[[1, 2]] = 5;
+
+    let mut arr2 = empty_array();
+    arr2.fill_from_resize(2 * arr);
+
+    assert_eq!(arr2[[0, 1]], 4);
+    assert_eq!(arr2[[1, 2]], 10);
+}
+
 mat_mul_test_impl!(f64, 1E-14);
 mat_mul_test_impl!(f32, 1E-5);
 mat_mul_test_impl!(c32, 1E-5);

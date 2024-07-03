@@ -7,6 +7,7 @@ pub mod cmp_wise_product;
 pub mod conjugate;
 pub mod other;
 pub mod scalar_mult;
+pub mod subtraction;
 pub mod to_complex;
 pub mod transpose;
 

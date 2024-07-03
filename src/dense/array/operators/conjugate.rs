@@ -1,7 +1,8 @@
 //! Container representing multiplication with a scalar
 
-use crate::dense::array::{
-    Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue,
+use crate::dense::{
+    array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
+    types::RlstScalar,
 };
 
 /// Conjugate

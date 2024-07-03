@@ -2,14 +2,15 @@
 
 use std::marker::PhantomData;
 
-use crate::dense::array::{
-    Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue,
+use crate::dense::{
+    array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
+    types::RlstNum,
 };
 
 /// Array to complex
 pub struct ArrayCast<
-    Item: RlstScalar,
-    Target: RlstScalar,
+    Item: RlstNum,
+    Target: RlstNum,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -19,8 +20,8 @@ pub struct ArrayCast<
 }
 
 impl<
-        Item: RlstScalar,
-        Target: RlstScalar,
+        Item: RlstNum,
+        Target: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayCast<Item, Target, ArrayImpl, NDIM>
@@ -36,8 +37,8 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
-        Target: RlstScalar,
+        Item: RlstNum,
+        Target: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
@@ -50,8 +51,8 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
-        Target: RlstScalar,
+        Item: RlstNum,
+        Target: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
@@ -62,8 +63,8 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
-        Target: RlstScalar,
+        Item: RlstNum,
+        Target: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -90,13 +91,13 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
     /// Cast array to type `T`.
-    pub fn cast<T: RlstScalar>(self) -> Array<T, ArrayCast<Item, T, ArrayImpl, NDIM>, NDIM> {
+    pub fn cast<T: RlstNum>(self) -> Array<T, ArrayCast<Item, T, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayCast::new(self))
     }
 }

@@ -13,14 +13,14 @@ use crate::dense::traits::{
     ChunkedAccess, RawAccess, RawAccessMut, Shape, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::RlstScalar;
+use crate::dense::types::RlstBase;
 
 /// A flattened view onto an array.
 ///
 /// Use the funtion [arr.flattened()](crate::Array::view_flat) instead.
 pub struct ArrayFlatView<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -29,7 +29,7 @@ pub struct ArrayFlatView<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayFlatView<'a, Item, ArrayImpl, NDIM>
@@ -42,7 +42,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<1> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
@@ -54,7 +54,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<1> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
@@ -69,7 +69,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
@@ -86,7 +86,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccess<Item = Item>,
         const NDIM: usize,
     > RawAccess for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
@@ -108,7 +108,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -124,7 +124,7 @@ impl<
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
         const NDIM: usize,
     > AsRawMetalBuffer for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
@@ -141,7 +141,7 @@ impl<
 /// Use the funtion [arr.flattened_mut()](crate::Array::view_flat_mut) instead.
 pub struct ArrayFlatViewMut<
     'a,
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
         + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -152,7 +152,7 @@ pub struct ArrayFlatViewMut<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -167,7 +167,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -181,7 +181,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -198,7 +198,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
@@ -215,7 +215,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -233,7 +233,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -258,7 +258,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -277,7 +277,7 @@ impl<
 
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
@@ -296,7 +296,7 @@ impl<
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + AsRawMetalBuffer
@@ -312,7 +312,7 @@ impl<
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
         'a,
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + AsRawMetalBufferMut

@@ -12,14 +12,14 @@ pub use subview::ArraySubView;
 pub use view::{ArrayView, ArrayViewMut};
 
 use crate::{
-    dense::layout::convert_nd_raw, Array, RlstScalar, Shape, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+    dense::{layout::convert_nd_raw, types::RlstBase},
+    Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 // Basic traits for ArrayViewMut
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -35,7 +35,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -52,7 +52,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,

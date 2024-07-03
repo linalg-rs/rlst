@@ -1,5 +1,6 @@
 //! Operations on arrays.
 use crate::dense::linalg;
+use crate::dense::types::{RlstBase, RlstNum};
 use crate::MatrixSvd;
 use crate::{dense::types::RlstResult, TransMode};
 use num::Zero;
@@ -8,47 +9,31 @@ use crate::dense::layout::convert_1d_nd_from_shape;
 
 use super::{
     Array, ChunkedAccess, DefaultIterator, DefaultIteratorMut, RandomAccessByValue,
-    RandomAccessMut, RawAccessMut, RlstScalar, Shape, Stride, UnsafeRandomAccessByRef,
+    RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::traits::ResizeInPlace;
 
+use crate::dense::types::RlstScalar;
+
+impl<Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
+    Array<Item, ArrayImpl, 1>
+{
+    /// Length of 1-d vector
+    pub fn len(&self) -> usize {
+        self.shape()[0]
+    }
+}
+
 impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
-    /// Set all elements of an array to zero.
-    pub fn set_zero(&mut self) {
-        for elem in self.iter_mut() {
-            *elem = <Item as num::Zero>::zero();
-        }
-    }
-
-    /// Set all elements of an array to one.
-    pub fn set_one(&mut self) {
-        for elem in self.iter_mut() {
-            *elem = <Item as num::One>::one();
-        }
-    }
-
-    /// Fill the diagonal of an array with the value 1 and all other elements zero.
-    pub fn set_identity(&mut self) {
-        self.set_zero();
-
-        for index in 0..self.shape().iter().copied().min().unwrap() {
-            *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
-        }
-    }
-
-    /// Multiply all array elements with the scalar `alpha`.
-    pub fn scale_inplace(&mut self, alpha: Item) {
-        for elem in self.iter_mut() {
-            *elem *= alpha;
-        }
+    /// Return true of array is empty (that is one dimension is zero), otherwise false.
+    pub fn is_empty(&self) -> bool {
+        self.shape().iter().copied().min().unwrap() == 0
     }
 
     /// Get the diagonal of an array.
@@ -70,7 +55,16 @@ impl<
             *other.get_mut([index]).unwrap() = self.get_value([index; NDIM]).unwrap();
         }
     }
+}
 
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
     /// Set the diagonal of an array.
     ///
     /// Argument must be a 1d array of length `self.shape().iter().min()`.
@@ -161,6 +155,45 @@ impl<
         }
 
         self.fill_from_chunked::<_, N>(other)
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    /// Set all elements of an array to zero.
+    pub fn set_zero(&mut self) {
+        for elem in self.iter_mut() {
+            *elem = <Item as num::Zero>::zero();
+        }
+    }
+
+    /// Set all elements of an array to one.
+    pub fn set_one(&mut self) {
+        for elem in self.iter_mut() {
+            *elem = <Item as num::One>::one();
+        }
+    }
+
+    /// Fill the diagonal of an array with the value 1 and all other elements zero.
+    pub fn set_identity(&mut self) {
+        self.set_zero();
+
+        for index in 0..self.shape().iter().copied().min().unwrap() {
+            *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
+        }
+    }
+
+    /// Multiply all array elements with the scalar `alpha`.
+    pub fn scale_inplace(&mut self, alpha: Item) {
+        for elem in self.iter_mut() {
+            *elem *= alpha;
+        }
     }
 
     /// Sum other array into array.
@@ -259,21 +292,16 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
-    /// Return true of array is empty (that is one dimension is zero), otherwise false.
-    pub fn is_empty(&self) -> bool {
-        self.shape().iter().copied().min().unwrap() == 0
-    }
-
     /// Return the trace of an array.
     pub fn trace(self) -> Item {
         let k = *self.shape().iter().min().unwrap();
 
-        (0..k).fold(<Item as Zero>::zero(), |acc, index| {
+        (0..k).fold(<Item as Default>::default(), |acc, index| {
             acc + self.get_value([index; NDIM]).unwrap()
         })
     }
@@ -336,11 +364,6 @@ where
                     acc + elem
                 }),
         )
-    }
-
-    /// Return the length of a 1-dimensional vector.
-    pub fn len(&self) -> usize {
-        self.shape()[0]
     }
 
     /// Compute the cross product with vector `other` and store into `res`.
@@ -500,51 +523,5 @@ where
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
         ludecomp.solve_mat(trans, rhs.view_mut())?;
         Ok(rhs)
-    }
-}
-
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Item>,
-    > Array<Item, ArrayImpl, 2>
-{
-    /// Update self += u * v^T, with u and v vectors.
-    pub fn rank1_sum_inplace<
-        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-    >(
-        &mut self,
-        u: Array<Item, ArrayImpl1, 1>,
-        v: Array<Item, ArrayImpl2, 1>,
-    ) {
-        assert_eq!(self.shape()[0], u.shape()[0]);
-        assert_eq!(self.shape()[1], v.shape()[0]);
-
-        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
-            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
-                *elem += v_elem * u_elem;
-            }
-        }
-    }
-
-    /// Update self *= u * v^T, with u and v vectors.
-    pub fn rank1_cmp_product_inplace<
-        ArrayImpl1: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-        ArrayImpl2: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-    >(
-        &mut self,
-        u: Array<Item, ArrayImpl1, 1>,
-        v: Array<Item, ArrayImpl2, 1>,
-    ) {
-        assert_eq!(self.shape()[0], u.shape()[0]);
-        assert_eq!(self.shape()[1], v.shape()[0]);
-
-        for (mut col, v_elem) in itertools::izip!(self.col_iter_mut(), v.iter()) {
-            for (elem, u_elem) in itertools::izip!(col.iter_mut(), u.iter()) {
-                *elem *= v_elem * u_elem;
-            }
-        }
     }
 }
