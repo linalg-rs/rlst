@@ -48,7 +48,9 @@ pub use crate::dense::traits::{
     NumberOfElements, ResizeInPlace, Shape, Stride,
 };
 
-pub use crate::dense::types::{c32, c64, DataChunk, RlstError, RlstResult, RlstScalar, TransMode};
+pub use crate::dense::types::{
+    c32, c64, DataChunk, RlstBase, RlstError, RlstNum, RlstResult, RlstScalar, TransMode,
+};
 
 pub use crate::dense::base_array::BaseArray;
 pub use crate::dense::data_container::{
