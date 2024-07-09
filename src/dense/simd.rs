@@ -518,7 +518,7 @@ impl RlstSimd for f32 {
         #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
         if coe::is_same::<S, pulp::x86::V3>() {
             let value: [f32; 8] = bytemuck::cast(value);
-            let sleef_avx::f32x8x2(s_out, c_out) =
+            let sleef_avx::F32x8x2(s_out, c_out) =
                 unsafe { sleef_avx::rlst_avx_sin_cos_f32(value.as_ptr()) };
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         }
@@ -535,7 +535,7 @@ impl RlstSimd for f32 {
                 itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
-                *c_out = Self::cos(*value)
+                *c_out = Self::cos(*value);
             }
         }
         (s_out, c_out)
@@ -892,7 +892,7 @@ impl RlstSimd for f64 {
         #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
         if coe::is_same::<S, pulp::x86::V3>() {
             let value: [f64; 4] = bytemuck::cast(value);
-            let sleef_avx::f64x4x2(s_out, c_out) =
+            let sleef_avx::F64x4x2(s_out, c_out) =
                 unsafe { sleef_avx::rlst_avx_sin_cos_f64(value.as_ptr()) };
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         }
@@ -909,7 +909,7 @@ impl RlstSimd for f64 {
                 itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
-                *c_out = Self::cos(*value)
+                *c_out = Self::cos(*value);
             }
         }
 
