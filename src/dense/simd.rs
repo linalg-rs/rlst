@@ -4,12 +4,12 @@
 mod sleef_neon;
 
 use bytemuck::Pod;
+use coe;
 use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
-
 /// A simplified wrapper to call into Simd operations in a type
 /// and architecture independent way.
 #[derive(Copy, Clone, Debug)]
@@ -541,9 +541,9 @@ impl RlstSimd for f32 {
             {
                 if coe::is_same::<S, pulp::aarch64::Neon>() {
                     let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                    return unsafe {
-                        bytemuck::cast(simd.neon.vld2q_f32(value.as_ptr() as *const f32))
-                    };
+                    return bytemuck::cast(unsafe {
+                        simd.neon.vld2q_f32(value.as_ptr() as *const f32)
+                    });
                 }
             }
             let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
@@ -620,6 +620,14 @@ impl RlstSimd for f32 {
 
     #[inline(always)]
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f32; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_exp_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
         let mut out = simd.f32s_splat(0.0);
         {
             let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
@@ -708,17 +716,16 @@ impl RlstSimd for f32 {
             use coe::coerce_static as to;
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                let value: pulp::f32x4 = to(value);
-                let mut res: pulp::f32x4 = pulp::cast(simd.neon.vrsqrteq_f32(pulp::cast(value)));
+                let mut res: pulp::f32x4 =
+                    bytemuck::cast(simd.neon.vrsqrteq_f32(bytemuck::cast(value)));
                 for _ in 0..2 {
-                    res =
-                        simd.mul_f32x4(
-                            res,
-                            pulp::cast(simd.neon.vrsqrtsq_f32(
-                                pulp::cast(value),
-                                pulp::cast(simd.mul_f32x4(res, res)),
-                            )),
-                        );
+                    res = simd.mul_f32x4(
+                        res,
+                        bytemuck::cast(simd.neon.vrsqrtsq_f32(
+                            bytemuck::cast(value),
+                            bytemuck::cast(simd.mul_f32x4(res, res)),
+                        )),
+                    );
                 }
                 return to(res);
             }
@@ -737,7 +744,7 @@ impl RlstSimd for f32 {
         {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                return simd.neon.vaddvq_f32(pulp::cast(value));
+                return simd.neon.vaddvq_f32(bytemuck::cast(value));
             }
         }
 
@@ -919,9 +926,9 @@ impl RlstSimd for f64 {
         {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                return unsafe {
-                    bytemuck::cast(simd.neon.vld3q_f64(value.as_ptr() as *const f64))
-                };
+                return bytemuck::cast(unsafe {
+                    simd.neon.vld3q_f64(value.as_ptr() as *const f64)
+                });
             }
         }
 
@@ -972,6 +979,14 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f64; 2] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_exp_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
         let mut out = simd.f64s_splat(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
@@ -1052,16 +1067,16 @@ impl RlstSimd for f64 {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
                 let value: pulp::f64x2 = to(value);
-                let mut res: pulp::f64x2 = pulp::cast(simd.neon.vrsqrteq_f64(pulp::cast(value)));
+                let mut res: pulp::f64x2 =
+                    bytemuck::cast(simd.neon.vrsqrteq_f64(bytemuck::cast(value)));
                 for _ in 0..3 {
-                    res =
-                        simd.mul_f64x2(
-                            res,
-                            pulp::cast(simd.neon.vrsqrtsq_f64(
-                                pulp::cast(value),
-                                pulp::cast(simd.mul_f64x2(res, res)),
-                            )),
-                        );
+                    res = simd.mul_f64x2(
+                        res,
+                        bytemuck::cast(simd.neon.vrsqrtsq_f64(
+                            bytemuck::cast(value),
+                            bytemuck::cast(simd.mul_f64x2(res, res)),
+                        )),
+                    );
                 }
                 return to(res);
             }
@@ -1076,7 +1091,7 @@ impl RlstSimd for f64 {
         {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                return simd.neon.vaddvq_f64(pulp::cast(value));
+                return simd.neon.vaddvq_f64(bytemuck::cast(value));
             }
         }
         simd.f64s_reduce_sum(value)

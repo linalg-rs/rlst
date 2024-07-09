@@ -55,17 +55,18 @@ rlst_float64x2 rlst_neon_exp_f64(double* value) {
 
   vst1q_f64(output.x, simd_output);
 
-  
+  return output;  
 }
 
-rlst_float64x2 rlst_neon_exp_f32(double* value) {
+rlst_float32x4 rlst_neon_exp_f32(float* value) {
 
-  float32x4_t simd_value = vld1q_f64(value);
+  float32x4_t simd_value = vld1q_f32(value);
   float32x4_t simd_output = Sleef_expf4_u10advsimd(simd_value);
   rlst_float32x4 output;
 
 
-  vst1q_f64(output.x, simd_output);
+  vst1q_f32(output.x, simd_output);
 
-  
+  return output;
+
 }

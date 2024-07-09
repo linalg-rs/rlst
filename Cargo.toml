@@ -81,6 +81,11 @@ harness = false
 name = "sin_cos"
 harness = false
 
+[[bench]]
+name = "exp"
+harness = false
+
+
 [[example]]
 name = "mpi_gather_to_all_vector"
 required-features = ["mpi"]

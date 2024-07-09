@@ -6,10 +6,10 @@ use num::Float;
 
 use pulp::{f32x4, f64x2};
 
-#[repr(C, align(16))]
+#[repr(C)]
 pub struct f64x2x2(pub f64x2, pub f64x2);
 
-#[repr(C, align(16))]
+#[repr(C)]
 pub struct f32x4x2(pub f32x4, pub f32x4);
 
 extern "C" {
