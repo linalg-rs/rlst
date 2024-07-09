@@ -30,6 +30,11 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         }
     }
 
+    /// Length of a Simd vector.
+    pub fn simd_vector_width(self) -> usize {
+        std::mem::size_of::<<T as RlstSimd>::Scalars<S>>() / std::mem::size_of::<T>()
+    }
+
     /// Copy a scalar across all Simd lanes.
     #[inline(always)]
     pub fn splat(self, value: T) -> T::Scalars<S> {
@@ -115,6 +120,12 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     // pub fn sin_cos_quarter_circle(self, value: T::Scalars<S>) -> (T::Scalars<S>, T::Scalars<S>) {
     //     T::simd_sin_cos_quarter_circle(self.simd, value)
     // }
+
+    /// Compute the base e exponential of a Simd vector.
+    #[inline(always)]
+    pub fn exp(self, value: T::Scalars<S>) -> T::Scalars<S> {
+        T::simd_exp(self.simd, value)
+    }
 
     /// Compute the square root of a Simd vector.
     #[inline(always)]
@@ -301,6 +312,9 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
     //     simd: S,
     //     value: Self::Scalars<S>,
     // ) -> (Self::Scalars<S>, Self::Scalars<S>);
+
+    /// Compute the base e exponential of a Simd vector.
+    fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
 
     /// Compute the square root of each element in the register.
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
@@ -599,6 +613,19 @@ impl RlstSimd for f32 {
                 out[n + i] = x[4 * i + 1];
                 out[2 * n + i] = x[4 * i + 2];
                 out[3 * n + i] = x[4 * i + 3];
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        let mut out = simd.f32s_splat(0.0);
+        {
+            let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.exp();
             }
         }
         out
@@ -1051,44 +1078,12 @@ impl RlstSimd for f64 {
 
 #[cfg(test)]
 mod tests {
+    use crate::RlstScalar;
+
     use super::*;
     use approx::assert_relative_eq;
+    use coe::{coerce_static, Coerce};
     use rand::prelude::*;
-
-    #[test]
-    fn test_sin_cos() {
-        let nsamples = 1000;
-        let eps_f32 = 1E-6;
-        let eps_f64 = 1E-13;
-        let mut rng = StdRng::seed_from_u64(0);
-
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
-        for _ in 0..nsamples {
-            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
-            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
-
-            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
-            let res_f32 = simd_for.sin_cos(bytemuck::cast(sample_f32));
-
-            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
-            let res_f64 = simd_for.sin_cos(bytemuck::cast(sample_f64));
-
-            let sin_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.0);
-            let cos_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.1);
-
-            let sin_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.0);
-            let cos_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.1);
-
-            for (s, c, sample) in itertools::izip!(sin_actual_f64, cos_actual_f64, sample_f64) {
-                assert_relative_eq!(s, sample.sin(), max_relative = eps_f64);
-                assert_relative_eq!(c, sample.cos(), max_relative = eps_f64);
-            }
-            for (s, c, sample) in itertools::izip!(sin_actual_f32, cos_actual_f32, sample_f32) {
-                assert_relative_eq!(s, sample.sin(), max_relative = eps_f32);
-                assert_relative_eq!(c, sample.cos(), max_relative = eps_f32);
-            }
-        }
-    }
 
     #[test]
     fn test_approx_inv_sqrt() {
@@ -1285,6 +1280,121 @@ mod tests {
             assert_relative_eq!(res_f64.1, 1.0 / sample_f64[1], max_relative = eps_f64);
             assert_relative_eq!(res_f64.2, 1.0 / sample_f64[2], max_relative = eps_f64);
             assert_relative_eq!(res_f64.3, 1.0 / sample_f64[3], max_relative = eps_f64);
+        }
+    }
+
+    #[test]
+    fn test_sin_cos() {
+        let nsamples = 1000;
+        let mut rng = StdRng::seed_from_u64(0);
+
+        trait Tolerance: RlstScalar<Real = Self> {
+            const TOL: Self;
+        }
+
+        impl Tolerance for f64 {
+            const TOL: f64 = 1E-13;
+        }
+
+        impl Tolerance for f32 {
+            const TOL: f32 = 1E-6;
+        }
+
+        struct Impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> {
+            rng: StdRng,
+            nsamples: usize,
+            _marker: PhantomData<T>,
+        }
+
+        impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> pulp::WithSimd for Impl<T> {
+            type Output = ();
+
+            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+                let Self {
+                    mut rng, nsamples, ..
+                } = self;
+
+                let samples = (0..nsamples)
+                    .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                    .collect::<Vec<_>>();
+
+                let mut actual_sin = vec![T::default(); nsamples];
+                let mut actual_cos = vec![T::default(); nsamples];
+
+                let (value_head, value_tail) =
+                    <T as RlstSimd>::as_simd_slice::<S>(samples.as_slice());
+                let (actual_sin_head, actual_sin_tail) =
+                    <T as RlstSimd>::as_simd_slice_mut::<S>(actual_sin.as_mut_slice());
+                let (actual_cos_head, actual_cos_tail) =
+                    <T as RlstSimd>::as_simd_slice_mut::<S>(actual_cos.as_mut_slice());
+
+                fn impl_slice<T: RlstScalar<Real = T> + RlstSimd + Tolerance, S: Simd>(
+                    simd: S,
+                    values: &[<T as RlstSimd>::Scalars<S>],
+                    actual_sin: &mut [<T as RlstSimd>::Scalars<S>],
+                    actual_cos: &mut [<T as RlstSimd>::Scalars<S>],
+                ) {
+                    let simd = SimdFor::<T, S>::new(simd);
+
+                    for (&v, asin, acos) in itertools::izip!(values, actual_sin, actual_cos) {
+                        (*asin, *acos) = simd.sin_cos(v);
+                    }
+                }
+
+                impl_slice::<T, _>(simd, value_head, actual_sin_head, actual_cos_head);
+                impl_slice::<T, _>(
+                    pulp::Scalar::new(),
+                    value_tail.coerce(),
+                    actual_sin_tail.coerce(),
+                    actual_cos_tail.coerce(),
+                );
+
+                if coe::is_same::<T, f32>() {
+                    for (v, s, c) in itertools::izip!(samples, actual_sin, actual_cos) {
+                        let v: f32 = coerce_static(v);
+                        let s: f32 = coerce_static(s);
+                        let c: f32 = coerce_static(c);
+                        assert_relative_eq!(v.sin(), s, max_relative = f32::TOL);
+                        assert_relative_eq!(v.cos(), c, max_relative = f32::TOL);
+                    }
+                } else if coe::is_same::<T, f64>() {
+                    for (v, s, c) in itertools::izip!(samples, actual_sin, actual_cos) {
+                        let v: f64 = coerce_static(v);
+                        let s: f64 = coerce_static(s);
+                        let c: f64 = coerce_static(c);
+                        assert_relative_eq!(v.sin(), s, max_relative = f64::TOL);
+                        assert_relative_eq!(v.cos(), c, max_relative = f64::TOL);
+                    }
+                } else {
+                    panic!("Unsupported type");
+                }
+            }
+        }
+
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f32 = simd_for.sin_cos(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f64 = simd_for.sin_cos(bytemuck::cast(sample_f64));
+
+            let sin_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.0);
+            let cos_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.1);
+
+            let sin_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.0);
+            let cos_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.1);
+
+            for (s, c, sample) in itertools::izip!(sin_actual_f64, cos_actual_f64, sample_f64) {
+                assert_relative_eq!(s, sample.sin(), max_relative = eps_f64);
+                assert_relative_eq!(c, sample.cos(), max_relative = eps_f64);
+            }
+            for (s, c, sample) in itertools::izip!(sin_actual_f32, cos_actual_f32, sample_f32) {
+                assert_relative_eq!(s, sample.sin(), max_relative = eps_f32);
+                assert_relative_eq!(c, sample.cos(), max_relative = eps_f32);
+            }
         }
     }
 }
