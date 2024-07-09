@@ -709,16 +709,16 @@ impl RlstSimd for f32 {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
                 let value: pulp::f32x4 = to(value);
-                let mut res: pulp::f32x4 = unsafe {
-                    std::mem::transmute(simd.neon.vrsqrteq_f32(std::mem::transmute(value)))
-                };
+                let mut res: pulp::f32x4 = pulp::cast(simd.neon.vrsqrteq_f32(pulp::cast(value)));
                 for _ in 0..2 {
-                    res = simd.mul_f32x4(res, unsafe {
-                        std::mem::transmute(simd.neon.vrsqrtsq_f32(
-                            std::mem::transmute(value),
-                            std::mem::transmute(simd.mul_f32x4(res, res)),
-                        ))
-                    });
+                    res =
+                        simd.mul_f32x4(
+                            res,
+                            pulp::cast(simd.neon.vrsqrtsq_f32(
+                                pulp::cast(value),
+                                pulp::cast(simd.mul_f32x4(res, res)),
+                            )),
+                        );
                 }
                 return to(res);
             }
@@ -735,12 +735,9 @@ impl RlstSimd for f32 {
     fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self {
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
-            use coe::coerce_static as to;
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                return simd
-                    .neon
-                    .vaddvq_f32(unsafe { std::mem::transmute(to::<_, pulp::f32x4>(value)) });
+                return simd.neon.vaddvq_f32(pulp::cast(value));
             }
         }
 
@@ -1055,16 +1052,16 @@ impl RlstSimd for f64 {
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
                 let value: pulp::f64x2 = to(value);
-                let mut res: pulp::f64x2 = unsafe {
-                    std::mem::transmute(simd.neon.vrsqrteq_f64(std::mem::transmute(value)))
-                };
+                let mut res: pulp::f64x2 = pulp::cast(simd.neon.vrsqrteq_f64(pulp::cast(value)));
                 for _ in 0..3 {
-                    res = simd.mul_f64x2(res, unsafe {
-                        std::mem::transmute(simd.neon.vrsqrtsq_f64(
-                            std::mem::transmute(value),
-                            std::mem::transmute(simd.mul_f64x2(res, res)),
-                        ))
-                    });
+                    res =
+                        simd.mul_f64x2(
+                            res,
+                            pulp::cast(simd.neon.vrsqrtsq_f64(
+                                pulp::cast(value),
+                                pulp::cast(simd.mul_f64x2(res, res)),
+                            )),
+                        );
                 }
                 return to(res);
             }
@@ -1077,12 +1074,9 @@ impl RlstSimd for f64 {
     fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self {
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
-            use coe::coerce_static as to;
             if coe::is_same::<S, pulp::aarch64::Neon>() {
                 let simd: pulp::aarch64::Neon = coe::coerce_static(simd);
-                return simd
-                    .neon
-                    .vaddvq_f64(unsafe { std::mem::transmute(to::<_, pulp::f64x2>(value)) });
+                return simd.neon.vaddvq_f64(pulp::cast(value));
             }
         }
         simd.f64s_reduce_sum(value)
@@ -1477,6 +1471,7 @@ mod tests {
             }
         }
         };
+
     }
 
     impl_unary_simd_test!(exp, 1E-6, 1E-13);
