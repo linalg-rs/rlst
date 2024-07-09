@@ -77,10 +77,6 @@ harness = false
 name = "inverse_sqrt_f32"
 harness = false
 
-[[bench]]
-name = "sin_cos"
-harness = false
-
 [[example]]
 name = "mpi_gather_to_all_vector"
 required-features = ["mpi"]

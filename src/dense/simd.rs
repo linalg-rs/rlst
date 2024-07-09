@@ -492,9 +492,8 @@ impl RlstSimd for f32 {
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
         #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
         if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f32; 4] = bytemuck::cast(value);
-            let sleef_neon::f32x4x2(s_out, c_out) =
-                unsafe { sleef_neon::rlst_neon_sin_cos_f32(value.as_ptr()) };
+            use sleef_neon::sin_cos_f32;
+            let sleef_neon::f32x4x2(s_out, c_out) = unsafe { sin_cos_f32(bytemuck::cast(value)) };
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         };
 
@@ -832,9 +831,8 @@ impl RlstSimd for f64 {
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
         #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
         if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f64; 2] = bytemuck::cast(value);
             let sleef_neon::f64x2x2(s_out, c_out) =
-                unsafe { sleef_neon::rlst_neon_sin_cos_f64(value.as_ptr()) };
+                unsafe { sleef_neon::sin_cos_f64(bytemuck::cast(value)) };
 
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         }
