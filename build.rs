@@ -14,6 +14,26 @@ macro_rules! build_dep {
     }};
 }
 
+fn build_sleef() {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    Config::new("sleef")
+        .define("CMAKE_PREFIX_PATH", out_dir.clone())
+        .build();
+
+    cc::Build::new()
+        .file("sleef_interface/sleef.c")
+        .include(out_dir.join("include"))
+        .compile("sleef_interface");
+
+    println!(
+        "cargo:rustc-link-search={}",
+        out_dir.clone().join("lib").display()
+    );
+
+    println!("cargo:rustc-link-lib=static=sleef");
+    println!("cargo:rustc-link-lib=static=sleef_interface");
+}
+
 fn build_internal_blis() {
     let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
     let build = dst.join("build_blis");
@@ -206,6 +226,11 @@ fn main() {
         build_umfpack(out_dir.clone());
     }
 
+    if std::env::var("CARGO_FEATURE_SLEEF").is_ok() {
+        build_sleef()
+    }
+
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
+    println!("cargo:rerun-if-changed=sleef_interface/sleef.c");
     println!("cargo:rerun-if-changed=build.rs");
 }

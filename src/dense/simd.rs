@@ -1,6 +1,9 @@
 //! Basic traits for SIMD Operations
 
-use bytemuck::Pod;
+#[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+mod sleef_neon;
+
+use bytemuck::{NoUninit, Pod};
 use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
@@ -487,6 +490,13 @@ impl RlstSimd for f32 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            use sleef_neon::sin_cos_f32;
+            let sleef_neon::f32x4x2(s_out, c_out) = unsafe { sin_cos_f32(bytemuck::cast(value)) };
+            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
+        };
+
         let mut s_out = Self::simd_splat(simd, Self::zero());
         let mut c_out = Self::simd_splat(simd, Self::zero());
         {
@@ -502,7 +512,6 @@ impl RlstSimd for f32 {
                 *c_out = Self::cos(*value)
             }
         }
-
         (s_out, c_out)
     }
 
@@ -820,6 +829,14 @@ impl RlstSimd for f64 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let sleef_neon::f64x2x2(s_out, c_out) =
+                unsafe { sleef_neon::sin_cos_f64(bytemuck::cast(value)) };
+
+            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
+        }
+
         let mut s_out = Self::simd_splat(simd, Self::zero());
         let mut c_out = Self::simd_splat(simd, Self::zero());
         {
@@ -1038,33 +1055,37 @@ mod tests {
 
     #[test]
     fn test_sin_cos() {
-        let rng = &mut StdRng::seed_from_u64(0);
-        let mut max_err_c = 0.0;
-        let mut max_err_s = 0.0;
-        for _ in 0..1000 {
-            let x = rng.gen::<f32>() * 1000.0;
-            let (s, c) = f32::simd_sin_cos(pulp::Scalar, x);
-            let (s_target, c_target) = x.sin_cos();
-            max_err_c = f32::max(max_err_c, (c - c_target).abs() / c_target.abs());
-            max_err_s = f32::max(max_err_s, (s - s_target).abs() / s_target.abs());
+        let nsamples = 1000;
+        let eps_f32 = 1E-6;
+        let eps_f64 = 1E-13;
+        let mut rng = StdRng::seed_from_u64(0);
+
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+        for _ in 0..nsamples {
+            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
+            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+
+            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f32 = simd_for.sin_cos(bytemuck::cast(sample_f32));
+
+            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
+            let res_f64 = simd_for.sin_cos(bytemuck::cast(sample_f64));
+
+            let sin_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.0);
+            let cos_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.1);
+
+            let sin_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.0);
+            let cos_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.1);
+
+            for (s, c, sample) in itertools::izip!(sin_actual_f64, cos_actual_f64, sample_f64) {
+                assert_relative_eq!(s, sample.sin(), max_relative = eps_f64);
+                assert_relative_eq!(c, sample.cos(), max_relative = eps_f64);
+            }
+            for (s, c, sample) in itertools::izip!(sin_actual_f32, cos_actual_f32, sample_f32) {
+                assert_relative_eq!(s, sample.sin(), max_relative = eps_f32);
+                assert_relative_eq!(c, sample.cos(), max_relative = eps_f32);
+            }
         }
-
-        assert!(max_err_c <= 1E-4);
-        assert!(max_err_s <= 1E-4);
-
-        let mut max_err_c = 0.0;
-        let mut max_err_s = 0.0;
-
-        for _ in 0..1000 {
-            let x = rng.gen::<f64>() * 1000.0;
-            let (s, c) = f64::simd_sin_cos(pulp::Scalar, x);
-            let (s_target, c_target) = x.sin_cos();
-            max_err_c = f64::max(max_err_c, (c - c_target).abs() / c_target.abs());
-            max_err_s = f64::max(max_err_s, (s - s_target).abs() / s_target.abs());
-        }
-
-        assert!(max_err_c <= 1E-12);
-        assert!(max_err_s <= 1E-12);
     }
 
     #[test]
