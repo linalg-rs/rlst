@@ -1014,6 +1014,14 @@ impl RlstSimd for f64 {
             return bytemuck::cast(out);
         }
 
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f64; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_exp_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
         let mut out = simd.f64s_splat(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
