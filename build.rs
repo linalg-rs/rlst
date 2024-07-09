@@ -18,12 +18,24 @@ fn build_sleef() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     Config::new("sleef")
         .define("CMAKE_PREFIX_PATH", out_dir.clone())
+        .profile("Release")
         .build();
 
-    cc::Build::new()
-        .file("sleef_interface/sleef.c")
-        .include(out_dir.join("include"))
-        .compile("sleef_interface");
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+
+    if target_arch == "aarch64" {
+        cc::Build::new()
+            .file("sleef_interface/sleef_neon.c")
+            .include(out_dir.join("include"))
+            .flag("-march=native")
+            .compile("sleef_interface");
+    } else if target_arch == "x86_64" {
+        cc::Build::new()
+            .file("sleef_interface/sleef_avx.c")
+            .include(out_dir.join("include"))
+            .flag("-march=native")
+            .compile("sleef_interface");
+    }
 
     println!(
         "cargo:rustc-link-search={}",

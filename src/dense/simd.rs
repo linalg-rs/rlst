@@ -3,6 +3,9 @@
 #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
 mod sleef_neon;
 
+#[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+mod sleef_avx;
+
 use bytemuck::Pod;
 use coe;
 use num::Zero;
@@ -512,6 +515,14 @@ impl RlstSimd for f32 {
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         };
 
+        #[cfg(target_arch = "x86_64")]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f32; 8] = bytemuck::cast(value);
+            let sleef_avx::f32x8x2(s_out, c_out) =
+                unsafe { sleef_avx::rlst_avx_sin_cos_f32(value.as_ptr()) };
+            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
+        }
+
         let mut s_out = Self::simd_splat(simd, Self::zero());
         let mut c_out = Self::simd_splat(simd, Self::zero());
         {
@@ -867,6 +878,14 @@ impl RlstSimd for f64 {
             let sleef_neon::f64x2x2(s_out, c_out) =
                 unsafe { sleef_neon::rlst_neon_sin_cos_f64(value.as_ptr()) };
 
+            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
+        }
+
+        #[cfg(target_arch = "x86_64")]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f64; 4] = bytemuck::cast(value);
+            let sleef_avx::f64x4x2(s_out, c_out) =
+                unsafe { sleef_avx::rlst_avx_sin_cos_f64(value.as_ptr()) };
             return (bytemuck::cast(s_out), bytemuck::cast(c_out));
         }
 
