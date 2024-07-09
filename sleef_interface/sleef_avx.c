@@ -47,41 +47,28 @@ rlst_float32x8x2 rlst_avx_sin_cos_f32(float* value) {
   return output;
 }
 
+rlst_float64x4 rlst_avx_exp_f64(double* value) {
 
-// rlst_float32x4x2 rlst_neon_sin_cos_f32(float* value ) {
+  __m256d simd_value = _mm256_loadu_pd(value);
+  __m256d simd_output = Sleef_expd4_u10avx2(simd_value);
+  rlst_float64x4 output;
 
-//   float32x4_t simd_value = vld1q_f32(value);
-//   Sleef_float32x4_t_2 simd_output = Sleef_sincosf4_u10advsimd(simd_value);
-//   rlst_float32x4x2 output;
+  _mm256_storeu_pd (output.x, simd_output);
+  
 
+  return output;
+}
 
-//   vst1q_f32(output.x, simd_output.x);
-//   vst1q_f32(output.y, simd_output.y);
- 
-//   return output;
-// }
+rlst_float32x8 rlst_avx_exp_f32(float* value) {
 
-// rlst_float64x2 rlst_neon_exp_f64(double* value) {
+  __m256 simd_value = _mm256_loadu_ps(value);
+  __m256 simd_output = Sleef_expf8_u10avx2(simd_value);
+  rlst_float32x8 output;
 
-//   float64x2_t simd_value = vld1q_f64(value);
-//   float64x2_t simd_output = Sleef_expd2_u10advsimd(simd_value);
-//   rlst_float64x2 output;
+  _mm256_storeu_ps (output.x, simd_output);
+  
 
-
-//   vst1q_f64(output.x, simd_output);
-
-//   return output;  
-// }
-
-// rlst_float32x4 rlst_neon_exp_f32(float* value) {
-
-//   float32x4_t simd_value = vld1q_f32(value);
-//   float32x4_t simd_output = Sleef_expf4_u10advsimd(simd_value);
-//   rlst_float32x4 output;
+  return output;
+}
 
 
-//   vst1q_f32(output.x, simd_output);
-
-//   return output;
-
-// }

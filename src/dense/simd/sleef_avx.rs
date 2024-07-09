@@ -13,4 +13,6 @@ pub struct f32x8x2(pub f32x8, pub f32x8);
 extern "C" {
     pub fn rlst_avx_sin_cos_f32(a: *const f32) -> f32x8x2;
     pub fn rlst_avx_sin_cos_f64(a: *const f64) -> f64x4x2;
+    pub fn rlst_avx_exp_f32(a: *const f32) -> f32x8;
+    pub fn rlst_avx_exp_f64(a: *const f64) -> f64x4;
 }
