@@ -54,12 +54,13 @@ cmake = "0.1"
 
 [features]
 strict = []
-default = []
+default = ["sleef"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 internal_blis = []
 disable_system_blas_lapack = []
 metal = []
+sleef = []
 
 [lints.clippy]
 wildcard_imports = "forbid"
