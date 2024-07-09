@@ -3,7 +3,7 @@
 #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
 mod sleef_neon;
 
-use bytemuck::{NoUninit, Pod};
+use bytemuck::Pod;
 use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
@@ -974,6 +974,19 @@ impl RlstSimd for f64 {
     }
 
     #[inline(always)]
+    fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        let mut out = simd.f64s_splat(0.0);
+        {
+            let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.exp();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
         #[cfg(target_arch = "x86_64")]
         {
@@ -1083,10 +1096,11 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use coe::{coerce_static, Coerce};
+    use paste;
     use rand::prelude::*;
 
     #[test]
-    fn test_approx_inv_sqrt() {
+    fn test_simd_approx_inv_sqrt() {
         let nsamples = 10000;
         let eps_f32 = 1E-5;
         let eps_f64 = 1E-13;
@@ -1221,7 +1235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_approx_inv() {
+    fn test_simd_approx_inv() {
         let nsamples = 10000;
         let eps_f32 = 1E-3;
         let eps_f64 = 1E-14;
@@ -1284,9 +1298,8 @@ mod tests {
     }
 
     #[test]
-    fn test_sin_cos() {
-        let nsamples = 1000;
-        let mut rng = StdRng::seed_from_u64(0);
+    fn test_simd_sin_cos() {
+        let nsamples = 1001;
 
         trait Tolerance: RlstScalar<Real = Self> {
             const TOL: Self;
@@ -1371,30 +1384,117 @@ mod tests {
             }
         }
 
-        for _ in 0..nsamples {
-            let sample_f32: [f32; 4] = [rng.gen(), rng.gen(), rng.gen(), rng.gen()];
-            let sample_f64: [f64; 2] = [rng.gen(), rng.gen()];
+        pulp::Arch::new().dispatch(Impl::<f32> {
+            rng: StdRng::seed_from_u64(0),
+            nsamples,
+            _marker: PhantomData,
+        });
 
-            let simd_for = SimdFor::<f32, _>::new(pulp::aarch64::Neon::try_new().unwrap());
-            let res_f32 = simd_for.sin_cos(bytemuck::cast(sample_f32));
+        pulp::Arch::new().dispatch(Impl::<f64> {
+            rng: StdRng::seed_from_u64(0),
+            nsamples,
+            _marker: PhantomData,
+        });
+    }
 
-            let simd_for = SimdFor::<f64, _>::new(pulp::aarch64::Neon::try_new().unwrap());
-            let res_f64 = simd_for.sin_cos(bytemuck::cast(sample_f64));
+    macro_rules! impl_unary_simd_test {
+        ($name:expr, $tol_f32:expr, $tol_f64:expr) => {
+            paste::paste! {
+            #[test]
+            fn [<test_simd_ $name>]() {
+                let nsamples = 1001;
 
-            let sin_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.0);
-            let cos_actual_f64 = bytemuck::cast::<_, [f64; 2]>(res_f64.1);
+                trait Tolerance: RlstScalar<Real = Self> {
+                    const TOL: Self;
+                }
 
-            let sin_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.0);
-            let cos_actual_f32 = bytemuck::cast::<_, [f32; 4]>(res_f32.1);
+                impl Tolerance for f32 {
+                    const TOL: f32 = $tol_f32;
+                }
 
-            for (s, c, sample) in itertools::izip!(sin_actual_f64, cos_actual_f64, sample_f64) {
-                assert_relative_eq!(s, sample.sin(), max_relative = eps_f64);
-                assert_relative_eq!(c, sample.cos(), max_relative = eps_f64);
-            }
-            for (s, c, sample) in itertools::izip!(sin_actual_f32, cos_actual_f32, sample_f32) {
-                assert_relative_eq!(s, sample.sin(), max_relative = eps_f32);
-                assert_relative_eq!(c, sample.cos(), max_relative = eps_f32);
+                impl Tolerance for f64 {
+                    const TOL: f64 = $tol_f64;
+                }
+
+
+                struct Impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> {
+                    rng: StdRng,
+                    nsamples: usize,
+                    _marker: PhantomData<T>,
+                }
+
+                impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> pulp::WithSimd for Impl<T> {
+                    type Output = ();
+
+                    fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+                        let Self {
+                            mut rng, nsamples, ..
+                        } = self;
+
+                        let samples = (0..nsamples)
+                            .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                            .collect::<Vec<_>>();
+
+                        let mut actual = vec![T::default(); nsamples];
+
+                        let (value_head, value_tail) =
+                            <T as RlstSimd>::as_simd_slice::<S>(samples.as_slice());
+                        let (actual_head, actual_tail) =
+                            <T as RlstSimd>::as_simd_slice_mut::<S>(actual.as_mut_slice());
+
+                        fn impl_slice<T: RlstScalar<Real = T> + RlstSimd + Tolerance, S: Simd>(
+                            simd: S,
+                            values: &[<T as RlstSimd>::Scalars<S>],
+                            actual: &mut [<T as RlstSimd>::Scalars<S>],
+                        ) {
+                            let simd = SimdFor::<T, S>::new(simd);
+
+                            for (&v, a) in itertools::izip!(values, actual) {
+                                *a = simd.[<$name>](v);
+                            }
+                        }
+
+                        impl_slice::<T, _>(simd, value_head, actual_head);
+                        impl_slice::<T, _>(
+                            pulp::Scalar::new(),
+                            value_tail.coerce(),
+                            actual_tail.coerce(),
+                        );
+
+                        if coe::is_same::<T, f32>() {
+                            for (v, a) in itertools::izip!(samples, actual) {
+                                let v: f32 = coerce_static(v);
+                                let a: f32 = coerce_static(a);
+                                assert_relative_eq!(v.[<$name>](), a, max_relative = f32::TOL);
+                            }
+                        } else if coe::is_same::<T, f64>() {
+                            for (v, a) in itertools::izip!(samples, actual) {
+                                let v: f64 = coerce_static(v);
+                                let a: f64 = coerce_static(a);
+                                assert_relative_eq!(v.[<$name>](), a, max_relative = f64::TOL);
+                            }
+                        } else {
+                            panic!("Unsupported type");
+                        }
+                    }
+                }
+
+                pulp::Arch::new().dispatch(Impl::<f32> {
+                    rng: StdRng::seed_from_u64(0),
+                    nsamples,
+                    _marker: PhantomData,
+                });
+
+                pulp::Arch::new().dispatch(Impl::<f64> {
+                    rng: StdRng::seed_from_u64(0),
+                    nsamples,
+                    _marker: PhantomData,
+                });
             }
         }
+        };
     }
+
+    impl_unary_simd_test!(exp, 1E-6, 1E-13);
+    impl_unary_simd_test!(sqrt, 1E-6, 1E-13);
 }
