@@ -1,9 +1,5 @@
 //! Sleef Simd functions for Neon
 
-use std::arch::aarch64::float64x2_t;
-
-use num::Float;
-
 use pulp::{f32x4, f64x2};
 
 #[repr(C)]
