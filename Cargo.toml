@@ -54,12 +54,13 @@ cmake = "0.1"
 
 [features]
 strict = []
-default = []
+default = ["sleef"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 internal_blis = []
 disable_system_blas_lapack = []
 metal = []
+sleef = []
 
 [lints.clippy]
 wildcard_imports = "forbid"
@@ -75,6 +76,15 @@ harness = false
 [[bench]]
 name = "inverse_sqrt_f32"
 harness = false
+
+[[bench]]
+name = "sin_cos"
+harness = false
+
+[[bench]]
+name = "exp"
+harness = false
+
 
 [[example]]
 name = "mpi_gather_to_all_vector"
