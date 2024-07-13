@@ -2,14 +2,12 @@
 
 pub mod accessors;
 
-pub use crate::dense::linalg::{
-    inverse::MatrixInverse, lu::MatrixLuDecomposition, pseudo_inverse::MatrixPseudoInverse,
-    qr::MatrixQrDecomposition, svd::MatrixSvd,
-};
 pub use accessors::*;
 
-use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
+
+use super::types::RlstBase;
+use super::types::RlstNum;
 
 /// Shape of an object
 pub trait Shape<const NDIM: usize> {
@@ -49,7 +47,7 @@ pub trait ResizeInPlace<const NDIM: usize> {
 /// Multiply into
 pub trait MultInto<First, Second> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstNum;
     /// Multiply First * Second and sum into Self
     fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
     where
@@ -79,7 +77,7 @@ pub trait MultInto<First, Second> {
 /// Multiply into with resize
 pub trait MultIntoResize<First, Second> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstNum;
     /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
     where
@@ -109,7 +107,7 @@ pub trait MultIntoResize<First, Second> {
 /// Default iterator.
 pub trait DefaultIterator {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
     /// Iterator type
     type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
@@ -121,7 +119,7 @@ pub trait DefaultIterator {
 /// Mutable default iterator.
 pub trait DefaultIteratorMut {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
     /// Iterator
     type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
@@ -135,7 +133,7 @@ pub trait DefaultIteratorMut {
 /// element.
 pub trait AijIterator {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
     /// Iterator
     type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where

@@ -20,6 +20,10 @@ which are used to provide sparse direct solver
 capabilities. UMFPACK is licensed under the GPL 2+ license, which affects any
 code compiled against RLST with the `suitesparse` feature flag.
 
+The [Sleef](https://sleef.org) dependency can be enabled with the `sleef` feature
+flag. It is enabled by default and provides SIMD variants of certain mathematical functions.
+Sleef is licensed under the Boost Software License Version 1.0.
+
 
 # Notes
 

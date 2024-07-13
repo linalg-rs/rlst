@@ -9,6 +9,60 @@ use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar, TransMode
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 
+/// Compute an LU decomposition from a given two-dimensional array.
+pub trait MatrixLu: RlstScalar {
+    /// Compute the matrix inverse
+    fn into_lu_alloc<
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self>,
+    >(
+        arr: Array<Self, ArrayImpl, 2>,
+    ) -> RlstResult<LuDecomposition<Self, ArrayImpl>>;
+}
+
+macro_rules! implement_into_lu {
+    ($scalar:ty) => {
+        impl MatrixLu for $scalar {
+            fn into_lu_alloc<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = Self>,
+            >(
+                arr: Array<Self, ArrayImpl, 2>,
+            ) -> RlstResult<LuDecomposition<Self, ArrayImpl>> {
+                LuDecomposition::<$scalar, ArrayImpl>::new(arr)
+            }
+        }
+    };
+}
+
+implement_into_lu!(f32);
+implement_into_lu!(f64);
+implement_into_lu!(c32);
+implement_into_lu!(c64);
+
+impl<
+        Item: RlstScalar + MatrixLu,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Stride<2>
+            + RawAccessMut<Item = Item>
+            + Shape<2>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Compute the LU decomposition of a matrix.
+    ///
+    /// The LU Decomposition of an `(m,n)` matrix `A` is defined
+    /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
+    /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
+    /// an `(k, n)` upper triangular matrix.
+    pub fn into_lu_alloc(self) -> RlstResult<LuDecomposition<Item, ArrayImpl>> {
+        <Item as MatrixLu>::into_lu_alloc(self)
+    }
+}
+
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined

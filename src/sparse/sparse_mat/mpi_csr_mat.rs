@@ -280,7 +280,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
         // Create a vector that combines local dofs and ghosts
 
         let mut local_vec = Vec::<T>::with_capacity(self.local_dof_count);
-        let x_data = x.local().data();
+        let x_local = x.local();
+        let x_data = x_local.data();
         let mut ghost_data = vec![T::zero(); self.domain_ghosts.total_receive_count];
 
         local_vec.extend(x_data.iter().copied());

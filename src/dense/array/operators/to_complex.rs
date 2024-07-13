@@ -3,9 +3,9 @@
 use crate::dense::types::{c32, c64};
 use std::marker::PhantomData;
 
-use crate::dense::array::{
-    Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue,
-};
+use crate::dense::array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue};
+
+use crate::dense::types::RlstScalar;
 
 /// Array to complex
 pub struct ArrayToComplex<

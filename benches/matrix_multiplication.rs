@@ -9,11 +9,8 @@ use rlst::external::metal::AutoReleasePool;
 
 const DIM: usize = 5000;
 
-extern crate blas_src;
-extern crate lapack_src;
-
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 pub fn metal_matmul(c: &mut Criterion) {
-    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     AutoReleasePool::execute(|| {
         let device = rlst::MetalDevice::from_default();
         let mut mat_a = rlst::rlst_metal_array2!(&device, f32, [DIM, DIM]);
@@ -66,5 +63,10 @@ pub fn cpu_matmul(c: &mut Criterion) {
     });
 }
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 criterion_group!(benches, metal_matmul, cpu_matmul);
+
+#[cfg(target_arch = "x86_64")]
+criterion_group!(benches, cpu_matmul);
+
 criterion_main!(benches);

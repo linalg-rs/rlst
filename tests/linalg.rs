@@ -1,8 +1,5 @@
 //! Tests of array algebray operations
 
-extern crate blas_src;
-extern crate lapack_src;
-
 use paste::paste;
 use rlst::assert_array_abs_diff_eq;
 use rlst::assert_array_relative_eq;

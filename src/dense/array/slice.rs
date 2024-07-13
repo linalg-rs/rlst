@@ -3,19 +3,20 @@
 use crate::dense::{
     layout::{convert_1d_nd_from_shape, convert_nd_raw},
     number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
+    types::RlstBase,
 };
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
 
 use super::{
-    empty_chunk, Array, ChunkedAccess, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
+    empty_chunk, Array, ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 /// Generic structure to store Array slices.
 pub struct ArraySlice<
-    Item: RlstScalar,
+    Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
     const ADIM: usize,
     const NDIM: usize,
@@ -32,7 +33,7 @@ pub struct ArraySlice<
 // Implementation of ArraySlice
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -65,7 +66,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -84,7 +85,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>,
@@ -105,7 +106,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -127,7 +128,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccess<Item = Item>
@@ -161,7 +162,7 @@ where
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + Stride<ADIM>
@@ -180,7 +181,7 @@ where
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + UnsafeRandomAccessMut<ADIM, Item = Item>
             + Shape<ADIM>
@@ -199,7 +200,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -221,7 +222,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
         const ADIM: usize,
     > Array<Item, ArrayImpl, ADIM>
@@ -251,7 +252,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM> + Stride<ADIM>,
         const ADIM: usize,
         const NDIM: usize,
@@ -286,10 +287,9 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
-            + UnsafeRandomAccessByRef<ADIM, Item = Item>
             + UnsafeRandomAccessMut<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,
@@ -308,7 +308,7 @@ where
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
             + RawAccessMut<Item = Item>

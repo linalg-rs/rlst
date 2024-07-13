@@ -12,6 +12,55 @@ use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
 use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use num::Zero;
 
+/// Compute a QR decomposition from a given two-dimensional array.
+pub trait MatrixQr: RlstScalar {
+    /// Compute the matrix inverse
+    fn into_qr_alloc<
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+            + Stride<2>
+            + Shape<2>
+            + RawAccessMut<Item = Self>,
+    >(
+        arr: Array<Self, ArrayImpl, 2>,
+    ) -> RlstResult<QrDecomposition<Self, ArrayImpl>>;
+}
+
+macro_rules! implement_into_qr {
+    ($scalar:ty) => {
+        impl MatrixQr for $scalar {
+            fn into_qr_alloc<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = Self>,
+            >(
+                arr: Array<Self, ArrayImpl, 2>,
+            ) -> RlstResult<QrDecomposition<Self, ArrayImpl>> {
+                QrDecomposition::<$scalar, ArrayImpl>::new(arr)
+            }
+        }
+    };
+}
+
+implement_into_qr!(f32);
+implement_into_qr!(f64);
+implement_into_qr!(c32);
+implement_into_qr!(c64);
+
+impl<
+        Item: RlstScalar + MatrixQr,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Stride<2>
+            + RawAccessMut<Item = Item>
+            + Shape<2>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Compute the QR decomposition of a given 2-dimensional array.
+    pub fn into_qr_alloc(self) -> RlstResult<QrDecomposition<Item, ArrayImpl>> {
+        <Item as MatrixQr>::into_qr_alloc(self)
+    }
+}
+
 /// Apply Q side
 #[derive(Clone, Copy)]
 #[repr(u8)]
@@ -20,95 +69,6 @@ pub enum ApplyQSide {
     Left = b'L',
     /// Right
     Right = b'R',
-}
-
-/// Compute the QR decomposition of a given `(m, n)` matrix A.
-///
-/// The function computes a decomposition of the form `AP=QR`, where
-/// `P` is a permutation matrix. It is implemented through a pivoted QR
-/// algorithm so that the forst `r` columns  of `QR` are a good approximation to the
-/// `r` dominant columns of `A`. The matrix `R` has dimension `(k, m)` with
-/// `k=min(m, n)`. `P` is of dimension `(n, n)`. The user can choose in the
-/// method [MatrixQrDecomposition::get_q_alloc] how many columns of `Q` to return.
-pub trait MatrixQrDecomposition: Sized {
-    /// Item type
-    type Item: RlstScalar;
-    /// Array implementation
-    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-        + Stride<2>
-        + RawAccessMut<Item = Self::Item>
-        + Shape<2>;
-    /// Create new
-    fn new(arr: Array<Self::Item, Self::ArrayImpl, 2>) -> RlstResult<Self>;
-
-    /// Return the permuation vector for the QR decomposition.
-    ///
-    /// If `perm[i] = j` then the ith column of QR corresponds
-    /// to the jth column of the original array.
-    fn get_perm(&self) -> Vec<usize>;
-
-    /// Return the R matrix of the QR decomposition.
-    ///
-    /// If `A` has dimension `(m, n)` then R has
-    /// dimension `(k, n)` with `k=min(m, n)`.
-    fn get_r<
-        ArrayImplR: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + RawAccessMut<Item = Self::Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplR, 2>,
-    );
-
-    /// Return the permuation matrix `P`.
-    ///
-    /// For `A` an `(m,n)` matrix `P` has dimension `(n, n)`.
-    fn get_p<
-        ArrayImplQ: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + RawAccessMut<Item = Self::Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplQ, 2>,
-    );
-
-    /// Return the Q matrix of the QR decomposition.
-    ///
-    /// If `A` has dimension `(m, n)` then `arr` needs
-    /// to be of dimension `(m, r)`, where `r<= m``
-    /// is the desired number of columns of `Q`.
-    ///
-    /// This method allocates temporary memory during execution.
-    fn get_q_alloc<
-        ArrayImplQ: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + RawAccessMut<Item = Self::Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplQ, 2>,
-    ) -> RlstResult<()>;
-
-    /// Apply Q to a given matrix.
-    ///
-    /// This method allocates temporary memory during execution.
-    fn apply_q_alloc<
-        ArrayImplQ: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + RawAccessMut<Item = Self::Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplQ, 2>,
-        side: ApplyQSide,
-        trans: ApplyQTrans,
-    ) -> RlstResult<()>;
 }
 
 /// Transpose
@@ -137,11 +97,10 @@ macro_rules! implement_qr_real {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > MatrixQrDecomposition for QrDecomposition<$scalar, ArrayImpl>
+            > QrDecomposition<$scalar, ArrayImpl>
         {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
-            fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
+            /// Create a new QR Decomposition.
+            pub fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
                 let stride = arr.stride();
                 let shape = arr.shape();
 
@@ -210,7 +169,7 @@ macro_rules! implement_qr_real {
             ///
             /// If `perm[i] = j` then the ith column of QR corresponds
             /// to the jth column of the original array.
-            fn get_perm(&self) -> Vec<usize> {
+            pub fn get_perm(&self) -> Vec<usize> {
                 self.jpvt
                     .iter()
                     .map(|&elem| elem as usize - 1)
@@ -221,7 +180,7 @@ macro_rules! implement_qr_real {
             ///
             /// If `A` has dimension `(m, n)` then R has
             /// dimension `(k, n)` with `k=min(m, n)`.
-            fn get_r<
+            pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -249,7 +208,7 @@ macro_rules! implement_qr_real {
             /// Return the permuation matrix `P`.
             ///
             /// For `A` an `(m,n)` matrix `P` has dimension `(n, n)`.
-            fn get_p<
+            pub fn get_p<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -274,7 +233,7 @@ macro_rules! implement_qr_real {
             /// is the desired number of columns of `Q`.
             ///
             /// This method allocates temporary memory during execution.
-            fn get_q_alloc<
+            pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -293,7 +252,7 @@ macro_rules! implement_qr_real {
             /// Apply Q to a given matrix.
             ///
             /// This method allocates temporary memory during execution.
-            fn apply_q_alloc<
+            pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -401,12 +360,10 @@ macro_rules! implement_qr_complex {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>,
-            > MatrixQrDecomposition for QrDecomposition<$scalar, ArrayImpl>
+            > QrDecomposition<$scalar, ArrayImpl>
         {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
-
-            fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
+            /// Create a new QR Decomposition.
+            pub fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
                 let stride = arr.stride();
                 let shape = arr.shape();
 
@@ -480,7 +437,7 @@ macro_rules! implement_qr_complex {
             ///
             /// If `perm[i] = j` then the ith column of QR corresponds
             /// to the jth column of the original array.
-            fn get_perm(&self) -> Vec<usize> {
+            pub fn get_perm(&self) -> Vec<usize> {
                 self.jpvt
                     .iter()
                     .map(|&elem| elem as usize - 1)
@@ -491,7 +448,7 @@ macro_rules! implement_qr_complex {
             ///
             /// If `A` has dimension `(m, n)` then R has
             /// dimension `(k, n)` with `k=min(m, n)`.
-            fn get_r<
+            pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -519,7 +476,7 @@ macro_rules! implement_qr_complex {
             /// Return the permuation matrix `P`.
             ///
             /// For `A` an `(m,n)` matrix `P` has dimension `(n, n)`.
-            fn get_p<
+            pub fn get_p<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -544,7 +501,7 @@ macro_rules! implement_qr_complex {
             /// is the desired number of columns of `Q`.
             ///
             /// This method allocates temporary memory during execution.
-            fn get_q_alloc<
+            pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>
@@ -563,7 +520,7 @@ macro_rules! implement_qr_complex {
             /// Apply Q to a given matrix.
             ///
             /// This method allocates temporary memory during execution.
-            fn apply_q_alloc<
+            pub fn apply_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + RawAccessMut<Item = $scalar>

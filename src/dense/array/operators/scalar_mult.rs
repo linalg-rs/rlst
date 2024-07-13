@@ -1,13 +1,12 @@
 //! Container representing multiplication with a scalar
 
-use crate::dense::array::{
-    Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue,
-};
-use crate::dense::types::{c32, c64};
+use crate::dense::array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue};
+use crate::dense::types::{c32, c64, RlstNum};
+use crate::RlstScalar;
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<
-    Item: RlstScalar,
+    Item: RlstNum,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
@@ -16,7 +15,7 @@ pub struct ArrayScalarMult<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -28,7 +27,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -41,7 +40,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Shape<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -52,7 +51,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
@@ -73,7 +72,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
@@ -133,3 +132,12 @@ impl_scalar_mult!(f64);
 impl_scalar_mult!(f32);
 impl_scalar_mult!(c64);
 impl_scalar_mult!(c32);
+impl_scalar_mult!(usize);
+impl_scalar_mult!(i8);
+impl_scalar_mult!(i16);
+impl_scalar_mult!(i32);
+impl_scalar_mult!(i64);
+impl_scalar_mult!(u8);
+impl_scalar_mult!(u16);
+impl_scalar_mult!(u32);
+impl_scalar_mult!(u64);

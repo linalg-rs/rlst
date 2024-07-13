@@ -1,5 +1,6 @@
 //! Basic types.
 
+use bytemuck::Pod;
 use thiserror::Error;
 
 /// The Rlst error type.
@@ -55,7 +56,7 @@ pub enum RlstError {
 pub type RlstResult<T> = std::result::Result<T, RlstError>;
 
 /// Data chunk of fixed size N.
-pub struct DataChunk<Item: RlstScalar, const N: usize> {
+pub struct DataChunk<Item: RlstBase, const N: usize> {
     /// The data
     pub data: [Item; N],
     /// The start index
@@ -77,6 +78,22 @@ pub use num::complex::Complex64 as c64;
 
 use crate::dense::gemm::Gemm;
 
+/// Base trait for Rlst admissible objects
+pub trait RlstBase:
+    Default + Sized + Copy + Clone + 'static + Display + Send + Sync + Debug
+{
+}
+
+impl<T: Default + Sized + Copy + Clone + Display + Send + Sync + Debug + 'static> RlstBase for T {}
+
+/// Trait representing numbers
+pub trait RlstNum:
+    RlstBase + NumAssign + NumCast + Sum + Product + NumCast + FromPrimitive
+{
+}
+
+impl<T: RlstBase + NumAssign + NumCast + Sum + Product + NumCast + FromPrimitive> RlstNum for T {}
+
 /// Rlst scalar
 ///
 /// The following RlstScalar trait and is implementation for f32, f64, c32, c64
@@ -84,21 +101,12 @@ use crate::dense::gemm::Gemm;
 /// (<https://github.com/rust-math/cauchy>), which is MIT licensed. For the full license text see
 /// <https://github.com/rust-math/cauchy/blob/master/LICENSE>.
 pub trait RlstScalar:
-    NumAssign
-    + FromPrimitive
-    + NumCast
+    RlstNum
     + Neg<Output = Self>
-    + Copy
-    + Clone
-    + Display
-    + Debug
     + LowerExp
     + UpperExp
-    + Sum
-    + Product
     + Serialize
-    + Send
-    + Sync
+    + Pod
     + Gemm
     + for<'de> Deserialize<'de>
     + 'static

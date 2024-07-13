@@ -12,7 +12,6 @@ use crate::dense::traits::{
     ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::RlstScalar;
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::AsRawMetalBufferMut;
@@ -21,15 +20,17 @@ use crate::external::metal::MetalDataBuffer;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::AsRawMetalBuffer;
 
+use super::types::RlstBase;
+
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
 /// the shape of the array, and `stride` contains the `stride` of the underlying data.
-pub struct BaseArray<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> {
+pub struct BaseArray<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],
     stride: [usize; NDIM],
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     BaseArray<Item, Data, NDIM>
 {
     /// Create new
@@ -69,7 +70,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<NDIM>
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<NDIM>
     for BaseArray<Item, Data, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
@@ -77,7 +78,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Shap
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessByRef<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -90,7 +91,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessByValue<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -103,7 +104,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
+impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     UnsafeRandomAccessMut<NDIM> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -116,7 +117,7 @@ impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
+impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
     ChunkedAccess<N> for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -143,7 +144,7 @@ impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const N: usize, cons
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
     for BaseArray<Item, Data, NDIM>
 {
     type Item = Item;
@@ -161,7 +162,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> RawA
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
+impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
     for BaseArray<Item, Data, NDIM>
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
@@ -173,7 +174,7 @@ impl<Item: RlstScalar, Data: DataContainerMut<Item = Item>, const NDIM: usize> R
     }
 }
 
-impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
+impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
     for BaseArray<Item, Data, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
@@ -181,7 +182,7 @@ impl<Item: RlstScalar, Data: DataContainer<Item = Item>, const NDIM: usize> Stri
     }
 }
 
-impl<Item: RlstScalar, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
+impl<Item: RlstBase, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
     ResizeInPlace<NDIM> for BaseArray<Item, Data, NDIM>
 {
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {

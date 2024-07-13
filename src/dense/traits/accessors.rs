@@ -17,12 +17,12 @@
 //! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
 use crate::dense::traits::Shape;
-use crate::dense::types::{DataChunk, RlstScalar};
+use crate::dense::types::{DataChunk, RlstBase};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
 
     /// Return the element at position determined by `multi_index`.
     ///
@@ -34,7 +34,7 @@ pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
 /// This trait provides unsafe access by reference to the underlying data.
 pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -46,7 +46,7 @@ pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
 /// This trait provides unsafe mutable access to the underlying data.
 pub trait UnsafeRandomAccessMut<const NDIM: usize> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -76,7 +76,7 @@ pub trait RandomAccessMut<const NDIM: usize>: UnsafeRandomAccessMut<NDIM> {
 /// Return chunks of data of size N;
 pub trait ChunkedAccess<const N: usize> {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
     /// Get chunk
     fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>>;
 }
@@ -92,7 +92,7 @@ pub trait ChunkedAccess<const N: usize> {
 ///   etc. it may be different from zero.
 pub trait RawAccess {
     /// Item type
-    type Item: RlstScalar;
+    type Item: RlstBase;
 
     /// Get a slice of the whole data.
     fn data(&self) -> &[Self::Item];
@@ -123,7 +123,7 @@ fn check_dimension<const NDIM: usize>(multi_index: [usize; NDIM], shape: [usize;
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         Mat: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > RandomAccessByValue<NDIM> for Mat
@@ -138,7 +138,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         Mat: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > RandomAccessMut<NDIM> for Mat
@@ -153,7 +153,7 @@ impl<
 }
 
 impl<
-        Item: RlstScalar,
+        Item: RlstBase,
         Mat: UnsafeRandomAccessByRef<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
     > RandomAccessByRef<NDIM> for Mat
