@@ -1,14 +1,13 @@
+use git2::Repository;
 use std::env;
-use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
 
 use cmake::Config;
 
 macro_rules! build_dep {
     ($name:literal) => {{
-        let out_dir = std::env::var("OUT_DIR").unwrap();
-        Config::new(format!("suitesparse/{}", $name))
+        let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+        Config::new(out_dir.join("suitesparse").join($name))
             .define("CMAKE_PREFIX_PATH", out_dir)
             .build()
     }};
@@ -16,7 +15,25 @@ macro_rules! build_dep {
 
 fn build_sleef() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    Config::new("sleef")
+    let sleef_dir = out_dir.join("sleef");
+
+    // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
+    let repo = Repository::clone("https://github.com/shibatch/sleef", sleef_dir.clone())
+        .expect("Could not clone Sleef repository.");
+    let refname = "3.6.1";
+    let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
+    repo.checkout_tree(&object, None)
+        .expect("Failed to checkout");
+
+    match reference {
+        // gref is an actual reference like branches or tags
+        Some(gref) => repo.set_head(gref.name().unwrap()),
+        // this is a commit, not a reference
+        None => repo.set_head_detached(object.id()),
+    }
+    .expect("Failed to set HEAD");
+
+    Config::new(sleef_dir.clone())
         .define("CMAKE_PREFIX_PATH", out_dir.clone())
         .profile("Release")
         .build();
@@ -37,72 +54,67 @@ fn build_sleef() {
             .compile("sleef_interface");
     }
 
-    println!(
-        "cargo:rustc-link-search={}",
-        out_dir.clone().join("lib").display()
-    );
-
     println!("cargo:rustc-link-lib=static=sleef");
     println!("cargo:rustc-link-lib=static=sleef_interface");
 }
 
-fn build_internal_blis() {
-    let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let build = dst.join("build_blis");
-    let _ = fs::create_dir(&build);
+// fn build_internal_blis() {
+//     let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
+//     let build = dst.join("build_blis");
+//     let _ = fs::create_dir(&build);
 
-    let configure = PathBuf::from("blis")
-        .join("configure")
-        .canonicalize()
-        .unwrap();
-    let mut config_command = Command::new("sh");
-    config_command
-        .args(["-c", "exec \"$0\" \"$@\""])
-        .arg(configure);
-    config_command.arg(format!("--prefix={}", dst.display()));
-    config_command.arg("--enable-threading=pthreads");
-    config_command.args(["--enable-cblas", "auto"]);
-    let status = match config_command.current_dir(&build).status() {
-        Ok(status) => status,
-        Err(e) => panic!("Could not execute configure command with error {}", e),
-    };
-    if !status.success() {
-        panic!("Configure command failed with error {}", status);
-    }
+//     let configure = PathBuf::from("blis")
+//         .join("configure")
+//         .canonicalize()
+//         .unwrap();
+//     let mut config_command = Command::new("sh");
+//     config_command
+//         .args(["-c", "exec \"$0\" \"$@\""])
+//         .arg(configure);
+//     config_command.arg(format!("--prefix={}", dst.display()));
+//     config_command.arg("--enable-threading=pthreads");
+//     config_command.args(["--enable-cblas", "auto"]);
+//     let status = match config_command.current_dir(&build).status() {
+//         Ok(status) => status,
+//         Err(e) => panic!("Could not execute configure command with error {}", e),
+//     };
+//     if !status.success() {
+//         panic!("Configure command failed with error {}", status);
+//     }
 
-    let make_flags = env::var_os("CARGO_MAKEFLAGS").unwrap();
-    let mut build_command = Command::new("sh");
-    build_command
-        .args(["-c", "exec \"$0\" \"$@\""])
-        .args(["make", "install"]);
-    build_command.env("MAKEFLAGS", make_flags);
+//     let make_flags = env::var_os("CARGO_MAKEFLAGS").unwrap();
+//     let mut build_command = Command::new("sh");
+//     build_command
+//         .args(["-c", "exec \"$0\" \"$@\""])
+//         .args(["make", "install"]);
+//     build_command.env("MAKEFLAGS", make_flags);
 
-    let status = match build_command.current_dir(&build).status() {
-        Ok(status) => status,
-        Err(e) => panic!("Could not execute build command with error {}", e),
-    };
-    if !status.success() {
-        panic!("Build command failed with error {}", status);
-    }
+//     let status = match build_command.current_dir(&build).status() {
+//         Ok(status) => status,
+//         Err(e) => panic!("Could not execute build command with error {}", e),
+//     };
+//     if !status.success() {
+//         panic!("Build command failed with error {}", status);
+//     }
 
-    let dst = cmake::Config::new("lapack")
-        .define("BUILD_SHARED_LIBS", "OFF")
-        .define("LAPACKE", "OFF")
-        .define("BLA_VENDOR", "FLAME")
-        .define("CMAKE_PREFIX_PATH", dst.display().to_string())
-        .define("USE_OPTIMIZED_BLAS", "ON")
-        .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
-        .build();
+//     let dst = cmake::Config::new("lapack")
+//         .define("BUILD_SHARED_LIBS", "OFF")
+//         .define("LAPACKE", "OFF")
+//         .define("BLA_VENDOR", "FLAME")
+//         .define("CMAKE_PREFIX_PATH", dst.display().to_string())
+//         .define("USE_OPTIMIZED_BLAS", "ON")
+//         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+//         .build();
 
-    println!("cargo:rustc-link-search={}", dst.join("lib").display());
-    println!("cargo:rustc-link-lib=static=lapack");
-    println!("cargo:rustc-link-lib=dylib=blis");
+//     println!("cargo:rustc-link-search={}", dst.join("lib").display());
+//     println!("cargo:rustc-link-lib=static=lapack");
+//     println!("cargo:rustc-link-lib=dylib=blis");
 
-    if cfg!(target_os = "macos") {
-        println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
-    }
-    println!("cargo:rustc-link-lib=dylib=gfortran");
-}
+//     if cfg!(target_os = "macos") {
+//         println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
+//     }
+//     println!("cargo:rustc-link-lib=dylib=gfortran");
+// }
 
 fn build_metal(out_dir: String) {
     cc::Build::new()
@@ -140,7 +152,28 @@ fn build_metal(out_dir: String) {
 fn build_umfpack(out_dir: String) {
     let out_path = PathBuf::from(out_dir.clone());
 
-    let suitesparse = build_dep!("SuiteSparse_config");
+    let suitesparse_dir = out_path.join("suitesparse");
+
+    // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
+    let repo = Repository::clone(
+        "https://github.com/DrTimothyAldenDavis/SuiteSparse.git",
+        suitesparse_dir.clone(),
+    )
+    .expect("Could not clone Suitesparse repository.");
+    let refname = "v7.7.0";
+    let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
+    repo.checkout_tree(&object, None)
+        .expect("Failed to checkout");
+
+    match reference {
+        // gref is an actual reference like branches or tags
+        Some(gref) => repo.set_head(gref.name().unwrap()),
+        // this is a commit, not a reference
+        None => repo.set_head_detached(object.id()),
+    }
+    .expect("Failed to set HEAD");
+
+    let _suitesparse_config = build_dep!("SuiteSparse_config");
     let _amd = build_dep!("AMD");
     let _camd = build_dep!("CAMD");
     let _colamd = build_dep!("COLAMD");
@@ -151,11 +184,6 @@ fn build_umfpack(out_dir: String) {
     // Only needed if we want to let other libraries know where we
     // compiled suitesparse.
     // println!("cargo:root={}", std::env::var("OUT_DIR").unwrap());
-
-    println!(
-        "cargo:rustc-link-search={}",
-        suitesparse.join("lib").display()
-    );
 
     println!("cargo:rustc-link-lib=static=suitesparseconfig");
     println!("cargo:rustc-link-lib=static=amd");
@@ -200,6 +228,7 @@ fn build_umfpack(out_dir: String) {
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
+    println!("cargo:rustc-link-search={}", out_dir.clone() + "/lib");
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
@@ -230,9 +259,9 @@ fn main() {
         build_metal(out_dir.clone());
     }
 
-    if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() && target_os != "macos" {
-        build_internal_blis();
-    }
+    // if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() && target_os != "macos" {
+    //     build_internal_blis();
+    // }
 
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());

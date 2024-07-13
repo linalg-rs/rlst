@@ -51,13 +51,13 @@ rand = "0.8"
 cc = "1.0"
 bindgen = "0.69"
 cmake = "0.1"
+git2 = "0.19"
 
 [features]
 strict = []
-default = ["sleef"]
+default = ["sleef", "suitesparse"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
-internal_blis = []
 disable_system_blas_lapack = []
 metal = []
 sleef = []
