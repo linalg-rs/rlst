@@ -482,7 +482,7 @@
 //! let mut p_mat = rlst_dynamic_array2!(f64, [5, 5]);
 //! let mut q_mat = rlst_dynamic_array2!(f64, [8, 5]);
 // ! arr.fill_from_equally_distributed(&mut rand);
-//! let qr = QrDecomposition::<f64, _>::new(arr).expect("QR Decomposition failed");
+//! let qr = arr.into_qr_alloc().expect("QR Decomposition failed");
 //! qr.get_r(r_mat.view_mut());
 //! qr.get_q_alloc(q_mat.view_mut());
 //! qr.get_p(p_mat.view_mut());

@@ -44,6 +44,25 @@ implement_into_lu!(f64);
 implement_into_lu!(c32);
 implement_into_lu!(c64);
 
+impl<
+        Item: RlstScalar + MatrixLu,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Stride<2>
+            + RawAccessMut<Item = Item>
+            + Shape<2>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Compute the LU decomposition of a matrix.
+    ///
+    /// The LU Decomposition of an `(m,n)` matrix `A` is defined
+    /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
+    /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
+    /// an `(k, n)` upper triangular matrix.
+    pub fn into_lu_alloc(self) -> RlstResult<LuDecomposition<Item, ArrayImpl>> {
+        <Item as MatrixLu>::into_lu_alloc(self)
+    }
+}
+
 /// Compute the LU decomposition of a matrix.
 ///
 /// The LU Decomposition of an `(m,n)` matrix `A` is defined

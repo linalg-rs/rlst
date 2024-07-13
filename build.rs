@@ -243,6 +243,7 @@ fn main() {
     }
 
     println!("cargo:rerun-if-changed=metal/rlst_metal.m");
-    println!("cargo:rerun-if-changed=sleef_interface/sleef.c");
+    println!("cargo:rerun-if-changed=sleef_interface/sleef_avx.c");
+    println!("cargo:rerun-if-changed=sleef_interface/sleef_neon.c");
     println!("cargo:rerun-if-changed=build.rs");
 }
