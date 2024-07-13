@@ -47,6 +47,20 @@ implement_into_qr!(f64);
 implement_into_qr!(c32);
 implement_into_qr!(c64);
 
+impl<
+        Item: RlstScalar + MatrixQr,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Stride<2>
+            + RawAccessMut<Item = Item>
+            + Shape<2>,
+    > Array<Item, ArrayImpl, 2>
+{
+    /// Compute the QR decomposition of a given 2-dimensional array.
+    pub fn into_qr_alloc(self) -> RlstResult<QrDecomposition<Item, ArrayImpl>> {
+        <Item as MatrixQr>::into_qr_alloc(self)
+    }
+}
+
 /// Apply Q side
 #[derive(Clone, Copy)]
 #[repr(u8)]
