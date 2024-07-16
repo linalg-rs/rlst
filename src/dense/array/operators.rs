@@ -10,6 +10,7 @@ pub mod scalar_mult;
 pub mod subtraction;
 pub mod to_complex;
 pub mod transpose;
+pub mod unary_maths;
 
 /// Test SIMD
 pub fn test_simd() {

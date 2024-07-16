@@ -20,7 +20,7 @@ exclude = [
 name = "rlst"
 
 [dependencies]
-rlst-proc-macro = { path = "proc-macro", version = "0.2" }
+rlst-proc-macro = { path = "proc-macro", version = "0.2.0-dev" }
 num = { version = "0.4", features = ["serde", "rand"]}
 approx = { version = "0.5", features=["num-complex"] }
 num_cpus = "1"
@@ -86,6 +86,9 @@ harness = false
 name = "exp"
 harness = false
 
+[[bench]]
+name = "array_unary"
+harness = false
 
 [[example]]
 name = "mpi_gather_to_all_vector"

@@ -15,6 +15,8 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
 
+use crate::RlstScalar;
+
 /// A simplified wrapper to call into Simd operations in a type
 /// and architecture independent way.
 #[derive(Copy, Clone, Debug)]
@@ -207,7 +209,7 @@ impl_unary_op_interface!(cos);
 
 /// [RlstScalar](crate::RlstScalar) extension trait for SIMD operations.
 #[allow(dead_code)]
-pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
+pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static + RlstScalar {
     /// Simd register that has the layout `[Self; N]` for some `N > 0`.
     type Scalars<S: Simd>: Pod + Copy + Send + Sync + Debug + 'static;
     /// Simd mask register that has the layout `[Self; N]` for some `N > 0`.
