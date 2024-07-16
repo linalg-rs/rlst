@@ -54,9 +54,9 @@ pub fn convert_1d_nd_from_shape<const NDIM: usize>(
 ) -> [usize; NDIM] {
     let mut res = [0; NDIM];
     debug_assert!(index < shape.iter().product());
-    for ind in 0..NDIM {
-        res[ind] = index % shape[ind];
-        index /= shape[ind];
+    for (r, s) in itertools::izip!(res.iter_mut(), shape.iter()) {
+        *r = index % s;
+        index /= s;
     }
     res
 }
