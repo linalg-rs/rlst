@@ -5,6 +5,7 @@
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
 use crate::dense::base_array::BaseArray;
+use crate::dense::data_container::CacheAlignedVectorContainer;
 use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
 use crate::dense::data_container::VectorContainer;
@@ -33,6 +34,10 @@ pub mod views;
 /// A basic dynamically allocated array.
 pub type DynamicArray<Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A basic cache aligned dynamically allocated array.
+pub type CacheAlignedDynamicArray<Item, const NDIM: usize> =
+    Array<Item, BaseArray<Item, CacheAlignedVectorContainer<Item>, NDIM>, NDIM>;
 
 /// A dynamically allocated array from a data slice.
 pub type SliceArray<'a, Item, const NDIM: usize> =
@@ -85,6 +90,27 @@ impl<Item: RlstBase, const NDIM: usize> DynamicArray<Item, NDIM> {
         let size = shape.iter().product();
         Self::new(BaseArray::new_with_stride(
             VectorContainer::new(size),
+            shape,
+            stride,
+        ))
+    }
+}
+
+impl<Item: RlstBase, const NDIM: usize> CacheAlignedDynamicArray<Item, NDIM> {
+    /// Create a new heap allocated array from a given shape.
+    pub fn from_shape(shape: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(BaseArray::new(
+            CacheAlignedVectorContainer::new(size),
+            shape,
+        ))
+    }
+
+    /// Create a new heap allocated array from a given shape.
+    pub fn from_shape_with_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(BaseArray::new_with_stride(
+            CacheAlignedVectorContainer::new(size),
             shape,
             stride,
         ))

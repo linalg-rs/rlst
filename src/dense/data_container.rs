@@ -12,6 +12,8 @@
 
 use super::types::RlstBase;
 
+use aligned_vec::{avec, AVec};
+
 /// Defines the basic behaviour of a data container.
 pub trait DataContainer {
     /// Item type
@@ -62,6 +64,12 @@ pub struct VectorContainer<Item: RlstBase> {
     data: Vec<Item>,
 }
 
+/// A dynamic contaiiner aligned along cache line.
+#[derive(Clone)]
+pub struct CacheAlignedVectorContainer<Item: RlstBase> {
+    data: AVec<Item>,
+}
+
 /// A container that uses a statically allocated array.
 ///
 /// The size of this container needs to be known at compile time.
@@ -88,6 +96,17 @@ impl<Item: RlstBase> VectorContainer<Item> {
     pub fn new(nelems: usize) -> VectorContainer<Item> {
         VectorContainer::<Item> {
             data: vec![<Item as Default>::default(); nelems],
+        }
+    }
+}
+
+impl<Item: RlstBase> CacheAlignedVectorContainer<Item> {
+    /// New aligned vector container by specifying the number of elements.
+    ///
+    /// The container is initialized with zeros by default.
+    pub fn new(nelems: usize) -> CacheAlignedVectorContainer<Item> {
+        CacheAlignedVectorContainer::<Item> {
+            data: avec![<Item as Default>::default(); nelems],
         }
     }
 }
@@ -155,6 +174,45 @@ impl<Item: RlstBase> DataContainerMut for VectorContainer<Item> {
 }
 
 impl<Item: RlstBase> ResizeableDataContainerMut for VectorContainer<Item> {
+    fn resize(&mut self, new_len: usize) {
+        self.data.resize(new_len, <Item as Default>::default());
+    }
+}
+
+impl<Item: RlstBase> DataContainer for CacheAlignedVectorContainer<Item> {
+    type Item = Item;
+
+    unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        *self.data.get_unchecked(index)
+    }
+
+    unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        self.data.get_unchecked(index)
+    }
+
+    fn data(&self) -> &[Self::Item] {
+        &self.data
+    }
+
+    fn number_of_elements(&self) -> usize {
+        self.data.len()
+    }
+}
+
+impl<Item: RlstBase> DataContainerMut for CacheAlignedVectorContainer<Item> {
+    unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        self.data.get_unchecked_mut(index)
+    }
+
+    fn data_mut(&mut self) -> &mut [Self::Item] {
+        &mut self.data
+    }
+}
+
+impl<Item: RlstBase> ResizeableDataContainerMut for CacheAlignedVectorContainer<Item> {
     fn resize(&mut self, new_len: usize) {
         self.data.resize(new_len, <Item as Default>::default());
     }

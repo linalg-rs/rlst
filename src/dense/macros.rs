@@ -18,11 +18,16 @@ macro_rules! rlst_rank1_array {
 /// # use rlst::prelude::*;
 /// // Creates a (3) array with `f64` entries.
 /// let arr = rlst_dynamic_array1!(f64, [3]);
+/// // Crates a cache aligned (3) array with 'f64' entries.
+/// let arr = rlst_dynamic_array1!(f64, [3], cache_aligned);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array1 {
     ($scalar:ty, $shape:expr) => {{
         $crate::dense::array::DynamicArray::<$scalar, 1>::from_shape($shape)
+    }};
+    ($scalar:ty, $shape:expr, cache_aligned) => {{
+        $crate::dense::array::CacheAlignedDynamicArray::<$scalar, 1>::from_shape($shape)
     }};
 }
 
@@ -35,11 +40,16 @@ macro_rules! rlst_dynamic_array1 {
 /// # use rlst::prelude::*;
 /// // Creates a (3, 5) array with `f64` entries.
 /// let arr = rlst_dynamic_array2!(f64, [3, 5]);
+/// // Crates a cache aligned (3, 5) array with 'f64' entries.
+/// let arr = rlst_dynamic_array2!(f64, [3, 5], cache_aligned);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array2 {
     ($scalar:ty, $shape:expr) => {{
         $crate::dense::array::DynamicArray::<$scalar, 2>::from_shape($shape)
+    }};
+    ($scalar:ty, $shape:expr, cache_aligned) => {{
+        $crate::dense::array::CacheAlignedDynamicArray::<$scalar, 2>::from_shape($shape)
     }};
 }
 
@@ -52,11 +62,16 @@ macro_rules! rlst_dynamic_array2 {
 /// # use rlst::prelude::*;
 /// // Creates a (3, 5, 2) array with `f64` entries.
 /// let arr = rlst_dynamic_array3!(f64, [3, 5, 2]);
+/// // Crates a cache aligned (3, 5, 2) array with 'f64' entries.
+/// let arr = rlst_dynamic_array3!(f64, [3, 5, 2], cache_aligned);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array3 {
     ($scalar:ty, $shape:expr) => {{
         $crate::dense::array::DynamicArray::<$scalar, 3>::from_shape($shape)
+    }};
+    ($scalar:ty, $shape:expr, cache_aligned) => {{
+        $crate::dense::array::CacheAlignedDynamicArray::<$scalar, 3>::from_shape($shape)
     }};
 }
 
@@ -69,11 +84,16 @@ macro_rules! rlst_dynamic_array3 {
 /// # use rlst::prelude::*;
 /// // Creates a (3, 5, 2, 4) array with `f64` entries.
 /// let arr = rlst_dynamic_array4!(f64, [3, 5, 2, 4]);
+/// // Crates a cache aligned (3, 5, 2, 4) array with 'f64' entries.
+/// let arr = rlst_dynamic_array4!(f64, [3, 5, 2, 4], cache_aligned);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array4 {
     ($scalar:ty, $shape:expr) => {{
         $crate::dense::array::DynamicArray::<$scalar, 4>::from_shape($shape)
+    }};
+    ($scalar:ty, $shape:expr, cache_aligned) => {{
+        $crate::dense::array::CacheAlignedDynamicArray::<$scalar, 4>::from_shape($shape)
     }};
 }
 
@@ -86,11 +106,16 @@ macro_rules! rlst_dynamic_array4 {
 /// # use rlst::prelude::*;
 /// // Creates a (3, 5, 2, 4, 6) array with `f64` entries.
 /// let arr = rlst_dynamic_array5!(f64, [3, 5, 2, 4, 6]);
+/// // Crates a cache aligned (3, 5, 2, 4) array with 'f64' entries.
+/// let arr = rlst_dynamic_array5!(f64, [3, 5, 2, 4, 6], cache_aligned);
 /// ```
 #[macro_export]
 macro_rules! rlst_dynamic_array5 {
     ($scalar:ty, $shape:expr) => {{
         $crate::dense::array::DynamicArray::<$scalar, 5>::from_shape($shape)
+    }};
+    ($scalar:ty, $shape:expr, cache_aligned) => {{
+        $crate::dense::array::CacheAlignedDynamicArray::<$scalar, 5>::from_shape($shape)
     }};
 }
 

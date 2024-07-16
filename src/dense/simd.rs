@@ -9,10 +9,12 @@ mod sleef_avx;
 use bytemuck::Pod;
 use coe;
 use num::Zero;
+use paste::paste;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::slice::{from_raw_parts, from_raw_parts_mut};
+
 /// A simplified wrapper to call into Simd operations in a type
 /// and architecture independent way.
 #[derive(Copy, Clone, Debug)]
@@ -124,11 +126,11 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     //     T::simd_sin_cos_quarter_circle(self.simd, value)
     // }
 
-    /// Compute the base e exponential of a Simd vector.
-    #[inline(always)]
-    pub fn exp(self, value: T::Scalars<S>) -> T::Scalars<S> {
-        T::simd_exp(self.simd, value)
-    }
+    // /// Compute the base e exponential of a Simd vector.
+    // #[inline(always)]
+    // pub fn exp(self, value: T::Scalars<S>) -> T::Scalars<S> {
+    //     T::simd_exp(self.simd, value)
+    // }
 
     /// Compute the square root of a Simd vector.
     #[inline(always)]
@@ -179,6 +181,29 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         }
     }
 }
+
+macro_rules! impl_unary_op_interface {
+    ($name: expr) => {
+        paste! {
+
+        #[allow(dead_code)]
+        impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
+            #[doc = "Implement "]
+            #[doc = stringify!($name)]
+            #[doc = " for a Simd vector."]
+            #[inline(always)]
+            pub fn [<$name>](self, value: T::Scalars<S>) -> T::Scalars<S> {
+                T::[<simd_ $name>](self.simd, value)
+            }
+        }
+
+        }
+    };
+}
+
+impl_unary_op_interface!(exp);
+impl_unary_op_interface!(sin);
+impl_unary_op_interface!(cos);
 
 /// [RlstScalar](crate::RlstScalar) extension trait for SIMD operations.
 #[allow(dead_code)]
@@ -318,6 +343,12 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
 
     /// Compute the base e exponential of a Simd vector.
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
+
+    /// Compute the sine a Simd vector.
+    fn simd_sin<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
+
+    /// Compute the cosine of a Simd vector.
+    fn simd_cos<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
 
     /// Compute the square root of each element in the register.
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
@@ -653,6 +684,64 @@ impl RlstSimd for f32 {
             let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
             for (out, x) in itertools::izip!(out, x) {
                 *out = x.exp();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_sin<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f32; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_sin_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f32; 8] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_sin_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.f32s_splat(0.0);
+        {
+            let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.sin();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_cos<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f32; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_cos_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f32; 8] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_cos_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.f32s_splat(0.0);
+        {
+            let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.cos();
             }
         }
         out
@@ -1028,6 +1117,64 @@ impl RlstSimd for f64 {
             let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
             for (out, x) in itertools::izip!(out, x) {
                 *out = x.exp();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_sin<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f64; 2] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_sin_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f64; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_sin_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.f64s_splat(0.0);
+        {
+            let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.sin();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_cos<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f64; 2] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_cos_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f64; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_cos_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.f64s_splat(0.0);
+        {
+            let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.cos();
             }
         }
         out
@@ -1526,4 +1673,7 @@ mod tests {
 
     impl_unary_simd_test!(exp, 1E-6, 1E-13);
     impl_unary_simd_test!(sqrt, 1E-6, 1E-13);
+
+    impl_unary_simd_test!(sin, 1E-6, 1E-13);
+    impl_unary_simd_test!(cos, 1E-6, 1E-13);
 }

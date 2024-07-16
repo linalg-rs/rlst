@@ -72,3 +72,51 @@ rlst_float32x8 rlst_avx_exp_f32(float* value) {
 }
 
 
+rlst_float64x4 rlst_avx_sin_f64(double* value) {
+
+  __m256d simd_value = _mm256_loadu_pd(value);
+  __m256d simd_output = Sleef_sind4_u10avx2(simd_value);
+  rlst_float64x4 output;
+
+  _mm256_storeu_pd (output.x, simd_output);
+  
+
+  return output;
+}
+
+rlst_float32x8 rlst_avx_sin_f32(float* value) {
+
+  __m256 simd_value = _mm256_loadu_ps(value);
+  __m256 simd_output = Sleef_sinf8_u10avx2(simd_value);
+  rlst_float32x8 output;
+
+  _mm256_storeu_ps (output.x, simd_output);
+  
+
+  return output;
+}
+
+rlst_float64x4 rlst_avx_cos_f64(double* value) {
+
+  __m256d simd_value = _mm256_loadu_pd(value);
+  __m256d simd_output = Sleef_cosd4_u10avx2(simd_value);
+  rlst_float64x4 output;
+
+  _mm256_storeu_pd (output.x, simd_output);
+  
+
+  return output;
+}
+
+rlst_float32x8 rlst_avx_cos_f32(float* value) {
+
+  __m256 simd_value = _mm256_loadu_ps(value);
+  __m256 simd_output = Sleef_cosf8_u10avx2(simd_value);
+  rlst_float32x8 output;
+
+  _mm256_storeu_ps (output.x, simd_output);
+  
+
+  return output;
+}
+
