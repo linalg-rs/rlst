@@ -25,6 +25,7 @@
 //! The following code demonstrates how to use this solver.
 //!
 //! ```
+//! use rlst::prelude::*;
 //! let n = 5;
 //!
 //! let mut mat = rlst_dynamic_array2!(f64, [n, n]);
@@ -50,13 +51,16 @@
 //!
 //! let sparse_mat = CscMatrix::from_aij([n, n], &rows, &cols, &data).unwrap();
 //!
-//! sparse_mat
-//!     .into_lu()
-//!     .unwrap()
-//!     .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
-//!     .unwrap();
+//! #[cfg(feature = "suitesparse")]
+//! {
+//!     sparse_mat
+//!         .into_lu()
+//!         .unwrap()
+//!         .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
+//!         .unwrap();
 //!
 //! rlst::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
+//! }
 //! ```
 //! Sparse matrices do not yet support algebraic operations such as multiplications with scalars, additions, etc.
 //! To use those it is possible to wrap a sparse matrix into an abstract operator and use the abstract operator interface.
