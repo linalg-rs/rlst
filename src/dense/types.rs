@@ -431,3 +431,14 @@ pub enum TransMode {
     /// Conjugate transpose of matrix.
     ConjTrans,
 }
+
+/// Memory Layout Descriptor.
+#[derive(Clone, Copy, PartialEq)]
+pub enum MemoryLayout {
+    /// Column Major Layout
+    ColMajor,
+    /// Row Major Layout
+    RowMajor,
+    /// General Layout
+    General,
+}

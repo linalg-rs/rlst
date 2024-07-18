@@ -18,6 +18,7 @@ use crate::dense::types::DataChunk;
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
+use crate::MemoryLayout;
 
 use super::types::RlstBase;
 
@@ -56,7 +57,7 @@ pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
     Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
-pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
+pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl, MemoryLayout)
 where
     Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>;
@@ -68,8 +69,8 @@ impl<
     > Array<Item, ArrayImpl, NDIM>
 {
     /// Instantiate a new array from an `ArrayImpl` structure.
-    pub fn new(arr: ArrayImpl) -> Self {
-        Self(arr)
+    pub fn new(arr: ArrayImpl, memory_layout: MemoryLayout) -> Self {
+        Self(arr, memory_layout)
     }
 
     /// Return the number of elements in the array.

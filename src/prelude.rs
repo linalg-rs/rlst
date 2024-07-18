@@ -39,6 +39,8 @@ pub use crate::dense::traits::{
     RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
+pub use crate::dense::types::MemoryLayout;
+
 pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
 
 pub use crate::dense::linalg::LinAlg;
