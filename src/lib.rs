@@ -21,7 +21,7 @@
 //! - Import and export of matrices.
 //! - BLAS dependencies, multithreading, and GPU offloading.
 
-#![cfg_attr(feature = "strict", deny(warnings))]
+#![cfg_attr(feature = "strict", deny(warnings), deny(unused_crate_dependencies))]
 #![warn(missing_docs)]
 
 pub mod dense;
@@ -36,3 +36,8 @@ pub mod threading;
 pub mod operator;
 
 pub use prelude::*;
+
+#[cfg(test)]
+mod test {
+    use criterion as _; // Hack to show that criterion is used, as cargo test does not see benches
+}

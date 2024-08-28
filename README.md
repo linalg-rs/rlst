@@ -3,7 +3,10 @@
 The Rust Linear Solver toolbox is an in-development project for
 dense and sparse library routines in Rust.
 
-# LICENSE
+## Documentation
+The latest documentation of the main branch of this repo is available at [linalg-rs.github.io/rlst](https://linalg-rs.github.io/rlst/).
+
+## LICENSE
 
 This work is dual-licensed under the Apache 2.0 and MIT license.
 You can choose between one of them if you use this work.
@@ -25,7 +28,7 @@ flag. It is enabled by default and provides SIMD variants of certain mathematica
 Sleef is licensed under the Boost Software License Version 1.0.
 
 
-# Notes
+## Notes
 
 This library is the result of the merger of two experimental linear algebra projects
 

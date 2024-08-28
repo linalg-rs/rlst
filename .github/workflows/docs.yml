@@ -1,0 +1,70 @@
+name: 📖
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+jobs:
+  build-docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "nightly"
+      - name: Set up MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: "mpich"
+      - uses: actions/checkout@v3
+
+      - name: Build docs
+        run: RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi,strict"
+
+  build-and-deploy-docs:
+    name: Build and deploy docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: "pages"
+      cancel-in-progress: true
+    steps:
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "nightly"
+          components: rustfmt
+      - name: Set up MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: "mpich"
+      - uses: actions/checkout@v3
+
+      - name: Build docs
+        run: RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi"
+
+      - name: Set file permissions
+        run: |
+          rm target/doc/.lock
+          chmod -c -R +rX target/doc
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact for docs
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'target/doc'
+      - name: Deploy docs to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

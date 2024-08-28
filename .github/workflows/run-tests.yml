@@ -59,6 +59,27 @@ jobs:
           python3 find_examples.py --features "strict"
           chmod +x examples.sh
           ./examples.sh
+      - name: Check benchmarks compile
+        run: cargo bench --no-run
 
       - name: Build docs
         run: cargo doc --features "mpi,strict"
+
+  check-dependencies:
+    name: Check dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust-version: ["stable"]
+    steps:
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt
+      - name: Install cargo-upgrades
+        run: cargo install cargo-upgrades
+      - uses: actions/checkout@v3
+      - name: Check that dependencies are up to date
+        run:
+          cargo upgrades

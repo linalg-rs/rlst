@@ -22,12 +22,10 @@ name = "rlst"
 [dependencies]
 rlst-proc-macro = { path = "proc-macro", version = "0.2" }
 num = { version = "0.4", features = ["serde", "rand"]}
-approx = { version = "0.5", features=["num-complex"] }
-num_cpus = "1"
 rand = "0.8"
 rand_chacha = "0.3"
 rand_distr = "0.4"
-itertools = "0.12"
+itertools = "0.13"
 blas = "0.22"
 lapack = "0.19"
 thiserror = "1"
@@ -36,20 +34,20 @@ serde = "1"
 coe-rs = "0.1.2"
 pulp = { version = "0.18.12" }
 bytemuck = "1.16.0"
-hexf = "0.2.1"
 
 mpi = { version="0.8.0", optional=true }
 mpi-sys = { version="0.2.1", optional=true }
 
 
 [dev-dependencies]
-criterion = { version = "0.3", features = ["html_reports"] }
+criterion = { version = "0.5", features = ["html_reports"] }
+approx = { version = "0.5", features=["num-complex"] }
 paste = "1"
 rand = "0.8"
 
 [build-dependencies]
 cc = "1.0"
-bindgen = "0.69"
+bindgen = "0.70"
 cmake = "0.1"
 git2 = "0.19"
 
@@ -61,6 +59,8 @@ suitesparse = []
 disable_system_blas_lapack = []
 metal = []
 sleef = []
+nightly = []
+internal_blis = []
 
 [lints.clippy]
 wildcard_imports = "forbid"
