@@ -36,3 +36,8 @@ pub mod threading;
 pub mod operator;
 
 pub use prelude::*;
+
+#[cfg(test)]
+mod test {
+    use criterion as _; // Hack to show that criterion is used, as cargo test does not see benches
+}
