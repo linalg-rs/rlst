@@ -59,6 +59,8 @@ jobs:
           python3 find_examples.py --features "strict"
           chmod +x examples.sh
           ./examples.sh
+      - name: Check benchmarks compile
+        run: cargo bench --no-run
 
       - name: Build docs
         run: cargo doc --features "mpi,strict"
