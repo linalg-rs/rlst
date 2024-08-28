@@ -49,7 +49,7 @@ pub trait MatrixPseudoInverse: RlstScalar + MatrixSvd {
     /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
     ///           `pinv` must have shape `[n, m]`.
     /// - `tol`: The relative tolerance. Singular values smaller or equal `tol * s\[0\]` will be discarded,
-    /// where s\[0\] is the largest singular value.
+    ///          where s\[0\] is the largest singular value.
     fn into_pseudo_inverse_alloc<
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
             + Stride<2>
@@ -107,7 +107,7 @@ impl<
     /// - `pinv`: Array to store the pseudo-inverse in. If `self` has shape `[m, n]` then
     ///           `pinv` must have shape `[n, m]`.
     /// - `tol`: The relative tolerance. Singular values smaller or equal `tol * s\[0\]` will be discarded,
-    /// where s\[0\] is the largest singular value.
+    ///          where s\[0\] is the largest singular value.
     pub fn into_pseudo_inverse_alloc<
         ArrayImplPInv: UnsafeRandomAccessByValue<2, Item = Item>
             + Stride<2>
