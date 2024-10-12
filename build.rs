@@ -60,87 +60,31 @@ fn build_sleef() {
     println!("cargo:rustc-link-lib=static=sleef_interface");
 }
 
-// fn build_internal_blis() {
-//     let dst = PathBuf::from(env::var("OUT_DIR").unwrap());
-//     let build = dst.join("build_blis");
-//     let _ = fs::create_dir(&build);
-
-//     let configure = PathBuf::from("blis")
-//         .join("configure")
-//         .canonicalize()
-//         .unwrap();
-//     let mut config_command = Command::new("sh");
-//     config_command
-//         .args(["-c", "exec \"$0\" \"$@\""])
-//         .arg(configure);
-//     config_command.arg(format!("--prefix={}", dst.display()));
-//     config_command.arg("--enable-threading=pthreads");
-//     config_command.args(["--enable-cblas", "auto"]);
-//     let status = match config_command.current_dir(&build).status() {
-//         Ok(status) => status,
-//         Err(e) => panic!("Could not execute configure command with error {}", e),
-//     };
-//     if !status.success() {
-//         panic!("Configure command failed with error {}", status);
-//     }
-
-//     let make_flags = env::var_os("CARGO_MAKEFLAGS").unwrap();
-//     let mut build_command = Command::new("sh");
-//     build_command
-//         .args(["-c", "exec \"$0\" \"$@\""])
-//         .args(["make", "install"]);
-//     build_command.env("MAKEFLAGS", make_flags);
-
-//     let status = match build_command.current_dir(&build).status() {
-//         Ok(status) => status,
-//         Err(e) => panic!("Could not execute build command with error {}", e),
-//     };
-//     if !status.success() {
-//         panic!("Build command failed with error {}", status);
-//     }
-
-//     let dst = cmake::Config::new("lapack")
-//         .define("BUILD_SHARED_LIBS", "OFF")
-//         .define("LAPACKE", "OFF")
-//         .define("BLA_VENDOR", "FLAME")
-//         .define("CMAKE_PREFIX_PATH", dst.display().to_string())
-//         .define("USE_OPTIMIZED_BLAS", "ON")
-//         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
-//         .build();
-
-//     println!("cargo:rustc-link-search={}", dst.join("lib").display());
-//     println!("cargo:rustc-link-lib=static=lapack");
-//     println!("cargo:rustc-link-lib=dylib=blis");
-
-//     if cfg!(target_os = "macos") {
-//         println!("cargo:rustc-link-search=/opt/homebrew/opt/gfortran/lib/gcc/current");
-//     }
-//     println!("cargo:rustc-link-lib=dylib=gfortran");
-// }
-
 fn build_umfpack(out_dir: String) {
     let out_path = PathBuf::from(out_dir.clone());
 
     let suitesparse_dir = out_path.join("suitesparse");
 
-    // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
-    let repo = Repository::clone(
-        "https://github.com/DrTimothyAldenDavis/SuiteSparse.git",
-        suitesparse_dir.clone(),
-    )
-    .expect("Could not clone Suitesparse repository.");
-    let refname = "v7.7.0";
-    let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
-    repo.checkout_tree(&object, None)
-        .expect("Failed to checkout");
+    if !suitesparse_dir.exists() {
+        // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
+        let repo = Repository::clone(
+            "https://github.com/DrTimothyAldenDavis/SuiteSparse.git",
+            suitesparse_dir.clone(),
+        )
+        .expect("Could not clone Suitesparse repository.");
+        let refname = "v7.7.0";
+        let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
+        repo.checkout_tree(&object, None)
+            .expect("Failed to checkout");
 
-    match reference {
-        // gref is an actual reference like branches or tags
-        Some(gref) => repo.set_head(gref.name().unwrap()),
-        // this is a commit, not a reference
-        None => repo.set_head_detached(object.id()),
+        match reference {
+            // gref is an actual reference like branches or tags
+            Some(gref) => repo.set_head(gref.name().unwrap()),
+            // this is a commit, not a reference
+            None => repo.set_head_detached(object.id()),
+        }
+        .expect("Failed to set HEAD");
     }
-    .expect("Failed to set HEAD");
 
     let _suitesparse_config = build_dep!("SuiteSparse_config");
     let _amd = build_dep!("AMD");
