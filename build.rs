@@ -17,21 +17,23 @@ fn build_sleef() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let sleef_dir = out_dir.join("sleef");
 
-    // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
-    let repo = Repository::clone("https://github.com/shibatch/sleef", sleef_dir.clone())
-        .expect("Could not clone Sleef repository.");
-    let refname = "3.6.1";
-    let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
-    repo.checkout_tree(&object, None)
-        .expect("Failed to checkout");
+    if !sleef_dir.exists() {
+        // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
+        let repo = Repository::clone("https://github.com/shibatch/sleef", sleef_dir.clone())
+            .expect("Could not clone Sleef repository.");
+        let refname = "3.6.1";
+        let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
+        repo.checkout_tree(&object, None)
+            .expect("Failed to checkout");
 
-    match reference {
-        // gref is an actual reference like branches or tags
-        Some(gref) => repo.set_head(gref.name().unwrap()),
-        // this is a commit, not a reference
-        None => repo.set_head_detached(object.id()),
+        match reference {
+            // gref is an actual reference like branches or tags
+            Some(gref) => repo.set_head(gref.name().unwrap()),
+            // this is a commit, not a reference
+            None => repo.set_head_detached(object.id()),
+        }
+        .expect("Failed to set HEAD");
     }
-    .expect("Failed to set HEAD");
 
     Config::new(sleef_dir.clone())
         .define("CMAKE_PREFIX_PATH", out_dir.clone())
@@ -116,39 +118,6 @@ fn build_sleef() {
 //     println!("cargo:rustc-link-lib=dylib=gfortran");
 // }
 
-fn build_metal(out_dir: String) {
-    cc::Build::new()
-        .file("metal/rlst_metal.m")
-        .compile("rlst_metal");
-
-    let sdk_path = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk";
-
-    let bindings = bindgen::Builder::default()
-        .header("metal/rlst_metal.h")
-        .clang_args(["-x", "objective-c"])
-        .clang_args(&["-isysroot", sdk_path])
-        .allowlist_function("rlst.*")
-        .allowlist_type("RLST.*")
-        .allowlist_var("RLST.*")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .generate()
-        .expect("Unable to generate bindings");
-
-    let out_path = PathBuf::from(out_dir.clone());
-
-    bindings
-        .write_to_file(out_path.join("metal.rs"))
-        .expect("Could not write bindings.");
-
-    println!("cargo:warning={}", out_dir);
-    println!("cargo:rustc-link-search=native={}", out_dir);
-    println!("cargo:rustc-link-lib=static=rlst_metal");
-    println!("cargo:rustc-link-lib=framework=Foundation");
-    println!("cargo:rustc-link-lib=framework=CoreGraphics");
-    println!("cargo:rustc-link-lib=framework=Metal");
-    println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
-}
-
 fn build_umfpack(out_dir: String) {
     let out_path = PathBuf::from(out_dir.clone());
 
@@ -231,9 +200,6 @@ fn main() {
     println!("cargo:rustc-link-search={}", out_dir.clone() + "/lib");
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-
-    let use_metal = target_os == "macos" && target_arch == "aarch64";
 
     let mut use_system_blas_lapack = std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK")
         .is_err()
@@ -255,10 +221,6 @@ fn main() {
         }
     }
 
-    if use_metal {
-        build_metal(out_dir.clone());
-    }
-
     // if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() && target_os != "macos" {
     //     build_internal_blis();
     // }
@@ -271,7 +233,6 @@ fn main() {
         build_sleef()
     }
 
-    println!("cargo:rerun-if-changed=metal/rlst_metal.m");
     println!("cargo:rerun-if-changed=sleef_interface/sleef_avx.c");
     println!("cargo:rerun-if-changed=sleef_interface/sleef_neon.c");
     println!("cargo:rerun-if-changed=build.rs");

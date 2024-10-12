@@ -13,13 +13,6 @@ use crate::dense::traits::{
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::metal_array::AsRawMetalBufferMut;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::MetalDataBuffer;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::AsRawMetalBuffer;
-
 use super::types::RlstBase;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
@@ -190,19 +183,5 @@ impl<Item: RlstBase, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: 
         self.data.resize(new_len);
         self.stride = stride_from_shape(shape);
         self.shape = shape;
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<const NDIM: usize> AsRawMetalBuffer for BaseArray<f32, MetalDataBuffer, NDIM> {
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.data.metal_buffer()
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<const NDIM: usize> AsRawMetalBufferMut for BaseArray<f32, MetalDataBuffer, NDIM> {
-    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
-        self.data.metal_buffer_mut()
     }
 }
