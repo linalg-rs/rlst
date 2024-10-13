@@ -177,7 +177,7 @@ fn main() {
         build_sleef()
     }
 
-    println!("cargo:rerun-if-changed=sleef_interface/sleef_avx.c");
-    println!("cargo:rerun-if-changed=sleef_interface/sleef_neon.c");
+    // println!("// cargo:rern-if-changed=sleef_interface/sleef_avx.c");
+    // println!("cargo:rerun-if-changed=sleef_interface/sleef_neon.c");
     println!("cargo:rerun-if-changed=build.rs");
 }

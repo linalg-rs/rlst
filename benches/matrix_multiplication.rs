@@ -31,7 +31,6 @@ pub fn cpu_matmul(c: &mut Criterion) {
     });
 }
 
-#[cfg(target_arch = "x86_64")]
 criterion_group!(benches, cpu_matmul);
 
 criterion_main!(benches);
