@@ -6,9 +6,6 @@ use crate::dense::{
     types::RlstBase,
 };
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
-
 use super::{
     empty_chunk, Array, ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
@@ -157,45 +154,6 @@ where
         let mut orig_index = [0; ADIM];
         orig_index[self.slice[0]] = self.slice[1];
         self.arr.offset() + convert_nd_raw(orig_index, self.arr.stride())
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + Shape<ADIM>
-            + Stride<ADIM>
-            + AsRawMetalBuffer,
-        const ADIM: usize,
-        const NDIM: usize,
-    > AsRawMetalBuffer for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer()
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
-            + UnsafeRandomAccessMut<ADIM, Item = Item>
-            + Shape<ADIM>
-            + Stride<ADIM>
-            + AsRawMetalBufferMut,
-        const ADIM: usize,
-        const NDIM: usize,
-    > AsRawMetalBufferMut for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsGreaterByOne<NDIM>,
-    NumberType<NDIM>: IsGreaterZero,
-{
-    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer_mut()
     }
 }
 

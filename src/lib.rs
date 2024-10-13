@@ -6,7 +6,6 @@
 //! RLST has the following feature set.
 //! - n-dimensional array structures that can be allocated on the stack or heap.
 //! - Support for BLAS matrix-matrix multiplication and a subset of Lapack operations (incl. LU, SVD, QR).
-//! - Offloading of batched matrix multiplication via Apple Metal.
 //! - CSR and CSC sparse matrices on a single node or via MPI on multiple nodes.
 //! - An interface to UMFPACK for the solution of sparse linear systems.
 //! - Import and export into Matrix-Market format.

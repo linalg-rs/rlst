@@ -15,9 +15,6 @@ use crate::dense::traits::{
 };
 use crate::dense::types::DataChunk;
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::metal_array::{AsRawMetalBuffer, AsRawMetalBufferMut};
-
 use super::types::RlstBase;
 
 pub mod empty_axis;
@@ -350,29 +347,5 @@ impl<
             write!(f, "{},", item).unwrap();
         }
         write!(f, "]")
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
-        const NDIM: usize,
-    > AsRawMetalBuffer for Array<Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.0.metal_buffer()
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBufferMut,
-        const NDIM: usize,
-    > AsRawMetalBufferMut for Array<Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
-        self.0.metal_buffer_mut()
     }
 }

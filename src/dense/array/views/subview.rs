@@ -3,10 +3,6 @@ use crate::dense::array::views::{compute_raw_range, offset_multi_index};
 use crate::dense::array::Array;
 
 use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::metal_array::AsRawMetalBufferMut;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::AsRawMetalBuffer;
 
 use crate::dense::traits::{
     ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
@@ -61,30 +57,6 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
-        const NDIM: usize,
-    > AsRawMetalBuffer for ArraySubView<Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer()
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBufferMut,
-        const NDIM: usize,
-    > AsRawMetalBufferMut for ArraySubView<Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer_mut()
     }
 }
 

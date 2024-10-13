@@ -93,14 +93,3 @@ pub use crate::operator::space::frame::{Frame, VectorFrame};
 pub use crate::operator::{AsApply, OperatorBase};
 pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
 pub use crate::operator::{Element, ElementView, ElementViewMut};
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub use crate::external::metal::{
-    interface::ResourceOptions, AsRawMetalBuffer, AutoReleasePool, MetalDevice,
-};
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub use crate::rlst_metal_array1;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub use crate::rlst_metal_array2;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub use crate::rlst_metal_array3;

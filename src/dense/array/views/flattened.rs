@@ -4,11 +4,6 @@ use crate::dense::layout::convert_1d_nd_from_shape;
 
 use crate::dense::array::Array;
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::external::metal::metal_array::AsRawMetalBufferMut;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::AsRawMetalBuffer;
-
 use crate::dense::traits::{
     ChunkedAccess, RawAccess, RawAccessMut, Shape, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
@@ -118,19 +113,6 @@ impl<
 
     fn get_chunk(&self, chunk_index: usize) -> Option<crate::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        'a,
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + AsRawMetalBuffer,
-        const NDIM: usize,
-    > AsRawMetalBuffer for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer()
     }
 }
 
@@ -290,37 +272,5 @@ impl<
 
     fn get_chunk(&self, chunk_index: usize) -> Option<crate::DataChunk<Self::Item, N>> {
         self.arr.get_chunk(chunk_index)
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        'a,
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + AsRawMetalBuffer
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > AsRawMetalBuffer for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer(&self) -> &crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer()
-    }
-}
-
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-impl<
-        'a,
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + AsRawMetalBufferMut
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > AsRawMetalBufferMut for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
-{
-    fn metal_buffer_mut(&mut self) -> &mut crate::external::metal::interface::MetalBuffer {
-        self.arr.metal_buffer_mut()
     }
 }

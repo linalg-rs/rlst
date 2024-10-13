@@ -1,6 +1,6 @@
 [package]
 name = "rlst"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["The linalg-rs contributors"]
 edition = "2021"
 description = "A Rust native linear algebra library."
@@ -53,11 +53,10 @@ git2 = "0.19"
 
 [features]
 strict = []
-default = ["sleef"]
+default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 disable_system_blas_lapack = []
-metal = []
 sleef = []
 nightly = []
 internal_blis = []
