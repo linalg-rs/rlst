@@ -160,8 +160,8 @@ fn main() {
         }
 
         if target_os == "linux" {
-            println!("cargo:rustc-link-lib=blas");
-            println!("cargo:rustc-link-lib=lapack");
+            println!("cargo:rustc-link-lib=dylib=blas");
+            println!("cargo:rustc-link-lib=dylib=lapack");
         }
     }
 
