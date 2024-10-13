@@ -1,6 +1,6 @@
 [package]
 name = "rlst"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["The linalg-rs contributors"]
 edition = "2021"
 description = "A Rust native linear algebra library."
