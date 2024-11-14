@@ -66,6 +66,7 @@ pub use crate::dense::linalg::qr::{MatrixQr, QrDecomposition};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
 pub use crate::dense::linalg::interpolative_decomposition::{MatrixId, IdDecomposition};
 pub use crate::dense::linalg::null_space::{MatrixNull, NullSpace};
+pub use crate::dense::linalg::elementary_matrix::{ElementaryMatrixData, ElementaryMatrix};
 
 pub use crate::dense::array::rank1_array::Rank1Array;
 

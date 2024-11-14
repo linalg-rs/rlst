@@ -514,6 +514,41 @@
 //! ```
 //! To compute the full SVD use the parameter [SvdMode::Full](crate::SvdMode::Full).
 //!
+//! # Interpolative decomposition
+//! 
+//! To compute the Interpolative Decomposition of a two-dimensional array (long or square) `arr`, for a given tolerance, use
+//! 
+//! ```
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [5, 8]);
+//! let tol: f64 = 1e-5;
+//! let mut res = arr.view_mut().into_id_alloc(tol, None).unwrap();
+//! ```
+//! 
+//! You can take a look at the interpolation matrix using
+//! 
+//! ```
+//! res.id_mat.pretty_print();
+//! ```
+//! 
+//! With this, the approximation of the low-rank elements of `arr` is given by
+//! 
+//! ```
+//! let arr_app = empty_array().simple_mult_into_resize(res.id_mat.view(), res.arr.view_mut().into_subview([0, 0], [res.rank, n]));
+//! ```
+//! 
+//! You can also obtain the Interpolative Decomposition by giving the algorithm a fixed rank, and the tolerance parameter is ignored, like so
+//! 
+//! ```
+//! # use rlst::prelude::*;
+//! let mut rand = rand::thread_rng();
+//! let mut arr = rlst_dynamic_array2!(f64, [5, 8]);
+//! let tol: f64 = 1e-5;
+//! k = 2;
+//! let mut res = arr.view_mut().into_id_alloc(tol, k).unwrap();
+//! ```
+//! 
 //! # Other vector functions
 //!
 //! The following other functions for arrays with a single dimension (i.e. vectors) are provided.
