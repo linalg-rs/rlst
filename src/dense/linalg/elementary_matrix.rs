@@ -100,7 +100,9 @@ pub struct ElementaryMatrix<
     row_indices: Vec<usize>, 
     col_indices: Vec<usize>,
     op_type: OpType,
-    trans: bool
+
+    ///Indicates if the operation is to be transposed or not
+    pub trans: bool
 
 }
 
@@ -147,12 +149,7 @@ macro_rules! impl_el_ops {
                     OpType::Perm => {assert_eq!(row_indices.len(), col_indices.len())}
                 }
 
-                if trans{
-                    Ok(Self{arr, dim, row_indices: col_indices, col_indices: row_indices, op_type, trans})
-                }
-                else{
-                    Ok(Self{arr, dim, row_indices, col_indices, op_type, trans})
-                }
+                Ok(Self{arr, dim, row_indices, col_indices, op_type, trans})
             }
 
             fn el_mul(self, right_arr: Array<Self::Item, Self::ArrayImpl, 2>, row_op_type: Option<RowOpType>, alpha: Option<Self::Item>)-> RlstResult<()> 
@@ -176,18 +173,23 @@ macro_rules! impl_el_ops {
                 let mut subarr_cols = rlst_dynamic_array2!($scalar, [self.col_indices.len(), self.dim]);
                 let mut subarr_rows = rlst_dynamic_array2!($scalar, [self.row_indices.len(), self.dim]);
                 let mut aux_arr = empty_array();
+                let col_indices :Vec<usize>;
+                let row_indices :Vec<usize>;
                 
                 if self.trans{
                     aux_arr.fill_from_resize(self.arr.view().conj().transpose());
+                    col_indices = self.row_indices;
+                    row_indices = self.col_indices;
                 }
                 else{
                     aux_arr.fill_from_resize(self.arr.view());
+                    col_indices = self.col_indices;
+                    row_indices = self.row_indices;
                 }
 
                 let right_arr_shape = right_arr.view().shape();
                 let dim = self.dim;
-                let col_indices = self.col_indices;
-                let row_indices = self.row_indices;
+
 
                 for col in 0..dim{
                     for row in 0..col_indices.len(){
@@ -228,8 +230,18 @@ macro_rules! impl_el_ops {
 
             fn row_perm(self, mut right_arr: Array<Self::Item, Self::ArrayImpl, 2>){
                 let dim = self.dim;
-                let col_indices = self.col_indices;
-                let row_indices = self.row_indices;
+                let col_indices :Vec<usize>;
+                let row_indices :Vec<usize>;
+                
+                if self.trans{
+                    col_indices = self.row_indices;
+                    row_indices = self.col_indices;
+                }
+                else{
+                    col_indices = self.col_indices;
+                    row_indices = self.row_indices;
+                }
+
                 let right_arr_shape = right_arr.view().shape();
                 let mut subarr_cols = rlst_dynamic_array2!($scalar, [col_indices.len(), dim]);
 
