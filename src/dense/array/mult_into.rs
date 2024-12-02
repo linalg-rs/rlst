@@ -1,4 +1,3 @@
-
 //! Implementation of array multiplication.
 
 use crate::dense::gemm::Gemm;
