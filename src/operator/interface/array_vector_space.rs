@@ -70,11 +70,13 @@ impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 
-    type View<'b> = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
+    type View<'b>
+        = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
     where
         Self: 'b;
 
-    type ViewMut<'b> = Array<Item, ArrayViewMut<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
+    type ViewMut<'b>
+        = Array<Item, ArrayViewMut<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
     where
         Self: 'b;
 

@@ -106,8 +106,16 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
     ) -> RlstResult<Self> {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
-        let max_col = if let Some(col) = cols.iter().max() { col } else { 0 };
-        let max_row = if let Some(row) = metrows.last() { row } else { 0 };
+        let max_col = if let Some(col) = cols.iter().max() {
+            col
+        } else {
+            0
+        };
+        let max_row = if let Some(row) = metrows.last() {
+            row
+        } else {
+            0
+        };
 
         assert!(
             *max_col < shape[1],
@@ -196,7 +204,10 @@ impl<'a, Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
 
 impl<Item: RlstScalar> AijIterator for CsrMatrix<Item> {
     type Item = Item;
-    type Iter<'a> = CsrAijIterator<'a, Item> where Self: 'a;
+    type Iter<'a>
+        = CsrAijIterator<'a, Item>
+    where
+        Self: 'a;
 
     fn iter_aij(&self) -> Self::Iter<'_> {
         CsrAijIterator::new(self)

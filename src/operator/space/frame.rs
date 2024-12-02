@@ -62,11 +62,13 @@ impl<Elem: Element> Default for VectorFrame<Elem> {
 impl<Elem: Element> Frame for VectorFrame<Elem> {
     type E = Elem;
 
-    type Iter<'iter> = std::slice::Iter<'iter, Self::E>
+    type Iter<'iter>
+        = std::slice::Iter<'iter, Self::E>
     where
         Self: 'iter;
 
-    type IterMut<'iter> = std::slice::IterMut<'iter, Self::E>
+    type IterMut<'iter>
+        = std::slice::IterMut<'iter, Self::E>
     where
         Self: 'iter;
 
