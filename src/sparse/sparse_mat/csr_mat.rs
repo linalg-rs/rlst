@@ -106,8 +106,8 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
     ) -> RlstResult<Self> {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
-        let max_col = cols.iter().max().unwrap();
-        let max_row = rows.last().unwrap();
+        let max_col = if let Some(col) = cols.iter().max() { col } else { 0 };
+        let max_row = if let Some(row) = metrows.last() { row } else { 0 };
 
         assert!(
             *max_col < shape[1],
