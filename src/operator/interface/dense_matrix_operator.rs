@@ -24,10 +24,9 @@ pub struct DenseMatrixOperator<
 }
 
 impl<
-        'a,
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > std::fmt::Debug for DenseMatrixOperator<'a, Item, ArrayImpl>
+    > std::fmt::Debug for DenseMatrixOperator<'_, Item, ArrayImpl>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DenseMatrixOperator")
@@ -60,10 +59,9 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > OperatorBase for DenseMatrixOperator<'a, Item, ArrayImpl>
+    > OperatorBase for DenseMatrixOperator<'_, Item, ArrayImpl>
 {
     type Domain = ArrayVectorSpace<Item>;
     type Range = ArrayVectorSpace<Item>;
@@ -78,10 +76,9 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > AsApply for DenseMatrixOperator<'a, Item, ArrayImpl>
+    > AsApply for DenseMatrixOperator<'_, Item, ArrayImpl>
 {
     fn apply_extended(
         &self,

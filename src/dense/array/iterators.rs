@@ -101,11 +101,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > std::iter::Iterator for ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    > std::iter::Iterator for ArrayDefaultIterator<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {

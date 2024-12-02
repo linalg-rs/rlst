@@ -1,3 +1,4 @@
+
 //! Implementation of array multiplication.
 
 use crate::dense::gemm::Gemm;
@@ -120,7 +121,7 @@ impl<
     }
 }
 
-/// MultIntoResize
+// MultIntoResize
 
 impl<
         Item: RlstScalar + Gemm,

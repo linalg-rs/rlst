@@ -111,11 +111,7 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
         } else {
             0
         };
-        let max_row = if let Some(row) = rows.last() {
-            *row
-        } else {
-            0
-        };
+        let max_row = if let Some(row) = rows.last() { *row } else { 0 };
 
         assert!(
             max_col < shape[1],
@@ -170,7 +166,7 @@ impl<'a, Item: RlstScalar> CsrAijIterator<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
+impl<Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'_, Item> {
     type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -309,8 +309,8 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>);
 
-    /// Compute the sine and cosine of each element in the register,
-    /// assuming that its absolute value is smaller than or equal to `pi / 2`.
+    // /// Compute the sine and cosine of each element in the register,
+    // /// assuming that its absolute value is smaller than or equal to `pi / 2`.
     // fn simd_sin_cos_quarter_circle<S: Simd>(
     //     simd: S,
     //     value: Self::Scalars<S>,

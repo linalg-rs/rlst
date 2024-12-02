@@ -166,7 +166,7 @@ impl<'a, Item: RlstScalar> CscAijIterator<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> std::iter::Iterator for CscAijIterator<'a, Item> {
+impl<Item: RlstScalar> std::iter::Iterator for CscAijIterator<'_, Item> {
     type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {

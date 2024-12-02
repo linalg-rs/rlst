@@ -36,11 +36,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > Shape<1> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
+    > Shape<1> for ArrayFlatView<'_, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; 1] {
         [self.arr.shape().iter().product()]
@@ -48,11 +47,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<1> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<1> for ArrayFlatView<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -63,13 +61,12 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<1> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<1> for ArrayFlatView<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -80,11 +77,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccess<Item = Item>,
         const NDIM: usize,
-    > RawAccess for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
+    > RawAccess for ArrayFlatView<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -102,12 +98,11 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayFlatView<'a, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArrayFlatView<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -148,13 +143,12 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > Shape<1> for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > Shape<1> for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; 1] {
         [self.arr.shape().iter().product()]
@@ -162,13 +156,12 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<1> for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<1> for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -179,13 +172,12 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessMut<1> for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessMut<1> for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -196,14 +188,13 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<1> for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<1> for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -214,14 +205,13 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + RawAccess<Item = Item>,
         const NDIM: usize,
-    > RawAccess for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > RawAccess for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -239,14 +229,13 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + RawAccessMut<Item = Item>,
         const NDIM: usize,
-    > RawAccessMut for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > RawAccessMut for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.arr.data_mut()
@@ -258,7 +247,6 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
@@ -266,7 +254,7 @@ impl<
             + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayFlatViewMut<'a, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArrayFlatViewMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
