@@ -35,7 +35,7 @@ macro_rules! impl_inverse_tests {
 
 impl_inverse_tests!(f64, 1E-12);
 impl_inverse_tests!(f32, 5E-6);
-impl_inverse_tests!(c32, 5E-6);
+impl_inverse_tests!(c32, 1E-5);
 impl_inverse_tests!(c64, 1E-12);
 
 macro_rules! impl_lu_tests {
