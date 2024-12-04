@@ -11,7 +11,7 @@ macro_rules! impl_inverse_tests {
 
                 #[test]
                 fn [<test_inverse_$scalar>]() {
-                    let n = 4;
+                    let n = 100;
 
                     let mut a = rlst_dynamic_array2!($scalar, [n, n]);
                     let mut b = rlst_dynamic_array2!($scalar, [n, n]);
