@@ -11,8 +11,6 @@ fn inverse_100() {
     }
 
     mat.view_mut()
-        .into_inverse_alloc()          
+        .into_inverse_alloc()
         .expect("Inverse could not be computed.");
-
-    println!("Mat[0, 0] {}", mat[[0, 0]]);
 }
