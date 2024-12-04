@@ -120,7 +120,7 @@ impl<
     }
 }
 
-/// MultIntoResize
+// MultIntoResize
 
 impl<
         Item: RlstScalar + Gemm,

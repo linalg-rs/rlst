@@ -1,7 +1,6 @@
 use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use paste;
 use rand::prelude::*;
 use rlst::prelude::*;
 
@@ -9,7 +8,7 @@ struct Impl<'a, T: RlstScalar<Real = T>> {
     values: &'a [T],
 }
 
-impl<'a, T: RlstScalar<Real = T> + RlstSimd> pulp::WithSimd for Impl<'a, T> {
+impl<T: RlstScalar<Real = T> + RlstSimd> pulp::WithSimd for Impl<'_, T> {
     type Output = ();
 
     fn with_simd<S: pulp::Simd>(self, simd: S) -> Self::Output {

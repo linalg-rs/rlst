@@ -1,6 +1,7 @@
 //! Benchmark the inverse sqrt function
 use std::hint::black_box;
 
+#[cfg(target_arch = "x86_64")]
 use bytemuck;
 use criterion::{criterion_group, criterion_main, Criterion};
 

@@ -14,8 +14,6 @@ use crate::dense::linalg::svd::MatrixSvd;
 
 /// Pseudo-inverse of a matrix
 pub trait MatrixPseudoInverse: RlstScalar + MatrixSvd {
-    /// Item type
-
     /// Compute the pseudoinverse into the array `pinv`.
     ///
     /// This method dynamically allocates memory for the computation.

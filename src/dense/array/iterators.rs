@@ -101,11 +101,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > std::iter::Iterator for ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    > std::iter::Iterator for ArrayDefaultIterator<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -156,7 +155,10 @@ impl<
     > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    type Iter<'a> = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM> where Self: 'a;
+    type Iter<'a>
+        = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
     fn iter(&self) -> Self::Iter<'_> {
         ArrayDefaultIterator::new(self)
@@ -172,7 +174,10 @@ impl<
     > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    type IterMut<'a> = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM> where Self: 'a;
+    type IterMut<'a>
+        = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         ArrayDefaultIteratorMut::new(self)
