@@ -49,7 +49,7 @@ git2 = "0.19"
 
 [features]
 strict = []
-default = []
+default = ["mpi"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 disable_system_blas_lapack = []

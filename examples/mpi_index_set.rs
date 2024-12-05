@@ -2,7 +2,7 @@
 
 use rlst::prelude::*;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
 const NCHUNKS: usize = 2;
 const CHUNK_SIZE: usize = 3;

@@ -89,7 +89,7 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     }
 }
 
-impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
+impl<C: Communicator> IndexLayout for DefaultMpiIndexLayout<'_, C> {
     fn index_range(&self, rank: usize) -> RlstResult<(usize, usize)> {
         if rank < self.comm.size() as usize {
             Ok((self.counts[rank], self.counts[1 + rank]))

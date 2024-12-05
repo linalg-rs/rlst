@@ -2,7 +2,7 @@
 
 use approx::assert_relative_eq;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
 use rlst::prelude::*;
 

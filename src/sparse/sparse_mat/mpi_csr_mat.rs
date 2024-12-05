@@ -295,7 +295,7 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> MpiCsrMatrix<'a, T, C> {
     }
 }
 
-impl<'a, T: RlstScalar + Equivalence, C: Communicator> Shape<2> for MpiCsrMatrix<'a, T, C> {
+impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for MpiCsrMatrix<'_, T, C> {
     fn shape(&self) -> [usize; 2] {
         self.shape
     }

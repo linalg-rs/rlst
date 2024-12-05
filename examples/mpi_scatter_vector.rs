@@ -2,9 +2,8 @@
 
 use approx::assert_relative_eq;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
-use itertools;
 use rlst::prelude::*;
 
 const ROOT: usize = 0;
