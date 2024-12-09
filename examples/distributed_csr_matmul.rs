@@ -63,11 +63,16 @@ fn main() {
 
         println!("Distributed matrix-vector product successfully executed.");
     } else {
+        // Create a distributed matrix on the non-root node (compare to `from_serial_root`).
         dist_mat = DistributedCsrMatrix::from_serial(0, &domain_layout, &range_layout, &world);
+
+        // Distribute the vector x.
         dist_x.scatter_from(0);
 
+        // Execute the distributed matmul.
         dist_mat.matmul(1.0, &dist_x, 0.0, &mut dist_y);
 
+        // Send the information back to root.
         dist_y.gather_to_rank(0);
     }
 }

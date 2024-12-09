@@ -6,6 +6,7 @@ use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
 use crate::sparse::traits::index_layout::IndexLayout;
+use crate::RlstResult;
 use bempp_ghost::GhostCommunicator;
 use itertools::{izip, Itertools};
 
@@ -132,6 +133,16 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Range layout
     pub fn range_layout(&self) -> &'a DefaultDistributedIndexLayout<'a, C> {
         self.range_layout
+    }
+
+    /// Create a new distributed CSR matrix from an aij format.
+    pub fn from_aij(
+        shape: [usize; 2],
+        rows: &[usize],
+        cols: &[usize],
+        data: &[T],
+    ) -> RlstResult<Self> {
+        todo!();
     }
 
     /// Create from root
