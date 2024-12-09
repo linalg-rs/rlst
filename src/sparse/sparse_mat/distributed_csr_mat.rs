@@ -17,10 +17,11 @@ use crate::dense::traits::Shape;
 use crate::dense::traits::{RawAccess, RawAccessMut};
 use crate::dense::types::RlstScalar;
 
+use super::tools::{normalize_aij, redistribute, sort_to_bins};
+
 /// Distributed CSR matrix
 pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
-    shape: [usize; 2],
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
@@ -32,7 +33,6 @@ pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator
 impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, T, C> {
     /// Create new
     pub fn new(
-        shape: [usize; 2],
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
@@ -85,9 +85,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
 
         Self {
             mat_type: SparseMatType::Csr,
-            shape,
             local_matrix: CsrMatrix::new(
-                [indptr.len() - 1, shape[1]],
+                [indptr.len() - 1, domain_layout.number_of_global_indices()],
                 mapped_indices,
                 indptr,
                 data,
@@ -137,12 +136,75 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        shape: [usize; 2],
+        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
-    ) -> RlstResult<Self> {
-        todo!();
+        comm: &'a C,
+    ) -> Self {
+        let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
+
+        // We now exchange data across the processes that should not be on our node. We need to send to each node
+        // the amount of data that it should get from us.
+        // The data is already sorted by rows. So just need to iterate through and work out how much data each process
+        // gets and the corresponding displacements.
+
+        // First we create the index bounds
+
+        let index_bounds = (0..comm.size())
+            .map(|rank| range_layout.index_range(rank as usize).unwrap().0)
+            .collect_vec();
+
+        // Now we compute how many entries each process gets.
+        let counts = sort_to_bins(&rows, &index_bounds)
+            .iter()
+            .map(|&x| x as i32)
+            .collect_vec();
+
+        let rows = redistribute(&rows, &counts, comm);
+        let cols = redistribute(&cols, &counts, comm);
+        let data = redistribute(&data, &counts, comm);
+
+        // We now need to normalize again since processes could now again have elements at the same matrix positions being
+        // sent over from different ranks.
+
+        let (rows, cols, data) = normalize_aij(&rows, &cols, &data, SparseMatType::Csr);
+
+        // We now have all the data at the right processes.
+        // We can now create the indptr array.
+
+        // First create the special case that there are no rows at our local process.
+
+        if rows.is_empty() {
+            // The index pointer of an empty sparse matrix still has one element.
+            // It contains the total number of elements, namely zero.
+            let indptr = vec![0];
+            let indices = Vec::<usize>::new();
+            let data = Vec::<T>::new();
+
+            Self::new(indices, indptr, data, domain_layout, range_layout, comm)
+        } else {
+            let mut indptr =
+                Vec::<usize>::with_capacity(1 + range_layout.number_of_local_indices());
+            let nelems = data.len();
+
+            // The actual rows in the aij format start at a nonzero index
+            // When we iterate through in the following loop we need to
+            // take this into account.
+            let first_row = *rows.first().unwrap();
+
+            let mut count: usize = 0;
+            for row in first_row..first_row + range_layout.number_of_local_indices() {
+                indptr.push(count);
+                while count < nelems && row == rows[count] {
+                    count += 1;
+                }
+            }
+            indptr.push(count);
+
+            Self::new(cols, indptr, data, domain_layout, range_layout, comm)
+        }
     }
 
     /// Create from root
@@ -193,7 +255,6 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
         // Once everything is received we can finally create the matrix object.
 
         Self::new(
-            [shape[0], shape[1]],
             csr_indices,
             csr_indptr,
             csr_data,
@@ -305,7 +366,6 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
         // Once everything is received we can finally create the matrix object.
 
         Self::new(
-            [shape[0], shape[1]],
             csr_indices,
             csr_indptr,
             csr_data,
@@ -367,6 +427,9 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
 
 impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'_, T, C> {
     fn shape(&self) -> [usize; 2] {
-        self.shape
+        [
+            self.range_layout().number_of_global_indices(),
+            self.domain_layout().number_of_global_indices(),
+        ]
     }
 }

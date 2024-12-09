@@ -42,14 +42,33 @@ fn main() {
         // We need to slice the expected result to remove the column dimension.
         assert_array_relative_eq!(y_actual, y_expected.view().slice(1, 0), 1E-12);
 
-        dist_mat = DistributedCsrMatrix::from_serial_root(
-            sparse_mat,
+        let mut rows = Vec::<usize>::new();
+        let mut cols = Vec::<usize>::new();
+        let mut data = Vec::<f64>::new();
+        sparse_mat.iter_aij().for_each(|(row, col, item)| {
+            rows.push(row);
+            cols.push(col);
+            data.push(item);
+        });
+
+        dist_mat = DistributedCsrMatrix::from_aij(
             &domain_layout,
             &range_layout,
+            &rows,
+            &cols,
+            &data,
             &world,
         );
 
+        // dist_mat = DistributedCsrMatrix::from_serial_root(
+        //     sparse_mat,
+        //     &domain_layout,
+        //     &range_layout,
+        //     &world,
+        // );
+
         dist_x.scatter_from_root(x.view().slice(1, 0));
+
         dist_mat.matmul(1.0, &dist_x, 0.0, &mut dist_y);
 
         // It is not needed to set y_actual to zero. But we want to make sure that
@@ -64,7 +83,15 @@ fn main() {
         println!("Distributed matrix-vector product successfully executed.");
     } else {
         // Create a distributed matrix on the non-root node (compare to `from_serial_root`).
-        dist_mat = DistributedCsrMatrix::from_serial(0, &domain_layout, &range_layout, &world);
+        //dist_mat = DistributedCsrMatrix::from_serial(0, &domain_layout, &range_layout, &world);
+        dist_mat = DistributedCsrMatrix::from_aij(
+            &domain_layout,
+            &range_layout,
+            &Vec::default(),
+            &Vec::default(),
+            &Vec::default(),
+            &world,
+        );
 
         // Distribute the vector x.
         dist_x.scatter_from(0);
