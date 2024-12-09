@@ -11,7 +11,7 @@ pub fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
 
-    let index_layout = DefaultMpiIndexLayout::new(NCHUNKS, CHUNK_SIZE, &world);
+    let index_layout = DefaultDistributedIndexLayout::new(NCHUNKS, CHUNK_SIZE, &world);
 
     if world.rank() == 0 {
         println!("Local index range: {:#?}", index_layout.local_range());

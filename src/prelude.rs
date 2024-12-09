@@ -73,8 +73,8 @@ pub use crate::dense::simd::{RlstSimd, SimdFor};
 
 #[cfg(feature = "mpi")]
 pub use crate::sparse::{
-    distributed_vector::DistributedVector, index_layout::DefaultMpiIndexLayout,
-    sparse_mat::mpi_csr_mat::MpiCsrMatrix,
+    distributed_vector::DistributedVector, index_layout::DefaultDistributedIndexLayout,
+    sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
 };
 
 pub use crate::sparse::index_layout::DefaultSerialIndexLayout;

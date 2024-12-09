@@ -11,18 +11,18 @@ use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 use mpi::Rank;
 
-use crate::sparse::index_layout::DefaultMpiIndexLayout;
+use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 
 /// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    index_layout: &'a DefaultMpiIndexLayout<'a, C>,
+    index_layout: &'a DefaultDistributedIndexLayout<'a, C>,
     local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
                                            // But this would be disallowed by Rust's static borrow checker.
 }
 
 impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
     /// Crate new
-    pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
+    pub fn new(index_layout: &'a DefaultDistributedIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
             local: RefCell::new(rlst_dynamic_array1!(
@@ -124,10 +124,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
 
     /// Create from root
     pub fn scatter_from_root<
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1>
-            + RawAccessMut<Item = Item>,
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + RawAccess<Item = Item>,
     >(
         &mut self,
         arr: Array<Item, ArrayImpl, 1>,
@@ -166,7 +163,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     }
 
     /// Return the index layout.
-    pub fn index_layout(&self) -> &DefaultMpiIndexLayout<'a, C> {
+    pub fn index_layout(&self) -> &DefaultDistributedIndexLayout<'a, C> {
         self.index_layout
     }
 }
