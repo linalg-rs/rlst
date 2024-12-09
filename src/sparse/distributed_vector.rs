@@ -153,11 +153,8 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     }
 
     /// Create from root
-    pub fn scatter_from(&mut self, source_rank: usize) {
-        let source_process = self
-            .index_layout()
-            .comm()
-            .process_at_rank(source_rank as Rank);
+    pub fn scatter_from(&mut self, root: usize) {
+        let source_process = self.index_layout().comm().process_at_rank(root as Rank);
 
         source_process.scatter_varcount_into(self.local_mut().data_mut());
     }
