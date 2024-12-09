@@ -191,7 +191,7 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
             // The actual rows in the aij format start at a nonzero index
             // When we iterate through in the following loop we need to
             // take this into account.
-            let first_row = *rows.first().unwrap();
+            let first_row = range_layout.local_range().0;
 
             let mut count: usize = 0;
             for row in first_row..first_row + range_layout.number_of_local_indices() {
