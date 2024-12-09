@@ -6,7 +6,6 @@ use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
 use crate::sparse::traits::index_layout::IndexLayout;
-use crate::RlstResult;
 use bempp_ghost::GhostCommunicator;
 use itertools::{izip, Itertools};
 
