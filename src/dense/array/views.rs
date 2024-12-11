@@ -41,6 +41,7 @@ impl<
     > Array<Item, ArrayImpl, NDIM>
 {
     /// Return a view onto the array.
+    #[deprecated(note = "Please use arr.r() instead.")]
     pub fn view(&self) -> Array<Item, ArrayView<'_, Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayView::new(self))
     }
@@ -60,6 +61,7 @@ impl<
     > Array<Item, ArrayImpl, NDIM>
 {
     /// Return a mutable view onto the array.
+    #[deprecated(note = "Please use arr.r_mut() instead.")]
     pub fn view_mut(&mut self) -> Array<Item, ArrayViewMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayViewMut::new(self))
     }
