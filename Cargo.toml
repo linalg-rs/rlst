@@ -50,7 +50,7 @@ git2 = "0.19"
 
 [features]
 strict = []
-default = ["mpi"]
+default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 suitesparse = []
 disable_system_blas_lapack = []
@@ -96,4 +96,12 @@ required-features = ["mpi"]
 
 [[example]]
 name = "mpi_scatter_vector"
+required-features = ["mpi"]
+
+[[example]]
+name = "distributed_csr_matmul"
+required-features = ["mpi"]
+
+[[example]]
+name = "cg_distributed"
 required-features = ["mpi"]

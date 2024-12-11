@@ -1,7 +1,11 @@
 //! Tools for sparse matrix handling
 use itertools::{izip, Itertools};
-use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{CommunicatorCollectives, Equivalence};
+
+#[cfg(feature = "mpi")]
+use {
+    mpi::datatype::{Partition, PartitionMut},
+    mpi::traits::{CommunicatorCollectives, Equivalence},
+};
 
 use crate::dense::types::RlstScalar;
 use crate::sparse::sparse_mat::SparseMatType;
@@ -154,6 +158,7 @@ pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     bin_counts
 }
 
+#[cfg(feature = "mpi")]
 /// Redistribute an array via an all_to_all_varcount operation.
 pub fn redistribute<T: Equivalence, C: CommunicatorCollectives>(
     arr: &[T],
