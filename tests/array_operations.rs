@@ -20,14 +20,14 @@ fn test_addition() {
     arr1.fill_from_seed_equally_distributed(0);
     arr2.fill_from_seed_equally_distributed(1);
 
-    let arr3 = arr1.view() + arr2.view();
+    let arr3 = arr1.r() + arr2.r();
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = arr1[multi_index] + arr2[multi_index];
     }
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     assert_array_relative_eq!(res_chunked, expected, 1E-14);
     assert_array_relative_eq!(res, expected, 1E-14);
@@ -45,14 +45,14 @@ fn test_subtraction() {
     arr1.fill_from_seed_equally_distributed(0);
     arr2.fill_from_seed_equally_distributed(1);
 
-    let arr3 = arr1.view() - arr2.view();
+    let arr3 = arr1.r() - arr2.r();
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = arr1[multi_index] - arr2[multi_index];
     }
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     assert_array_relative_eq!(res_chunked, expected, 1E-14);
     assert_array_relative_eq!(res, expected, 1E-14);
@@ -73,11 +73,11 @@ fn test_multiple_operations() {
     arr2.fill_from_seed_equally_distributed(1);
     res.fill_from_seed_equally_distributed(2);
     res_chunked.fill_from_seed_equally_distributed(2);
-    compare.fill_from(res.view());
+    compare.fill_from(res.r());
 
-    let arr3 = 3.6 * arr1.view() - arr2.view();
-    res_chunked.sum_into_chunked::<_, 64>(arr3.view());
-    res.sum_into(arr3.view());
+    let arr3 = 3.6 * arr1.r() - arr2.r();
+    res_chunked.sum_into_chunked::<_, 64>(arr3.r());
+    res.sum_into(arr3.r());
 
     for index in 0..nelements {
         let indices = convert_1d_nd_from_shape(index, res.shape());
@@ -107,10 +107,10 @@ fn test_cmp_wise_multiplication() {
     arr1.fill_from_seed_equally_distributed(0);
     arr2.fill_from_seed_equally_distributed(1);
 
-    let arr3 = arr1.view() * arr2.view();
+    let arr3 = arr1.r() * arr2.r();
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = arr1[multi_index] * arr2[multi_index];
@@ -130,10 +130,10 @@ fn test_conj() {
 
     arr1.fill_from_seed_equally_distributed(0);
 
-    let arr3 = arr1.view().conj();
+    let arr3 = arr1.r().conj();
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = arr1[multi_index].conj();
@@ -154,9 +154,9 @@ fn test_transpose() {
     let mut res_chunked = rlst_dynamic_array3!(f64, new_shape);
     let mut expected = rlst_dynamic_array3!(f64, new_shape);
 
-    let arr3 = arr1.view().permute_axes(permutation);
-    res.fill_from(arr3.view());
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
+    let arr3 = arr1.r().permute_axes(permutation);
+    res.fill_from(arr3.r());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
 
     assert_eq!(arr3.shape(), [shape[1], shape[2], shape[0]]);
 
@@ -183,10 +183,10 @@ fn test_cmp_wise_division() {
     arr1.fill_from_seed_equally_distributed(0);
     arr2.fill_from_seed_equally_distributed(1);
 
-    let arr3 = arr1.view() / arr2.view();
+    let arr3 = arr1.r() / arr2.r();
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = arr1[multi_index] / arr2[multi_index];
@@ -206,10 +206,10 @@ fn test_to_complex() {
 
     arr1.fill_from_seed_equally_distributed(0);
 
-    let arr3 = arr1.view().to_complex();
+    let arr3 = arr1.r().to_complex();
 
-    res_chunked.fill_from_chunked::<_, 31>(arr3.view());
-    res.fill_from(arr3.view());
+    res_chunked.fill_from_chunked::<_, 31>(arr3.r());
+    res.fill_from(arr3.r());
 
     for (multi_index, elem) in expected.iter_mut().enumerate().multi_index(shape) {
         *elem = c64::from_real(arr1[multi_index]);
@@ -259,7 +259,7 @@ fn test_row_iter_mut() {
     let mut arr2 = crate::rlst_dynamic_array2![f64, shape];
 
     arr.fill_from_seed_equally_distributed(0);
-    arr2.fill_from(arr.view());
+    arr2.fill_from(arr.r());
 
     let mut row_count = 0;
     for (row_index, mut row) in arr.row_iter_mut().enumerate() {
@@ -301,7 +301,7 @@ fn test_col_iter_mut() {
     let mut arr2 = crate::rlst_dynamic_array2![f64, shape];
 
     arr.fill_from_seed_equally_distributed(0);
-    arr2.fill_from(arr.view());
+    arr2.fill_from(arr.r());
 
     let mut col_count = 0;
     for (col_index, mut col) in arr.col_iter_mut().enumerate() {
@@ -340,7 +340,7 @@ fn test_insert_axis_back() {
     let mut arr = rlst_dynamic_array3!(f64, shape);
     arr.fill_from_seed_equally_distributed(0);
 
-    let new_arr = arr.view().insert_empty_axis(AxisPosition::Back);
+    let new_arr = arr.r().insert_empty_axis(AxisPosition::Back);
 
     assert_eq!(new_arr.shape(), [3, 7, 6, 1]);
 
@@ -355,7 +355,7 @@ fn test_insert_axis_front() {
     let mut arr = rlst_dynamic_array3!(f64, shape);
     arr.fill_from_seed_equally_distributed(0);
 
-    let new_arr = arr.view().insert_empty_axis(AxisPosition::Front);
+    let new_arr = arr.r().insert_empty_axis(AxisPosition::Front);
 
     assert_eq!(new_arr.shape(), [1, 3, 7, 6]);
 
@@ -371,7 +371,7 @@ fn test_create_slice() {
 
     arr.fill_from_seed_equally_distributed(0);
 
-    let slice = arr.view().slice(1, 2);
+    let slice = arr.r().slice(1, 2);
 
     assert_eq!(slice[[1, 5]], arr[[1, 2, 5]]);
 
@@ -401,7 +401,7 @@ fn test_multiple_slices() {
     let mut arr = rlst_dynamic_array3!(f64, shape);
     arr.fill_from_seed_equally_distributed(0);
 
-    let mut slice = arr.view_mut().slice(1, 3).slice(1, 1);
+    let mut slice = arr.r_mut().slice(1, 3).slice(1, 1);
 
     slice[[2]] = 5.0;
 
@@ -410,12 +410,12 @@ fn test_multiple_slices() {
 }
 
 #[test]
-fn test_slice_of_subview() {
+fn test_slice_of_subr() {
     let shape = [3, 7, 6];
     let mut arr = rlst_dynamic_array3!(f64, shape);
     arr.fill_from_seed_equally_distributed(0);
     let mut arr2 = rlst_dynamic_array3!(f64, shape);
-    arr2.fill_from(arr.view());
+    arr2.fill_from(arr.r());
 
     let slice = arr.into_subview([1, 2, 4], [2, 3, 2]).slice(1, 2);
 
@@ -448,7 +448,7 @@ macro_rules! mat_mul_test_impl {
                     mat_b.fill_from_seed_equally_distributed(1);
                     //mat_c.fill_from_seed_equally_distributed(2);
 
-                    expected.fill_from(mat_c.view_mut());
+                    expected.fill_from(mat_c.r_mut());
 
                     matrix_multiply(
                         transa,
@@ -519,17 +519,17 @@ fn matrix_multiply_compare<Item: RlstScalar>(
     let mut b_actual = rlst_dynamic_array2!(Item, b_shape);
 
     match transa {
-        TransMode::NoTrans => a_actual.fill_from(mat_a.view()),
-        TransMode::ConjNoTrans => a_actual.fill_from(mat_a.view().conj()),
-        TransMode::Trans => a_actual.fill_from(mat_a.view().transpose()),
-        TransMode::ConjTrans => a_actual.fill_from(mat_a.view().conj().transpose()),
+        TransMode::NoTrans => a_actual.fill_from(mat_a.r()),
+        TransMode::ConjNoTrans => a_actual.fill_from(mat_a.r().conj()),
+        TransMode::Trans => a_actual.fill_from(mat_a.r().transpose()),
+        TransMode::ConjTrans => a_actual.fill_from(mat_a.r().conj().transpose()),
     }
 
     match transb {
-        TransMode::NoTrans => b_actual.fill_from(mat_b.view()),
-        TransMode::ConjNoTrans => b_actual.fill_from(mat_b.view().conj()),
-        TransMode::Trans => b_actual.fill_from(mat_b.view().transpose()),
-        TransMode::ConjTrans => b_actual.fill_from(mat_b.view().conj().transpose()),
+        TransMode::NoTrans => b_actual.fill_from(mat_b.r()),
+        TransMode::ConjNoTrans => b_actual.fill_from(mat_b.r().conj()),
+        TransMode::Trans => b_actual.fill_from(mat_b.r().transpose()),
+        TransMode::ConjTrans => b_actual.fill_from(mat_b.r().conj().transpose()),
     }
 
     let m = mat_c.shape()[0];

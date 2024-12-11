@@ -2,7 +2,7 @@
 
 use approx::assert_relative_eq;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
 use rlst::prelude::*;
 
@@ -15,7 +15,7 @@ pub fn main() {
 
     let rank = world.rank() as usize;
 
-    let index_layout = DefaultMpiIndexLayout::new(NDIM, 1, &world);
+    let index_layout = DefaultDistributedIndexLayout::new(NDIM, 1, &world);
 
     let vec = DistributedVector::<f64, _>::new(&index_layout);
 
@@ -27,7 +27,7 @@ pub fn main() {
 
     if rank == ROOT {
         let mut arr = rlst_dynamic_array1!(f64, [NDIM]);
-        vec.gather_to_rank_root(arr.view_mut());
+        vec.gather_to_rank_root(arr.r_mut());
 
         for index in 0..NDIM {
             assert_relative_eq!(index as f64, arr[[index]], epsilon = 1E-12);

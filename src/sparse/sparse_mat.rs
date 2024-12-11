@@ -3,7 +3,7 @@ pub mod csc_mat;
 pub mod csr_mat;
 
 #[cfg(feature = "mpi")]
-pub mod mpi_csr_mat;
+pub mod distributed_csr_mat;
 
 pub mod tools;
 #[cfg(feature = "suitesparse")]

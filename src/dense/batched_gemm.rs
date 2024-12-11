@@ -146,9 +146,9 @@ impl<Item: RlstScalar> BatchedGemm for DefaultCpuBatchedGemm<Item> {
 
     fn evaluate(&mut self) -> RlstResult<()> {
         for index in 0..self.number_of_matrices {
-            let left_matrix = self.left_matrices[index].view();
-            let right_matrix = self.right_matrices[index].view();
-            let result_matrix = self.result_matrices[index].view_mut();
+            let left_matrix = self.left_matrices[index].r();
+            let right_matrix = self.right_matrices[index].r();
+            let result_matrix = self.result_matrices[index].r_mut();
             result_matrix.mult_into(
                 TransMode::NoTrans,
                 TransMode::NoTrans,

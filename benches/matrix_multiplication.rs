@@ -19,12 +19,12 @@ pub fn cpu_matmul(c: &mut Criterion) {
 
     c.bench_function("Metal f32 matrix product", |b| {
         b.iter(|| {
-            mat_c.view_mut().mult_into(
+            mat_c.r_mut().mult_into(
                 TransMode::NoTrans,
                 TransMode::NoTrans,
                 1.0,
-                mat_a.view(),
-                mat_b.view(),
+                mat_a.r(),
+                mat_b.r(),
                 0.0,
             );
         })

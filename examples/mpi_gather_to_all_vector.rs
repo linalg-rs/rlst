@@ -4,7 +4,7 @@ mod approx_inv_sqrt_accuracy;
 
 use approx::assert_relative_eq;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
 use rlst::prelude::*;
 
@@ -16,7 +16,7 @@ pub fn main() {
 
     let rank = world.rank() as usize;
 
-    let index_layout = DefaultMpiIndexLayout::new(NDIM, 1, &world);
+    let index_layout = DefaultDistributedIndexLayout::new(NDIM, 1, &world);
 
     let vec = DistributedVector::<f64, _>::new(&index_layout);
 
@@ -28,7 +28,7 @@ pub fn main() {
 
     let mut arr = rlst_dynamic_array1!(f64, [NDIM]);
 
-    vec.gather_to_all(arr.view_mut());
+    vec.gather_to_all(arr.r_mut());
 
     for (index, elem) in arr.iter().enumerate() {
         assert_relative_eq!(elem, index as f64, epsilon = 1E-12);

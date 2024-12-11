@@ -144,7 +144,7 @@ fn test_distributed_index_set() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
 
-    let index_layout = DefaultMpiIndexLayout::new(14, 1, &world);
+    let index_layout = DefaultDistributedIndexLayout::new(14, 1, &world);
 
     // Test that the range is correct on rank 0
     assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));
@@ -188,7 +188,7 @@ fn test_csc_umfpack_f64() {
     mat.fill_from_seed_equally_distributed(0);
     x_exact.fill_from_seed_equally_distributed(1);
 
-    let rhs = empty_array::<f64, 1>().simple_mult_into_resize(mat.view(), x_exact.view());
+    let rhs = empty_array::<f64, 1>().simple_mult_into_resize(mat.r(), x_exact.r());
 
     let mut rows = Vec::<usize>::with_capacity(n * n);
     let mut cols = Vec::<usize>::with_capacity(n * n);
@@ -207,7 +207,7 @@ fn test_csc_umfpack_f64() {
     sparse_mat
         .into_lu()
         .unwrap()
-        .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
+        .solve(rhs.r(), x_actual.r_mut(), TransMode::NoTrans)
         .unwrap();
 
     rlst::assert_array_relative_eq!(x_actual, x_exact, 1E-12);
@@ -225,7 +225,7 @@ fn test_csc_umfpack_c64() {
     mat.fill_from_seed_equally_distributed(0);
     x_exact.fill_from_seed_equally_distributed(1);
 
-    let rhs = empty_array::<c64, 1>().simple_mult_into_resize(mat.view(), x_exact.view());
+    let rhs = empty_array::<c64, 1>().simple_mult_into_resize(mat.r(), x_exact.r());
 
     let mut rows = Vec::<usize>::with_capacity(n * n);
     let mut cols = Vec::<usize>::with_capacity(n * n);
@@ -244,7 +244,7 @@ fn test_csc_umfpack_c64() {
     sparse_mat
         .into_lu()
         .unwrap()
-        .solve(rhs.view(), x_actual.view_mut(), TransMode::NoTrans)
+        .solve(rhs.r(), x_actual.r_mut(), TransMode::NoTrans)
         .unwrap();
 
     rlst::assert_array_relative_eq!(x_actual, x_exact, 1E-12);

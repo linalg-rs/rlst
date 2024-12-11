@@ -23,12 +23,12 @@ pub fn test_simd() {
     arr1.fill_from_seed_equally_distributed(0);
     arr2.fill_from_seed_equally_distributed(0);
 
-    // let arr3 = arr1.view() + arr2.view();
+    // let arr3 = arr1.r() + arr2.r();
 
     let arr3 = 3.0 * arr1 + arr2;
 
-    res.fill_from_chunked::<_, 512>(arr3.view());
-    //res.fill_from(arr3.view());
+    res.fill_from_chunked::<_, 512>(arr3.r());
+    //res.fill_from(arr3.r());
 
     println!("{}", res[[0, 0]]);
 }

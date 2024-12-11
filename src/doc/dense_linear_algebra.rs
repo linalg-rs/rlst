@@ -93,11 +93,11 @@
 //! # arr1.fill_from_equally_distributed(&mut rng);
 //! # let mut arr2 = rlst_dynamic_array3!(f64, [3, 5, 2]);
 //! # arr2.fill_from_equally_distributed(&mut rng);
-//! let output = empty_array().fill_from_resize(3.0 * arr1.view() + 5.0 * arr2.view());
+//! let output = empty_array().fill_from_resize(3.0 * arr1.r() + 5.0 * arr2.r());
 //! ```
-//! The method `arr1.view()` creates a `view` object that stores a reference to `arr1`. Ownership is now taken of the `view` object and
+//! The method `arr1.r()` creates a `view` object that stores a reference to `arr1`. Ownership is now taken of the `view` object and
 //! not of `arr1`. Ownership rules of Rust naturally extend to `view` objects since they are container that store Rust references. A mutable
-//! view is created through `arr1.view_mut()`.
+//! view is created through `arr1.r_mut()`.
 //!
 //! # Element access
 //!
@@ -135,7 +135,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! let mut arr = DynamicArray::<f64, 2>::from_shape([5, 4]);
-//! ````    
+//! ````
 //!
 //! ## Stack based array allocations.
 //!
@@ -186,9 +186,9 @@
 //! ```
 //! # use rlst::prelude::*;
 //! let mut arr = rlst_dynamic_array2!(f64, [5, 4]);
-//! let view = arr.view();
+//! let view = arr.r();
 //! ```
-//! To create a mutable view use instead `arr.view_mut()`. Views are just contianer that hold references to the original array. They implement
+//! To create a mutable view use instead `arr.r_mut()`. Views are just contianer that hold references to the original array. They implement
 //! all traits that also arrays implement and can be used interchangeably. Hence, of a RLST function takes ownership of an array one can provide
 //! instead a `view` object and the function takes ownership of the view and not of the original array.
 //!
@@ -203,7 +203,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr = rlst_dynamic_array3!(f64, [5, 3, 2]);
-//! let slice = arr.view().slice(1, 0);
+//! let slice = arr.r().slice(1, 0);
 //! ```
 //! This creates a two dimensional array of dimension `(5, 2)`. Any index `[a, b]` into this array
 //! is mapped to an index `[a, 0, b]` of the original array. A slice is mutable if the original array or view was mutable.
@@ -212,9 +212,9 @@
 //! # use rlst::prelude::*;
 //! let arr = rlst_dynamic_array2!(f64, [4, 6]);
 //! // This gives the third column
-//! let slice = arr.view().slice(1, 2);
+//! let slice = arr.r().slice(1, 2);
 //! // This gives the fourth row
-//! let slice = arr.view().slice(0, 3);
+//! let slice = arr.r().slice(0, 3);
 //! ```
 //!
 //! # Array iterators
@@ -226,7 +226,7 @@
 //! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
 //! for elem in arr.iter_mut() {
 //!     *elem = 2.0;
-//! }     
+//! }
 //! ```
 //! This fills all elements of an array with the value `2.0`. It is often useful to get the multi index of an element together
 //! with the element itself. This can be achieved as follows.
@@ -256,23 +256,23 @@
 //! # let mut rng = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
 //! arr.fill_from_equally_distributed(&mut rng);
-//! let res = 5.0 * arr.view();
+//! let res = 5.0 * arr.r();
 //! ```
 //! The array `res` is not connected with a memory region. It internally takes ownership of a view into `arr` and every random access to that
 //! view is multipltakes ownership of a view into `arr` and every random access to that
 //! view is multiplied by `5.0`. The `res` array implements also all traits that other arrays implement and can be used like any other array.
 //! The only exception is raw access to its memory. Since it does not have its own memory it does not implement the [RawAccess](crate::RawAccess) trait.
-//! To evaluate the operation `5.0 * arr.view()` one creates a new array and fills this array with values as follows.
+//! To evaluate the operation `5.0 * arr.r()` one creates a new array and fills this array with values as follows.
 //! ```
 //! # use rlst::prelude::*;
 //! # let mut rng = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
 //! let mut res = rlst_dynamic_array2!(f64, [2, 3]);
 //! arr.fill_from_equally_distributed(&mut rng);
-//! res.fill_from(5.0 * arr.view());
+//! res.fill_from(5.0 * arr.r());
 //! ```
-//! The [fill_from](crate::dense::array::Array::fill_from) method iterates through `5.0 * arr.view()` and fills the array `res` with the returned values.
-//! The advantage of this approach is that more complex operations such as `res.fill_from(5.0 * arr1.view() + 3.0 * arr2.view())` only require a single
+//! The [fill_from](crate::dense::array::Array::fill_from) method iterates through `5.0 * arr.r()` and fills the array `res` with the returned values.
+//! The advantage of this approach is that more complex operations such as `res.fill_from(5.0 * arr1.r() + 3.0 * arr2.r())` only require a single
 //! loop through the data and create no temporary objects. RLST provides [various different methods](#evaluating-arrays-into-other-arrays) to evaluate an
 //! array into another array.
 //!
@@ -283,11 +283,11 @@
 //! # use rlst::prelude::*;
 //! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
 //! arr.scale_inplace(5.0);
-//! let res1 = 5.0 * arr.view();
-//! let res2 = arr.view().scalar_mul(5.0);
+//! let res1 = 5.0 * arr.r();
+//! let res2 = arr.r().scalar_mul(5.0);
 //! ```
 //! The method [scale_in_place](crate::Array::scale_inplace) immediately scales in place all elements of the array by the given scalar. The commands
-//! `5.0 * arr` and `arr.view().scalar_mul(5.0)` are identical. They both return a new lazy evaluation object without performing the scalar multiplication.
+//! `5.0 * arr` and `arr.r().scalar_mul(5.0)` are identical. They both return a new lazy evaluation object without performing the scalar multiplication.
 //!
 //! ## Negation of an array
 //!
@@ -295,8 +295,8 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res1 = arr.view().neg();
-//! let res2 = -1.0 * arr.view();
+//! let res1 = arr.r().neg();
+//! let res2 = -1.0 * arr.r();
 //! ```
 //! Both operations are identical and return a lazy evaluation object.
 //!
@@ -307,10 +307,10 @@
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res1 = arr1.view() + arr2.view();
-//! let res2 = arr1.view().add(arr2.view());
-//! let res3 = arr1.view() - arr2.view();
-//! let res4 = arr1.view().sub(arr2.view());
+//! let res1 = arr1.r() + arr2.r();
+//! let res2 = arr1.r().add(arr2.r());
+//! let res3 = arr1.r() - arr2.r();
+//! let res4 = arr1.r().sub(arr2.r());
 //! ```
 //! The add, respectively subtraction operations, are implemented in the same way and return a lazy evaluation object that
 //! represents addition/subtraction of the arrays.
@@ -322,8 +322,8 @@
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res1 = arr1.view() * arr2.view();
-//! let res2 = arr1.view() / arr2.view();
+//! let res1 = arr1.r() * arr2.r();
+//! let res2 = arr1.r() / arr2.r();
 //! ```
 //! Both operations use lazy evaluation.
 //!
@@ -333,7 +333,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res = arr.view().transpose();
+//! let res = arr.r().transpose();
 //! ```
 //! For general n-dimensional arrays transposition reverses the order of axes. More general axes permutations are available
 //! through the [permute_axes](crate::Array::permute_axes) method. Note that this method only performs transposition. To take the
@@ -341,7 +341,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res = arr.view().conj().transpose();
+//! let res = arr.r().conj().transpose();
 //! ```
 //!
 //! ## Conversion to complex type
@@ -350,7 +350,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res = arr.view().to_complex();
+//! let res = arr.r().to_complex();
 //! ```
 //!
 //! ## Conjugation of an array
@@ -359,7 +359,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-//! let res = arr.view().conj();
+//! let res = arr.r().conj();
 //! ```
 //!
 //! # Evaluating arrays into other arrays
@@ -369,7 +369,7 @@
 //! # use rlst::prelude::*;
 //! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
 //! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! arr2.fill_from(arr1.view());
+//! arr2.fill_from(arr1.r());
 //! ```
 //! The [fill_from](crate::dense::array::Array::fill_from) method takes ownership of its arguments. If this is not desired a `view` should passed into the method as
 //! in the example above. The [fill_from](crate::dense::array::Array::fill_from) method assumes that both arrays have the same shape and type. However, they need not
@@ -378,7 +378,7 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-//! let arr2 = empty_array().fill_from_resize(arr1.view());
+//! let arr2 = empty_array().fill_from_resize(arr1.r());
 //! ```
 //! Instead of `fill_from` the method [sum_into](crate::dense::array::Array::sum_into) can be used to sum the values of one array into another array. This method has no `resize` variant.
 //!
@@ -388,9 +388,9 @@
 //! # use rlst::prelude::*;
 //! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
 //! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-//! arr2.fill_from_chunked::<_, 16>(5.0 * arr1.view());
+//! arr2.fill_from_chunked::<_, 16>(5.0 * arr1.r());
 //! ```
-//! The chunked evaluation passes through `arr1.view()` in chunks of 16, copying 16 elements at a time into a buffer and then multiplying each element in the buffer by `5.0`. This allows effective
+//! The chunked evaluation passes through `arr1.r()` in chunks of 16, copying 16 elements at a time into a buffer and then multiplying each element in the buffer by `5.0`. This allows effective
 //! SIMD evaluation but comes at a price of an additional copy operation. The buffer is not heap allocated but lives on the stack and its size is determined as const generic parameter at compile time.
 //! Good sizes are multiples of the SIMD vector length of a CPU. The number of elements in an array does not need to be an exact multiple of the chunk size. This case is handled correctly in RLST.
 //! In summary, the following methods provide evaluation of an array into another array.
@@ -414,7 +414,7 @@
 //! # use rlst::prelude::*;
 //! # let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
 //! # let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
-//! let res = empty_array().simple_mult_into_resize(arr1.view(), arr2.view());
+//! let res = empty_array().simple_mult_into_resize(arr1.r(), arr2.r());
 //! ```
 //! This multiplies the matrices `arr1` and `arr2` into a new matrix `res`. The method [simple_mult_into_resize](crate::dense::traits::MultIntoResize::simple_mult_into_resize)
 //! resizes the result array if necessary. To multiply multiple arrays one can chain the `simple_mult_into_resize` method.
@@ -425,8 +425,8 @@
 //! # let arr2 = rlst_dynamic_array2!(f64, [2, 2]);
 //! # let arr3 = rlst_dynamic_array2!(f64, [2, 2]);
 //! let res = empty_array().simple_mult_into_resize(
-//!             empty_array().simple_mult_into_resize(arr1.view(), arr2.view()),
-//!             arr3.view()
+//!             empty_array().simple_mult_into_resize(arr1.r(), arr2.r()),
+//!             arr3.r()
 //!           );
 //! ```
 //! The rationale behind this interface is that the user may want to store results of the multiplication in stack allocated arrays.
@@ -448,7 +448,7 @@
 //! let mut rhs = rlst_dynamic_array1!(f64, [4]);
 //! arr.fill_from_equally_distributed(&mut rand);
 //! let lu = LuDecomposition::<f64, _ >::new(arr).expect("LU Decomposition failed.");
-//! lu.solve_vec(TransMode::NoTrans, rhs.view_mut()).expect("LU solve failed.");
+//! lu.solve_vec(TransMode::NoTrans, rhs.r_mut()).expect("LU solve failed.");
 //! ```
 //! The variable `rhs` is overwritten with the solution to the linear system of equations. For solving with multiple right-hand sides use the
 //! [solve_mat](crate::dense::linalg::lu::MatrixLuDecomposition::solve_mat). Note that the structure [LuDecomposition](crate::dense::linalg::lu::LuDecomposition)
@@ -483,9 +483,9 @@
 //! let mut q_mat = rlst_dynamic_array2!(f64, [8, 5]);
 // ! arr.fill_from_equally_distributed(&mut rand);
 //! let qr = arr.into_qr_alloc().expect("QR Decomposition failed");
-//! qr.get_r(r_mat.view_mut());
-//! qr.get_q_alloc(q_mat.view_mut());
-//! qr.get_p(p_mat.view_mut());
+//! qr.get_r(r_mat.r_mut());
+//! qr.get_q_alloc(q_mat.r_mut());
+//! qr.get_p(p_mat.r_mut());
 //! ````
 //! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::QrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
@@ -510,7 +510,7 @@
 //! let mut u = rlst_dynamic_array2!(f64, [8, 5]);
 //! let mut vt = rlst_dynamic_array2!(f64, [5, 5]);
 //! let mut sigma = rlst_dynamic_array1!(f64, [5]);
-//! arr.into_svd_alloc(u.view_mut(), vt.view_mut(), sigma.data_mut(), SvdMode::Reduced).unwrap();
+//! arr.into_svd_alloc(u.r_mut(), vt.r_mut(), sigma.data_mut(), SvdMode::Reduced).unwrap();
 //! ```
 //! To compute the full SVD use the parameter [SvdMode::Full](crate::SvdMode::Full).
 //!

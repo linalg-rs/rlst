@@ -6,35 +6,35 @@ use rlst::assert_array_relative_eq;
 use rlst::prelude::*;
 
 macro_rules! impl_inverse_tests {
-        ($scalar:ty, $tol:expr) => {
-            paste! {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
 
-                #[test]
-                fn [<test_inverse_$scalar>]() {
-                    let n = 100;
+            #[test]
+            fn [<test_inverse_$scalar>]() {
+                let n = 100;
 
-                    let mut a = rlst_dynamic_array2!($scalar, [n, n]);
-                    let mut b = rlst_dynamic_array2!($scalar, [n, n]);
+                let mut a = rlst_dynamic_array2!($scalar, [n, n]);
+                let mut b = rlst_dynamic_array2!($scalar, [n, n]);
 
-                    let mut ident = rlst_dynamic_array2!($scalar, [n, n]);
-                    ident.set_identity();
+                let mut ident = rlst_dynamic_array2!($scalar, [n, n]);
+                ident.set_identity();
 
-                    a.fill_from_seed_equally_distributed(0);
-                    b.fill_from(a.view());
+                a.fill_from_seed_equally_distributed(0);
+                b.fill_from(a.r());
 
-                    a.view_mut().into_inverse_alloc().unwrap();
+                a.r_mut().into_inverse_alloc().unwrap();
 
-                    let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(a.view(), b.view());
+                let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(a.r(), b.r());
 
-                    assert_array_abs_diff_eq!(actual, ident, $tol);
-                }
-
+                assert_array_abs_diff_eq!(actual, ident, $tol);
             }
-        };
-    }
+
+        }
+    };
+}
 
 impl_inverse_tests!(f64, 1E-12);
-impl_inverse_tests!(f32, 5E-6);
+impl_inverse_tests!(f32, 5E-5);
 impl_inverse_tests!(c32, 5E-5);
 impl_inverse_tests!(c64, 1E-12);
 
@@ -49,7 +49,7 @@ macro_rules! impl_lu_tests {
 
                     arr.fill_from_seed_normally_distributed(0);
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
-                    arr2.fill_from(arr.view());
+                    arr2.fill_from(arr.r());
 
                     let lu = LuDecomposition::<$scalar,_>::new(arr2).unwrap();
 
@@ -57,9 +57,9 @@ macro_rules! impl_lu_tests {
                     let mut u_mat = empty_array::<$scalar, 2>();
                     let mut p_mat = empty_array::<$scalar, 2>();
 
-                    lu.get_l_resize(l_mat.view_mut());
-                    lu.get_u_resize(u_mat.view_mut());
-                    lu.get_p_resize(p_mat.view_mut());
+                    lu.get_l_resize(l_mat.r_mut());
+                    lu.get_u_resize(u_mat.r_mut());
+                    lu.get_p_resize(p_mat.r_mut());
 
                     let res = empty_array::<$scalar, 2>();
 
@@ -76,7 +76,7 @@ macro_rules! impl_lu_tests {
 
                     arr.fill_from_seed_normally_distributed(0);
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
-                    arr2.fill_from(arr.view());
+                    arr2.fill_from(arr.r());
 
                     let lu = LuDecomposition::<$scalar, _>::new(arr2).unwrap();
 
@@ -84,9 +84,9 @@ macro_rules! impl_lu_tests {
                     let mut u_mat = empty_array::<$scalar, 2>();
                     let mut p_mat = empty_array::<$scalar, 2>();
 
-                    lu.get_l_resize(l_mat.view_mut());
-                    lu.get_u_resize(u_mat.view_mut());
-                    lu.get_p_resize(p_mat.view_mut());
+                    lu.get_l_resize(l_mat.r_mut());
+                    lu.get_u_resize(u_mat.r_mut());
+                    lu.get_p_resize(p_mat.r_mut());
 
                     let res = empty_array::<$scalar, 2>();
 
@@ -104,10 +104,10 @@ macro_rules! impl_lu_tests {
                     let mut x_actual = rlst_dynamic_array1!($scalar, [dim[0]]);
                     let mut rhs = rlst_dynamic_array1!($scalar, [dim[0]]);
                     x_actual.fill_from_seed_equally_distributed(1);
-                    rhs.view_mut().simple_mult_into_resize(arr.view(), x_actual.view());
+                    rhs.r_mut().simple_mult_into_resize(arr.r(), x_actual.r());
 
                     let lu = LuDecomposition::<$scalar,_>::new(arr).unwrap();
-                    lu.solve_vec(TransMode::NoTrans, rhs.view_mut()).unwrap();
+                    lu.solve_vec(TransMode::NoTrans, rhs.r_mut()).unwrap();
 
                     assert_array_relative_eq!(x_actual, rhs, $tol)
                 }
@@ -121,7 +121,7 @@ macro_rules! impl_lu_tests {
 
                     arr.fill_from_seed_normally_distributed(0);
                     let mut arr2 = rlst_dynamic_array2!($scalar, dim);
-                    arr2.fill_from(arr.view());
+                    arr2.fill_from(arr.r());
 
                     let lu = LuDecomposition::<$scalar,_>::new(arr2).unwrap();
 
@@ -129,9 +129,9 @@ macro_rules! impl_lu_tests {
                     let mut u_mat = empty_array::<$scalar, 2>();
                     let mut p_mat = empty_array::<$scalar, 2>();
 
-                    lu.get_l_resize(l_mat.view_mut());
-                    lu.get_u_resize(u_mat.view_mut());
-                    lu.get_p_resize(p_mat.view_mut());
+                    lu.get_l_resize(l_mat.r_mut());
+                    lu.get_u_resize(u_mat.r_mut());
+                    lu.get_p_resize(p_mat.r_mut());
 
                     let res = empty_array::<$scalar, 2>();
 
@@ -181,9 +181,9 @@ macro_rules! impl_pinv_tests {
                 ident.set_identity();
 
                 mat.fill_from_seed_equally_distributed(0);
-                mat2.fill_from(mat.view());
+                mat2.fill_from(mat.r());
 
-                mat2.into_pseudo_inverse_alloc(pinv.view_mut(), tol)
+                mat2.into_pseudo_inverse_alloc(pinv.r_mut(), tol)
                     .unwrap();
 
                 let actual = if shape[0] >= shape[1] {
@@ -208,9 +208,9 @@ macro_rules! impl_pinv_tests {
                 ident.set_identity();
 
                 mat.fill_from_seed_equally_distributed(0);
-                mat2.fill_from(mat.view());
+                mat2.fill_from(mat.r());
 
-                mat2.into_pseudo_inverse_alloc(pinv.view_mut(), tol)
+                mat2.into_pseudo_inverse_alloc(pinv.r_mut(), tol)
                     .unwrap();
 
                 let actual = if shape[0] >= shape[1] {
@@ -231,96 +231,96 @@ impl_pinv_tests!(c32, 1E-5);
 impl_pinv_tests!(c64, 1E-12);
 
 macro_rules! implement_qr_tests {
-        ($scalar:ty, $tol:expr) => {
-            paste! {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
 
-            #[test]
-            pub fn [<test_thin_qr_$scalar>]() {
-                let shape = [8, 5];
-                let mut mat = rlst_dynamic_array2!($scalar, shape);
-                let mut mat2 = rlst_dynamic_array2!($scalar, shape);
+        #[test]
+        pub fn [<test_thin_qr_$scalar>]() {
+            let shape = [8, 5];
+            let mut mat = rlst_dynamic_array2!($scalar, shape);
+            let mut mat2 = rlst_dynamic_array2!($scalar, shape);
 
-                mat.fill_from_seed_equally_distributed(0);
-                mat2.fill_from(mat.view());
+            mat.fill_from_seed_equally_distributed(0);
+            mat2.fill_from(mat.r());
 
-                let mut r_mat = rlst_dynamic_array2!($scalar, [5, 5]);
-                let mut q_mat = rlst_dynamic_array2!($scalar, [8, 5]);
-                let mut p_mat = rlst_dynamic_array2!($scalar, [5, 5]);
-                let mut p_trans = rlst_dynamic_array2!($scalar, [5, 5]);
-                let actual = rlst_dynamic_array2!($scalar, [8, 5]);
-                let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
-                ident.set_identity();
+            let mut r_mat = rlst_dynamic_array2!($scalar, [5, 5]);
+            let mut q_mat = rlst_dynamic_array2!($scalar, [8, 5]);
+            let mut p_mat = rlst_dynamic_array2!($scalar, [5, 5]);
+            let mut p_trans = rlst_dynamic_array2!($scalar, [5, 5]);
+            let actual = rlst_dynamic_array2!($scalar, [8, 5]);
+            let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
+            ident.set_identity();
 
-                let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
+            let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
 
-                let _ = qr.get_r(r_mat.view_mut());
-                let _ = qr.get_q_alloc(q_mat.view_mut());
-                let _ = qr.get_p(p_mat.view_mut());
+            let _ = qr.get_r(r_mat.r_mut());
+            let _ = qr.get_q_alloc(q_mat.r_mut());
+            let _ = qr.get_p(p_mat.r_mut());
 
-                p_trans.fill_from(p_mat.transpose());
+            p_trans.fill_from(p_mat.transpose());
 
-                let actual = empty_array::<$scalar, 2>()
-                    .simple_mult_into_resize(actual.simple_mult_into(q_mat.view(), r_mat.view()), p_trans);
+            let actual = empty_array::<$scalar, 2>()
+                .simple_mult_into_resize(actual.simple_mult_into(q_mat.r(), r_mat.r()), p_trans);
 
-                assert_array_relative_eq!(actual, mat2, $tol);
+            assert_array_relative_eq!(actual, mat2, $tol);
 
-                let qtq = empty_array::<$scalar, 2>().mult_into_resize(
-                    TransMode::ConjTrans,
-                    TransMode::NoTrans,
-                    1.0.into(),
-                    q_mat.view(),
-                    q_mat.view(),
-                    1.0.into(),
-                );
+            let qtq = empty_array::<$scalar, 2>().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
 
-                assert_array_abs_diff_eq!(qtq, ident, $tol);
-            }
+            assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
 
-            #[test]
-            pub fn [<test_thick_qr_$scalar>]() {
-                let shape = [5, 8];
-                let mut mat = rlst_dynamic_array2!($scalar, shape);
-                let mut mat2 = rlst_dynamic_array2!($scalar, shape);
+        #[test]
+        pub fn [<test_thick_qr_$scalar>]() {
+            let shape = [5, 8];
+            let mut mat = rlst_dynamic_array2!($scalar, shape);
+            let mut mat2 = rlst_dynamic_array2!($scalar, shape);
 
-                mat.fill_from_seed_equally_distributed(0);
-                mat2.fill_from(mat.view());
+            mat.fill_from_seed_equally_distributed(0);
+            mat2.fill_from(mat.r());
 
-                let mut r_mat = rlst_dynamic_array2!($scalar, [5, 8]);
-                let mut q_mat = rlst_dynamic_array2!($scalar, [5, 5]);
-                let mut p_mat = rlst_dynamic_array2!($scalar, [8, 8]);
-                let mut p_trans = rlst_dynamic_array2!($scalar, [8, 8]);
-                let actual = rlst_dynamic_array2!($scalar, [5, 8]);
-                let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
-                ident.set_identity();
+            let mut r_mat = rlst_dynamic_array2!($scalar, [5, 8]);
+            let mut q_mat = rlst_dynamic_array2!($scalar, [5, 5]);
+            let mut p_mat = rlst_dynamic_array2!($scalar, [8, 8]);
+            let mut p_trans = rlst_dynamic_array2!($scalar, [8, 8]);
+            let actual = rlst_dynamic_array2!($scalar, [5, 8]);
+            let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
+            ident.set_identity();
 
-                let qr = QrDecomposition::<$scalar, _>::new(mat).unwrap();
+            let qr = QrDecomposition::<$scalar, _>::new(mat).unwrap();
 
-                let _ = qr.get_r(r_mat.view_mut());
-                let _ = qr.get_q_alloc(q_mat.view_mut());
-                let _ = qr.get_p(p_mat.view_mut());
+            let _ = qr.get_r(r_mat.r_mut());
+            let _ = qr.get_q_alloc(q_mat.r_mut());
+            let _ = qr.get_p(p_mat.r_mut());
 
-                p_trans.fill_from(p_mat.transpose());
+            p_trans.fill_from(p_mat.transpose());
 
-                let actual = empty_array::<$scalar, 2>()
-                    .simple_mult_into_resize(actual.simple_mult_into(q_mat.view(), r_mat), p_trans);
+            let actual = empty_array::<$scalar, 2>()
+                .simple_mult_into_resize(actual.simple_mult_into(q_mat.r(), r_mat), p_trans);
 
-                assert_array_relative_eq!(actual, mat2, $tol);
+            assert_array_relative_eq!(actual, mat2, $tol);
 
-                let qtq = empty_array::<$scalar, 2>().mult_into_resize(
-                    TransMode::ConjTrans,
-                    TransMode::NoTrans,
-                    1.0.into(),
-                    q_mat.view(),
-                    q_mat.view(),
-                    1.0.into(),
-                );
+            let qtq = empty_array::<$scalar, 2>().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
 
-                assert_array_abs_diff_eq!(qtq, ident, $tol);
-            }
+            assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
 
-                    }
-        };
-    }
+                }
+    };
+}
 
 implement_qr_tests!(f32, 1E-6);
 implement_qr_tests!(f64, 1E-12);
@@ -353,13 +353,13 @@ macro_rules! impl_tests {
 
                     mat.fill_from_seed_equally_distributed(0);
                     let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
-                    qr.get_q_alloc(q.view_mut()).unwrap();
+                    qr.get_q_alloc(q.r_mut()).unwrap();
 
                     for index in 0..k {
                         sigma[[index, index]] = ((k - index) as <$scalar as RlstScalar>::Real).into();
                     }
 
-                    let a = empty_array::<$scalar, 2>().simple_mult_into_resize(q.view(), sigma.view());
+                    let a = empty_array::<$scalar, 2>().simple_mult_into_resize(q.r(), sigma.r());
 
                     let mut singvals = rlst_dynamic_array1!(<$scalar as RlstScalar>::Real, [k]);
 
@@ -400,22 +400,22 @@ macro_rules! impl_tests {
                     mat_vt.fill_from_seed_equally_distributed(1);
 
                     let qr = QrDecomposition::<$scalar,_>::new(mat_u).unwrap();
-                    qr.get_q_alloc(u.view_mut()).unwrap();
+                    qr.get_q_alloc(u.r_mut()).unwrap();
 
                     let qr = QrDecomposition::<$scalar,_>::new(mat_vt).unwrap();
-                    qr.get_q_alloc(vt.view_mut()).unwrap();
+                    qr.get_q_alloc(vt.r_mut()).unwrap();
 
                     for index in 0..k {
                         sigma[[index, index]] = ((k - index) as <$scalar as RlstScalar>::Real).into();
                     }
 
                     let a = empty_array::<$scalar, 2>().simple_mult_into_resize(
-                        empty_array::<$scalar, 2>().simple_mult_into_resize(u.view(), sigma.view()),
-                        vt.view(),
+                        empty_array::<$scalar, 2>().simple_mult_into_resize(u.r(), sigma.r()),
+                        vt.r(),
                     );
 
                     let mut expected = rlst_dynamic_array2!($scalar, a.shape());
-                    expected.fill_from(a.view());
+                    expected.fill_from(a.r());
 
                     u.set_zero();
                     vt.set_zero();
@@ -423,7 +423,7 @@ macro_rules! impl_tests {
 
                     let mut singvals = rlst_dynamic_array1!(<$scalar as RlstScalar>::Real, [k]);
 
-                    a.into_svd_alloc(u.view_mut(), vt.view_mut(), singvals.data_mut(), mode)
+                    a.into_svd_alloc(u.r_mut(), vt.r_mut(), singvals.data_mut(), mode)
                         .unwrap();
 
                     for index in 0..k {

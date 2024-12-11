@@ -4,14 +4,14 @@ use crate::sparse::traits::index_layout::IndexLayout;
 use mpi::traits::Communicator;
 
 /// Default index layout
-pub struct DefaultMpiIndexLayout<'a, C: Communicator> {
+pub struct DefaultDistributedIndexLayout<'a, C: Communicator> {
     size: usize,
     my_rank: usize,
     counts: Vec<usize>,
     comm: &'a C,
 }
 
-impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
+impl<'a, C: Communicator> DefaultDistributedIndexLayout<'a, C> {
     /// Crate new
     pub fn new(nchunks: usize, chunk_size: usize, comm: &'a C) -> Self {
         let size = nchunks * chunk_size;
@@ -89,7 +89,7 @@ impl<'a, C: Communicator> DefaultMpiIndexLayout<'a, C> {
     }
 }
 
-impl<'a, C: Communicator> IndexLayout for DefaultMpiIndexLayout<'a, C> {
+impl<C: Communicator> IndexLayout for DefaultDistributedIndexLayout<'_, C> {
     fn index_range(&self, rank: usize) -> RlstResult<(usize, usize)> {
         if rank < self.comm.size() as usize {
             Ok((self.counts[rank], self.counts[1 + rank]))

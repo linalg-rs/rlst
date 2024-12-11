@@ -10,19 +10,20 @@ use crate::{rlst_dynamic_array1, Array, UnsafeRandomAccessByValue, UnsafeRandomA
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 use mpi::Rank;
+use num::Zero;
 
-use crate::sparse::index_layout::DefaultMpiIndexLayout;
+use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 
 /// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    index_layout: &'a DefaultMpiIndexLayout<'a, C>,
+    index_layout: &'a DefaultDistributedIndexLayout<'a, C>,
     local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
                                            // But this would be disallowed by Rust's static borrow checker.
 }
 
 impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
     /// Crate new
-    pub fn new(index_layout: &'a DefaultMpiIndexLayout<'a, C>) -> Self {
+    pub fn new(index_layout: &'a DefaultDistributedIndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
             local: RefCell::new(rlst_dynamic_array1!(
@@ -41,6 +42,22 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     pub fn local_mut(&self) -> RefMut<DynamicArray<Item, 1>> {
         // The data is behind a RefCell, so do not require mutable reference to self.
         self.local.borrow_mut()
+    }
+
+    /// Compute the inner product of `self` with `other`.
+    pub fn inner(&self, other: &Self) -> Item {
+        // First compute the local inner product.
+        let result = self.local().inner(other.local().r());
+
+        let comm = self.index_layout.comm();
+
+        let mut global_result = <Item as Zero>::zero();
+        comm.all_reduce_into(
+            &result,
+            &mut global_result,
+            mpi::collective::SystemOperation::sum(),
+        );
+        global_result
     }
 
     /// Gather `Self` to all processes and store in `arr`.
@@ -124,10 +141,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
 
     /// Create from root
     pub fn scatter_from_root<
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1>
-            + RawAccessMut<Item = Item>,
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + RawAccess<Item = Item>,
     >(
         &mut self,
         arr: Array<Item, ArrayImpl, 1>,
@@ -156,64 +170,17 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     }
 
     /// Create from root
-    pub fn scatter_from(&mut self, source_rank: usize) {
-        let source_process = self
-            .index_layout()
-            .comm()
-            .process_at_rank(source_rank as Rank);
+    pub fn scatter_from(&mut self, root: usize) {
+        let source_process = self.index_layout().comm().process_at_rank(root as Rank);
 
         source_process.scatter_varcount_into(self.local_mut().data_mut());
     }
 
     /// Return the index layout.
-    pub fn index_layout(&self) -> &DefaultMpiIndexLayout<'a, C> {
+    pub fn index_layout(&self) -> &DefaultDistributedIndexLayout<'a, C> {
         self.index_layout
     }
 }
-
-// impl<'a, T: Scalar + Equivalence, C: Communicator> IndexableVector for DefaultMpiVector<'a, T, C> {
-//     type Item = T;
-//     type View<'b> = LocalIndexableVectorView<'b, T> where Self: 'b;
-//     type ViewMut<'b> = LocalIndexableVectorViewMut<'b, T> where Self: 'b;
-//     type Ind = DefaultMpiIndexLayout<'a, C>;
-
-//     fn index_layout(&self) -> &Self::Ind {
-//         &self.index_layout
-//     }
-
-//     fn view<'b>(&'b self) -> Option<Self::View<'b>> {
-//         Some(rlst_dense::RawAccess::data(&self.local))
-//     }
-
-//     fn view_mut<'b>(&'b mut self) -> Option<Self::ViewMut<'b>> {
-//         Some(self.local.view_mut().unwrap())
-//     }
-// }
-
-// impl<T: Scalar + Equivalence, C: Communicator> Inner for DefaultMpiVector<'_, T, C> {
-//     fn inner(&self, other: &Self) -> RlstResult<Self::Item> {
-//         let result;
-
-//         if let Ok(local_result) = self.local.inner(&other.local()) {
-//             result = local_result;
-//         } else {
-//             panic!(
-//                 "Could not perform local inner product on process {}",
-//                 self.index_layout().comm().rank()
-//             );
-//         }
-
-//         let comm = self.index_layout.comm();
-
-//         let mut global_result = T::zero();
-//         comm.all_reduce_into(
-//             &result,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::sum(),
-//         );
-//         Ok(global_result)
-//     }
-// }
 
 // impl<T: Scalar + Equivalence, C: Communicator> AbsSquareSum for DefaultMpiVector<'_, T, C>
 // where
