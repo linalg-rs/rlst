@@ -6,7 +6,8 @@ use mpi::traits::{Communicator, Equivalence};
 
 use crate::dense::types::RlstScalar;
 use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
-use crate::{DefaultDistributedIndexLayout, DistributedVector, IndexLayout};
+use crate::{DefaultDistributedIndexLayout, DistributedVector};
+use bempp_distributed_tools::IndexLayout;
 
 /// Array vector space
 pub struct DistributedArrayVectorSpace<'a, Item: RlstScalar + Equivalence, C: Communicator> {

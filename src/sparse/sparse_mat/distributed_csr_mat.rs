@@ -2,10 +2,10 @@
 
 use std::collections::HashMap;
 
-use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
-use crate::sparse::traits::index_layout::IndexLayout;
+use bempp_distributed_tools::index_layout::DefaultDistributedIndexLayout;
+use bempp_distributed_tools::index_layout::IndexLayout;
 use bempp_distributed_tools::GhostCommunicator;
 use itertools::{izip, Itertools};
 

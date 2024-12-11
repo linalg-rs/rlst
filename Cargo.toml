@@ -26,7 +26,7 @@ blas = "0.22"
 lapack = "0.19"
 thiserror = "2"
 serde = "1"
-bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git" }
+bempp-distributed-tools = { path = "../distributed_tools" }
 
 coe-rs = "0.1.2"
 pulp = { version = "0.20" }

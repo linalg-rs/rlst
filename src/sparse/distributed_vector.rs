@@ -1,7 +1,7 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use std::cell::{Ref, RefCell, RefMut};
 
-use crate::sparse::traits::index_layout::IndexLayout;
+use bempp_distributed_tools::{DefaultDistributedIndexLayout, IndexLayout};
 
 use crate::dense::array::DynamicArray;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
@@ -11,8 +11,6 @@ use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 use mpi::Rank;
 use num::Zero;
-
-use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 
 /// Distributed vector
 pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
