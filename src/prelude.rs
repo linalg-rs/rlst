@@ -77,7 +77,6 @@ pub use crate::sparse::{
     sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
 };
 
-pub use crate::sparse::index_layout::DefaultSerialIndexLayout;
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 pub use crate::sparse::traits::index_layout::IndexLayout;
