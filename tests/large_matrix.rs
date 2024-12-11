@@ -10,7 +10,7 @@ fn inverse_100() {
         mat[[index, index]] = 1.0;
     }
 
-    mat.view_mut()
+    mat.r_mut()
         .into_inverse_alloc()
         .expect("Inverse could not be computed.");
 }

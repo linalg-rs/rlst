@@ -64,7 +64,7 @@ pub fn test_gram_schmidt() {
         let mut actual = space.zero();
         let expected = original.get(index).unwrap();
         let mut coeffs = rlst_dynamic_array1!(c64, [frame.len()]);
-        coeffs.fill_from(col.view());
+        coeffs.fill_from(col.r());
         frame.evaluate(coeffs.data(), &mut actual);
         let rel_diff = (actual.view() - expected.view()).norm_2() / expected.view().norm_2();
         approx::assert_abs_diff_eq!(rel_diff, f64::zero(), epsilon = 1E-12);
@@ -87,7 +87,7 @@ fn test_cg() {
         mat[[index, index]] = rng.gen_range(1.0..=2.0);
     }
 
-    let op = DenseMatrixOperator::new(mat.view(), &space, &space);
+    let op = DenseMatrixOperator::new(mat.r(), &space, &space);
 
     let mut rhs = space.zero();
     rhs.view_mut().fill_from_equally_distributed(&mut rng);

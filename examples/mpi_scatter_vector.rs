@@ -26,7 +26,7 @@ pub fn main() {
         for (index, elem) in arr.iter_mut().enumerate() {
             *elem = index as f64;
         }
-        vec.scatter_from_root(arr.view_mut());
+        vec.scatter_from_root(arr.r_mut());
     } else {
         vec.scatter_from(ROOT);
     }

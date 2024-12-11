@@ -38,8 +38,8 @@ fn main() {
     //         let mut expected = empty_array();
     //
     //         expected
-    //             .view_mut()
-    //             .simple_mult_into_resize(left_matrix.view(), right_matrix.view());
+    //             .r_mut()
+    //             .simple_mult_into_resize(left_matrix.r(), right_matrix.r());
     //
     //         assert_array_relative_eq!(expected, batched_gemm.result_matrix(index).unwrap(), 1E-5);
     //     }

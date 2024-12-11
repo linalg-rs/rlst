@@ -28,7 +28,7 @@ pub fn main() {
 
     let mut arr = rlst_dynamic_array1!(f64, [NDIM]);
 
-    vec.gather_to_all(arr.view_mut());
+    vec.gather_to_all(arr.r_mut());
 
     for (index, elem) in arr.iter().enumerate() {
         assert_relative_eq!(elem, index as f64, epsilon = 1E-12);

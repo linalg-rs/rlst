@@ -47,7 +47,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     /// Compute the inner product of `self` with `other`.
     pub fn inner(&self, other: &Self) -> Item {
         // First compute the local inner product.
-        let result = self.local().inner(other.local().view());
+        let result = self.local().inner(other.local().r());
 
         let comm = self.index_layout.comm();
 

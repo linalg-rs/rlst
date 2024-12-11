@@ -92,8 +92,8 @@ impl<
             TransMode::NoTrans,
             TransMode::NoTrans,
             alpha,
-            self.arr.view(),
-            x.view(),
+            self.arr.r(),
+            x.view().r(),
             beta,
         );
         Ok(())

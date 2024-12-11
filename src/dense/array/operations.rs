@@ -481,7 +481,7 @@ where
         use linalg::lu::MatrixLuDecomposition;
 
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_vec(trans, rhs.view_mut())?;
+        ludecomp.solve_vec(trans, rhs.r_mut())?;
         Ok(rhs)
     }
 
@@ -521,7 +521,7 @@ where
         use linalg::lu::MatrixLuDecomposition;
 
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_mat(trans, rhs.view_mut())?;
+        ludecomp.solve_mat(trans, rhs.r_mut())?;
         Ok(rhs)
     }
 }

@@ -93,18 +93,18 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
     }
 
     fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {
-        //self.elem.sum_into(other.view().scalar_mul(alpha));
+        //self.elem.sum_into(other.r().scalar_mul(alpha));
         self.elem
             .local_mut()
-            .sum_into(other.view().local().view().scalar_mul(alpha));
+            .sum_into(other.view().local().r().scalar_mul(alpha));
     }
 
     fn sum_inplace(&mut self, other: &Self) {
-        self.elem.local_mut().sum_into(other.view().local().view());
+        self.elem.local_mut().sum_into(other.view().local().r());
     }
 
     fn fill_inplace(&mut self, other: &Self) {
-        self.elem.local_mut().fill_from(other.view().local().view());
+        self.elem.local_mut().fill_from(other.view().local().r());
     }
 
     fn scale_inplace(&mut self, alpha: Self::F) {

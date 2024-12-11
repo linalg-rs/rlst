@@ -2,12 +2,10 @@
 
 use std::marker::PhantomData;
 
+use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
 use crate::dense::types::RlstScalar;
 use crate::dense::{
-    array::{
-        views::{ArrayView, ArrayViewMut},
-        Array, DynamicArray,
-    },
+    array::{Array, DynamicArray},
     base_array::BaseArray,
     data_container::VectorContainer,
 };
@@ -71,21 +69,21 @@ impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     type Space = ArrayVectorSpace<Item>;
 
     type View<'b>
-        = Array<Item, ArrayView<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
+        = Array<Item, ArrayRef<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
     where
         Self: 'b;
 
     type ViewMut<'b>
-        = Array<Item, ArrayViewMut<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
+        = Array<Item, ArrayRefMut<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
     where
         Self: 'b;
 
     fn view(&self) -> Self::View<'_> {
-        self.elem.view()
+        self.elem.r()
     }
 
     fn view_mut(&mut self) -> Self::ViewMut<'_> {
-        self.elem.view_mut()
+        self.elem.r_mut()
     }
 
     fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {

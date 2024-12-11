@@ -40,7 +40,7 @@ fn main() {
 
         // Make sure that the actual result matches the expected result.
         // We need to slice the expected result to remove the column dimension.
-        assert_array_relative_eq!(y_actual, y_expected.view().slice(1, 0), 1E-12);
+        assert_array_relative_eq!(y_actual, y_expected.r().slice(1, 0), 1E-12);
 
         let mut rows = Vec::<usize>::new();
         let mut cols = Vec::<usize>::new();
@@ -67,18 +67,18 @@ fn main() {
         //     &world,
         // );
 
-        dist_x.scatter_from_root(x.view().slice(1, 0));
+        dist_x.scatter_from_root(x.r().slice(1, 0));
 
         dist_mat.matmul(1.0, &dist_x, 0.0, &mut dist_y);
 
         // It is not needed to set y_actual to zero. But we want to make sure that
         // the correct data is not already contained in the vector for testing purpose.
         y_actual.set_zero();
-        dist_y.gather_to_rank_root(y_actual.view_mut());
+        dist_y.gather_to_rank_root(y_actual.r_mut());
 
         // Make sure that the actual result matches the expected result.
         // We need to slice the expected result to remove the column dimension.
-        assert_array_relative_eq!(y_actual, y_expected.view().slice(1, 0), 1E-12);
+        assert_array_relative_eq!(y_actual, y_expected.r().slice(1, 0), 1E-12);
 
         println!("Distributed matrix-vector product successfully executed.");
     } else {
