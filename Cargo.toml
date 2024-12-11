@@ -33,7 +33,6 @@ pulp = { version = "0.20" }
 bytemuck = "1.16.0"
 
 mpi = { version = "0.8.0", optional = true }
-mpi-sys = { version = "0.2.1", optional = true }
 
 
 [dev-dependencies]
@@ -51,7 +50,7 @@ git2 = "0.19"
 [features]
 strict = []
 default = []
-mpi = ["dep:mpi", "dep:mpi-sys"]
+mpi = ["dep:mpi"]
 suitesparse = []
 disable_system_blas_lapack = []
 sleef = []
