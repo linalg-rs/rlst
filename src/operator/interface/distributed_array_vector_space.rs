@@ -6,12 +6,12 @@ use mpi::traits::{Communicator, Equivalence};
 
 use crate::dense::types::RlstScalar;
 use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
-use crate::{DefaultDistributedIndexLayout, DistributedVector};
+use crate::{DistributedVector, EquiDistributedIndexLayout};
 use bempp_distributed_tools::IndexLayout;
 
 /// Array vector space
 pub struct DistributedArrayVectorSpace<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    index_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+    index_layout: &'a EquiDistributedIndexLayout<'a, C>,
     _marker: PhantomData<Item>,
 }
 
@@ -33,7 +33,7 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence>
 
 impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVectorSpace<'a, Item, C> {
     /// Create a new vector space
-    pub fn new(index_layout: &'a DefaultDistributedIndexLayout<'a, C>) -> Self {
+    pub fn new(index_layout: &'a EquiDistributedIndexLayout<'a, C>) -> Self {
         Self {
             index_layout,
             _marker: PhantomData,

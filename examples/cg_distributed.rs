@@ -5,7 +5,7 @@ use rand::Rng;
 use rlst::operator::interface::distributed_sparse_operator::DistributedCsrMatrixOperator;
 use rlst::operator::interface::DistributedArrayVectorSpace;
 use rlst::{
-    CgIteration, DefaultDistributedIndexLayout, DistributedCsrMatrix, Element, LinearSpace,
+    CgIteration, DistributedCsrMatrix, Element, EquiDistributedIndexLayout, LinearSpace,
     NormedSpace,
 };
 
@@ -22,7 +22,7 @@ pub fn main() {
     let n = 500;
     let tol = 1E-5;
 
-    let index_layout = DefaultDistributedIndexLayout::new(n, 1, &world);
+    let index_layout = EquiDistributedIndexLayout::new(n, 1, &world);
 
     let space = DistributedArrayVectorSpace::<f64, _>::new(&index_layout);
     let mut residuals = Vec::<f64>::new();

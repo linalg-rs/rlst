@@ -6,7 +6,7 @@ use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
 use bempp_distributed_tools::array_tools::redistribute;
 use bempp_distributed_tools::array_tools::sort_to_bins;
-use bempp_distributed_tools::index_layout::DefaultDistributedIndexLayout;
+use bempp_distributed_tools::index_layout::EquiDistributedIndexLayout;
 use bempp_distributed_tools::index_layout::IndexLayout;
 use bempp_distributed_tools::GhostCommunicator;
 use itertools::{izip, Itertools};
@@ -26,8 +26,8 @@ pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
-    domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-    range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+    domain_layout: &'a EquiDistributedIndexLayout<'a, C>,
+    range_layout: &'a EquiDistributedIndexLayout<'a, C>,
     domain_ghosts: GhostCommunicator<usize>,
 }
 
@@ -37,8 +37,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a EquiDistributedIndexLayout<'a, C>,
+        range_layout: &'a EquiDistributedIndexLayout<'a, C>,
         comm: &'a C,
     ) -> Self {
         let my_rank = comm.rank() as usize;
@@ -126,19 +126,19 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     }
 
     /// Domain layout
-    pub fn domain_layout(&self) -> &'a DefaultDistributedIndexLayout<'a, C> {
+    pub fn domain_layout(&self) -> &'a EquiDistributedIndexLayout<'a, C> {
         self.domain_layout
     }
 
     /// Range layout
-    pub fn range_layout(&self) -> &'a DefaultDistributedIndexLayout<'a, C> {
+    pub fn range_layout(&self) -> &'a EquiDistributedIndexLayout<'a, C> {
         self.range_layout
     }
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a EquiDistributedIndexLayout<'a, C>,
+        range_layout: &'a EquiDistributedIndexLayout<'a, C>,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
@@ -211,8 +211,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial(
         root: usize,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a EquiDistributedIndexLayout<'a, C>,
+        range_layout: &'a EquiDistributedIndexLayout<'a, C>,
         comm: &'a C,
     ) -> Self {
         let root_process = comm.process_at_rank(root as i32);
@@ -268,8 +268,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial_root(
         csr_mat: CsrMatrix<T>,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a EquiDistributedIndexLayout<'a, C>,
+        range_layout: &'a EquiDistributedIndexLayout<'a, C>,
         comm: &'a C,
     ) -> Self {
         let size = comm.size() as usize;

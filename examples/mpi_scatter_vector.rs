@@ -15,7 +15,7 @@ pub fn main() {
 
     let rank = world.rank() as usize;
 
-    let index_layout = DefaultDistributedIndexLayout::new(NDIM, 1, &world);
+    let index_layout = EquiDistributedIndexLayout::new(NDIM, 1, &world);
 
     let mut vec = DistributedVector::<f64, _>::new(&index_layout);
 

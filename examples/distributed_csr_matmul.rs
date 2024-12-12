@@ -13,11 +13,11 @@ fn main() {
 
     let dist_mat;
 
-    let domain_layout = DefaultDistributedIndexLayout::new(313, 1, &world);
+    let domain_layout = EquiDistributedIndexLayout::new(313, 1, &world);
 
     let mut dist_x = DistributedVector::<f64, _>::new(&domain_layout);
 
-    let range_layout = DefaultDistributedIndexLayout::new(507, 1, &world);
+    let range_layout = EquiDistributedIndexLayout::new(507, 1, &world);
 
     let mut dist_y = DistributedVector::<f64, _>::new(&range_layout);
 
