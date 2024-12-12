@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
+use bempp_distributed_tools::array_tools::redistribute;
+use bempp_distributed_tools::array_tools::sort_to_bins;
 use bempp_distributed_tools::index_layout::DefaultDistributedIndexLayout;
 use bempp_distributed_tools::index_layout::IndexLayout;
 use bempp_distributed_tools::GhostCommunicator;
@@ -16,7 +18,7 @@ use crate::dense::traits::Shape;
 use crate::dense::traits::{RawAccess, RawAccessMut};
 use crate::dense::types::RlstScalar;
 
-use super::tools::{normalize_aij, redistribute, sort_to_bins};
+use super::tools::normalize_aij;
 
 /// Distributed CSR matrix
 pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
