@@ -1,7 +1,7 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use std::cell::{Ref, RefCell, RefMut};
 
-use bempp_distributed_tools::{EquiDistributedIndexLayout, IndexLayout};
+use bempp_distributed_tools::IndexLayout;
 
 use crate::dense::array::DynamicArray;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
@@ -13,15 +13,15 @@ use mpi::Rank;
 use num::Zero;
 
 /// Distributed vector
-pub struct DistributedVector<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    index_layout: &'a EquiDistributedIndexLayout<'a, C>,
+pub struct DistributedVector<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> {
+    index_layout: &'a Layout,
     local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
                                            // But this would be disallowed by Rust's static borrow checker.
 }
 
-impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, Item, C> {
+impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> DistributedVector<'a, Layout, Item> {
     /// Crate new
-    pub fn new(index_layout: &'a EquiDistributedIndexLayout<'a, C>) -> Self {
+    pub fn new(index_layout: &'a Layout) -> Self {
         DistributedVector {
             index_layout,
             local: RefCell::new(rlst_dynamic_array1!(
@@ -175,7 +175,7 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> DistributedVector<'a, 
     }
 
     /// Return the index layout.
-    pub fn index_layout(&self) -> &EquiDistributedIndexLayout<'a, C> {
+    pub fn index_layout(&self) -> &Layout {
         self.index_layout
     }
 }

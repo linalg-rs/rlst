@@ -24,7 +24,7 @@ pub fn main() {
 
     let index_layout = EquiDistributedIndexLayout::new(n, 1, &world);
 
-    let space = DistributedArrayVectorSpace::<f64, _>::new(&index_layout);
+    let space = DistributedArrayVectorSpace::<_, f64>::new(&index_layout);
     let mut residuals = Vec::<f64>::new();
 
     let mut rng = rand::thread_rng();
