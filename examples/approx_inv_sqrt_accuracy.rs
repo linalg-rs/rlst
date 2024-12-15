@@ -1,5 +1,6 @@
 //! Test the accuracy of the inverse sqrt
 
+#[allow(dead_code)]
 const NSAMPLES: usize = 10000;
 use rand::prelude::*;
 use rlst::SimdFor;
@@ -53,6 +54,7 @@ fn main() {
     println!("Maximum relative error f64: {:.2E}", max_error_f64);
 }
 
+#[allow(dead_code)]
 #[cfg(target_arch = "x86_64")]
 fn main() {
     fn rel_diff_sqrt_f32(a: f32, b: f32) -> f32 {
