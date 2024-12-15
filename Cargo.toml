@@ -50,7 +50,7 @@ git2 = "0.19"
 
 [features]
 strict = []
-default = ["mpi"]
+default = []
 mpi = ["dep:mpi", "dep:bempp-distributed-tools"]
 suitesparse = []
 disable_system_blas_lapack = []
