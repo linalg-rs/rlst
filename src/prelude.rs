@@ -73,14 +73,13 @@ pub use crate::dense::simd::{RlstSimd, SimdFor};
 
 #[cfg(feature = "mpi")]
 pub use crate::sparse::{
-    distributed_vector::DistributedVector, index_layout::DefaultDistributedIndexLayout,
-    sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
+    distributed_vector::DistributedVector, sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
 };
+#[cfg(feature = "mpi")]
+pub use bempp_distributed_tools::{EquiDistributedIndexLayout, IndexLayout};
 
-pub use crate::sparse::index_layout::DefaultSerialIndexLayout;
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
-pub use crate::sparse::traits::index_layout::IndexLayout;
 
 pub use crate::operator::interface::{
     ArrayVectorSpace, ArrayVectorSpaceElement, CscMatrixOperator, CsrMatrixOperator,

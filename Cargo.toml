@@ -26,10 +26,11 @@ blas = "0.22"
 lapack = "0.19"
 thiserror = "2"
 serde = "1"
-bempp-ghost = { git = "https://github.com/bempp/ghost.git" }
+# bempp-distributed-tools = { path = "../distributed_tools", optional = true }
+bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
 
 coe-rs = "0.1.2"
-pulp = { version = "0.20" }
+pulp = { version = "0.21" }
 bytemuck = "1.16.0"
 
 mpi = { version = "0.8.0", optional = true }
@@ -49,8 +50,8 @@ git2 = "0.19"
 
 [features]
 strict = []
-default = []
-mpi = ["dep:mpi"]
+default = ["mpi"]
+mpi = ["dep:mpi", "dep:bempp-distributed-tools"]
 suitesparse = []
 disable_system_blas_lapack = []
 sleef = []

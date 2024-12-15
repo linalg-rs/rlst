@@ -59,7 +59,7 @@ macro_rules! impl_sin_cos_bench {
 
                 c.bench_function(&format!("scalar_sin_cos_{}", stringify!($scalar)), |b| {
                     b.iter(|| {
-                        pulp::ScalarArch::new().dispatch(Impl::<'_, $scalar> {
+                        pulp::Arch::Scalar.dispatch(Impl::<'_, $scalar> {
                             values: values.as_slice(),
                         })
                     })

@@ -2,37 +2,44 @@
 
 use std::marker::PhantomData;
 
-use mpi::traits::{Communicator, Equivalence};
+use mpi::traits::Equivalence;
 
 use crate::dense::types::RlstScalar;
 use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
-use crate::{DefaultDistributedIndexLayout, DistributedVector, IndexLayout};
+use crate::DistributedVector;
+use bempp_distributed_tools::IndexLayout;
 
 /// Array vector space
-pub struct DistributedArrayVectorSpace<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    index_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+pub struct DistributedArrayVectorSpace<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> {
+    index_layout: &'a Layout,
     _marker: PhantomData<Item>,
 }
 
 /// Element of an array vector space
-pub struct DistributedArrayVectorSpaceElement<'a, Item: RlstScalar + Equivalence, C: Communicator> {
-    elem: DistributedVector<'a, Item, C>,
+pub struct DistributedArrayVectorSpaceElement<
+    'a,
+    Layout: IndexLayout,
+    Item: RlstScalar + Equivalence,
+> {
+    elem: DistributedVector<'a, Layout, Item>,
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence>
-    DistributedArrayVectorSpaceElement<'a, Item, C>
+impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence>
+    DistributedArrayVectorSpaceElement<'a, Layout, Item>
 {
     /// Create a new element
-    pub fn new(space: &DistributedArrayVectorSpace<'a, Item, C>) -> Self {
+    pub fn new(space: &DistributedArrayVectorSpace<'a, Layout, Item>) -> Self {
         Self {
             elem: DistributedVector::new(space.index_layout),
         }
     }
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVectorSpace<'a, Item, C> {
+impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence>
+    DistributedArrayVectorSpace<'a, Layout, Item>
+{
     /// Create a new vector space
-    pub fn new(index_layout: &'a DefaultDistributedIndexLayout<'a, C>) -> Self {
+    pub fn new(index_layout: &'a Layout) -> Self {
         Self {
             index_layout,
             _marker: PhantomData,
@@ -40,18 +47,18 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVector
     }
 }
 
-impl<C: Communicator, Item: RlstScalar + Equivalence> IndexableSpace
-    for DistributedArrayVectorSpace<'_, Item, C>
+impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> IndexableSpace
+    for DistributedArrayVectorSpace<'_, Layout, Item>
 {
     fn dimension(&self) -> usize {
         self.index_layout.number_of_global_indices()
     }
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
-    for DistributedArrayVectorSpace<'a, Item, C>
+impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> LinearSpace
+    for DistributedArrayVectorSpace<'a, Layout, Item>
 {
-    type E = DistributedArrayVectorSpaceElement<'a, Item, C>;
+    type E = DistributedArrayVectorSpaceElement<'a, Layout, Item>;
 
     type F = Item;
 
@@ -60,27 +67,27 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
     }
 }
 
-impl<C: Communicator, Item: RlstScalar + Equivalence> InnerProductSpace
-    for DistributedArrayVectorSpace<'_, Item, C>
+impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> InnerProductSpace
+    for DistributedArrayVectorSpace<'_, Layout, Item>
 {
     fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F {
         x.view().inner(other.view())
     }
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
-    for DistributedArrayVectorSpaceElement<'a, Item, C>
+impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Element
+    for DistributedArrayVectorSpaceElement<'a, Layout, Item>
 {
     type F = Item;
-    type Space = DistributedArrayVectorSpace<'a, Item, C>;
+    type Space = DistributedArrayVectorSpace<'a, Layout, Item>;
 
     type View<'b>
-        = &'b DistributedVector<'a, Item, C>
+        = &'b DistributedVector<'a, Layout, Item>
     where
         Self: 'b;
 
     type ViewMut<'b>
-        = &'b mut DistributedVector<'a, Item, C>
+        = &'b mut DistributedVector<'a, Layout, Item>
     where
         Self: 'b;
 

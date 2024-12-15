@@ -2,11 +2,12 @@
 
 use std::collections::HashMap;
 
-use crate::sparse::index_layout::DefaultDistributedIndexLayout;
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
-use crate::sparse::traits::index_layout::IndexLayout;
-use bempp_ghost::GhostCommunicator;
+use bempp_distributed_tools::array_tools::redistribute;
+use bempp_distributed_tools::array_tools::sort_to_bins;
+use bempp_distributed_tools::index_layout::IndexLayout;
+use bempp_distributed_tools::GhostCommunicator;
 use itertools::{izip, Itertools};
 
 use crate::sparse::distributed_vector::DistributedVector;
@@ -16,27 +17,40 @@ use crate::dense::traits::Shape;
 use crate::dense::traits::{RawAccess, RawAccessMut};
 use crate::dense::types::RlstScalar;
 
-use super::tools::{normalize_aij, redistribute, sort_to_bins};
+use super::tools::normalize_aij;
 
 /// Distributed CSR matrix
-pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
+pub struct DistributedCsrMatrix<
+    'a,
+    DomainLayout: IndexLayout<Comm = C>,
+    RangeLayout: IndexLayout<Comm = C>,
+    T: RlstScalar + Equivalence,
+    C: Communicator,
+> {
     mat_type: SparseMatType,
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
-    domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-    range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+    domain_layout: &'a DomainLayout,
+    range_layout: &'a RangeLayout,
     domain_ghosts: GhostCommunicator<usize>,
 }
 
-impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, T, C> {
+impl<
+        'a,
+        DomainLayout: IndexLayout<Comm = C>,
+        RangeLayout: IndexLayout<Comm = C>,
+        T: RlstScalar + Equivalence,
+        C: Communicator,
+    > DistributedCsrMatrix<'a, DomainLayout, RangeLayout, T, C>
+{
     /// Create new
     pub fn new(
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a DomainLayout,
+        range_layout: &'a RangeLayout,
         comm: &'a C,
     ) -> Self {
         let my_rank = comm.rank() as usize;
@@ -124,19 +138,19 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     }
 
     /// Domain layout
-    pub fn domain_layout(&self) -> &'a DefaultDistributedIndexLayout<'a, C> {
+    pub fn domain_layout(&self) -> &'a DomainLayout {
         self.domain_layout
     }
 
     /// Range layout
-    pub fn range_layout(&self) -> &'a DefaultDistributedIndexLayout<'a, C> {
+    pub fn range_layout(&self) -> &'a RangeLayout {
         self.range_layout
     }
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a DomainLayout,
+        range_layout: &'a RangeLayout,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
@@ -209,8 +223,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial(
         root: usize,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a DomainLayout,
+        range_layout: &'a RangeLayout,
         comm: &'a C,
     ) -> Self {
         let root_process = comm.process_at_rank(root as i32);
@@ -266,8 +280,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial_root(
         csr_mat: CsrMatrix<T>,
-        domain_layout: &'a DefaultDistributedIndexLayout<'a, C>,
-        range_layout: &'a DefaultDistributedIndexLayout<'a, C>,
+        domain_layout: &'a DomainLayout,
+        range_layout: &'a RangeLayout,
         comm: &'a C,
     ) -> Self {
         let size = comm.size() as usize;
@@ -378,9 +392,9 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     pub fn matmul<'b>(
         &self,
         alpha: T,
-        x: &DistributedVector<'b, T, C>,
+        x: &DistributedVector<'b, DomainLayout, T>,
         beta: T,
-        y: &mut DistributedVector<'b, T, C>,
+        y: &mut DistributedVector<'b, RangeLayout, T>,
     ) {
         // Create a vector that combines local dofs and ghosts
 
@@ -424,7 +438,13 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     }
 }
 
-impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'_, T, C> {
+impl<
+        T: RlstScalar + Equivalence,
+        DomainLayout: IndexLayout<Comm = C>,
+        RangeLayout: IndexLayout<Comm = C>,
+        C: Communicator,
+    > Shape<2> for DistributedCsrMatrix<'_, DomainLayout, RangeLayout, T, C>
+{
     fn shape(&self) -> [usize; 2] {
         [
             self.range_layout().number_of_global_indices(),

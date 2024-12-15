@@ -13,24 +13,24 @@ fn main() {
 
     let dist_mat;
 
-    let domain_layout = DefaultDistributedIndexLayout::new(313, 1, &world);
+    let domain_layout = EquiDistributedIndexLayout::new(313, 1, &world);
 
-    let mut dist_x = DistributedVector::<f64, _>::new(&domain_layout);
+    let mut dist_x = DistributedVector::<_, f64>::new(&domain_layout);
 
-    let range_layout = DefaultDistributedIndexLayout::new(507, 1, &world);
+    let range_layout = EquiDistributedIndexLayout::new(507, 1, &world);
 
-    let mut dist_y = DistributedVector::<f64, _>::new(&range_layout);
+    let mut dist_y = DistributedVector::<_, f64>::new(&range_layout);
 
     if rank == 0 {
         // Read the sparse matrix in matrix market format.
-        let sparse_mat = read_coordinate_mm::<f64>("mat_507_313.mm").unwrap();
+        let sparse_mat = read_coordinate_mm::<f64>("examples/mat_507_313.mm").unwrap();
 
         // Read the vector x. Note that the matrix market format mandates two dimensions for arrays.
         // So the vector is returned as two-dimensional array with the column dimension being 1.
-        let x = read_array_mm::<f64>("x_313.mm").unwrap();
+        let x = read_array_mm::<f64>("examples/x_313.mm").unwrap();
 
         // Read the expected result vector in matrix market format.
-        let y_expected = read_array_mm::<f64>("y_507.mm").unwrap();
+        let y_expected = read_array_mm::<f64>("examples/y_507.mm").unwrap();
 
         // Create a new vector to store the actual matrix-vector product.
         let mut y_actual = rlst_dynamic_array1!(f64, [507]);
