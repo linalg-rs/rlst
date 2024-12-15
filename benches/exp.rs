@@ -59,7 +59,7 @@ macro_rules! impl_exp_bench {
 
                 c.bench_function(&format!("scalar_exp_{}", stringify!($scalar)), |b| {
                     b.iter(|| {
-                        pulp::ScalarArch::new().dispatch(Impl::<'_, $scalar> {
+                        pulp::Arch::Scalar.dispatch(Impl::<'_, $scalar> {
                             values: values.as_slice(),
                         })
                     })
