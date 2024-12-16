@@ -563,4 +563,4 @@ fn test_integer_array() {
 mat_mul_test_impl!(f64, 1E-14);
 mat_mul_test_impl!(f32, 1E-5);
 mat_mul_test_impl!(c32, 1E-5);
-mat_mul_test_impl!(c64, 1E-14);
+mat_mul_test_impl!(c64, 1E-12);

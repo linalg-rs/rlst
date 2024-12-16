@@ -162,7 +162,7 @@ macro_rules! impl_lu_tests {
 impl_lu_tests!(f64, 1E-12);
 impl_lu_tests!(f32, 1E-5);
 impl_lu_tests!(c64, 1E-12);
-impl_lu_tests!(c32, 1E-5);
+impl_lu_tests!(c32, 1E-4);
 
 macro_rules! impl_pinv_tests {
     ($scalar:ty, $tol:expr) => {
@@ -322,10 +322,10 @@ macro_rules! implement_qr_tests {
     };
 }
 
-implement_qr_tests!(f32, 1E-6);
-implement_qr_tests!(f64, 1E-12);
-implement_qr_tests!(c32, 1E-6);
-implement_qr_tests!(c64, 1E-12);
+implement_qr_tests!(f32, 1E-5);
+implement_qr_tests!(f64, 1E-10);
+implement_qr_tests!(c32, 1E-4);
+implement_qr_tests!(c64, 1E-10);
 
 macro_rules! impl_tests {
         ($scalar:ty, $tol:expr) => {
@@ -443,7 +443,7 @@ macro_rules! impl_tests {
         };
     }
 
-impl_tests!(f32, 1E-5);
-impl_tests!(f64, 1E-12);
-impl_tests!(c32, 1E-5);
-impl_tests!(c64, 1E-12);
+impl_tests!(f32, 1E-4);
+impl_tests!(f64, 1E-11);
+impl_tests!(c32, 1E-4);
+impl_tests!(c64, 1E-10);

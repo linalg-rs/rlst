@@ -58,6 +58,7 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> DistributedVector<
         global_result
     }
 
+
     /// Gather `Self` to all processes and store in `arr`.
     pub fn gather_to_all<
         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
