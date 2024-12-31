@@ -45,6 +45,16 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence>
             _marker: PhantomData,
         }
     }
+
+    /// Return the communicator
+    pub fn comm(&self) -> &Layout::Comm {
+        self.index_layout.comm()
+    }
+
+    /// Return the index layout
+    pub fn index_layout(&self) -> &Layout {
+        self.index_layout
+    }
 }
 
 impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> IndexableSpace
