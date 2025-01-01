@@ -45,7 +45,7 @@ pub fn main() {
     // It sends the entries around according to the index layout and constructs the parallel
     // distributed matrix.
     let distributed_mat =
-        DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data, &world);
+        DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data);
 
     // We can now wrap the matrix into an operator.
     let op = DistributedCsrMatrixOperator::new(distributed_mat, &space, &space);

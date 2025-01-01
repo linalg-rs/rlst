@@ -51,8 +51,10 @@ impl<
         data: Vec<T>,
         domain_layout: &'a DomainLayout,
         range_layout: &'a RangeLayout,
-        comm: &'a C,
     ) -> Self {
+        assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
+        let comm = domain_layout.comm();
+
         let my_rank = comm.rank() as usize;
 
         let domain_ghost_dofs: Vec<usize> = indices
@@ -154,8 +156,13 @@ impl<
         rows: &[usize],
         cols: &[usize],
         data: &[T],
-        comm: &'a C,
     ) -> Self {
+        // Require the communicators to be identical.
+
+        assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
+
+        let comm = domain_layout.comm();
+
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
         // We now exchange data across the processes that should not be on our node. We need to send to each node
@@ -196,7 +203,7 @@ impl<
             let indices = Vec::<usize>::new();
             let data = Vec::<T>::new();
 
-            Self::new(indices, indptr, data, domain_layout, range_layout, comm)
+            Self::new(indices, indptr, data, domain_layout, range_layout)
         } else {
             let mut indptr =
                 Vec::<usize>::with_capacity(1 + range_layout.number_of_local_indices());
@@ -216,7 +223,7 @@ impl<
             }
             indptr.push(count);
 
-            Self::new(cols, indptr, data, domain_layout, range_layout, comm)
+            Self::new(cols, indptr, data, domain_layout, range_layout)
         }
     }
 
@@ -273,7 +280,6 @@ impl<
             csr_data,
             domain_layout,
             range_layout,
-            comm,
         )
     }
 
@@ -282,8 +288,10 @@ impl<
         csr_mat: CsrMatrix<T>,
         domain_layout: &'a DomainLayout,
         range_layout: &'a RangeLayout,
-        comm: &'a C,
     ) -> Self {
+        assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
+        let comm = domain_layout.comm();
+
         let size = comm.size() as usize;
         let root_process = comm.this_process();
 
@@ -384,7 +392,6 @@ impl<
             csr_data,
             domain_layout,
             range_layout,
-            comm,
         )
     }
 
