@@ -51,14 +51,8 @@ fn main() {
             data.push(item);
         });
 
-        dist_mat = DistributedCsrMatrix::from_aij(
-            &domain_layout,
-            &range_layout,
-            &rows,
-            &cols,
-            &data,
-            &world,
-        );
+        dist_mat =
+            DistributedCsrMatrix::from_aij(&domain_layout, &range_layout, &rows, &cols, &data);
 
         // dist_mat = DistributedCsrMatrix::from_serial_root(
         //     sparse_mat,
@@ -90,7 +84,6 @@ fn main() {
             &Vec::default(),
             &Vec::default(),
             &Vec::default(),
-            &world,
         );
 
         // Distribute the vector x.
