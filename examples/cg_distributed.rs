@@ -48,7 +48,7 @@ pub fn main() {
         DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data, &world);
 
     // We can now wrap the matrix into an operator.
-    let op = DistributedCsrMatrixOperator::new(&distributed_mat, &space, &space);
+    let op = DistributedCsrMatrixOperator::new(distributed_mat, &space, &space);
 
     // Let's create a right-hand side.
     let mut rhs = space.zero();

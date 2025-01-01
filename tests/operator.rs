@@ -128,7 +128,7 @@ fn test_operator_algebra() {
     op2.apply_extended(2.0, &x, 3.5, &mut y_expected).unwrap();
     op1.apply_extended(10.0, &x, 1.0, &mut y_expected).unwrap();
 
-    let sum = op1.scale(5.0).sum(op2.as_ref_obj());
+    let sum = op1.scale(5.0).sum(op2.r());
 
     sum.apply_extended(2.0, &x, 3.5, &mut y).unwrap();
 

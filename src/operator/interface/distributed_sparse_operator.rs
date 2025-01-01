@@ -21,7 +21,7 @@ pub struct DistributedCsrMatrixOperator<
     Item: RlstScalar + Equivalence,
     C: Communicator,
 > {
-    csr_mat: &'a DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
+    csr_mat: DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
     domain: &'a DistributedArrayVectorSpace<'a, DomainLayout, Item>,
     range: &'a DistributedArrayVectorSpace<'a, RangeLayout, Item>,
 }
@@ -51,7 +51,7 @@ impl<
 {
     /// Create a new CSR matrix operator
     pub fn new(
-        csr_mat: &'a DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
+        csr_mat: DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
         domain: &'a DistributedArrayVectorSpace<'a, DomainLayout, Item>,
         range: &'a DistributedArrayVectorSpace<'a, RangeLayout, Item>,
     ) -> Self {
@@ -63,6 +63,16 @@ impl<
             domain,
             range,
         }
+    }
+
+    /// Return a reference to the contained CSR matrix.
+    pub fn inner(&self) -> &DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C> {
+        &self.csr_mat
+    }
+
+    /// Move the contained CSR matrix out of the operator.
+    pub fn into_inner(self) -> DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C> {
+        self.csr_mat
     }
 }
 

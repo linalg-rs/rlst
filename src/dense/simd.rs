@@ -532,7 +532,7 @@ impl RlstSimd for f32 {
             let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
 
             for (value, s_out, c_out) in
-                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
+                itertools::izip!(value.iter(), s_out.iter_mut(), c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
                 *c_out = Self::cos(*value);
@@ -906,7 +906,7 @@ impl RlstSimd for f64 {
             let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
 
             for (value, s_out, c_out) in
-                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
+                itertools::izip!(value.iter(), s_out.iter_mut(), c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
                 *c_out = Self::cos(*value);

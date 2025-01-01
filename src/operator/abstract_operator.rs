@@ -17,7 +17,7 @@ pub trait OperatorBase: Debug {
     /// Get the range
     fn range(&self) -> &Self::Range;
     /// Convert to RLST reference
-    fn as_ref_obj(&self) -> RlstOperatorReference<'_, Self>
+    fn r(&self) -> RlstOperatorReference<'_, Self>
     where
         Self: Sized,
     {
