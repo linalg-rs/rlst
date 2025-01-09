@@ -82,13 +82,16 @@ pub trait AsApply: OperatorBase {
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()>;
 
     /// Apply
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
+    fn apply(
+        &self,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
+    ) -> <Self::Range as LinearSpace>::E<'_> {
         let mut out = self.range().zero();
 
         self.apply_extended(
@@ -129,9 +132,9 @@ impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         self.0.apply_extended(alpha, x, beta, y)
     }
@@ -164,15 +167,16 @@ impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         self.0.apply_extended(alpha, x, beta, y)
     }
 }
 
 impl<OpImpl: OperatorBase> Operator<OpImpl> {
+    /// Create a new Operator
     pub fn new(op: OpImpl) -> Self {
         Operator(op)
     }
@@ -329,9 +333,9 @@ impl<
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         self.0.apply_extended(alpha, x, beta, y)?;
         self.1
@@ -370,9 +374,9 @@ impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         self.0.apply_extended(self.1 * alpha, x, beta, y)?;
         Ok(())
@@ -422,9 +426,9 @@ impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Spac
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: &<Self::Domain as LinearSpace>::E<'_>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: &mut <Self::Range as LinearSpace>::E<'_>,
     ) -> RlstResult<()> {
         self.op2.apply_extended(alpha, &self.op1.apply(x), beta, y)
     }

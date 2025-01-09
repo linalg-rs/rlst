@@ -107,7 +107,7 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Element<'a>
         Self: 'b;
 
     fn space(&self) -> &Self::Space {
-        &self.space
+        self.space
     }
 
     fn view(&self) -> Self::View<'_> {
@@ -138,12 +138,14 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Element<'a>
     }
 }
 
-impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Clone
-    for DistributedArrayVectorSpaceElement<'a, Layout, Item>
+impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> Clone
+    for DistributedArrayVectorSpaceElement<'_, Layout, Item>
 {
     fn clone(&self) -> Self {
         let mut elem = DistributedArrayVectorSpaceElement::new(self.space);
-        elem.view().local().fill_from(self.view().local().r());
+        elem.view_mut()
+            .local_mut()
+            .fill_from(self.view().local().r());
         elem
     }
 }

@@ -84,7 +84,7 @@ impl<'a, Item: RlstScalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
         Self: 'b;
 
     fn space(&self) -> &Self::Space {
-        &self.space
+        self.space
     }
 
     fn view(&self) -> Self::View<'_> {
@@ -112,10 +112,10 @@ impl<'a, Item: RlstScalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> Clone for ArrayVectorSpaceElement<'a, Item> {
+impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<'_, Item> {
     fn clone(&self) -> Self {
         let mut new_array = rlst_dynamic_array1!(Item, [self.space.dimension()]);
-        new_array.fill_from(self.elem.view());
+        new_array.fill_from(self.elem.r());
         Self {
             elem: new_array,
             space: self.space,

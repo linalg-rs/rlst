@@ -2,11 +2,10 @@
 
 use mpi::topology::Communicator;
 use rand::Rng;
-use rlst::operator::interface::distributed_sparse_operator::DistributedCsrMatrixOperatorImpl;
-use rlst::operator::interface::DistributedArrayVectorSpace;
+use rlst::operator::Operator;
 use rlst::{
     CgIteration, DistributedCsrMatrix, Element, EquiDistributedIndexLayout, LinearSpace,
-    NormedSpace,
+    OperatorBase,
 };
 
 pub fn main() {
@@ -24,7 +23,6 @@ pub fn main() {
 
     let index_layout = EquiDistributedIndexLayout::new(n, 1, &world);
 
-    let space = DistributedArrayVectorSpace::<_, f64>::new(&index_layout);
     let mut residuals = Vec::<f64>::new();
 
     let mut rng = rand::thread_rng();
@@ -48,10 +46,10 @@ pub fn main() {
         DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data);
 
     // We can now wrap the matrix into an operator.
-    let op = DistributedCsrMatrixOperatorImpl::new(distributed_mat, &space, &space);
+    let op = Operator::from(distributed_mat);
 
     // Let's create a right-hand side.
-    let mut rhs = space.zero();
+    let mut rhs = op.range().zero();
     rhs.view_mut()
         .local_mut()
         .fill_from_equally_distributed(&mut rng);
@@ -60,7 +58,7 @@ pub fn main() {
     // We can now run the CG iteration.
     let cg = (CgIteration::new(&op, &rhs))
         .set_callable(|_, res| {
-            let res_norm = space.norm(res);
+            let res_norm = res.norm();
             residuals.push(res_norm);
         })
         .set_tol(tol);

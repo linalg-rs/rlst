@@ -7,7 +7,7 @@ use super::LinearSpace;
 /// An Element of a linear spaces.
 pub trait Element<'a>: Clone {
     /// Space type
-    type Space: LinearSpace<F = Self::F, E<'a> = Self>;
+    type Space: LinearSpace<F = Self::F, E<'a> = Self> + 'a;
     /// Scalar Type
     type F: RlstScalar;
     /// View
@@ -92,6 +92,9 @@ pub trait Element<'a>: Clone {
         self
     }
 
+    /// Comppute the inner product with another vector
+    ///
+    /// Only implemented for elements of inner product spaces.
     fn inner(&self, other: &Self) -> Self::F
     where
         Self::Space: super::InnerProductSpace,
@@ -100,7 +103,10 @@ pub trait Element<'a>: Clone {
         <Self::Space as super::InnerProductSpace>::inner(self.space(), self, other)
     }
 
-    fn norm(&self) -> Self::F
+    /// Compute the norm of a vector
+    ///
+    /// Only implemented for elements of normed spaces.
+    fn norm(&self) -> <Self::F as RlstScalar>::Real
     where
         Self::Space: super::NormedSpace,
     {

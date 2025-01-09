@@ -5,6 +5,7 @@ pub mod accessors;
 pub use accessors::*;
 
 use crate::dense::types::TransMode;
+use crate::RlstScalar;
 
 use super::types::RlstBase;
 use super::types::RlstNum;
@@ -150,4 +151,19 @@ pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
         self,
         shape: [usize; NDIM],
     ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
+}
+
+/// A helper trait to implement generic operators over matrices.
+pub trait AsOperatorApply {
+    /// Item type
+    type Item: RlstScalar;
+
+    /// Apply the operator to a vector.
+    fn apply_extended(
+        &self,
+        alpha: Self::Item,
+        x: &[Self::Item],
+        beta: Self::Item,
+        y: &mut [Self::Item],
+    );
 }

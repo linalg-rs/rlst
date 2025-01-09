@@ -2,7 +2,6 @@
 
 use super::Element;
 use crate::dense::types::RlstScalar;
-use num::One;
 
 /// Definition of a linear space
 ///

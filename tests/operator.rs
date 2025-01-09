@@ -2,16 +2,14 @@
 
 use num::traits::{One, Zero};
 use rand::Rng;
-use rlst::prelude::*;
+use rlst::{operator::Operator, prelude::*};
 
 #[test]
 fn test_dense_matrix_operator() {
     let mut mat = rlst_dynamic_array2!(f64, [3, 4]);
-    let domain = ArrayVectorSpace::new(4);
-    let range = ArrayVectorSpace::new(3);
     mat.fill_from_seed_equally_distributed(0);
 
-    let op = DenseMatrixOperator::new(mat, &domain, &range);
+    let op = Operator::from(mat);
     let mut x = op.domain().zero();
     let mut y = op.range().zero();
 
@@ -40,7 +38,7 @@ pub fn test_gram_schmidt() {
     frame.push(vec3);
 
     for elem in frame.iter() {
-        original.push(space.new_from(elem));
+        original.push(elem.clone());
     }
 
     let mut r_mat = rlst_dynamic_array2!(c64, [3, 3]);
@@ -87,7 +85,7 @@ fn test_cg() {
         mat[[index, index]] = rng.gen_range(1.0..=2.0);
     }
 
-    let op = DenseMatrixOperator::new(mat.r(), &space, &space);
+    let op = Operator::from(mat.r());
 
     let mut rhs = space.zero();
     rhs.view_mut().fill_from_equally_distributed(&mut rng);
@@ -115,8 +113,8 @@ fn test_operator_algebra() {
     mat1.fill_from_seed_equally_distributed(0);
     mat2.fill_from_seed_equally_distributed(1);
 
-    let op1 = DenseMatrixOperator::new(mat1, &domain, &range);
-    let op2 = DenseMatrixOperator::new(mat2, &domain, &range);
+    let op1 = Operator::from(mat1);
+    let op2 = Operator::from(mat2);
 
     let mut x = domain.zero();
     let mut y = range.zero();
