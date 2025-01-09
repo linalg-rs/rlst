@@ -41,6 +41,25 @@ pub trait OperatorBase: Debug {
         OperatorSum(self, other)
     }
 
+    /// Take the difference self - other.
+    fn diff<Op: OperatorBase<Domain = Self::Domain, Range = Self::Range> + Sized>(
+        self,
+        other: Op,
+    ) -> OperatorSum<Self::Domain, Self::Range, Self, ScalarTimesOperator<Op>>
+    where
+        Self: Sized,
+    {
+        self.sum(other.neg())
+    }
+
+    /// Return the negative -self.
+    fn neg(self) -> ScalarTimesOperator<Self>
+    where
+        Self: Sized,
+    {
+        ScalarTimesOperator(self, -<<Self::Range as LinearSpace>::F as One>::one())
+    }
+
     /// Form a new operator self * other.
     fn product<Op: OperatorBase<Range = Self::Domain>>(
         self,
