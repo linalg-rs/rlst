@@ -2,6 +2,7 @@
 
 use crate::dense::types::RlstResult;
 use crate::operator::{FieldType, LinearSpace};
+use crate::RlstScalar;
 use num::{One, Zero};
 use std::fmt::Debug;
 
@@ -42,7 +43,7 @@ pub trait OperatorBase: Debug {
     }
 
     /// Take the difference self - other.
-    fn diff<Op: OperatorBase<Domain = Self::Domain, Range = Self::Range> + Sized>(
+    fn sub<Op: OperatorBase<Domain = Self::Domain, Range = Self::Range> + Sized>(
         self,
         other: Op,
     ) -> OperatorSum<Self::Domain, Self::Range, Self, ScalarTimesOperator<Op>>
@@ -133,6 +134,145 @@ impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
         y: &mut <Self::Range as LinearSpace>::E,
     ) -> RlstResult<()> {
         self.0.apply_extended(alpha, x, beta, y)
+    }
+}
+
+/// A concrete operator.
+pub struct Operator<OpImpl: OperatorBase>(OpImpl);
+
+impl<OpImpl: OperatorBase> std::fmt::Debug for Operator<OpImpl> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Operator").field(&self.0).finish()
+    }
+}
+
+impl<OpImpl: OperatorBase> OperatorBase for Operator<OpImpl> {
+    type Domain = OpImpl::Domain;
+
+    type Range = OpImpl::Range;
+
+    fn domain(&self) -> &Self::Domain {
+        self.0.domain()
+    }
+
+    fn range(&self) -> &Self::Range {
+        self.0.range()
+    }
+}
+
+impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
+    fn apply_extended(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: &<Self::Domain as LinearSpace>::E,
+        beta: <Self::Range as LinearSpace>::F,
+        y: &mut <Self::Range as LinearSpace>::E,
+    ) -> RlstResult<()> {
+        self.0.apply_extended(alpha, x, beta, y)
+    }
+}
+
+impl<OpImpl: OperatorBase> Operator<OpImpl> {
+    pub fn new(op: OpImpl) -> Self {
+        Operator(op)
+    }
+}
+
+impl<
+        Domain: LinearSpace,
+        Range: LinearSpace,
+        OpImpl1: OperatorBase<Domain = Domain, Range = Range>,
+        OpImpl2: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Add<Operator<OpImpl2>> for Operator<OpImpl1>
+{
+    type Output = Operator<OperatorSum<Domain, Range, OpImpl1, OpImpl2>>;
+
+    fn add(self, rhs: Operator<OpImpl2>) -> Self::Output {
+        Operator::new(self.0.sum(rhs.0))
+    }
+}
+
+impl<
+        Domain: LinearSpace,
+        Range: LinearSpace,
+        OpImpl1: OperatorBase<Domain = Domain, Range = Range>,
+        OpImpl2: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Sub<Operator<OpImpl2>> for Operator<OpImpl1>
+{
+    type Output = Operator<OperatorSum<Domain, Range, OpImpl1, ScalarTimesOperator<OpImpl2>>>;
+
+    fn sub(self, rhs: Operator<OpImpl2>) -> Self::Output {
+        Operator::new(self.0.sub(rhs.0))
+    }
+}
+
+/// Trait that is satisfied by each scalar type that can multiply an operator from the left.
+pub trait OperatorLeftScalarMul<OpImpl: OperatorBase>: std::ops::Mul<Operator<OpImpl>> {}
+
+impl<
+        T: RlstScalar + std::ops::Mul<Operator<OpImpl>>,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > OperatorLeftScalarMul<OpImpl> for T
+{
+}
+
+macro_rules! impl_operator_mul {
+    ($dtype:ty) => {
+        impl<
+                Domain: LinearSpace,
+                Range: LinearSpace<F = $dtype>,
+                OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+            > std::ops::Mul<Operator<OpImpl>> for $dtype
+        {
+            type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+            fn mul(self, rhs: Operator<OpImpl>) -> Self::Output {
+                Operator::new(rhs.0.scale(self))
+            }
+        }
+    };
+}
+
+impl_operator_mul!(f32);
+impl_operator_mul!(f64);
+impl_operator_mul!(crate::dense::types::c32);
+impl_operator_mul!(crate::dense::types::c64);
+
+impl<OpImpl: OperatorBase> std::ops::Neg for Operator<OpImpl> {
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn neg(self) -> Self::Output {
+        Operator::new(self.0.neg())
+    }
+}
+
+impl<
+        T: RlstScalar,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Mul<T> for Operator<OpImpl>
+{
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Operator::new(self.0.scale(rhs))
+    }
+}
+
+impl<
+        T: RlstScalar,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Div<T> for Operator<OpImpl>
+{
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn div(self, rhs: T) -> Self::Output {
+        Operator::new(self.0.scale(T::one() / rhs))
     }
 }
 

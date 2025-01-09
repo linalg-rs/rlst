@@ -2,7 +2,7 @@
 
 use mpi::topology::Communicator;
 use rand::Rng;
-use rlst::operator::interface::distributed_sparse_operator::DistributedCsrMatrixOperator;
+use rlst::operator::interface::distributed_sparse_operator::DistributedCsrMatrixOperatorImpl;
 use rlst::operator::interface::DistributedArrayVectorSpace;
 use rlst::{
     CgIteration, DistributedCsrMatrix, Element, EquiDistributedIndexLayout, LinearSpace,
@@ -48,7 +48,7 @@ pub fn main() {
         DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data);
 
     // We can now wrap the matrix into an operator.
-    let op = DistributedCsrMatrixOperator::new(distributed_mat, &space, &space);
+    let op = DistributedCsrMatrixOperatorImpl::new(distributed_mat, &space, &space);
 
     // Let's create a right-hand side.
     let mut rhs = space.zero();

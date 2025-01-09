@@ -89,6 +89,7 @@ pub use crate::operator::interface::{
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
+pub use crate::operator::OperatorLeftScalarMul;
 pub use crate::operator::{AsApply, OperatorBase};
 pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
 pub use crate::operator::{Element, ElementView, ElementViewMut};

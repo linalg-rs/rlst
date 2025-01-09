@@ -5,9 +5,9 @@ use num::One;
 use super::LinearSpace;
 
 /// An Element of a linear spaces.
-pub trait Element {
+pub trait Element<'a>: Clone {
     /// Space type
-    type Space: LinearSpace<F = Self::F, E = Self>;
+    type Space: LinearSpace<F = Self::F, E<'a> = Self>;
     /// Scalar Type
     type F: RlstScalar;
     /// View
@@ -18,6 +18,9 @@ pub trait Element {
     type ViewMut<'b>
     where
         Self: 'b;
+
+    /// Return the associated function space.
+    fn space(&self) -> &Self::Space;
 
     /// Get a view onto the element.
     fn view(&self) -> Self::View<'_>;
@@ -88,10 +91,28 @@ pub trait Element {
         self.neg_inplace();
         self
     }
+
+    fn inner(&self, other: &Self) -> Self::F
+    where
+        Self::Space: super::InnerProductSpace,
+    {
+        // Weird way of writing it because rust-analyzer gets confused which inner to choose.
+        <Self::Space as super::InnerProductSpace>::inner(self.space(), self, other)
+    }
+
+    fn norm(&self) -> Self::F
+    where
+        Self::Space: super::NormedSpace,
+    {
+        // Rust-Analyzer is otherwise confused what `norm` method to choose.
+        <Self::Space as super::NormedSpace>::norm(self.space(), self)
+    }
 }
 
 /// The view type associated with elements of linear spaces.
-pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as Element>::View<'view>;
+pub type ElementView<'view, Space> =
+    <<Space as LinearSpace>::E<'view> as Element<'view>>::View<'view>;
 
 /// The mutable view type associated with elements of linear spaces.
-pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as Element>::ViewMut<'view>;
+pub type ElementViewMut<'view, Space> =
+    <<Space as LinearSpace>::E<'view> as Element<'view>>::ViewMut<'view>;

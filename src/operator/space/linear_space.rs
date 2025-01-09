@@ -13,19 +13,14 @@ pub trait LinearSpace {
     type F: RlstScalar;
 
     /// Type associated with elements of the space.
-    type E: Element<F = Self::F>;
+    type E<'a>: Element<'a, F = Self::F>
+    where
+        Self: 'a;
 
     /// Create a new vector from the space.
-    fn zero(&self) -> Self::E;
-
-    /// Create a new element from a given one.
-    fn new_from(&self, elem: &Self::E) -> Self::E {
-        let mut cloned = self.zero();
-        cloned.axpy_inplace(<Self::F as One>::one(), elem);
-        cloned
-    }
+    fn zero(&self) -> Self::E<'_>;
 }
 /// Element type
-pub type ElementType<Space> = <Space as LinearSpace>::E;
+pub type ElementType<'a, Space> = <Space as LinearSpace>::E<'a>;
 /// Field type
 pub type FieldType<Space> = <Space as LinearSpace>::F;
