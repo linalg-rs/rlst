@@ -51,8 +51,13 @@ fn main() {
             data.push(item);
         });
 
-        dist_mat =
-            DistributedCsrMatrix::from_aij(&domain_layout, &range_layout, &rows, &cols, &data);
+        dist_mat = DistributedCsrMatrix::from_aij(
+            domain_layout.clone(),
+            range_layout.clone(),
+            &rows,
+            &cols,
+            &data,
+        );
 
         // dist_mat = DistributedCsrMatrix::from_serial_root(
         //     sparse_mat,
@@ -79,8 +84,8 @@ fn main() {
         // Create a distributed matrix on the non-root node (compare to `from_serial_root`).
         //dist_mat = DistributedCsrMatrix::from_serial(0, &domain_layout, &range_layout, &world);
         dist_mat = DistributedCsrMatrix::from_aij(
-            &domain_layout,
-            &range_layout,
+            domain_layout.clone(),
+            range_layout.clone(),
             &Vec::default(),
             &Vec::default(),
             &Vec::default(),

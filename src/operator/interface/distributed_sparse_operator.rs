@@ -16,13 +16,12 @@ use super::DistributedArrayVectorSpace;
 
 /// CSR matrix operator
 pub struct DistributedCsrMatrixOperatorImpl<
-    'a,
     DomainLayout: IndexLayout<Comm = C>,
     RangeLayout: IndexLayout<Comm = C>,
     Item: RlstScalar + Equivalence,
     C: Communicator,
 > {
-    csr_mat: DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
+    csr_mat: DistributedCsrMatrix<DomainLayout, RangeLayout, Item, C>,
     domain: DistributedArrayVectorSpace<DomainLayout, Item>,
     range: DistributedArrayVectorSpace<RangeLayout, Item>,
 }
@@ -32,7 +31,7 @@ impl<
         RangeLayout: IndexLayout<Comm = C>,
         Item: RlstScalar + Equivalence,
         C: Communicator,
-    > std::fmt::Debug for DistributedCsrMatrixOperatorImpl<'_, DomainLayout, RangeLayout, Item, C>
+    > std::fmt::Debug for DistributedCsrMatrixOperatorImpl<DomainLayout, RangeLayout, Item, C>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DistributedCsrMatrixOperator")
@@ -43,16 +42,15 @@ impl<
 }
 
 impl<
-        'a,
         DomainLayout: IndexLayout<Comm = C>,
         RangeLayout: IndexLayout<Comm = C>,
         Item: RlstScalar + Equivalence,
         C: Communicator,
-    > DistributedCsrMatrixOperatorImpl<'a, DomainLayout, RangeLayout, Item, C>
+    > DistributedCsrMatrixOperatorImpl<DomainLayout, RangeLayout, Item, C>
 {
     /// Create a new CSR matrix operator
     pub fn new(
-        csr_mat: DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>,
+        csr_mat: DistributedCsrMatrix<DomainLayout, RangeLayout, Item, C>,
         domain: DistributedArrayVectorSpace<DomainLayout, Item>,
         range: DistributedArrayVectorSpace<RangeLayout, Item>,
     ) -> Self {
@@ -82,7 +80,7 @@ impl<
         RangeLayout: IndexLayout<Comm = C>,
         Item: RlstScalar + Equivalence,
         C: Communicator,
-    > OperatorBase for DistributedCsrMatrixOperatorImpl<'_, DomainLayout, RangeLayout, Item, C>
+    > OperatorBase for DistributedCsrMatrixOperatorImpl<DomainLayout, RangeLayout, Item, C>
 {
     type Domain = DistributedArrayVectorSpace<DomainLayout, Item>;
     type Range = DistributedArrayVectorSpace<RangeLayout, Item>;
@@ -101,7 +99,7 @@ impl<
         RangeLayout: IndexLayout<Comm = C>,
         Item: RlstScalar + Equivalence,
         C: Communicator,
-    > AsApply for DistributedCsrMatrixOperatorImpl<'_, DomainLayout, RangeLayout, Item, C>
+    > AsApply for DistributedCsrMatrixOperatorImpl<DomainLayout, RangeLayout, Item, C>
 {
     fn apply_extended(
         &self,
@@ -116,15 +114,14 @@ impl<
 }
 
 impl<
-        'a,
         DomainLayout: IndexLayout<Comm = C>,
         RangeLayout: IndexLayout<Comm = C>,
         Item: RlstScalar + Equivalence,
         C: Communicator,
-    > From<DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>>
-    for Operator<DistributedCsrMatrixOperatorImpl<'a, DomainLayout, RangeLayout, Item, C>>
+    > From<DistributedCsrMatrix<DomainLayout, RangeLayout, Item, C>>
+    for Operator<DistributedCsrMatrixOperatorImpl<DomainLayout, RangeLayout, Item, C>>
 {
-    fn from(csr_mat: DistributedCsrMatrix<'a, DomainLayout, RangeLayout, Item, C>) -> Self {
+    fn from(csr_mat: DistributedCsrMatrix<DomainLayout, RangeLayout, Item, C>) -> Self {
         let domain_layout = csr_mat.domain_layout();
         let range_layout = csr_mat.range_layout();
         let domain = DistributedArrayVectorSpace::new(domain_layout.clone());
