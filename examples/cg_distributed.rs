@@ -42,8 +42,13 @@ pub fn main() {
     // The constructor takes care of the fact that the aij entries are only defined on rank 0.
     // It sends the entries around according to the index layout and constructs the parallel
     // distributed matrix.
-    let distributed_mat =
-        DistributedCsrMatrix::from_aij(&index_layout, &index_layout, &rows, &cols, &data);
+    let distributed_mat = DistributedCsrMatrix::from_aij(
+        index_layout.clone(),
+        index_layout.clone(),
+        &rows,
+        &cols,
+        &data,
+    );
 
     // We can now wrap the matrix into an operator.
     let op = Operator::from(distributed_mat);

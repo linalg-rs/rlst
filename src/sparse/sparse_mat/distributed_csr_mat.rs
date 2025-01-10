@@ -21,7 +21,6 @@ use super::tools::normalize_aij;
 
 /// Distributed CSR matrix
 pub struct DistributedCsrMatrix<
-    'a,
     DomainLayout: IndexLayout<Comm = C>,
     RangeLayout: IndexLayout<Comm = C>,
     T: RlstScalar + Equivalence,
@@ -31,26 +30,25 @@ pub struct DistributedCsrMatrix<
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
-    domain_layout: &'a DomainLayout,
-    range_layout: &'a RangeLayout,
+    domain_layout: DomainLayout,
+    range_layout: RangeLayout,
     domain_ghosts: GhostCommunicator<usize>,
 }
 
 impl<
-        'a,
         DomainLayout: IndexLayout<Comm = C>,
         RangeLayout: IndexLayout<Comm = C>,
         T: RlstScalar + Equivalence,
         C: Communicator,
-    > DistributedCsrMatrix<'a, DomainLayout, RangeLayout, T, C>
+    > DistributedCsrMatrix<DomainLayout, RangeLayout, T, C>
 {
     /// Create new
     pub fn new(
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
-        domain_layout: &'a DomainLayout,
-        range_layout: &'a RangeLayout,
+        domain_layout: DomainLayout,
+        range_layout: RangeLayout,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();
@@ -140,19 +138,19 @@ impl<
     }
 
     /// Domain layout
-    pub fn domain_layout(&self) -> &'a DomainLayout {
-        self.domain_layout
+    pub fn domain_layout(&self) -> &DomainLayout {
+        &self.domain_layout
     }
 
     /// Range layout
-    pub fn range_layout(&self) -> &'a RangeLayout {
-        self.range_layout
+    pub fn range_layout(&self) -> &RangeLayout {
+        &self.range_layout
     }
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        domain_layout: &'a DomainLayout,
-        range_layout: &'a RangeLayout,
+        domain_layout: DomainLayout,
+        range_layout: RangeLayout,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
@@ -230,10 +228,13 @@ impl<
     /// Create from root
     pub fn from_serial(
         root: usize,
-        domain_layout: &'a DomainLayout,
-        range_layout: &'a RangeLayout,
-        comm: &'a C,
+        domain_layout: DomainLayout,
+        range_layout: RangeLayout,
     ) -> Self {
+        assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
+
+        let comm = domain_layout.comm();
+
         let root_process = comm.process_at_rank(root as i32);
 
         let my_index_range = range_layout.local_range();
@@ -286,8 +287,8 @@ impl<
     /// Create from root
     pub fn from_serial_root(
         csr_mat: CsrMatrix<T>,
-        domain_layout: &'a DomainLayout,
-        range_layout: &'a RangeLayout,
+        domain_layout: DomainLayout,
+        range_layout: RangeLayout,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();
@@ -450,7 +451,7 @@ impl<
         DomainLayout: IndexLayout<Comm = C>,
         RangeLayout: IndexLayout<Comm = C>,
         C: Communicator,
-    > Shape<2> for DistributedCsrMatrix<'_, DomainLayout, RangeLayout, T, C>
+    > Shape<2> for DistributedCsrMatrix<DomainLayout, RangeLayout, T, C>
 {
     fn shape(&self) -> [usize; 2] {
         [
