@@ -396,12 +396,12 @@ impl<
     }
 
     /// Matrix multiplication
-    pub fn matmul<'b>(
+    pub fn matmul(
         &self,
         alpha: T,
-        x: &DistributedVector<'b, DomainLayout, T>,
+        x: &DistributedVector<'_, DomainLayout, T>,
         beta: T,
-        y: &mut DistributedVector<'b, RangeLayout, T>,
+        y: &mut DistributedVector<'_, RangeLayout, T>,
     ) {
         // Create a vector that combines local dofs and ghosts
 

@@ -35,8 +35,9 @@ pub use crate::dense::gemm::Gemm;
 pub use crate::dense::tools::PrettyPrint;
 
 pub use crate::dense::traits::{
-    ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, RawAccess,
-    RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    AsOperatorApply, ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut,
+    RawAccess, RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
 
 pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
@@ -81,14 +82,12 @@ pub use bempp_distributed_tools::{EquiDistributedIndexLayout, IndexLayout};
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 
-pub use crate::operator::interface::{
-    ArrayVectorSpace, ArrayVectorSpaceElement, CscMatrixOperator, CsrMatrixOperator,
-    DenseMatrixOperator,
-};
+pub use crate::operator::interface::{ArrayVectorSpace, ArrayVectorSpaceElement, MatrixOperator};
 
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
+pub use crate::operator::OperatorLeftScalarMul;
 pub use crate::operator::{AsApply, OperatorBase};
 pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
 pub use crate::operator::{Element, ElementView, ElementViewMut};

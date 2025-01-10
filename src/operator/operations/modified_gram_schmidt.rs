@@ -12,10 +12,11 @@ pub struct ModifiedGramSchmidt;
 impl ModifiedGramSchmidt {
     /// Orthogonalize a matrix
     pub fn orthogonalize<
+        'a,
         Item: RlstScalar,
-        Elem: Element<F = Item>,
-        Space: InnerProductSpace<E = Elem, F = Item>,
-        FrameType: Frame<E = Elem>,
+        Elem: Element<'a, F = Item>,
+        Space: InnerProductSpace<E<'a> = Elem, F = Item> + 'a,
+        FrameType: Frame<'a, E = Elem>,
     >(
         space: &Space,
         frame: &mut FrameType,
@@ -28,7 +29,7 @@ impl ModifiedGramSchmidt {
         r_mat.set_zero();
 
         for elem_index in 0..nelements {
-            let mut elem = space.new_from(frame.get(elem_index).unwrap());
+            let mut elem = (frame.get(elem_index).unwrap()).clone();
             for (other_index, other_elem) in frame.iter().take(elem_index).enumerate() {
                 let inner = space.inner(&elem, other_elem);
                 *r_mat.get_mut([other_index, elem_index]).unwrap() = inner;

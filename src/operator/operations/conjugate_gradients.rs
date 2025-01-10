@@ -7,12 +7,13 @@ use num::One;
 pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>> {
     operator: &'a Op,
     space: &'a Space,
-    rhs: &'a Space::E,
-    x: Space::E,
+    rhs: &'a Space::E<'a>,
+    x: Space::E<'a>,
     max_iter: usize,
     tol: <Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
-    callable: Option<Box<dyn FnMut(&<Space as LinearSpace>::E, &<Space as LinearSpace>::E) + 'a>>,
+    callable:
+        Option<Box<dyn FnMut(&<Space as LinearSpace>::E<'a>, &<Space as LinearSpace>::E<'a>) + 'a>>,
     print_debug: bool,
 }
 
@@ -20,7 +21,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     CgIteration<'a, Space, Op>
 {
     /// Create a new CG iteration
-    pub fn new(op: &'a Op, rhs: &'a Space::E) -> Self {
+    pub fn new(op: &'a Op, rhs: &'a Space::E<'a>) -> Self {
         Self {
             operator: op,
             space: op.domain(),
@@ -34,7 +35,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     }
 
     /// Set x
-    pub fn set_x(mut self, x: &Space::E) -> Self {
+    pub fn set_x(mut self, x: &Space::E<'a>) -> Self {
         self.x.fill_inplace(x);
         self
     }
@@ -52,7 +53,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     }
 
     /// Set the cammable
-    pub fn set_callable(mut self, callable: impl FnMut(&Space::E, &Space::E) + 'a) -> Self {
+    pub fn set_callable(mut self, callable: impl FnMut(&Space::E<'a>, &Space::E<'a>) + 'a) -> Self {
         self.callable = Some(Box::new(callable));
         self
     }
@@ -64,7 +65,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     }
 
     /// Run CG
-    pub fn run(mut self) -> (Space::E, <Space::F as RlstScalar>::Real) {
+    pub fn run(mut self) -> (Space::E<'a>, <Space::F as RlstScalar>::Real) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
                 "CG converged in {} iterations with relative residual {:+E}.",
@@ -79,10 +80,10 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
             );
         }
 
-        let mut res = self.space.new_from(self.rhs);
+        let mut res = self.rhs.clone();
         res.sum_inplace(&self.operator.apply(&self.x).neg());
 
-        let mut p = self.space.new_from(&res);
+        let mut p = res.clone();
 
         let rhs_norm = self.space.norm(self.rhs);
         let mut res_inner = self.space.inner(&res, &res);

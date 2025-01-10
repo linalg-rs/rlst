@@ -5,5 +5,5 @@ use super::LinearSpace;
 /// Inner product space
 pub trait InnerProductSpace: LinearSpace {
     /// Inner product
-    fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F;
+    fn inner<'a>(&self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F;
 }
