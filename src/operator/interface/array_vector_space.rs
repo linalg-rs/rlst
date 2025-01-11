@@ -1,6 +1,7 @@
 //! Implementation of operator concepts for dense arrays.
 
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
 use crate::dense::types::RlstScalar;
@@ -19,14 +20,14 @@ pub struct ArrayVectorSpace<Item: RlstScalar> {
 }
 
 /// Element of an array vector space
-pub struct ArrayVectorSpaceElement<'a, Item: RlstScalar> {
+pub struct ArrayVectorSpaceElement<Item: RlstScalar> {
     elem: DynamicArray<Item, 1>,
-    space: &'a ArrayVectorSpace<Item>,
+    space: Rc<ArrayVectorSpace<Item>>,
 }
 
-impl<'a, Item: RlstScalar> ArrayVectorSpaceElement<'a, Item> {
+impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
     /// Create a new element
-    pub fn new(space: &'a ArrayVectorSpace<Item>) -> Self {
+    pub fn new(space: Rc<ArrayVectorSpace<Item>>) -> Self {
         Self {
             elem: rlst_dynamic_array1!(Item, [space.dimension()]),
             space,
@@ -34,13 +35,24 @@ impl<'a, Item: RlstScalar> ArrayVectorSpaceElement<'a, Item> {
     }
 }
 
+impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<Item> {
+    fn clone(&self) -> Self {
+        let mut new_array = rlst_dynamic_array1!(Item, [self.space.dimension()]);
+        new_array.fill_from(self.view().r());
+        Self {
+            elem: new_array,
+            space: self.space.clone(),
+        }
+    }
+}
+
 impl<Item: RlstScalar> ArrayVectorSpace<Item> {
     /// Create a new vector space
-    pub fn new(dimension: usize) -> Self {
-        Self {
+    pub fn from_dimension(dimension: usize) -> Rc<Self> {
+        Rc::new(Self {
             dimension,
             _marker: PhantomData,
-        }
+        })
     }
 }
 
@@ -51,28 +63,22 @@ impl<Item: RlstScalar> IndexableSpace for ArrayVectorSpace<Item> {
 }
 
 impl<Item: RlstScalar> LinearSpace for ArrayVectorSpace<Item> {
-    type E<'elem>
-        = ArrayVectorSpaceElement<'elem, Item>
-    where
-        Self: 'elem;
+    type E = ArrayVectorSpaceElement<Item>;
 
     type F = Item;
 
-    fn zero(&self) -> Self::E<'_> {
-        ArrayVectorSpaceElement::new(self)
+    fn zero(space: Rc<Self>) -> Self::E {
+        ArrayVectorSpaceElement::new(space)
     }
 }
 
 impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
-    fn inner<'a>(&self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F
-    where
-        Self: 'a,
-    {
+    fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F {
         x.view().inner(other.view())
     }
 }
 
-impl<'a, Item: RlstScalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
+impl<'a, Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 
@@ -87,7 +93,7 @@ impl<'a, Item: RlstScalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
         Self: 'b;
 
     fn space(&self) -> &Self::Space {
-        self.space
+        &self.space
     }
 
     fn view(&self) -> Self::View<'_> {
@@ -112,16 +118,5 @@ impl<'a, Item: RlstScalar> Element<'a> for ArrayVectorSpaceElement<'a, Item> {
 
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.view_mut().scale_inplace(alpha);
-    }
-}
-
-impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<'_, Item> {
-    fn clone(&self) -> Self {
-        let mut new_array = rlst_dynamic_array1!(Item, [self.space.dimension()]);
-        new_array.fill_from(self.elem.r());
-        Self {
-            elem: new_array,
-            space: self.space,
-        }
     }
 }

@@ -5,9 +5,9 @@ use std::marker::PhantomData;
 use crate::operator::Element;
 
 /// A frame is a collection of elements of a space.
-pub trait Frame<'a> {
+pub trait Frame {
     /// Element type
-    type E: Element<'a>;
+    type E: Element;
     /// Iterator
     type Iter<'iter>: std::iter::Iterator<Item = &'iter Self::E>
     where
@@ -35,7 +35,7 @@ pub trait Frame<'a> {
     /// Add an element
     fn push(&mut self, elem: Self::E);
     /// Evaluate
-    fn evaluate(&self, coeffs: &[<Self::E as Element<'a>>::F], result: &mut Self::E) {
+    fn evaluate(&self, coeffs: &[<Self::E as Element>::F], result: &mut Self::E) {
         assert_eq!(coeffs.len(), self.len());
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
             result.axpy_inplace(coeff, elem);
@@ -44,28 +44,24 @@ pub trait Frame<'a> {
 }
 
 /// A vector frame
-pub struct VectorFrame<'a, Elem: Element<'a>> {
+pub struct VectorFrame<Elem: Element> {
     data: Vec<Elem>,
-    _marker: PhantomData<&'a ()>,
 }
 
-impl<'a, Elem: Element<'a>> VectorFrame<'a, Elem> {
+impl<'a, Elem: Element> VectorFrame<Elem> {
     /// Create a new vector frame
     pub fn new() -> Self {
-        Self {
-            data: Vec::new(),
-            _marker: PhantomData,
-        }
+        Self { data: Vec::new() }
     }
 }
 
-impl<'a, Elem: Element<'a>> Default for VectorFrame<'a, Elem> {
+impl<'a, Elem: Element> Default for VectorFrame<Elem> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, Elem: Element<'a>> Frame<'a> for VectorFrame<'a, Elem> {
+impl<'a, Elem: Element> Frame for VectorFrame<Elem> {
     type E = Elem;
 
     type Iter<'iter>

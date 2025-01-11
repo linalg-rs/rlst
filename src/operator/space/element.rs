@@ -5,9 +5,9 @@ use num::One;
 use super::LinearSpace;
 
 /// An Element of a linear spaces.
-pub trait Element<'a>: Clone {
+pub trait Element: Clone {
     /// Space type
-    type Space: LinearSpace<F = Self::F, E<'a> = Self> + 'a;
+    type Space: LinearSpace<F = Self::F, E = Self>;
     /// Scalar Type
     type F: RlstScalar;
     /// View
@@ -116,9 +116,7 @@ pub trait Element<'a>: Clone {
 }
 
 /// The view type associated with elements of linear spaces.
-pub type ElementView<'view, Space> =
-    <<Space as LinearSpace>::E<'view> as Element<'view>>::View<'view>;
+pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as Element>::View<'view>;
 
 /// The mutable view type associated with elements of linear spaces.
-pub type ElementViewMut<'view, Space> =
-    <<Space as LinearSpace>::E<'view> as Element<'view>>::ViewMut<'view>;
+pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as Element>::ViewMut<'view>;
