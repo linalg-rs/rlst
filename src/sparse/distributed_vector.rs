@@ -1,5 +1,6 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use std::cell::{Ref, RefCell, RefMut};
+use std::ops::Index;
 
 use bempp_distributed_tools::IndexLayout;
 
@@ -13,15 +14,15 @@ use mpi::Rank;
 use num::Zero;
 
 /// Distributed vector
-pub struct DistributedVector<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> {
-    index_layout: &'a Layout,
+pub struct DistributedVector<'a, C: Communicator, Item: RlstScalar + Equivalence> {
+    index_layout: &'a IndexLayout<'a, C>,
     local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
                                            // But this would be disallowed by Rust's static borrow checker.
 }
 
-impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> DistributedVector<'a, Layout, Item> {
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedVector<'a, C, Item> {
     /// Crate new
-    pub fn new(index_layout: &'a Layout) -> Self {
+    pub fn new(index_layout: &'a IndexLayout<'a, C>) -> Self {
         DistributedVector {
             index_layout,
             local: RefCell::new(rlst_dynamic_array1!(
@@ -175,7 +176,7 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> DistributedVector<
     }
 
     /// Return the index layout.
-    pub fn index_layout(&self) -> &Layout {
+    pub fn index_layout(&self) -> &IndexLayout<'a, C> {
         self.index_layout
     }
 }

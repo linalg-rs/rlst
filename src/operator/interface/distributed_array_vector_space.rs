@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-use mpi::traits::Equivalence;
+use mpi::traits::{Communicator, Equivalence};
 
 use crate::dense::types::RlstScalar;
 use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
@@ -10,26 +10,22 @@ use crate::DistributedVector;
 use bempp_distributed_tools::IndexLayout;
 
 /// Array vector space
-pub struct DistributedArrayVectorSpace<Layout: IndexLayout, Item: RlstScalar + Equivalence> {
-    index_layout: Layout,
+pub struct DistributedArrayVectorSpace<'a, C: Communicator, Item: RlstScalar + Equivalence> {
+    index_layout: IndexLayout<'a, C>,
     _marker: PhantomData<Item>,
 }
 
 /// Element of an array vector space
-pub struct DistributedArrayVectorSpaceElement<
-    'a,
-    Layout: IndexLayout,
-    Item: RlstScalar + Equivalence,
-> {
-    elem: DistributedVector<'a, Layout, Item>,
-    space: &'a DistributedArrayVectorSpace<Layout, Item>,
+pub struct DistributedArrayVectorSpaceElement<'a, C: Communicator, Item: RlstScalar + Equivalence> {
+    elem: DistributedVector<'a, C, Item>,
+    space: &'a DistributedArrayVectorSpace<'a, C, Item>,
 }
 
-impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence>
-    DistributedArrayVectorSpaceElement<'a, Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence>
+    DistributedArrayVectorSpaceElement<'a, C, Item>
 {
     /// Create a new element
-    pub fn new(space: &'a DistributedArrayVectorSpace<Layout, Item>) -> Self {
+    pub fn new(space: &'a DistributedArrayVectorSpace<'a, C, Item>) -> Self {
         Self {
             elem: DistributedVector::new(&space.index_layout),
             space,
@@ -37,11 +33,9 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence>
     }
 }
 
-impl<Layout: IndexLayout, Item: RlstScalar + Equivalence>
-    DistributedArrayVectorSpace<Layout, Item>
-{
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVectorSpace<'a, C, Item> {
     /// Create a new vector space
-    pub fn new(index_layout: Layout) -> Self {
+    pub fn new(index_layout: IndexLayout<'a, C>) -> Self {
         Self {
             index_layout,
             _marker: PhantomData,
@@ -49,31 +43,31 @@ impl<Layout: IndexLayout, Item: RlstScalar + Equivalence>
     }
 
     /// Return the communicator
-    pub fn comm(&self) -> &Layout::Comm {
+    pub fn comm(&self) -> &C {
         self.index_layout.comm()
     }
 
     /// Return the index layout
-    pub fn index_layout(&self) -> &Layout {
+    pub fn index_layout(&self) -> &IndexLayout<'a, C> {
         &self.index_layout
     }
 }
 
-impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> IndexableSpace
-    for DistributedArrayVectorSpace<Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> IndexableSpace
+    for DistributedArrayVectorSpace<'a, C, Item>
 {
     fn dimension(&self) -> usize {
         self.index_layout.number_of_global_indices()
     }
 }
 
-impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> LinearSpace
-    for DistributedArrayVectorSpace<Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
+    for DistributedArrayVectorSpace<'a, C, Item>
 {
-    type E<'a>
-        = DistributedArrayVectorSpaceElement<'a, Layout, Item>
+    type E<'b>
+        = DistributedArrayVectorSpaceElement<'b, C, Item>
     where
-        Self: 'a;
+        Self: 'b;
 
     type F = Item;
 
@@ -82,27 +76,30 @@ impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> LinearSpace
     }
 }
 
-impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> InnerProductSpace
-    for DistributedArrayVectorSpace<Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> InnerProductSpace
+    for DistributedArrayVectorSpace<'a, C, Item>
 {
-    fn inner<'a>(&self, x: &'a Self::E<'a>, other: &'a Self::E<'a>) -> Self::F {
+    fn inner<'b>(&self, x: &Self::E<'b>, other: &Self::E<'b>) -> Self::F
+    where
+        Self: 'b,
+    {
         x.view().inner(other.view())
     }
 }
 
-impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Element<'a>
-    for DistributedArrayVectorSpaceElement<'a, Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element<'a>
+    for DistributedArrayVectorSpaceElement<'a, C, Item>
 {
     type F = Item;
-    type Space = DistributedArrayVectorSpace<Layout, Item>;
+    type Space = DistributedArrayVectorSpace<'a, C, Item>;
 
     type View<'b>
-        = &'b DistributedVector<'a, Layout, Item>
+        = &'b DistributedVector<'a, C, Item>
     where
         Self: 'b;
 
     type ViewMut<'b>
-        = &'b mut DistributedVector<'a, Layout, Item>
+        = &'b mut DistributedVector<'a, C, Item>
     where
         Self: 'b;
 
@@ -138,8 +135,8 @@ impl<'a, Layout: IndexLayout, Item: RlstScalar + Equivalence> Element<'a>
     }
 }
 
-impl<Layout: IndexLayout, Item: RlstScalar + Equivalence> Clone
-    for DistributedArrayVectorSpaceElement<'_, Layout, Item>
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Clone
+    for DistributedArrayVectorSpaceElement<'_, C, Item>
 {
     fn clone(&self) -> Self {
         let mut elem = DistributedArrayVectorSpaceElement::new(self.space);

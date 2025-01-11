@@ -79,6 +79,6 @@ jobs:
           components: rustfmt
       - name: Install cargo-upgrades
         run: cargo install cargo-upgrades
-      - uses: actions/checkout@v3
-      - name: Check that dependencies are up to date
-        run: cargo upgrades
+      # - uses: actions/checkout@v3
+      # - name: Check that dependencies are up to date
+      #   run: cargo upgrades

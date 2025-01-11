@@ -64,7 +64,10 @@ impl<Item: RlstScalar> LinearSpace for ArrayVectorSpace<Item> {
 }
 
 impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
-    fn inner<'a>(&self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F {
+    fn inner<'a>(&self, x: &Self::E<'a>, other: &Self::E<'a>) -> Self::F
+    where
+        Self: 'a,
+    {
         x.view().inner(other.view())
     }
 }
