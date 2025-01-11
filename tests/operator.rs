@@ -1,7 +1,5 @@
 //! Tests for the operator interface
 
-use std::rc::Rc;
-
 use num::traits::{One, Zero};
 use rand::Rng;
 use rlst::{operator::Operator, prelude::*};

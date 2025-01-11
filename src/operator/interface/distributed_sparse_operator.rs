@@ -1,7 +1,6 @@
 //! Distributed sparse operator
 use std::rc::Rc;
 
-use bempp_distributed_tools::IndexLayout;
 use mpi::traits::{Communicator, Equivalence};
 
 use crate::dense::traits::Shape;
@@ -23,8 +22,8 @@ pub struct DistributedCsrMatrixOperatorImpl<'a, Item: RlstScalar + Equivalence, 
     range: Rc<DistributedArrayVectorSpace<'a, C, Item>>,
 }
 
-impl<'a, Item: RlstScalar + Equivalence, C: Communicator> std::fmt::Debug
-    for DistributedCsrMatrixOperatorImpl<'a, Item, C>
+impl<Item: RlstScalar + Equivalence, C: Communicator> std::fmt::Debug
+    for DistributedCsrMatrixOperatorImpl<'_, Item, C>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DistributedCsrMatrixOperator")
@@ -79,8 +78,8 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> OperatorBase
     }
 }
 
-impl<'a, Item: RlstScalar + Equivalence, C: Communicator> AsApply
-    for DistributedCsrMatrixOperatorImpl<'a, Item, C>
+impl<Item: RlstScalar + Equivalence, C: Communicator> AsApply
+    for DistributedCsrMatrixOperatorImpl<'_, Item, C>
 {
     fn apply_extended(
         &self,

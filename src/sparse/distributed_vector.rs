@@ -1,6 +1,5 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use std::cell::{Ref, RefCell, RefMut};
-use std::ops::Index;
 use std::rc::Rc;
 
 use bempp_distributed_tools::IndexLayout;

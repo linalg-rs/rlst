@@ -1,7 +1,6 @@
 //! Definition of CSR matrices.
 
 use std::collections::HashMap;
-use std::ops::Index;
 use std::rc::Rc;
 
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
@@ -437,7 +436,7 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     }
 }
 
-impl<'a, T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'a, T, C> {
+impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'_, T, C> {
     fn shape(&self) -> [usize; 2] {
         [
             self.range_layout().number_of_global_indices(),

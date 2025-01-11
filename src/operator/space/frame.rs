@@ -1,7 +1,5 @@
 //! A frame is a collection of elements of a space.
 
-use std::marker::PhantomData;
-
 use crate::operator::Element;
 
 /// A frame is a collection of elements of a space.
@@ -48,20 +46,20 @@ pub struct VectorFrame<Elem: Element> {
     data: Vec<Elem>,
 }
 
-impl<'a, Elem: Element> VectorFrame<Elem> {
+impl<Elem: Element> VectorFrame<Elem> {
     /// Create a new vector frame
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }
 }
 
-impl<'a, Elem: Element> Default for VectorFrame<Elem> {
+impl<Elem: Element> Default for VectorFrame<Elem> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, Elem: Element> Frame for VectorFrame<Elem> {
+impl<Elem: Element> Frame for VectorFrame<Elem> {
     type E = Elem;
 
     type Iter<'iter>
