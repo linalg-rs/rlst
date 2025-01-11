@@ -36,11 +36,11 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence>
 
 impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVectorSpace<'a, C, Item> {
     /// Create a new vector space
-    pub fn new(index_layout: Rc<IndexLayout<'a, C>>) -> Self {
-        Self {
+    pub fn from_index_layout(index_layout: Rc<IndexLayout<'a, C>>) -> Rc<Self> {
+        Rc::new(Self {
             index_layout,
             _marker: PhantomData,
-        }
+        })
     }
 
     /// Return the communicator
@@ -54,8 +54,8 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVector
     }
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> IndexableSpace
-    for DistributedArrayVectorSpace<'a, C, Item>
+impl<C: Communicator, Item: RlstScalar + Equivalence> IndexableSpace
+    for DistributedArrayVectorSpace<'_, C, Item>
 {
     fn dimension(&self) -> usize {
         self.index_layout.number_of_global_indices()
@@ -65,8 +65,7 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> IndexableSpace
 impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
     for DistributedArrayVectorSpace<'a, C, Item>
 {
-    type E
-        = DistributedArrayVectorSpaceElement<'a, C, Item>
+    type E = DistributedArrayVectorSpaceElement<'a, C, Item>;
 
     type F = Item;
 
@@ -78,8 +77,7 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
 impl<'a, C: Communicator, Item: RlstScalar + Equivalence> InnerProductSpace
     for DistributedArrayVectorSpace<'a, C, Item>
 {
-    fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F
-    {
+    fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F {
         x.view().inner(other.view())
     }
 }

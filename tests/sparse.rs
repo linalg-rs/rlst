@@ -144,7 +144,7 @@ fn test_distributed_index_set() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
 
-    let index_layout = EquiDistributedIndexLayout::new(14, 1, &world);
+    let index_layout = IndexLayout::from_equidistributed_chunks(14, 1, &world);
 
     // Test that the range is correct on rank 0
     assert_eq!(index_layout.index_range(0).unwrap(), (0, 14));

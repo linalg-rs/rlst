@@ -78,7 +78,7 @@ impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
+impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 

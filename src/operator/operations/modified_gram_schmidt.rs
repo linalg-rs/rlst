@@ -14,9 +14,9 @@ impl ModifiedGramSchmidt {
     pub fn orthogonalize<
         'a,
         Item: RlstScalar,
-        Elem: Element<'a, F = Item>,
-        Space: InnerProductSpace<E<'a> = Elem, F = Item> + 'a,
-        FrameType: Frame<'a, E = Elem>,
+        Elem: Element<F = Item>,
+        Space: InnerProductSpace<E = Elem, F = Item> + 'a,
+        FrameType: Frame<E = Elem>,
     >(
         space: &Space,
         frame: &mut FrameType,

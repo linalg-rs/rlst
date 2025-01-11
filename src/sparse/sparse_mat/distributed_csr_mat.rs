@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::ops::Index;
+use std::rc::Rc;
 
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
@@ -26,8 +27,8 @@ pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
-    domain_layout: IndexLayout<'a, C>,
-    range_layout: IndexLayout<'a, C>,
+    domain_layout: Rc<IndexLayout<'a, C>>,
+    range_layout: Rc<IndexLayout<'a, C>>,
     domain_ghosts: GhostCommunicator<usize>,
 }
 
@@ -37,8 +38,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
-        domain_layout: IndexLayout<'a, C>,
-        range_layout: IndexLayout<'a, C>,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();
@@ -128,19 +129,19 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     }
 
     /// Domain layout
-    pub fn domain_layout(&self) -> &IndexLayout<'a, C> {
-        &self.domain_layout
+    pub fn domain_layout(&self) -> Rc<IndexLayout<'a, C>> {
+        self.domain_layout.clone()
     }
 
     /// Range layout
-    pub fn range_layout(&self) -> &IndexLayout<'a, C> {
-        &self.range_layout
+    pub fn range_layout(&self) -> Rc<IndexLayout<'a, C>> {
+        self.range_layout.clone()
     }
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        domain_layout: IndexLayout<'a, C>,
-        range_layout: IndexLayout<'a, C>,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
@@ -218,8 +219,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial(
         root: usize,
-        domain_layout: IndexLayout<'a, C>,
-        range_layout: IndexLayout<'a, C>,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
 
@@ -277,8 +278,8 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
     /// Create from root
     pub fn from_serial_root(
         csr_mat: CsrMatrix<T>,
-        domain_layout: IndexLayout<'a, C>,
-        range_layout: IndexLayout<'a, C>,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();

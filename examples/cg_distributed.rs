@@ -1,12 +1,12 @@
 //! Example of a distributed CG iteration across several MPI ranks.
 
+use std::rc::Rc;
+
 use mpi::topology::Communicator;
 use rand::Rng;
+use rlst::operator::interface::DistributedArrayVectorSpace;
 use rlst::operator::Operator;
-use rlst::{
-    CgIteration, DistributedCsrMatrix, Element, EquiDistributedIndexLayout, LinearSpace,
-    OperatorBase,
-};
+use rlst::{CgIteration, DistributedCsrMatrix, Element, IndexLayout, LinearSpace, OperatorBase};
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();
@@ -21,7 +21,7 @@ pub fn main() {
     let n = 500;
     let tol = 1E-5;
 
-    let index_layout = EquiDistributedIndexLayout::new(n, 1, &world);
+    let index_layout = Rc::new(IndexLayout::from_equidistributed_chunks(n, 1, &world));
 
     let mut residuals = Vec::<f64>::new();
 
@@ -54,7 +54,7 @@ pub fn main() {
     let op = Operator::from(distributed_mat);
 
     // Let's create a right-hand side.
-    let mut rhs = op.range().zero();
+    let mut rhs = DistributedArrayVectorSpace::zero(op.range());
     rhs.view_mut()
         .local_mut()
         .fill_from_equally_distributed(&mut rng);

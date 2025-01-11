@@ -1,5 +1,7 @@
 //! Demonstrate the creation of a distributed CSR matrix and its multiplication with a vector.
 
+use std::rc::Rc;
+
 use mpi::traits::Communicator;
 use rlst::{assert_array_relative_eq, prelude::*};
 
@@ -13,13 +15,13 @@ fn main() {
 
     let dist_mat;
 
-    let domain_layout = EquiDistributedIndexLayout::new(313, 1, &world);
+    let domain_layout = Rc::new(IndexLayout::from_equidistributed_chunks(313, 1, &world));
 
-    let mut dist_x = DistributedVector::<_, f64>::new(&domain_layout);
+    let mut dist_x = DistributedVector::<_, f64>::new(domain_layout.clone());
 
-    let range_layout = EquiDistributedIndexLayout::new(507, 1, &world);
+    let range_layout = Rc::new(IndexLayout::from_equidistributed_chunks(507, 1, &world));
 
-    let mut dist_y = DistributedVector::<_, f64>::new(&range_layout);
+    let mut dist_y = DistributedVector::<_, f64>::new(range_layout.clone());
 
     if rank == 0 {
         // Read the sparse matrix in matrix market format.
