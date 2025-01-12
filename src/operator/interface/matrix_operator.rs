@@ -1,4 +1,6 @@
 //! Dense matrix operator
+use std::rc::Rc;
+
 use crate::dense::types::RlstScalar;
 use crate::dense::{
     array::Array,
@@ -19,15 +21,15 @@ use super::array_vector_space::ArrayVectorSpace;
 /// Matrix operator
 pub struct MatrixOperator<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> {
     op: Op,
-    domain: ArrayVectorSpace<Item>,
-    range: ArrayVectorSpace<Item>,
+    domain: Rc<ArrayVectorSpace<Item>>,
+    range: Rc<ArrayVectorSpace<Item>>,
 }
 
 /// Matrix operator reference
 pub struct MatrixOperatorRef<'a, Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> {
     op: &'a Op,
-    domain: ArrayVectorSpace<Item>,
-    range: ArrayVectorSpace<Item>,
+    domain: Rc<ArrayVectorSpace<Item>>,
+    range: Rc<ArrayVectorSpace<Item>>,
 }
 
 impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> std::fmt::Debug
@@ -65,8 +67,8 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> From<Op>
 {
     fn from(op: Op) -> Self {
         let shape = op.shape();
-        let domain = ArrayVectorSpace::new(shape[1]);
-        let range = ArrayVectorSpace::new(shape[0]);
+        let domain = ArrayVectorSpace::from_dimension(shape[1]);
+        let range = ArrayVectorSpace::from_dimension(shape[0]);
         Operator::new(MatrixOperator { op, domain, range })
     }
 }
@@ -76,8 +78,8 @@ impl<'a, Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> From<&'a
 {
     fn from(op: &'a Op) -> Self {
         let shape = op.shape();
-        let domain = ArrayVectorSpace::new(shape[1]);
-        let range = ArrayVectorSpace::new(shape[0]);
+        let domain = ArrayVectorSpace::from_dimension(shape[1]);
+        let range = ArrayVectorSpace::from_dimension(shape[0]);
         Self::new(MatrixOperatorRef { op, domain, range })
     }
 }
@@ -88,12 +90,12 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
     type Domain = ArrayVectorSpace<Item>;
     type Range = ArrayVectorSpace<Item>;
 
-    fn domain(&self) -> &Self::Domain {
-        &self.domain
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.domain.clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        &self.range
+    fn range(&self) -> Rc<Self::Range> {
+        self.range.clone()
     }
 }
 
@@ -103,13 +105,23 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
-    ) -> crate::dense::types::RlstResult<()> {
+        y: &mut <Self::Range as LinearSpace>::E,
+    ) {
         self.op
             .apply_extended(alpha, x.view().data(), beta, y.view_mut().data_mut());
-        Ok(())
+    }
+
+    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
+        let mut y = <Self::Range as LinearSpace>::zero(self.range.clone());
+        self.apply_extended(
+            <Self::Range as LinearSpace>::F::one(),
+            x,
+            <Self::Range as LinearSpace>::F::zero(),
+            &mut y,
+        );
+        y
     }
 }
 
@@ -119,12 +131,12 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
     type Domain = ArrayVectorSpace<Item>;
     type Range = ArrayVectorSpace<Item>;
 
-    fn domain(&self) -> &Self::Domain {
-        &self.domain
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.domain.clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        &self.range
+    fn range(&self) -> Rc<Self::Range> {
+        self.range.clone()
     }
 }
 
@@ -134,13 +146,23 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
     fn apply_extended(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E<'_>,
+        x: &<Self::Domain as LinearSpace>::E,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E<'_>,
-    ) -> crate::dense::types::RlstResult<()> {
+        y: &mut <Self::Range as LinearSpace>::E,
+    ) {
         self.op
             .apply_extended(alpha, x.view().data(), beta, y.view_mut().data_mut());
-        Ok(())
+    }
+
+    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
+        let mut y = <Self::Range as LinearSpace>::zero(self.range.clone());
+        self.apply_extended(
+            <Self::Range as LinearSpace>::F::one(),
+            x,
+            <Self::Range as LinearSpace>::F::zero(),
+            &mut y,
+        );
+        y
     }
 }
 

@@ -77,7 +77,7 @@ pub use crate::sparse::{
     distributed_vector::DistributedVector, sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
 };
 #[cfg(feature = "mpi")]
-pub use bempp_distributed_tools::{EquiDistributedIndexLayout, IndexLayout};
+pub use bempp_distributed_tools::IndexLayout;
 
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;

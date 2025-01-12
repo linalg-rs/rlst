@@ -1,5 +1,7 @@
 //! Scatter a vector on the root rank.
 
+use std::rc::Rc;
+
 use approx::assert_relative_eq;
 
 use mpi::traits::Communicator;
@@ -15,9 +17,9 @@ pub fn main() {
 
     let rank = world.rank() as usize;
 
-    let index_layout = EquiDistributedIndexLayout::new(NDIM, 1, &world);
+    let index_layout = Rc::new(IndexLayout::from_equidistributed_chunks(NDIM, 1, &world));
 
-    let mut vec = DistributedVector::<_, f64>::new(&index_layout);
+    let mut vec = DistributedVector::<_, f64>::new(index_layout);
 
     let local_index_range = vec.index_layout().index_range(rank).unwrap();
 

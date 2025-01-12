@@ -2,7 +2,10 @@
 
 use num::traits::{One, Zero};
 use rand::Rng;
-use rlst::{operator::Operator, prelude::*};
+use rlst::{
+    operator::{zero_element, Operator},
+    prelude::*,
+};
 
 #[test]
 fn test_dense_matrix_operator() {
@@ -10,20 +13,20 @@ fn test_dense_matrix_operator() {
     mat.fill_from_seed_equally_distributed(0);
 
     let op = Operator::from(mat);
-    let mut x = op.domain().zero();
-    let mut y = op.range().zero();
+    let mut x = zero_element(op.domain());
+    let mut y = zero_element(op.range());
 
     x.view_mut().fill_from_seed_equally_distributed(0);
 
-    op.apply_extended(1.0, &x, 0.0, &mut y).unwrap();
+    op.apply_extended(1.0, &x, 0.0, &mut y);
 }
 
 #[test]
 pub fn test_gram_schmidt() {
-    let space = ArrayVectorSpace::<c64>::new(5);
-    let mut vec1 = space.zero();
-    let mut vec2 = space.zero();
-    let mut vec3 = space.zero();
+    let space = ArrayVectorSpace::<c64>::from_dimension(5);
+    let mut vec1 = zero_element(space.clone());
+    let mut vec2 = zero_element(space.clone());
+    let mut vec3 = zero_element(space.clone());
 
     vec1.view_mut().fill_from_seed_equally_distributed(0);
     vec2.view_mut().fill_from_seed_equally_distributed(1);
@@ -43,12 +46,12 @@ pub fn test_gram_schmidt() {
 
     let mut r_mat = rlst_dynamic_array2!(c64, [3, 3]);
 
-    ModifiedGramSchmidt::orthogonalize(&space, &mut frame, &mut r_mat);
+    ModifiedGramSchmidt::orthogonalize(space.as_ref(), &mut frame, &mut r_mat);
 
     // Check orthogonality
     for index1 in 0..3 {
         for index2 in 0..3 {
-            let inner = space.inner(frame.get(index1).unwrap(), frame.get(index2).unwrap());
+            let inner = space.inner_product(frame.get(index1).unwrap(), frame.get(index2).unwrap());
             if index1 == index2 {
                 approx::assert_relative_eq!(inner, c64::one(), epsilon = 1E-12);
             } else {
@@ -59,7 +62,7 @@ pub fn test_gram_schmidt() {
 
     // Check that r is correct.
     for (index, col) in r_mat.col_iter().enumerate() {
-        let mut actual = space.zero();
+        let mut actual = <ArrayVectorSpace<c64> as LinearSpace>::zero(space.clone());
         let expected = original.get(index).unwrap();
         let mut coeffs = rlst_dynamic_array1!(c64, [frame.len()]);
         coeffs.fill_from(col.r());
@@ -74,7 +77,7 @@ fn test_cg() {
     let dim = 10;
     let tol = 1E-5;
 
-    let space = ArrayVectorSpace::<f64>::new(dim);
+    let space = ArrayVectorSpace::<f64>::from_dimension(dim);
     let mut residuals = Vec::<f64>::new();
 
     let mut rng = rand::thread_rng();
@@ -87,7 +90,7 @@ fn test_cg() {
 
     let op = Operator::from(mat.r());
 
-    let mut rhs = space.zero();
+    let mut rhs = zero_element(op.range());
     rhs.view_mut().fill_from_equally_distributed(&mut rng);
 
     let cg = (CgIteration::new(&op, &rhs))
@@ -107,8 +110,8 @@ fn test_operator_algebra() {
     let mut mat1 = rlst_dynamic_array2!(f64, [4, 3]);
     let mut mat2 = rlst_dynamic_array2!(f64, [4, 3]);
 
-    let domain = ArrayVectorSpace::new(3);
-    let range = ArrayVectorSpace::new(4);
+    let domain = ArrayVectorSpace::from_dimension(3);
+    let range = ArrayVectorSpace::from_dimension(4);
 
     mat1.fill_from_seed_equally_distributed(0);
     mat2.fill_from_seed_equally_distributed(1);
@@ -116,19 +119,19 @@ fn test_operator_algebra() {
     let op1 = Operator::from(mat1);
     let op2 = Operator::from(mat2);
 
-    let mut x = domain.zero();
-    let mut y = range.zero();
-    let mut y_expected = range.zero();
+    let mut x = ArrayVectorSpace::zero(domain.clone());
+    let mut y = ArrayVectorSpace::zero(range.clone());
+    let mut y_expected = ArrayVectorSpace::zero(range.clone());
     x.view_mut().fill_from_seed_equally_distributed(2);
     y.view_mut().fill_from_seed_equally_distributed(3);
     y_expected.view_mut().fill_from(y.view());
 
-    op2.apply_extended(2.0, &x, 3.5, &mut y_expected).unwrap();
-    op1.apply_extended(10.0, &x, 1.0, &mut y_expected).unwrap();
+    op2.apply_extended(2.0, &x, 3.5, &mut y_expected);
+    op1.apply_extended(10.0, &x, 1.0, &mut y_expected);
 
     let sum = op1.scale(5.0).sum(op2.r());
 
-    sum.apply_extended(2.0, &x, 3.5, &mut y).unwrap();
+    sum.apply_extended(2.0, &x, 3.5, &mut y);
 
     rlst::assert_array_relative_eq!(y.view(), y_expected.view(), 1E-12);
 }

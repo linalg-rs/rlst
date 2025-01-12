@@ -1,6 +1,7 @@
 //! Definition of CSR matrices.
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 use crate::sparse::sparse_mat::SparseMatType;
@@ -20,35 +21,24 @@ use crate::dense::types::RlstScalar;
 use super::tools::normalize_aij;
 
 /// Distributed CSR matrix
-pub struct DistributedCsrMatrix<
-    DomainLayout: IndexLayout<Comm = C>,
-    RangeLayout: IndexLayout<Comm = C>,
-    T: RlstScalar + Equivalence,
-    C: Communicator,
-> {
+pub struct DistributedCsrMatrix<'a, T: RlstScalar + Equivalence, C: Communicator> {
     mat_type: SparseMatType,
     local_matrix: CsrMatrix<T>,
     global_indices: Vec<usize>,
     local_dof_count: usize,
-    domain_layout: DomainLayout,
-    range_layout: RangeLayout,
+    domain_layout: Rc<IndexLayout<'a, C>>,
+    range_layout: Rc<IndexLayout<'a, C>>,
     domain_ghosts: GhostCommunicator<usize>,
 }
 
-impl<
-        DomainLayout: IndexLayout<Comm = C>,
-        RangeLayout: IndexLayout<Comm = C>,
-        T: RlstScalar + Equivalence,
-        C: Communicator,
-    > DistributedCsrMatrix<DomainLayout, RangeLayout, T, C>
-{
+impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, T, C> {
     /// Create new
     pub fn new(
         indices: Vec<usize>,
         indptr: Vec<usize>,
         data: Vec<T>,
-        domain_layout: DomainLayout,
-        range_layout: RangeLayout,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();
@@ -138,19 +128,19 @@ impl<
     }
 
     /// Domain layout
-    pub fn domain_layout(&self) -> &DomainLayout {
-        &self.domain_layout
+    pub fn domain_layout(&self) -> Rc<IndexLayout<'a, C>> {
+        self.domain_layout.clone()
     }
 
     /// Range layout
-    pub fn range_layout(&self) -> &RangeLayout {
-        &self.range_layout
+    pub fn range_layout(&self) -> Rc<IndexLayout<'a, C>> {
+        self.range_layout.clone()
     }
 
     /// Create a new distributed CSR matrix from an aij format.
     pub fn from_aij(
-        domain_layout: DomainLayout,
-        range_layout: RangeLayout,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
         rows: &[usize],
         cols: &[usize],
         data: &[T],
@@ -228,8 +218,8 @@ impl<
     /// Create from root
     pub fn from_serial(
         root: usize,
-        domain_layout: DomainLayout,
-        range_layout: RangeLayout,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
 
@@ -287,8 +277,8 @@ impl<
     /// Create from root
     pub fn from_serial_root(
         csr_mat: CsrMatrix<T>,
-        domain_layout: DomainLayout,
-        range_layout: RangeLayout,
+        domain_layout: Rc<IndexLayout<'a, C>>,
+        range_layout: Rc<IndexLayout<'a, C>>,
     ) -> Self {
         assert!(std::ptr::addr_eq(domain_layout.comm(), range_layout.comm()));
         let comm = domain_layout.comm();
@@ -400,9 +390,9 @@ impl<
     pub fn matmul(
         &self,
         alpha: T,
-        x: &DistributedVector<'_, DomainLayout, T>,
+        x: &DistributedVector<'_, C, T>,
         beta: T,
-        y: &mut DistributedVector<'_, RangeLayout, T>,
+        y: &mut DistributedVector<'_, C, T>,
     ) {
         // Create a vector that combines local dofs and ghosts
 
@@ -446,13 +436,7 @@ impl<
     }
 }
 
-impl<
-        T: RlstScalar + Equivalence,
-        DomainLayout: IndexLayout<Comm = C>,
-        RangeLayout: IndexLayout<Comm = C>,
-        C: Communicator,
-    > Shape<2> for DistributedCsrMatrix<DomainLayout, RangeLayout, T, C>
-{
+impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'_, T, C> {
     fn shape(&self) -> [usize; 2] {
         [
             self.range_layout().number_of_global_indices(),
