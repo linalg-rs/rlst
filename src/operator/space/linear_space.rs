@@ -16,10 +16,15 @@ pub trait LinearSpace {
     /// Type associated with elements of the space.
     type E: Element<F = Self::F>;
 
-    /// Create a new vector from the space.
+    /// Create a new zero element from the space.
     fn zero(space: Rc<Self>) -> Self::E;
 }
 /// Element type
 pub type ElementType<Space> = <Space as LinearSpace>::E;
 /// Field type
 pub type FieldType<Space> = <Space as LinearSpace>::F;
+
+/// Create a new zero element from a given space.
+pub fn zero_element<Space: LinearSpace>(space: Rc<Space>) -> ElementType<Space> {
+    Space::zero(space)
+}

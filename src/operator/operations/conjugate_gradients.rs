@@ -82,6 +82,9 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
 
         let mut p = res.clone();
 
+        // This syntax is only necessary because the type inference becomes confused for some reason.
+        // If I write `let rhs_norm = self.rhs.norm()` the compiler thinks that `self.rhs` is a space and
+        // not an element.
         let rhs_norm = <Space as NormedSpace>::norm(&self.operator.range(), self.rhs);
         let mut res_inner = <Space as InnerProductSpace>::inner(&self.operator.range(), &res, &res);
         let mut res_norm = res_inner.abs().sqrt();

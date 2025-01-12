@@ -2,7 +2,10 @@
 
 use num::traits::{One, Zero};
 use rand::Rng;
-use rlst::{operator::Operator, prelude::*};
+use rlst::{
+    operator::{zero_element, Operator},
+    prelude::*,
+};
 
 #[test]
 fn test_dense_matrix_operator() {
@@ -10,8 +13,8 @@ fn test_dense_matrix_operator() {
     mat.fill_from_seed_equally_distributed(0);
 
     let op = Operator::from(mat);
-    let mut x = op.domain_zero();
-    let mut y = op.range_zero();
+    let mut x = zero_element(op.domain());
+    let mut y = zero_element(op.range());
 
     x.view_mut().fill_from_seed_equally_distributed(0);
 
@@ -21,9 +24,9 @@ fn test_dense_matrix_operator() {
 #[test]
 pub fn test_gram_schmidt() {
     let space = ArrayVectorSpace::<c64>::from_dimension(5);
-    let mut vec1 = ArrayVectorSpace::zero(space.clone());
-    let mut vec2 = ArrayVectorSpace::zero(space.clone());
-    let mut vec3 = ArrayVectorSpace::zero(space.clone());
+    let mut vec1 = zero_element(space.clone());
+    let mut vec2 = zero_element(space.clone());
+    let mut vec3 = zero_element(space.clone());
 
     vec1.view_mut().fill_from_seed_equally_distributed(0);
     vec2.view_mut().fill_from_seed_equally_distributed(1);
@@ -87,7 +90,7 @@ fn test_cg() {
 
     let op = Operator::from(mat.r());
 
-    let mut rhs = op.range_zero();
+    let mut rhs = zero_element(op.range());
     rhs.view_mut().fill_from_equally_distributed(&mut rng);
 
     let cg = (CgIteration::new(&op, &rhs))

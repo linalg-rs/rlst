@@ -19,16 +19,6 @@ pub trait OperatorBase: Debug {
     /// Get the range
     fn range(&self) -> Rc<Self::Range>;
 
-    /// Get a zero in the domain space.
-    fn domain_zero(&self) -> <Self::Domain as LinearSpace>::E {
-        <Self::Domain as LinearSpace>::zero(self.domain())
-    }
-
-    /// Get a zero in the range space.
-    fn range_zero(&self) -> <Self::Range as LinearSpace>::E {
-        <Self::Range as LinearSpace>::zero(self.range())
-    }
-
     /// Convert to RLST reference
     fn r(&self) -> RlstOperatorReference<'_, Self>
     where
