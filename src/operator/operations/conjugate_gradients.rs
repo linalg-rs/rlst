@@ -1,10 +1,13 @@
 //! Arnoldi Iteration
 use crate::dense::types::RlstScalar;
-use crate::operator::{AsApply, Element, InnerProductSpace, LinearSpace, NormedSpace};
+use crate::operator::{AsApply, Element, InnerProductSpace, LinearSpace};
 use num::One;
 
 /// Iteration for CG
-pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>> {
+pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
+where
+    <Space::E as Element>::Space: InnerProductSpace,
+{
     operator: &'a Op,
     rhs: &'a Space::E,
     x: Space::E,
@@ -17,6 +20,8 @@ pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space,
 
 impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     CgIteration<'a, Space, Op>
+where
+    <Space::E as Element>::Space: InnerProductSpace,
 {
     /// Create a new CG iteration
     pub fn new(op: &'a Op, rhs: &'a Space::E) -> Self {
@@ -85,9 +90,8 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         // This syntax is only necessary because the type inference becomes confused for some reason.
         // If I write `let rhs_norm = self.rhs.norm()` the compiler thinks that `self.rhs` is a space and
         // not an element.
-        let rhs_norm = <Space as NormedSpace>::norm(&self.operator.range(), self.rhs);
-        let mut res_inner =
-            <Space as InnerProductSpace>::inner_product(&self.operator.range(), &res, &res);
+        let rhs_norm = self.rhs.norm();
+        let mut res_inner = res.inner_product(&res);
         let mut res_norm = res_inner.abs().sqrt();
         let mut rel_res = res_norm / rhs_norm;
 
@@ -117,8 +121,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
                 callable(&self.x, &res);
             }
             let res_inner_previous = res_inner;
-            res_inner =
-                <Space as InnerProductSpace>::inner_product(&self.operator.range(), &res, &res);
+            res_inner = res.inner_product(&res);
             res_norm = res_inner.abs().sqrt();
             rel_res = res_norm / rhs_norm;
             if res_norm < self.tol {
