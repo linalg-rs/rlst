@@ -77,7 +77,7 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
 impl<C: Communicator, Item: RlstScalar + Equivalence> InnerProductSpace
     for DistributedArrayVectorSpace<'_, C, Item>
 {
-    fn inner(&self, x: &Self::E, other: &Self::E) -> Self::F {
+    fn inner_product(&self, x: &Self::E, other: &Self::E) -> Self::F {
         x.view().inner(other.view())
     }
 }
@@ -98,8 +98,8 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
     where
         Self: 'b;
 
-    fn space(&self) -> &Self::Space {
-        &self.space
+    fn space(&self) -> Rc<Self::Space> {
+        self.space.clone()
     }
 
     fn view(&self) -> Self::View<'_> {

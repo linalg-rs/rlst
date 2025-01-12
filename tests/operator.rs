@@ -51,7 +51,7 @@ pub fn test_gram_schmidt() {
     // Check orthogonality
     for index1 in 0..3 {
         for index2 in 0..3 {
-            let inner = space.inner(frame.get(index1).unwrap(), frame.get(index2).unwrap());
+            let inner = space.inner_product(frame.get(index1).unwrap(), frame.get(index2).unwrap());
             if index1 == index2 {
                 approx::assert_relative_eq!(inner, c64::one(), epsilon = 1E-12);
             } else {

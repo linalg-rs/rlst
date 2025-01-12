@@ -31,7 +31,7 @@ impl ModifiedGramSchmidt {
         for elem_index in 0..nelements {
             let mut elem = (frame.get(elem_index).unwrap()).clone();
             for (other_index, other_elem) in frame.iter().take(elem_index).enumerate() {
-                let inner = space.inner(&elem, other_elem);
+                let inner = space.inner_product(&elem, other_elem);
                 *r_mat.get_mut([other_index, elem_index]).unwrap() = inner;
                 elem.axpy_inplace(-inner, other_elem);
             }

@@ -86,7 +86,8 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         // If I write `let rhs_norm = self.rhs.norm()` the compiler thinks that `self.rhs` is a space and
         // not an element.
         let rhs_norm = <Space as NormedSpace>::norm(&self.operator.range(), self.rhs);
-        let mut res_inner = <Space as InnerProductSpace>::inner(&self.operator.range(), &res, &res);
+        let mut res_inner =
+            <Space as InnerProductSpace>::inner_product(&self.operator.range(), &res, &res);
         let mut res_norm = res_inner.abs().sqrt();
         let mut rel_res = res_norm / rhs_norm;
 
@@ -98,7 +99,7 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
         }
 
         for it_count in 0..self.max_iter {
-            let p_conj_inner = <Space as InnerProductSpace>::inner(
+            let p_conj_inner = <Space as InnerProductSpace>::inner_product(
                 &self.operator.range(),
                 &self.operator.apply(&p),
                 &p,
@@ -116,7 +117,8 @@ impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
                 callable(&self.x, &res);
             }
             let res_inner_previous = res_inner;
-            res_inner = <Space as InnerProductSpace>::inner(&self.operator.range(), &res, &res);
+            res_inner =
+                <Space as InnerProductSpace>::inner_product(&self.operator.range(), &res, &res);
             res_norm = res_inner.abs().sqrt();
             rel_res = res_norm / rhs_norm;
             if res_norm < self.tol {
