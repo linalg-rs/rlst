@@ -49,8 +49,8 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedArrayVector
     }
 
     /// Return the index layout
-    pub fn index_layout(&self) -> &IndexLayout<'a, C> {
-        &self.index_layout
+    pub fn index_layout(&self) -> Rc<IndexLayout<'a, C>> {
+        self.index_layout.clone()
     }
 }
 
