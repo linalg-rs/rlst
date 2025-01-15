@@ -1,6 +1,6 @@
 //! Definition of a general linear operator.
 
-use crate::operator::element::Element;
+use crate::operator::element::ElementImpl;
 use crate::operator::LinearSpace;
 use crate::RlstScalar;
 use num::One;

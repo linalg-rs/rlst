@@ -8,7 +8,7 @@ use crate::dense::{
 };
 use crate::operator::Operator;
 use crate::{
-    operator::space::{Element, LinearSpace},
+    operator::space::{ElementImpl, LinearSpace},
     operator::AsApply,
     operator::OperatorBase,
 };

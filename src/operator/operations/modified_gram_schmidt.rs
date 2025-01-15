@@ -4,7 +4,7 @@ use crate::dense::{
     array::DynamicArray,
     traits::{RandomAccessMut, Shape},
 };
-use crate::operator::{frame::Frame, Element, InnerProductSpace, NormedSpace};
+use crate::operator::{frame::Frame, ElementImpl, InnerProductSpace, NormedSpace};
 use num::One;
 /// Gram Schmidt orthogonalization
 pub struct ModifiedGramSchmidt;
@@ -14,7 +14,7 @@ impl ModifiedGramSchmidt {
     pub fn orthogonalize<
         'a,
         Item: RlstScalar,
-        Elem: Element<F = Item>,
+        Elem: ElementImpl<F = Item>,
         Space: InnerProductSpace<E = Elem, F = Item> + 'a,
         FrameType: Frame<E = Elem>,
     >(

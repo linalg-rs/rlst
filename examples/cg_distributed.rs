@@ -6,7 +6,9 @@ use mpi::topology::Communicator;
 use rand::Rng;
 use rlst::operator::interface::DistributedArrayVectorSpace;
 use rlst::operator::Operator;
-use rlst::{CgIteration, DistributedCsrMatrix, Element, IndexLayout, LinearSpace, OperatorBase};
+use rlst::{
+    CgIteration, DistributedCsrMatrix, ElementImpl, IndexLayout, LinearSpace, OperatorBase,
+};
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();

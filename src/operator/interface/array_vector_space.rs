@@ -10,7 +10,8 @@ use crate::dense::{
     base_array::BaseArray,
     data_container::VectorContainer,
 };
-use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
+use crate::operator::space::{ElementImpl, IndexableSpace, InnerProductSpace, LinearSpace};
+use crate::operator::{ConcreteElementContainer, Element};
 use crate::rlst_dynamic_array1;
 
 /// Array vector space
@@ -67,8 +68,8 @@ impl<Item: RlstScalar> LinearSpace for ArrayVectorSpace<Item> {
 
     type F = Item;
 
-    fn zero(space: Rc<Self>) -> Self::E {
-        ArrayVectorSpaceElement::new(space)
+    fn zero(space: Rc<Self>) -> Element<ConcreteElementContainer<Self::E>> {
+        Element::<ConcreteElementContainer<Self::E>>::new(ArrayVectorSpaceElement::new(space))
     }
 }
 
@@ -78,7 +79,7 @@ impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
     }
 }
 
-impl<Item: RlstScalar> Element for ArrayVectorSpaceElement<Item> {
+impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
     type F = Item;
     type Space = ArrayVectorSpace<Item>;
 

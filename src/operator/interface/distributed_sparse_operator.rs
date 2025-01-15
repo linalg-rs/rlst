@@ -8,7 +8,7 @@ use crate::dense::types::RlstScalar;
 use crate::operator::Operator;
 use crate::DistributedCsrMatrix;
 use crate::{
-    operator::space::{Element, IndexableSpace, LinearSpace},
+    operator::space::{ElementImpl, IndexableSpace, LinearSpace},
     operator::AsApply,
     operator::OperatorBase,
 };

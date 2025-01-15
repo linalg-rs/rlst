@@ -1,11 +1,11 @@
 //! A frame is a collection of elements of a space.
 
-use crate::operator::Element;
+use crate::operator::ElementImpl;
 
 /// A frame is a collection of elements of a space.
 pub trait Frame {
     /// Element type
-    type E: Element;
+    type E: ElementImpl;
     /// Iterator
     type Iter<'iter>: std::iter::Iterator<Item = &'iter Self::E>
     where
@@ -33,7 +33,7 @@ pub trait Frame {
     /// Add an element
     fn push(&mut self, elem: Self::E);
     /// Evaluate
-    fn evaluate(&self, coeffs: &[<Self::E as Element>::F], result: &mut Self::E) {
+    fn evaluate(&self, coeffs: &[<Self::E as ElementImpl>::F], result: &mut Self::E) {
         assert_eq!(coeffs.len(), self.len());
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
             result.axpy_inplace(coeff, elem);
@@ -42,24 +42,24 @@ pub trait Frame {
 }
 
 /// A vector frame
-pub struct VectorFrame<Elem: Element> {
+pub struct VectorFrame<Elem: ElementImpl> {
     data: Vec<Elem>,
 }
 
-impl<Elem: Element> VectorFrame<Elem> {
+impl<Elem: ElementImpl> VectorFrame<Elem> {
     /// Create a new vector frame
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }
 }
 
-impl<Elem: Element> Default for VectorFrame<Elem> {
+impl<Elem: ElementImpl> Default for VectorFrame<Elem> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Elem: Element> Frame for VectorFrame<Elem> {
+impl<Elem: ElementImpl> Frame for VectorFrame<Elem> {
     type E = Elem;
 
     type Iter<'iter>

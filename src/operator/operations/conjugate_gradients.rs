@@ -1,12 +1,12 @@
 //! Arnoldi Iteration
 use crate::dense::types::RlstScalar;
-use crate::operator::{AsApply, Element, InnerProductSpace, LinearSpace};
+use crate::operator::{AsApply, ElementImpl, InnerProductSpace, LinearSpace};
 use num::One;
 
 /// Iteration for CG
 pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
 where
-    <Space::E as Element>::Space: InnerProductSpace,
+    <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     operator: &'a Op,
     rhs: &'a Space::E,
@@ -21,7 +21,7 @@ where
 impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
     CgIteration<'a, Space, Op>
 where
-    <Space::E as Element>::Space: InnerProductSpace,
+    <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     /// Create a new CG iteration
     pub fn new(op: &'a Op, rhs: &'a Space::E) -> Self {
