@@ -5,10 +5,12 @@ use std::{
     rc::Rc,
 };
 
+use crate::dense::types::{c32, c64};
+
 use crate::dense::types::RlstScalar;
 use num::One;
 
-use super::{InnerProductSpace, LinearSpace, NormedSpace};
+use super::{zero_element, InnerProductSpace, LinearSpace, NormedSpace};
 
 /// An Element of a linear spaces.
 pub trait ElementImpl {
@@ -42,61 +44,14 @@ pub trait ElementImpl {
         self.axpy_inplace(<Self::F as One>::one(), other);
     }
 
+    /// self -= other.
+    fn sub_inplace(&mut self, other: &Self);
+
     /// self = other.
     fn fill_inplace(&mut self, other: &Self);
 
     /// self *= alpha.
     fn scale_inplace(&mut self, alpha: Self::F);
-
-    /// self = -self.
-    fn neg_inplace(&mut self) {
-        self.scale_inplace(-<Self::F as One>::one());
-    }
-
-    // /// self += alpha * other.
-    // fn axpy(mut self, alpha: Self::F, other: &Self) -> Self
-    // where
-    //     Self: Sized,
-    // {
-    //     self.axpy_inplace(alpha, other);
-    //     self
-    // }
-
-    // /// self += other
-    // fn sum(mut self, other: &Self) -> Self
-    // where
-    //     Self: Sized,
-    // {
-    //     self.sum_inplace(other);
-    //     self
-    // }
-
-    // /// self = other
-    // fn fill(mut self, other: &Self) -> Self
-    // where
-    //     Self: Sized,
-    // {
-    //     self.fill_inplace(other);
-    //     self
-    // }
-
-    // /// self = alpha * self
-    // fn scale(mut self, alpha: Self::F) -> Self
-    // where
-    //     Self: Sized,
-    // {
-    //     self.scale_inplace(alpha);
-    //     self
-    // }
-
-    // /// self = -self
-    // fn neg(mut self) -> Self
-    // where
-    //     Self: Sized,
-    // {
-    //     self.neg_inplace();
-    //     self
-    // }
 }
 
 /// The view type associated with elements of linear spaces.
@@ -109,65 +64,10 @@ pub trait ElementContainer {
     type E: ElementImpl;
 
     fn imp(&self) -> &Self::E;
-
-    fn space(&self) -> Rc<<Self::E as ElementImpl>::Space> {
-        self.imp().space()
-    }
-
-    fn view(&self) -> ElementView<'_, <Self::E as ElementImpl>::Space> {
-        self.imp().view()
-    }
-
-    /// Comppute the inner product with another vector
-    ///
-    /// Only implemented for elements of inner product spaces.
-    fn inner_product(
-        &self,
-        other: impl ElementContainer<E = Self::E>,
-    ) -> <Self::E as ElementImpl>::F
-    where
-        <Self::E as ElementImpl>::Space: super::InnerProductSpace,
-    {
-        self.space().inner_product(self.imp(), other.imp())
-    }
-
-    /// Compute the norm of a vector
-    ///
-    /// Only implemented for elements of normed spaces.
-    fn norm(&self) -> <<Self::E as ElementImpl>::F as RlstScalar>::Real
-    where
-        <Self::E as ElementImpl>::Space: super::NormedSpace,
-    {
-        self.space().norm(self.imp())
-    }
 }
 
 pub trait ElementContainerMut: ElementContainer {
     fn imp_mut(&mut self) -> &mut Self::E;
-
-    fn view_mut(&mut self) -> ElementViewMut<'_, <Self::E as ElementImpl>::Space> {
-        self.imp_mut().view_mut()
-    }
-
-    fn axpy_inplace(
-        &mut self,
-        alpha: <Self::E as ElementImpl>::F,
-        other: impl ElementContainer<E = Self::E>,
-    ) {
-        self.imp_mut().axpy_inplace(alpha, other.imp());
-    }
-
-    fn sum_inplace(&mut self, other: Element<impl ElementContainer<E = Self::E>>) {
-        self.imp_mut().sum_inplace(other.imp());
-    }
-
-    fn fill_inplace(&mut self, other: Element<impl ElementContainer<E = Self::E>>) {
-        self.imp_mut().fill_inplace(other.imp());
-    }
-
-    fn scale_inplace(&mut self, alpha: <Self::E as ElementImpl>::F) {
-        self.imp_mut().scale_inplace(alpha);
-    }
 }
 
 pub struct ConcreteElementContainer<ElemImpl: ElementImpl>(ElemImpl);
@@ -185,6 +85,12 @@ impl<ElemImpl: ElementImpl> ElementContainer for ConcreteElementContainer<ElemIm
 
     fn imp(&self) -> &Self::E {
         &self.0
+    }
+}
+
+impl<ElemImpl: ElementImpl> ElementContainerMut for ConcreteElementContainer<ElemImpl> {
+    fn imp_mut(&mut self) -> &mut Self::E {
+        &mut self.0
     }
 }
 
@@ -216,11 +122,85 @@ impl<Container: ElementContainer> Element<Container> {
     pub fn imp(&self) -> &Container::E {
         self.0.imp()
     }
+
+    pub fn r(&self) -> Element<ConcreteElementContainerRef<'_, Container::E>> {
+        Element(ConcreteElementContainerRef { elem: self.imp() })
+    }
+
+    pub fn duplicate(&self) -> Element<ConcreteElementContainer<Container::E>> {
+        let mut x = zero_element(self.space());
+
+        x.fill_inplace(self.r());
+
+        x
+    }
+
+    pub fn space(&self) -> Rc<<Container::E as ElementImpl>::Space> {
+        self.0.imp().space()
+    }
+
+    pub fn view(&self) -> ElementView<'_, <Container::E as ElementImpl>::Space> {
+        self.0.imp().view()
+    }
+
+    pub fn inner_product(
+        &self,
+        other: Element<impl ElementContainer<E = Container::E>>,
+    ) -> <Container::E as ElementImpl>::F
+    where
+        <Container::E as ElementImpl>::Space: InnerProductSpace,
+    {
+        self.0
+            .imp()
+            .space()
+            .inner_product(self.0.imp(), other.0.imp())
+    }
+
+    pub fn norm(&self) -> <<Container::E as ElementImpl>::F as RlstScalar>::Real
+    where
+        <Container::E as ElementImpl>::Space: NormedSpace,
+    {
+        self.0.imp().space().norm(self.0.imp())
+    }
 }
 
 impl<Container: ElementContainerMut> Element<Container> {
     pub fn imp_mut(&mut self) -> &mut Container::E {
         self.0.imp_mut()
+    }
+
+    pub fn r_mut(&mut self) -> Element<ConcreteElementContainerRefMut<'_, Container::E>> {
+        Element(ConcreteElementContainerRefMut {
+            elem: self.imp_mut(),
+        })
+    }
+
+    pub fn view_mut(&mut self) -> ElementViewMut<'_, <Container::E as ElementImpl>::Space> {
+        self.imp_mut().view_mut()
+    }
+
+    pub fn axpy_inplace(
+        &mut self,
+        alpha: <Container::E as ElementImpl>::F,
+        other: Element<impl ElementContainer<E = Container::E>>,
+    ) {
+        self.imp_mut().axpy_inplace(alpha, other.imp());
+    }
+
+    pub fn sum_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
+        self.imp_mut().sum_inplace(other.imp());
+    }
+
+    pub fn sub_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
+        self.imp_mut().sub_inplace(other.imp());
+    }
+
+    pub fn fill_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
+        self.imp_mut().fill_inplace(other.imp());
+    }
+
+    pub fn scale_inplace(&mut self, alpha: <Container::E as ElementImpl>::F) {
+        self.imp_mut().scale_inplace(alpha);
     }
 }
 
@@ -230,25 +210,9 @@ impl<ElemImpl: ElementImpl> Element<ConcreteElementContainer<ElemImpl>> {
     }
 }
 
-impl<ElemImpl: ElementImpl> Deref for Element<ConcreteElementContainer<ElemImpl>> {
-    type Target = ConcreteElementContainer<ElemImpl>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRef<'a, ElemImpl>> {
     pub fn new(elem: &'a ElemImpl) -> Self {
         Self(ConcreteElementContainerRef { elem })
-    }
-}
-
-impl<'a, ElemImpl: ElementImpl> Deref for Element<ConcreteElementContainerRef<'a, ElemImpl>> {
-    type Target = ConcreteElementContainerRef<'a, ElemImpl>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 
@@ -258,16 +222,135 @@ impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRefMut<'a, ElemI
     }
 }
 
-impl<'a, ElemImpl: ElementImpl> Deref for Element<ConcreteElementContainerRefMut<'a, ElemImpl>> {
-    type Target = ConcreteElementContainerRefMut<'a, ElemImpl>;
+// Arithmetic operations
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl<E: ElementImpl, Container1: ElementContainer<E = E>, Container2: ElementContainer<E = E>>
+    std::ops::Add<Element<Container2>> for Element<Container1>
+{
+    type Output = ElementType<E>;
+
+    fn add(self, other: Element<Container2>) -> Self::Output {
+        let mut x = self.duplicate();
+        x.sum_inplace(other);
+        x
     }
 }
 
-impl<'a, ElemImpl: ElementImpl> DerefMut for Element<ConcreteElementContainerRefMut<'a, ElemImpl>> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl<E: ElementImpl, Container1: ElementContainer<E = E>, Container2: ElementContainer<E = E>>
+    std::ops::Sub<Element<Container2>> for Element<Container1>
+{
+    type Output = ElementType<E>;
+
+    fn sub(self, other: Element<Container2>) -> Self::Output {
+        let mut x = self.duplicate();
+        x.sub_inplace(other);
+        x
     }
 }
+
+impl<
+        E: ElementImpl,
+        Container1: ElementContainerMut<E = E>,
+        Container2: ElementContainer<E = E>,
+    > std::ops::AddAssign<Element<Container2>> for Element<Container1>
+{
+    fn add_assign(&mut self, rhs: Element<Container2>) {
+        self.sum_inplace(rhs);
+    }
+}
+
+impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Neg for Element<Container> {
+    type Output = ElementType<E>;
+
+    fn neg(self) -> Self::Output {
+        let mut x = self.duplicate();
+        x.scale_inplace(-<E as ElementImpl>::F::one());
+        x
+    }
+}
+
+impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Mul<<E as ElementImpl>::F>
+    for Element<Container>
+{
+    type Output = ElementType<E>;
+
+    fn mul(self, rhs: <E as ElementImpl>::F) -> Self::Output {
+        let mut x = self.duplicate();
+        x.scale_inplace(rhs);
+        x
+    }
+}
+
+impl<E: ElementImpl, Container: ElementContainerMut<E = E>>
+    std::ops::MulAssign<<E as ElementImpl>::F> for Element<Container>
+{
+    fn mul_assign(&mut self, rhs: <E as ElementImpl>::F) {
+        self.scale_inplace(rhs);
+    }
+}
+
+impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Div<<E as ElementImpl>::F>
+    for Element<Container>
+{
+    type Output = ElementType<E>;
+
+    fn div(self, rhs: <E as ElementImpl>::F) -> Self::Output {
+        let mut x = self.duplicate();
+        x.scale_inplace(<E as ElementImpl>::F::one() / rhs);
+        x
+    }
+}
+
+impl<E: ElementImpl, Container: ElementContainerMut<E = E>>
+    std::ops::DivAssign<<E as ElementImpl>::F> for Element<Container>
+{
+    fn div_assign(&mut self, rhs: <E as ElementImpl>::F) {
+        self.scale_inplace(<E as ElementImpl>::F::one() / rhs);
+    }
+}
+
+impl<
+        E: ElementImpl,
+        Container1: ElementContainerMut<E = E>,
+        Container2: ElementContainer<E = E>,
+    > std::ops::SubAssign<Element<Container2>> for Element<Container1>
+{
+    fn sub_assign(&mut self, rhs: Element<Container2>) {
+        *self += -rhs;
+    }
+}
+
+macro_rules! impl_element_scalar_mul {
+    ($scalar:ty) => {
+        impl<E: ElementImpl<F = $scalar>, Container: ElementContainer<E = E>>
+            std::ops::Mul<Element<Container>> for $scalar
+        {
+            type Output = ElementType<E>;
+
+            fn mul(self, rhs: Element<Container>) -> Self::Output {
+                rhs * self
+            }
+        }
+    };
+}
+
+impl_element_scalar_mul!(f32);
+impl_element_scalar_mul!(f64);
+impl_element_scalar_mul!(c32);
+impl_element_scalar_mul!(c64);
+
+pub trait ScalarTimesElement<Container: ElementContainer>:
+    std::ops::Mul<Element<Container>>
+{
+}
+
+impl<T: RlstScalar, E: ElementImpl<F = T>, Container: ElementContainer<E = E>>
+    ScalarTimesElement<Container> for T
+where
+    T: std::ops::Mul<Element<Container>>,
+{
+}
+
+pub type ElementType<ElemImpl> = Element<ConcreteElementContainer<ElemImpl>>;
+pub type ElementTypeRef<'a, ElemImpl> = Element<ConcreteElementContainerRef<'a, ElemImpl>>;
+pub type ElementTypeRefMut<'a, ElemImpl> = Element<ConcreteElementContainerRefMut<'a, ElemImpl>>;

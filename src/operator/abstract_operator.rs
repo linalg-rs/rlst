@@ -3,9 +3,14 @@
 use crate::operator::element::ElementImpl;
 use crate::operator::LinearSpace;
 use crate::RlstScalar;
-use num::One;
+use num::{One, Zero};
 use std::fmt::Debug;
 use std::rc::Rc;
+
+use super::{
+    zero_element, ConcreteElementContainer, Element, ElementContainer, ElementContainerMut,
+    ElementType, ElementTypeRefMut,
+};
 
 /// A base operator trait.
 pub trait OperatorBase: Debug {
@@ -81,16 +86,32 @@ pub trait OperatorBase: Debug {
 /// Apply an operator as y -> alpha * Ax + beta y
 pub trait AsApply: OperatorBase {
     /// Apply an operator as y -> alpha * Ax + beta y
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: Element<ContainerOut>,
     );
 
-    /// Apply
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E;
+    fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
+        &self,
+        x: Element<ContainerIn>,
+    ) -> ElementType<<Self::Range as LinearSpace>::E> {
+        let mut y = zero_element(self.range());
+
+        self.apply_extended(
+            <<Self::Range as LinearSpace>::F as One>::one(),
+            x,
+            <<Self::Range as LinearSpace>::F as Zero>::zero(),
+            y.r_mut(),
+        );
+
+        y
+    }
 }
 
 /// Operator reference
@@ -117,18 +138,17 @@ impl<Op: OperatorBase> OperatorBase for RlstOperatorReference<'_, Op> {
 }
 
 impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: Element<ContainerOut>,
     ) {
         self.0.apply_extended(alpha, x, beta, y);
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        self.0.apply(x)
     }
 }
 
@@ -156,18 +176,17 @@ impl<OpImpl: OperatorBase> OperatorBase for Operator<OpImpl> {
 }
 
 impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: Element<ContainerOut>,
     ) {
         self.0.apply_extended(alpha, x, beta, y);
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        self.0.apply(x)
     }
 }
 
@@ -326,22 +345,19 @@ impl<
         Op2: AsApply<Domain = Domain, Range = Range>,
     > AsApply for OperatorSum<Domain, Range, Op1, Op2>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        mut y: Element<ContainerOut>,
     ) {
-        self.0.apply_extended(alpha, x, beta, y);
+        self.0.apply_extended(alpha, x.r(), beta, y.r_mut());
         self.1
             .apply_extended(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y);
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut sum_elem = self.0.apply(x);
-        sum_elem.sum_inplace(&self.1.apply(x));
-        sum_elem
     }
 }
 
@@ -372,20 +388,17 @@ impl<Op: OperatorBase> OperatorBase for ScalarTimesOperator<Op> {
 }
 
 impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: Element<ContainerOut>,
     ) {
         self.0.apply_extended(self.1 * alpha, x, beta, y);
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut res = self.0.apply(x);
-        res.scale_inplace(self.1);
-        res
     }
 }
 
@@ -429,17 +442,16 @@ impl<Space: LinearSpace, Op1: OperatorBase<Range = Space>, Op2: OperatorBase<Dom
 impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Space>> AsApply
     for OperatorProduct<Space, Op1, Op2>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        y: Element<ContainerOut>,
     ) {
-        self.op2.apply_extended(alpha, &self.op1.apply(x), beta, y);
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        self.op2.apply(&self.op1.apply(x))
+        self.op2.apply_extended(alpha, self.op1.apply(x), beta, y);
     }
 }
