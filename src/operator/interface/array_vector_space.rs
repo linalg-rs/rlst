@@ -105,8 +105,8 @@ impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
         self.elem.r_mut()
     }
 
-    fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {
-        self.elem.sum_into(other.view().scalar_mul(alpha));
+    fn axpy_inplace(&mut self, alpha: Self::F, x: &Self) {
+        self.elem.sum_into(x.view().scalar_mul(alpha));
     }
 
     fn sum_inplace(&mut self, other: &Self) {
@@ -119,5 +119,9 @@ impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
 
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.view_mut().scale_inplace(alpha);
+    }
+
+    fn sub_inplace(&mut self, other: &Self) {
+        self.elem.sub_into(other.view());
     }
 }

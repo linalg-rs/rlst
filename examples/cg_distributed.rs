@@ -6,9 +6,7 @@ use mpi::topology::Communicator;
 use rand::Rng;
 use rlst::operator::interface::DistributedArrayVectorSpace;
 use rlst::operator::Operator;
-use rlst::{
-    CgIteration, DistributedCsrMatrix, ElementImpl, IndexLayout, LinearSpace, OperatorBase,
-};
+use rlst::{CgIteration, DistributedCsrMatrix, IndexLayout, LinearSpace, OperatorBase};
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();
@@ -63,7 +61,7 @@ pub fn main() {
     // We need the vector x as well.
 
     // We can now run the CG iteration.
-    let cg = (CgIteration::new(&op, &rhs))
+    let cg = (CgIteration::new(op.r(), rhs.r()))
         .set_callable(|_, res| {
             let res_norm = res.norm();
             residuals.push(res_norm);

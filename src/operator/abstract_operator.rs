@@ -1,16 +1,12 @@
 //! Definition of a general linear operator.
 
-use crate::operator::element::ElementImpl;
 use crate::operator::LinearSpace;
 use crate::RlstScalar;
 use num::{One, Zero};
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use super::{
-    zero_element, ConcreteElementContainer, Element, ElementContainer, ElementContainerMut,
-    ElementType, ElementTypeRefMut,
-};
+use super::{zero_element, Element, ElementContainer, ElementContainerMut, ElementType};
 
 /// A base operator trait.
 pub trait OperatorBase: Debug {
@@ -25,11 +21,11 @@ pub trait OperatorBase: Debug {
     fn range(&self) -> Rc<Self::Range>;
 
     /// Convert to RLST reference
-    fn r(&self) -> RlstOperatorReference<'_, Self>
+    fn r(&self) -> Operator<RlstOperatorReference<'_, Self>>
     where
         Self: Sized,
     {
-        RlstOperatorReference(self)
+        Operator::new(RlstOperatorReference(self))
     }
     /// Form a new operator alpha * self.
     fn scale(self, alpha: <Self::Range as LinearSpace>::F) -> ScalarTimesOperator<Self>
@@ -97,6 +93,7 @@ pub trait AsApply: OperatorBase {
         y: Element<ContainerOut>,
     );
 
+    /// Apply an operator to a vector
     fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
         &self,
         x: Element<ContainerIn>,

@@ -1,9 +1,5 @@
 //! Elements of linear spaces
-use std::{
-    borrow::Borrow,
-    ops::{Deref, DerefMut},
-    rc::Rc,
-};
+use std::rc::Rc;
 
 use crate::dense::types::{c32, c64};
 
@@ -36,8 +32,8 @@ pub trait ElementImpl {
     /// Get a mutable view onto the element.
     fn view_mut(&mut self) -> Self::ViewMut<'_>;
 
-    /// self += alpha * other.
-    fn axpy_inplace(&mut self, alpha: Self::F, other: &Self);
+    /// self += alpha * x.
+    fn axpy_inplace(&mut self, alpha: Self::F, x: &Self);
 
     /// self += other.
     fn sum_inplace(&mut self, other: &Self) {
@@ -60,22 +56,30 @@ pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as ElementImpl>:
 /// The mutable view type associated with elements of linear spaces.
 pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as ElementImpl>::ViewMut<'view>;
 
+/// This trait defines containers that hold element implementations.
 pub trait ElementContainer {
+    /// Element implementation type
     type E: ElementImpl;
 
+    /// Return a reference to the element implementation
     fn imp(&self) -> &Self::E;
 }
 
+/// A mutable element container
 pub trait ElementContainerMut: ElementContainer {
+    /// Return a mutable reference to the element implementation
     fn imp_mut(&mut self) -> &mut Self::E;
 }
 
+/// Element container holding ownership of an element implementation
 pub struct ConcreteElementContainer<ElemImpl: ElementImpl>(ElemImpl);
 
+/// Element container holding a reference to an element implementation
 pub struct ConcreteElementContainerRef<'a, ElemImpl: ElementImpl> {
     elem: &'a ElemImpl,
 }
 
+/// Element container holding a mutable reference to an element implementation
 pub struct ConcreteElementContainerRefMut<'a, ElemImpl: ElementImpl> {
     elem: &'a mut ElemImpl,
 }
@@ -116,17 +120,21 @@ impl<ElemImpl: ElementImpl> ElementContainerMut for ConcreteElementContainerRefM
     }
 }
 
+/// An element is a wrapper type around an element container that provides convient routines to work with elements
 pub struct Element<Container: ElementContainer>(Container);
 
 impl<Container: ElementContainer> Element<Container> {
+    /// Return a reference to the element implementation
     pub fn imp(&self) -> &Container::E {
         self.0.imp()
     }
 
+    /// Create a new struct that holds a reference to this struct's element implementation
     pub fn r(&self) -> Element<ConcreteElementContainerRef<'_, Container::E>> {
         Element(ConcreteElementContainerRef { elem: self.imp() })
     }
 
+    /// Duplicate the element as a new element that does not reference the current element
     pub fn duplicate(&self) -> Element<ConcreteElementContainer<Container::E>> {
         let mut x = zero_element(self.space());
 
@@ -135,14 +143,17 @@ impl<Container: ElementContainer> Element<Container> {
         x
     }
 
+    /// Return the space associated with the element
     pub fn space(&self) -> Rc<<Container::E as ElementImpl>::Space> {
         self.0.imp().space()
     }
 
+    /// Return a view to the underlying type of the element implementation
     pub fn view(&self) -> ElementView<'_, <Container::E as ElementImpl>::Space> {
         self.0.imp().view()
     }
 
+    /// Take the inner product with another element if the space is an inner product space
     pub fn inner_product(
         &self,
         other: Element<impl ElementContainer<E = Container::E>>,
@@ -156,6 +167,7 @@ impl<Container: ElementContainer> Element<Container> {
             .inner_product(self.0.imp(), other.0.imp())
     }
 
+    /// The the norm of the element if the space is a normed space
     pub fn norm(&self) -> <<Container::E as ElementImpl>::F as RlstScalar>::Real
     where
         <Container::E as ElementImpl>::Space: NormedSpace,
@@ -165,26 +177,30 @@ impl<Container: ElementContainer> Element<Container> {
 }
 
 impl<Container: ElementContainerMut> Element<Container> {
+    /// Return a mutable reference to the element implementation
     pub fn imp_mut(&mut self) -> &mut Container::E {
         self.0.imp_mut()
     }
 
+    /// Create a new struct that holds a mutable reference to this struct's element implementation
     pub fn r_mut(&mut self) -> Element<ConcreteElementContainerRefMut<'_, Container::E>> {
         Element(ConcreteElementContainerRefMut {
             elem: self.imp_mut(),
         })
     }
 
+    /// Return a mutable view to the underlying type of the element implementation
     pub fn view_mut(&mut self) -> ElementViewMut<'_, <Container::E as ElementImpl>::Space> {
         self.imp_mut().view_mut()
     }
 
+    ///
     pub fn axpy_inplace(
         &mut self,
         alpha: <Container::E as ElementImpl>::F,
-        other: Element<impl ElementContainer<E = Container::E>>,
+        x: Element<impl ElementContainer<E = Container::E>>,
     ) {
-        self.imp_mut().axpy_inplace(alpha, other.imp());
+        self.imp_mut().axpy_inplace(alpha, x.imp());
     }
 
     pub fn sum_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
@@ -316,7 +332,7 @@ impl<
     > std::ops::SubAssign<Element<Container2>> for Element<Container1>
 {
     fn sub_assign(&mut self, rhs: Element<Container2>) {
-        *self += -rhs;
+        self.sub_inplace(rhs);
     }
 }
 

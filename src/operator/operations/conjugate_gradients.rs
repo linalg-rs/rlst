@@ -1,34 +1,46 @@
 //! Arnoldi Iteration
 use crate::dense::types::RlstScalar;
-use crate::operator::{AsApply, ElementImpl, InnerProductSpace, LinearSpace};
+use crate::operator::{
+    zero_element, AsApply, ElementImpl, ElementType, InnerProductSpace, LinearSpace, Operator,
+};
+use crate::{Element, ElementContainer, OperatorBase};
 use num::One;
 
 /// Iteration for CG
-pub struct CgIteration<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
-where
+pub struct CgIteration<
+    'a,
+    Space: InnerProductSpace,
+    OpImpl: AsApply<Domain = Space, Range = Space>,
+    Container: ElementContainer<E = Space::E>,
+> where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
-    operator: &'a Op,
-    rhs: &'a Space::E,
-    x: Space::E,
+    operator: Operator<OpImpl>,
+    rhs: Element<Container>,
+    x: ElementType<Space::E>,
     max_iter: usize,
     tol: <Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
-    callable: Option<Box<dyn FnMut(&<Space as LinearSpace>::E, &<Space as LinearSpace>::E) + 'a>>,
+    callable: Option<Box<dyn FnMut(&ElementType<Space::E>, &ElementType<Space::E>) + 'a>>,
     print_debug: bool,
 }
 
-impl<'a, Space: InnerProductSpace, Op: AsApply<Domain = Space, Range = Space>>
-    CgIteration<'a, Space, Op>
+impl<
+        'a,
+        Space: InnerProductSpace,
+        OpImpl: AsApply<Domain = Space, Range = Space>,
+        Container: ElementContainer<E = Space::E>,
+    > CgIteration<'a, Space, OpImpl, Container>
 where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     /// Create a new CG iteration
-    pub fn new(op: &'a Op, rhs: &'a Space::E) -> Self {
+    pub fn new(op: Operator<OpImpl>, rhs: Element<Container>) -> Self {
+        let domain = op.domain();
         Self {
             operator: op,
             rhs,
-            x: <Space as LinearSpace>::zero(op.domain()),
+            x: zero_element(domain),
             max_iter: 1000,
             tol: num::cast::<f64, <Space::F as RlstScalar>::Real>(1E-6).unwrap(),
             callable: None,
@@ -37,7 +49,10 @@ where
     }
 
     /// Set x
-    pub fn set_x(mut self, x: &Space::E) -> Self {
+    pub fn set_x<OtherElementContainer: ElementContainer<E = Space::E>>(
+        mut self,
+        x: Element<OtherElementContainer>,
+    ) -> Self {
         self.x.fill_inplace(x);
         self
     }
@@ -55,7 +70,10 @@ where
     }
 
     /// Set the cammable
-    pub fn set_callable(mut self, callable: impl FnMut(&Space::E, &Space::E) + 'a) -> Self {
+    pub fn set_callable(
+        mut self,
+        callable: impl FnMut(&ElementType<Space::E>, &ElementType<Space::E>) + 'a,
+    ) -> Self {
         self.callable = Some(Box::new(callable));
         self
     }
@@ -67,7 +85,7 @@ where
     }
 
     /// Run CG
-    pub fn run(mut self) -> (Space::E, <Space::F as RlstScalar>::Real) {
+    pub fn run(mut self) -> (ElementType<Space::E>, <Space::F as RlstScalar>::Real) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
                 "CG converged in {} iterations with relative residual {:+E}.",
@@ -82,16 +100,16 @@ where
             );
         }
 
-        let mut res: Space::E = <<Space as LinearSpace>::E as Clone>::clone(self.rhs);
-        res.sum_inplace(&self.operator.apply(&self.x).neg());
+        let mut res = self.rhs.duplicate();
+        res -= self.operator.apply(self.x.r());
 
-        let mut p = res.clone();
+        let mut p = res.duplicate();
 
         // This syntax is only necessary because the type inference becomes confused for some reason.
         // If I write `let rhs_norm = self.rhs.norm()` the compiler thinks that `self.rhs` is a space and
         // not an element.
         let rhs_norm = self.rhs.norm();
-        let mut res_inner = res.inner_product(&res);
+        let mut res_inner = res.inner_product(res.r());
         let mut res_norm = res_inner.abs().sqrt();
         let mut rel_res = res_norm / rhs_norm;
 
@@ -103,25 +121,21 @@ where
         }
 
         for it_count in 0..self.max_iter {
-            let p_conj_inner = <Space as InnerProductSpace>::inner_product(
-                &self.operator.range(),
-                &self.operator.apply(&p),
-                &p,
-            );
-            let alpha = res_inner / p_conj_inner;
+            let p_conj_inner = self.operator.apply(p.r()).inner_product(p.r());
 
-            self.x.axpy_inplace(alpha, &p);
+            let alpha = res_inner / p_conj_inner;
+            self.x.axpy_inplace(alpha, p.r());
             self.operator.apply_extended(
                 -alpha,
-                &p,
+                p.r(),
                 <<Space as LinearSpace>::F as One>::one(),
-                &mut res,
+                res.r_mut(),
             );
             if let Some(callable) = self.callable.as_mut() {
                 callable(&self.x, &res);
             }
             let res_inner_previous = res_inner;
-            res_inner = res.inner_product(&res);
+            res_inner = res.inner_product(res.r());
             res_norm = res_inner.abs().sqrt();
             rel_res = res_norm / rhs_norm;
             if res_norm < self.tol {
@@ -131,8 +145,8 @@ where
                 return (self.x, rel_res);
             }
             let beta = res_inner / res_inner_previous;
-            p.scale_inplace(beta);
-            p.sum_inplace(&res);
+            p *= beta;
+            p += res.r();
         }
 
         if self.print_debug {

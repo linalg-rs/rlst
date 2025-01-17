@@ -113,11 +113,11 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> ElementImpl
         &mut self.elem
     }
 
-    fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {
+    fn axpy_inplace(&mut self, alpha: Self::F, x: &Self) {
         //self.elem.sum_into(other.r().scalar_mul(alpha));
         self.elem
             .local_mut()
-            .sum_into(other.view().local().r().scalar_mul(alpha));
+            .sum_into(x.view().local().r().scalar_mul(alpha));
     }
 
     fn sum_inplace(&mut self, other: &Self) {
@@ -130,6 +130,10 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> ElementImpl
 
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.elem.local_mut().scale_inplace(alpha);
+    }
+
+    fn sub_inplace(&mut self, other: &Self) {
+        self.elem.local_mut().sub_into(other.view().local().r());
     }
 }
 
