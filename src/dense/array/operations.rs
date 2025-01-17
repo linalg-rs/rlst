@@ -206,6 +206,16 @@ impl<
         }
     }
 
+    /// Subtract other array into array.
+    pub fn sub_into<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) {
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item -= other_item;
+        }
+    }
+
     /// Componentwise multiply other array into array.
     pub fn cmp_mult_into<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,

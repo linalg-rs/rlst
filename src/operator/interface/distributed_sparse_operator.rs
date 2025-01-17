@@ -8,7 +8,7 @@ use crate::dense::types::RlstScalar;
 use crate::operator::Operator;
 use crate::DistributedCsrMatrix;
 use crate::{
-    operator::space::{Element, IndexableSpace, LinearSpace},
+    operator::space::{ElementImpl, IndexableSpace, LinearSpace},
     operator::AsApply,
     operator::OperatorBase,
 };
@@ -81,25 +81,18 @@ impl<'a, Item: RlstScalar + Equivalence, C: Communicator> OperatorBase
 impl<Item: RlstScalar + Equivalence, C: Communicator> AsApply
     for DistributedCsrMatrixOperatorImpl<'_, Item, C>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        mut y: crate::Element<ContainerOut>,
     ) {
-        self.csr_mat.matmul(alpha, x.view(), beta, y.view_mut());
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut y = <Self::Range as LinearSpace>::zero(self.range.clone());
-        self.apply_extended(
-            <Self::Range as LinearSpace>::F::one(),
-            x,
-            <Self::Range as LinearSpace>::F::zero(),
-            &mut y,
-        );
-        y
+        self.csr_mat
+            .matmul(alpha, x.imp().view(), beta, y.imp_mut().view_mut());
     }
 }
 

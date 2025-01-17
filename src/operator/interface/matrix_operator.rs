@@ -8,7 +8,7 @@ use crate::dense::{
 };
 use crate::operator::Operator;
 use crate::{
-    operator::space::{Element, LinearSpace},
+    operator::space::{ElementImpl, LinearSpace},
     operator::AsApply,
     operator::OperatorBase,
 };
@@ -102,26 +102,22 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
 impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
     for MatrixOperator<Item, Op>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        mut y: crate::Element<ContainerOut>,
     ) {
-        self.op
-            .apply_extended(alpha, x.view().data(), beta, y.view_mut().data_mut());
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut y = <Self::Range as LinearSpace>::zero(self.range.clone());
-        self.apply_extended(
-            <Self::Range as LinearSpace>::F::one(),
-            x,
-            <Self::Range as LinearSpace>::F::zero(),
-            &mut y,
+        self.op.apply_extended(
+            alpha,
+            x.imp().view().data(),
+            beta,
+            y.imp_mut().view_mut().data_mut(),
         );
-        y
     }
 }
 
@@ -143,26 +139,22 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
 impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
     for MatrixOperatorRef<'_, Item, Op>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
+        mut y: crate::Element<ContainerOut>,
     ) {
-        self.op
-            .apply_extended(alpha, x.view().data(), beta, y.view_mut().data_mut());
-    }
-
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut y = <Self::Range as LinearSpace>::zero(self.range.clone());
-        self.apply_extended(
-            <Self::Range as LinearSpace>::F::one(),
-            x,
-            <Self::Range as LinearSpace>::F::zero(),
-            &mut y,
+        self.op.apply_extended(
+            alpha,
+            x.imp().view().data(),
+            beta,
+            y.imp_mut().view_mut().data_mut(),
         );
-        y
     }
 }
 

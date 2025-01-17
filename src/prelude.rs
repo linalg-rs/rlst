@@ -84,10 +84,15 @@ pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 
 pub use crate::operator::interface::{ArrayVectorSpace, ArrayVectorSpaceElement, MatrixOperator};
 
+pub use crate::operator::element::{
+    Element, ElementContainer, ElementContainerMut, ScalarTimesElement,
+};
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
 pub use crate::operator::OperatorLeftScalarMul;
 pub use crate::operator::{AsApply, OperatorBase};
 pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
-pub use crate::operator::{Element, ElementView, ElementViewMut};
+pub use crate::operator::{ElementImpl, ElementView, ElementViewMut};
+
+pub use crate::operator::abstract_operator::ScalarTimesOperator;

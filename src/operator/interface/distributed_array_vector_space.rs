@@ -6,7 +6,8 @@ use std::rc::Rc;
 use mpi::traits::{Communicator, Equivalence};
 
 use crate::dense::types::RlstScalar;
-use crate::operator::space::{Element, IndexableSpace, InnerProductSpace, LinearSpace};
+use crate::operator::space::{ElementImpl, IndexableSpace, InnerProductSpace, LinearSpace};
+use crate::operator::{ConcreteElementContainer, Element};
 use crate::DistributedVector;
 use bempp_distributed_tools::IndexLayout;
 
@@ -69,8 +70,10 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> LinearSpace
 
     type F = Item;
 
-    fn zero(space: Rc<Self>) -> Self::E {
-        DistributedArrayVectorSpaceElement::new(space.clone())
+    fn zero(space: Rc<Self>) -> Element<ConcreteElementContainer<Self::E>> {
+        Element::<ConcreteElementContainer<_>>::new(DistributedArrayVectorSpaceElement::new(
+            space.clone(),
+        ))
     }
 }
 
@@ -82,7 +85,7 @@ impl<C: Communicator, Item: RlstScalar + Equivalence> InnerProductSpace
     }
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
+impl<'a, C: Communicator, Item: RlstScalar + Equivalence> ElementImpl
     for DistributedArrayVectorSpaceElement<'a, C, Item>
 {
     type F = Item;
@@ -110,11 +113,11 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
         &mut self.elem
     }
 
-    fn axpy_inplace(&mut self, alpha: Self::F, other: &Self) {
+    fn axpy_inplace(&mut self, alpha: Self::F, x: &Self) {
         //self.elem.sum_into(other.r().scalar_mul(alpha));
         self.elem
             .local_mut()
-            .sum_into(other.view().local().r().scalar_mul(alpha));
+            .sum_into(x.view().local().r().scalar_mul(alpha));
     }
 
     fn sum_inplace(&mut self, other: &Self) {
@@ -127,6 +130,10 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> Element
 
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.elem.local_mut().scale_inplace(alpha);
+    }
+
+    fn sub_inplace(&mut self, other: &Self) {
+        self.elem.local_mut().sub_into(other.view().local().r());
     }
 }
 
