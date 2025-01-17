@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use super::{element, ConcreteElementContainer, Element, ElementImpl};
+use super::{ConcreteElementContainer, Element, ElementImpl};
 use crate::dense::types::RlstScalar;
 
 /// Definition of a linear space

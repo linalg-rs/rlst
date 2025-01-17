@@ -2,9 +2,7 @@
 
 use crate::operator::ElementImpl;
 
-use super::{
-    Element, ElementContainer, ElementContainerMut, ElementType, ElementTypeRef, ElementTypeRefMut,
-};
+use super::{Element, ElementContainer, ElementContainerMut, ElementType};
 
 /// A frame is a collection of elements of a space.
 pub trait Frame {

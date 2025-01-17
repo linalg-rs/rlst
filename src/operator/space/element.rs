@@ -194,7 +194,7 @@ impl<Container: ElementContainerMut> Element<Container> {
         self.imp_mut().view_mut()
     }
 
-    ///
+    /// Add `alpha * x` to `self`
     pub fn axpy_inplace(
         &mut self,
         alpha: <Container::E as ElementImpl>::F,
@@ -203,36 +203,43 @@ impl<Container: ElementContainerMut> Element<Container> {
         self.imp_mut().axpy_inplace(alpha, x.imp());
     }
 
+    /// Sum `other` into `self`
     pub fn sum_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
         self.imp_mut().sum_inplace(other.imp());
     }
 
+    /// Subtract `other` from `self`
     pub fn sub_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
         self.imp_mut().sub_inplace(other.imp());
     }
 
+    /// Fill `self` with `other`
     pub fn fill_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
         self.imp_mut().fill_inplace(other.imp());
     }
 
+    /// Scale `self` by `alpha`
     pub fn scale_inplace(&mut self, alpha: <Container::E as ElementImpl>::F) {
         self.imp_mut().scale_inplace(alpha);
     }
 }
 
 impl<ElemImpl: ElementImpl> Element<ConcreteElementContainer<ElemImpl>> {
+    /// Create a new Element from an implementation
     pub fn new(elem: ElemImpl) -> Self {
         Self(ConcreteElementContainer(elem))
     }
 }
 
 impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRef<'a, ElemImpl>> {
+    /// Create a new element reference from an implementation reference
     pub fn new(elem: &'a ElemImpl) -> Self {
         Self(ConcreteElementContainerRef { elem })
     }
 }
 
 impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRefMut<'a, ElemImpl>> {
+    /// Create a new mutable element reference from an implementation mutable reference
     pub fn new(elem: &'a mut ElemImpl) -> Self {
         Self(ConcreteElementContainerRefMut { elem })
     }
@@ -355,6 +362,7 @@ impl_element_scalar_mul!(f64);
 impl_element_scalar_mul!(c32);
 impl_element_scalar_mul!(c64);
 
+/// A trait for scalar times element operations
 pub trait ScalarTimesElement<Container: ElementContainer>:
     std::ops::Mul<Element<Container>>
 {
@@ -367,6 +375,9 @@ where
 {
 }
 
+/// The type of an owned element for a given implementation type
 pub type ElementType<ElemImpl> = Element<ConcreteElementContainer<ElemImpl>>;
+/// The type of an element reference for a given implementation type
 pub type ElementTypeRef<'a, ElemImpl> = Element<ConcreteElementContainerRef<'a, ElemImpl>>;
+/// The type of a mutable element reference for a given implementation type
 pub type ElementTypeRefMut<'a, ElemImpl> = Element<ConcreteElementContainerRefMut<'a, ElemImpl>>;
