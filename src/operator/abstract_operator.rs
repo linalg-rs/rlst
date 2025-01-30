@@ -452,3 +452,16 @@ impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Spac
         self.op2.apply_extended(alpha, self.op1.apply(x), beta, y);
     }
 }
+
+impl<
+        Space: LinearSpace,
+        OpImpl1: OperatorBase<Range = Space>,
+        OpImpl2: OperatorBase<Domain = Space>,
+    > std::ops::Mul<Operator<OpImpl1>> for Operator<OpImpl2>
+{
+    type Output = Operator<OperatorProduct<Space, OpImpl1, OpImpl2>>;
+
+    fn mul(self, rhs: Operator<OpImpl1>) -> Self::Output {
+        Operator::new(self.0.product(rhs.0))
+    }
+}
