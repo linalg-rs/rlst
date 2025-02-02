@@ -83,6 +83,10 @@ pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
 
 pub use crate::operator::interface::{ArrayVectorSpace, ArrayVectorSpaceElement, MatrixOperator};
+#[cfg(feature = "mpi")]
+pub use crate::operator::interface::{
+    DistributedArrayVectorSpace, DistributedArrayVectorSpaceElement,
+};
 
 pub use crate::operator::element::{
     Element, ElementContainer, ElementContainerMut, ScalarTimesElement,
