@@ -57,6 +57,7 @@ disable_system_blas_lapack = []
 sleef = []
 nightly = []
 internal_blis = []
+openblas = []
 
 [lints.clippy]
 wildcard_imports = "forbid"
