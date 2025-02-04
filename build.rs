@@ -145,9 +145,10 @@ fn main() {
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
 
-    let mut use_system_blas_lapack = std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK")
-        .is_err()
-        && std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_err();
+    let mut use_system_blas_lapack =
+        std::env::var("CARGO_FEATURE_DISABLE_SYSTEM_BLAS_LAPACK").is_err();
+
+    let use_openblas = std::env::var("CARGO_FEATURE_OPENBLAS").is_ok();
 
     if target_os == "macos" && !use_system_blas_lapack {
         println!("cargo:warning=Reverting to Accelerate as BLAS/Lapack provider on Mac OS.");
@@ -165,9 +166,9 @@ fn main() {
         }
     }
 
-    // if std::env::var("CARGO_FEATURE_INTERNAL_BLIS").is_ok() && target_os != "macos" {
-    //     build_internal_blis();
-    // }
+    if use_openblas {
+        println!("cargo:rustc-link-lib=dylib=openblas");
+    }
 
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
