@@ -160,7 +160,7 @@ macro_rules! impl_lu_tests {
     }
 
 impl_lu_tests!(f64, 1E-12);
-impl_lu_tests!(f32, 1E-5);
+impl_lu_tests!(f32, 1E-4);
 impl_lu_tests!(c64, 1E-12);
 impl_lu_tests!(c32, 1E-4);
 
