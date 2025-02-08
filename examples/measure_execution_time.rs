@@ -1,9 +1,6 @@
 //! Examples for measuring execution time
 
-use rlst::{
-    prelude::*,
-    tracing::{trace_call, Tracing},
-};
+use rlst::{prelude::*, tracing::trace_call};
 
 #[measure_duration(id = "matmul_fun")]
 fn matmul_fun<
