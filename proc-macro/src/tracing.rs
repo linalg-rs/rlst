@@ -9,7 +9,6 @@ use syn::parse_macro_input;
 #[darling(default)]
 struct Identifier {
     id: String,
-    stdout: bool,
 }
 
 pub(crate) fn measure_duration_impl(args: TokenStream, item: TokenStream) -> TokenStream {
@@ -36,7 +35,6 @@ pub(crate) fn measure_duration_impl(args: TokenStream, item: TokenStream) -> Tok
     };
 
     let ident = args.id;
-    let stdout = args.stdout;
 
     let statements = block.stmts;
 
@@ -55,12 +53,11 @@ pub(crate) fn measure_duration_impl(args: TokenStream, item: TokenStream) -> Tok
                 };
 
                 let duration = now.elapsed();
+                let duration_as_secs = duration.as_secs_f64();
+                let ident = #ident;
 
-                #[cfg(feature="mpi")]
-                if #stdout {
-                   rlst::println_mpi!(mpi::topology::SimpleCommunicator::world(), "Id: {} - {}s", #ident, duration.as_secs_f64());
-                }
-             
+                log::info!("Id: {ident} - {duration_as_secs}s");
+
                 rlst::tracing::Tracing::add_duration(&#ident, duration);
                 __result
 

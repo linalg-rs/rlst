@@ -26,7 +26,6 @@ blas = "0.22"
 lapack = "0.19"
 thiserror = "2"
 serde = "1"
-# bempp-distributed-tools = { path = "../distributed_tools", optional = true }
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
 log = "0.4"
 
@@ -42,6 +41,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 approx = { version = "0.5", features = ["num-complex"] }
 paste = "1"
 rand = "0.8"
+env_logger = "0.11"
 
 [build-dependencies]
 cc = "=1.2.7"
@@ -60,7 +60,6 @@ nightly = []
 internal_blis = []
 openblas = []
 enable_tracing = ["rlst-proc-macro/enable_tracing"]
-print_mpi_root_only = []
 
 [lints.clippy]
 wildcard_imports = "forbid"

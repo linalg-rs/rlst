@@ -55,6 +55,8 @@ pub fn trace_call<T>(identifier: &str, mut fun: impl FnMut() -> T) -> T {
     let now = std::time::Instant::now();
     let res = fun();
     let duration = now.elapsed();
+    let duration_in_secs = duration.as_secs_f64();
+    log::info!("Id: {identifier} - {duration_in_secs}s");
     Tracing::add_duration(identifier, duration);
     res
 }

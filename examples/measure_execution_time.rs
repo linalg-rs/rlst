@@ -5,7 +5,7 @@ use rlst::{
     tracing::{trace_call, Tracing},
 };
 
-#[measure_duration(id = "matmul_fun", stdout)]
+#[measure_duration(id = "matmul_fun")]
 fn matmul_fun<
     ArrayImpl1: RandomAccessByValue<2, Item = f64> + Shape<2> + Stride<2> + RawAccess<Item = f64>,
     ArrayImpl2: RandomAccessByValue<2, Item = f64> + Shape<2> + Stride<2> + RawAccess<Item = f64>,
@@ -20,6 +20,8 @@ fn matmul_fun<
 fn main() {
     let n = 5000;
 
+    env_logger::init();
+
     let mut mat_a = rlst_dynamic_array2!(f64, [n, n]);
     let mut mat_b = rlst_dynamic_array2!(f64, [n, n]);
 
@@ -31,8 +33,4 @@ fn main() {
     });
 
     let _mat_c2 = matmul_fun(mat_a.r(), mat_b.r());
-
-    for (key, duration) in Tracing::durations() {
-        println!("{}: {}", key, duration.as_millis());
-    }
 }
