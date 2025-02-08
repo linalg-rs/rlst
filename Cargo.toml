@@ -28,6 +28,7 @@ thiserror = "2"
 serde = "1"
 # bempp-distributed-tools = { path = "../distributed_tools", optional = true }
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
+log = "0.4"
 
 coe-rs = "0.1.2"
 pulp = { version = "0.21" }
@@ -50,7 +51,7 @@ git2 = "0.20"
 
 [features]
 strict = []
-default = []
+default = ["mpi"]
 mpi = ["dep:mpi", "dep:bempp-distributed-tools"]
 suitesparse = []
 disable_system_blas_lapack = []
@@ -58,6 +59,8 @@ sleef = []
 nightly = []
 internal_blis = []
 openblas = []
+enable_tracing = ["rlst-proc-macro/enable_tracing"]
+print_mpi_root_only = []
 
 [lints.clippy]
 wildcard_imports = "forbid"

@@ -23,6 +23,7 @@ pub use crate::rlst_array_from_slice_mut5;
 
 pub use crate::rlst_rank1_array;
 
+pub use rlst_proc_macro::measure_duration;
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
@@ -102,3 +103,5 @@ pub use crate::operator::{AsApply, Operator, OperatorBase};
 pub use crate::operator::{ElementImpl, ElementView, ElementViewMut};
 
 pub use crate::operator::abstract_operator::ScalarTimesOperator;
+
+pub use crate::tracing::Tracing;
