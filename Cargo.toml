@@ -26,8 +26,8 @@ blas = "0.22"
 lapack = "0.19"
 thiserror = "2"
 serde = "1"
-# bempp-distributed-tools = { path = "../distributed_tools", optional = true }
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
+log = { version = "0.4", optional = true}
 
 coe-rs = "0.1.2"
 pulp = { version = "0.21" }
@@ -58,6 +58,7 @@ sleef = []
 nightly = []
 internal_blis = []
 openblas = []
+enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 
 [lints.clippy]
 wildcard_imports = "forbid"
