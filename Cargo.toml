@@ -41,7 +41,6 @@ criterion = { version = "0.5", features = ["html_reports"] }
 approx = { version = "0.5", features = ["num-complex"] }
 paste = "1"
 rand = "0.8"
-env_logger = "0.11"
 
 [build-dependencies]
 cc = "=1.2.7"

@@ -17,8 +17,6 @@ fn matmul_fun<
 fn main() {
     let n = 5000;
 
-    env_logger::init();
-
     let mut mat_a = rlst_dynamic_array2!(f64, [n, n]);
     let mut mat_b = rlst_dynamic_array2!(f64, [n, n]);
 
