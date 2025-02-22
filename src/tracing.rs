@@ -13,7 +13,6 @@ macro_rules! println_mpi {
         if $rank == 0 {
             println!($($arg)*);
         }
-        println!($($arg)*);
     };
 }
 
