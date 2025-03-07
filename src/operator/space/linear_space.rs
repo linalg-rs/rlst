@@ -1,8 +1,9 @@
 //! Linear spaces and their elements.
 
-use super::Element;
+use std::rc::Rc;
+
+use super::{ConcreteElementContainer, Element, ElementImpl};
 use crate::dense::types::RlstScalar;
-use num::One;
 
 /// Definition of a linear space
 ///
@@ -13,19 +14,19 @@ pub trait LinearSpace {
     type F: RlstScalar;
 
     /// Type associated with elements of the space.
-    type E: Element<F = Self::F>;
+    type E: ElementImpl<F = Self::F>;
 
-    /// Create a new vector from the space.
-    fn zero(&self) -> Self::E;
-
-    /// Create a new element from a given one.
-    fn new_from(&self, elem: &Self::E) -> Self::E {
-        let mut cloned = self.zero();
-        cloned.axpy_inplace(<Self::F as One>::one(), elem);
-        cloned
-    }
+    /// Create a new zero element from the space.
+    fn zero(space: Rc<Self>) -> Element<ConcreteElementContainer<Self::E>>;
 }
 /// Element type
-pub type ElementType<Space> = <Space as LinearSpace>::E;
+pub type ElementImplType<Space> = <Space as LinearSpace>::E;
 /// Field type
 pub type FieldType<Space> = <Space as LinearSpace>::F;
+
+/// Create a new zero element from a given space.
+pub fn zero_element<Space: LinearSpace>(
+    space: Rc<Space>,
+) -> Element<ConcreteElementContainer<ElementImplType<Space>>> {
+    Space::zero(space)
+}

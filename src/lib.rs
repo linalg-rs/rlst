@@ -28,6 +28,7 @@ pub mod doc;
 pub mod external;
 pub mod io;
 pub mod sparse;
+pub mod tracing;
 
 pub mod prelude;
 pub mod threading;

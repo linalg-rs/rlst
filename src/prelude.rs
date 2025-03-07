@@ -23,6 +23,7 @@ pub use crate::rlst_array_from_slice_mut5;
 
 pub use crate::rlst_rank1_array;
 
+pub use rlst_proc_macro::measure_duration;
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
@@ -35,8 +36,9 @@ pub use crate::dense::gemm::Gemm;
 pub use crate::dense::tools::PrettyPrint;
 
 pub use crate::dense::traits::{
-    ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut, RawAccess,
-    RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    AsOperatorApply, ChunkedAccess, RandomAccessByRef, RandomAccessByValue, RandomAccessMut,
+    RawAccess, RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
 
 pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
@@ -75,23 +77,33 @@ pub use crate::dense::simd::{RlstSimd, SimdFor};
 
 #[cfg(feature = "mpi")]
 pub use crate::sparse::{
-    distributed_vector::DistributedVector, index_layout::DefaultMpiIndexLayout,
-    sparse_mat::mpi_csr_mat::MpiCsrMatrix,
+    distributed_vector::DistributedVector, sparse_mat::distributed_csr_mat::DistributedCsrMatrix,
 };
+#[cfg(feature = "mpi")]
+pub use bempp_distributed_tools::IndexLayout;
 
-pub use crate::sparse::index_layout::DefaultSerialIndexLayout;
 pub use crate::sparse::sparse_mat::csc_mat::CscMatrix;
 pub use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
-pub use crate::sparse::traits::index_layout::IndexLayout;
 
+pub use crate::operator::interface::{ArrayVectorSpace, ArrayVectorSpaceElement, MatrixOperator};
+#[cfg(feature = "mpi")]
 pub use crate::operator::interface::{
-    ArrayVectorSpace, ArrayVectorSpaceElement, CscMatrixOperator, CsrMatrixOperator,
-    DenseMatrixOperator,
+    DistributedArrayVectorSpace, DistributedArrayVectorSpaceElement,
 };
 
+pub use crate::operator::element::{
+    Element, ElementContainer, ElementContainerMut, ScalarTimesElement,
+};
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
-pub use crate::operator::{AsApply, OperatorBase};
-pub use crate::operator::{DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace};
-pub use crate::operator::{Element, ElementView, ElementViewMut};
+pub use crate::operator::OperatorLeftScalarMul;
+pub use crate::operator::{
+    zero_element, DualSpace, IndexableSpace, InnerProductSpace, LinearSpace, NormedSpace,
+};
+pub use crate::operator::{AsApply, Operator, OperatorBase};
+pub use crate::operator::{ElementImpl, ElementView, ElementViewMut};
+
+pub use crate::operator::abstract_operator::ScalarTimesOperator;
+
+pub use crate::tracing::Tracing;

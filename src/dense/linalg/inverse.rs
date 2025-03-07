@@ -23,15 +23,9 @@ use super::assert_lapack_stride;
 /// # use rlst::dense::linalg::inverse::MatrixInverse;
 /// # let mut a = rlst_dynamic_array2!(f64, [3, 3]);
 /// # a.fill_from_seed_equally_distributed(0);
-/// a.view_mut().into_inverse_alloc().unwrap();
+/// a.r_mut().into_inverse_alloc().unwrap();
 /// ```
 /// This method allocates memory for the inverse computation.
-
-// pub trait MatrixInverse {
-//     /// Compute the matrix inverse
-//     fn into_inverse_alloc(self) -> RlstResult<()>;
-// }
-
 pub trait MatrixInverse: RlstScalar {
     /// Compute the matrix inverse
     fn into_inverse_alloc<

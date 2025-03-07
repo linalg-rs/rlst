@@ -109,14 +109,14 @@ impl<Item: RlstBase, const N: usize> Default for ArrayContainer<Item, N> {
 
 impl<'a, Item: RlstBase> SliceContainer<'a, Item> {
     /// New slice container from a reference.
-    pub fn new(slice: &'a [Item]) -> SliceContainer<Item> {
+    pub fn new(slice: &'a [Item]) -> SliceContainer<'a, Item> {
         SliceContainer::<Item> { data: slice }
     }
 }
 
 impl<'a, Item: RlstBase> SliceContainerMut<'a, Item> {
     /// New mutable slice container from mutable reference.
-    pub fn new(slice: &'a mut [Item]) -> SliceContainerMut<Item> {
+    pub fn new(slice: &'a mut [Item]) -> SliceContainerMut<'a, Item> {
         SliceContainerMut::<Item> { data: slice }
     }
 }
@@ -193,7 +193,7 @@ impl<Item: RlstBase, const N: usize> DataContainerMut for ArrayContainer<Item, N
     }
 }
 
-impl<'a, Item: RlstBase> DataContainer for SliceContainer<'a, Item> {
+impl<Item: RlstBase> DataContainer for SliceContainer<'_, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -215,7 +215,7 @@ impl<'a, Item: RlstBase> DataContainer for SliceContainer<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstBase> DataContainer for SliceContainerMut<'a, Item> {
+impl<Item: RlstBase> DataContainer for SliceContainerMut<'_, Item> {
     type Item = Item;
 
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
@@ -237,7 +237,7 @@ impl<'a, Item: RlstBase> DataContainer for SliceContainerMut<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstBase> DataContainerMut for SliceContainerMut<'a, Item> {
+impl<Item: RlstBase> DataContainerMut for SliceContainerMut<'_, Item> {
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
         self.data.get_unchecked_mut(index)

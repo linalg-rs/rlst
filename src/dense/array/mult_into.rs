@@ -65,8 +65,8 @@ impl<
         arr_b: Array<Item, ArrayImplSecond, 1>,
         beta: Item,
     ) -> Self {
-        let mut self_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Back);
-        let arr_with_padded_dim = arr_b.view().insert_empty_axis(AxisPosition::Back);
+        let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Back);
+        let arr_with_padded_dim = arr_b.r().insert_empty_axis(AxisPosition::Back);
 
         crate::dense::matrix_multiply::matrix_multiply(
             transa,
@@ -104,8 +104,8 @@ impl<
         arr_b: Array<Item, ArrayImplSecond, 2>,
         beta: Item,
     ) -> Self {
-        let mut self_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Front);
-        let arr_with_padded_dim = arr_a.view().insert_empty_axis(AxisPosition::Front);
+        let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Front);
+        let arr_with_padded_dim = arr_a.r().insert_empty_axis(AxisPosition::Front);
 
         crate::dense::matrix_multiply::matrix_multiply(
             transa,
@@ -120,7 +120,7 @@ impl<
     }
 }
 
-/// MultIntoResize
+// MultIntoResize
 
 impl<
         Item: RlstScalar + Gemm,
@@ -194,8 +194,8 @@ impl<
             self.resize_in_place(expected_shape);
         }
 
-        let mut self_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Back);
-        let arr_with_padded_dim = arr_b.view().insert_empty_axis(AxisPosition::Back);
+        let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Back);
+        let arr_with_padded_dim = arr_b.r().insert_empty_axis(AxisPosition::Back);
 
         crate::dense::matrix_multiply::matrix_multiply(
             transa,
@@ -242,8 +242,8 @@ impl<
             self.resize_in_place(expected_shape);
         }
 
-        let mut self_with_padded_dim = self.view_mut().insert_empty_axis(AxisPosition::Front);
-        let arr_with_padded_dim = arr_a.view().insert_empty_axis(AxisPosition::Front);
+        let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Front);
+        let arr_with_padded_dim = arr_a.r().insert_empty_axis(AxisPosition::Front);
 
         crate::dense::matrix_multiply::matrix_multiply(
             transa,

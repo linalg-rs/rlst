@@ -1,4 +1,7 @@
-//! Default view onto an array.
+//! Reference to an array.
+//!
+//! A reference is an owned struct that holds a reference to an array. It is used to
+//! pass arrays to functions without transferring ownership.
 
 use crate::dense::types::RlstBase;
 
@@ -10,7 +13,7 @@ use crate::dense::traits::{
 };
 
 /// Basic structure for a `View`
-pub struct ArrayView<
+pub struct ArrayRef<
     'a,
     Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -24,7 +27,7 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > ArrayView<'a, Item, ArrayImpl, NDIM>
+    > ArrayRef<'a, Item, ArrayImpl, NDIM>
 {
     /// Create new view
     pub fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
@@ -36,7 +39,7 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > Shape<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > Shape<NDIM> for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.arr.shape()
@@ -47,7 +50,7 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
         const NDIM: usize,
-    > Stride<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > Stride<NDIM> for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
@@ -61,7 +64,7 @@ impl<
             + RawAccess<Item = Item>
             + Stride<NDIM>,
         const NDIM: usize,
-    > RawAccess for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > RawAccess for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -82,7 +85,7 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -97,7 +100,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessByRef<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<NDIM> for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -111,7 +114,7 @@ impl<
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayView<'_, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArrayRef<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     fn get_chunk(
@@ -122,10 +125,10 @@ impl<
     }
 }
 
-/////////// ArrayViewMut
+/////////// ArrayRefMut
 
 /// Mutable array view
-pub struct ArrayViewMut<
+pub struct ArrayRefMut<
     'a,
     Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
@@ -143,7 +146,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > ArrayViewMut<'a, Item, ArrayImpl, NDIM>
+    > ArrayRefMut<'a, Item, ArrayImpl, NDIM>
 {
     /// Create new mutable view
     pub fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
@@ -157,7 +160,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > Shape<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > Shape<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.arr.shape()
@@ -171,7 +174,7 @@ impl<
             + Stride<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > Stride<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > Stride<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
@@ -186,7 +189,7 @@ impl<
             + Stride<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > RawAccess for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > RawAccess for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -212,7 +215,7 @@ impl<
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + RawAccessMut<Item = Item>,
         const NDIM: usize,
-    > RawAccessMut for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > RawAccessMut for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.arr.data_mut()
@@ -229,7 +232,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByValue<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -245,7 +248,7 @@ impl<
             + UnsafeRandomAccessByRef<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessByRef<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -262,7 +265,7 @@ impl<
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
         const N: usize,
-    > ChunkedAccess<N> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > ChunkedAccess<N> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     fn get_chunk(
@@ -279,7 +282,7 @@ impl<
             + Shape<NDIM>
             + UnsafeRandomAccessMut<NDIM, Item = Item>,
         const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > UnsafeRandomAccessMut<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -296,10 +299,35 @@ impl<
             + UnsafeRandomAccessMut<NDIM, Item = Item>
             + ResizeInPlace<NDIM>,
         const NDIM: usize,
-    > ResizeInPlace<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+    > ResizeInPlace<NDIM> for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
 {
     #[inline]
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.arr.resize_in_place(shape)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    /// Return a reference to an array.
+    pub fn r(&self) -> Array<Item, ArrayRef<'_, Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayRef::new(self))
+    }
+}
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > Array<Item, ArrayImpl, NDIM>
+{
+    /// Return a mutable view onto the array.
+    pub fn r_mut(&mut self) -> Array<Item, ArrayRefMut<'_, Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayRefMut::new(self))
     }
 }

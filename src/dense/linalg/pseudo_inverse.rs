@@ -14,8 +14,6 @@ use crate::dense::linalg::svd::MatrixSvd;
 
 /// Pseudo-inverse of a matrix
 pub trait MatrixPseudoInverse: RlstScalar + MatrixSvd {
-    /// Item type
-
     /// Compute the pseudoinverse into the array `pinv`.
     ///
     /// This method dynamically allocates memory for the computation.
@@ -174,7 +172,7 @@ macro_rules! impl_pinv {
                 let mut u = rlst_dynamic_array2!($scalar, [arr.shape()[0], k]);
                 let mut vt = rlst_dynamic_array2!($scalar, [k, arr.shape()[1]]);
 
-                arr.into_svd_alloc(u.view_mut(), vt.view_mut(), &mut singvals, mode)?;
+                arr.into_svd_alloc(u.r_mut(), vt.r_mut(), &mut singvals, mode)?;
 
                 let index = match singvals
                     .iter()
@@ -193,20 +191,20 @@ macro_rules! impl_pinv {
                 let mut v = rlst_dynamic_array2!($scalar, [shape[1], index]);
 
                 uh.fill_from(
-                    u.view()
+                    u.r()
                         .transpose()
                         .conj()
                         .into_subview([0, 0], [index, shape[0]]),
                 );
                 v.fill_from(
-                    vt.view()
+                    vt.r()
                         .transpose()
                         .conj()
                         .into_subview([0, 0], [shape[1], index]),
                 );
 
                 for (col_index, &singval) in singvals.iter().take(index).enumerate() {
-                    v.view_mut().slice(1, col_index).scale_inplace(
+                    v.r_mut().slice(1, col_index).scale_inplace(
                         (<<$scalar as RlstScalar>::Real as One>::one() / singval).into(),
                     );
                 }

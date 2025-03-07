@@ -168,10 +168,10 @@ mod test {
             }
         }
 
-        let rank1_array = rlst_rank1_array!(u.view(), v.view());
+        let rank1_array = rlst_rank1_array!(u.r(), v.r());
 
-        actual.fill_from(rank1_array.view());
-        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.view());
+        actual.fill_from(rank1_array.r());
+        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.r());
 
         assert_array_relative_eq!(rank1_array, expected, eps);
         assert_array_relative_eq!(actual, expected, eps);
@@ -202,10 +202,10 @@ mod test {
             }
         }
 
-        let rank1_array = rlst_rank1_array!(u.view(), v.view());
+        let rank1_array = rlst_rank1_array!(u.r(), v.r());
 
-        actual.fill_from(rank1_array.view());
-        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.view());
+        actual.fill_from(rank1_array.r());
+        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.r());
 
         assert_array_relative_eq!(rank1_array, expected, eps);
         assert_array_relative_eq!(actual, expected, eps);
@@ -236,10 +236,10 @@ mod test {
             }
         }
 
-        let rank1_array = rlst_rank1_array!(u.view(), v.view());
+        let rank1_array = rlst_rank1_array!(u.r(), v.r());
 
-        actual.fill_from(rank1_array.view());
-        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.view());
+        actual.fill_from(rank1_array.r());
+        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.r());
 
         assert_array_relative_eq!(rank1_array, expected, eps);
         assert_array_relative_eq!(actual, expected, eps);
@@ -270,10 +270,10 @@ mod test {
             }
         }
 
-        let rank1_array = rlst_rank1_array!(u.view(), v.view());
+        let rank1_array = rlst_rank1_array!(u.r(), v.r());
 
-        actual.fill_from(rank1_array.view());
-        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.view());
+        actual.fill_from(rank1_array.r());
+        actual_chunked.fill_from_chunked::<_, 13>(rank1_array.r());
 
         assert_array_relative_eq!(rank1_array, expected, eps);
         assert_array_relative_eq!(actual, expected, eps);

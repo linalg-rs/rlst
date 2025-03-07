@@ -9,8 +9,6 @@ use super::assert_lapack_stride;
 
 /// Singular value decomposition
 pub trait MatrixSvd: RlstScalar {
-    /// Item type
-
     /// Compute the singular values of the matrix.
     ///
     /// For a `(m, n)` matrix A the slice `singular_values` has

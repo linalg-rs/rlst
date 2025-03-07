@@ -1,10 +1,11 @@
 //! Various iterator implementations.
 
-use crate::dense::array::{views, Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use crate::dense::array::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::dense::traits::AsMultiIndex;
 use crate::dense::types::RlstBase;
 
+use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
 
 /// Default column major iterator.
@@ -101,11 +102,10 @@ impl<
 }
 
 impl<
-        'a,
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
         const NDIM: usize,
-    > std::iter::Iterator for ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    > std::iter::Iterator for ArrayDefaultIterator<'_, Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -156,7 +156,10 @@ impl<
     > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    type Iter<'a> = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM> where Self: 'a;
+    type Iter<'a>
+        = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
     fn iter(&self) -> Self::Iter<'_> {
         ArrayDefaultIterator::new(self)
@@ -172,7 +175,10 @@ impl<
     > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
-    type IterMut<'a> = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM> where Self: 'a;
+    type IterMut<'a>
+        = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         ArrayDefaultIteratorMut::new(self)
@@ -208,12 +214,12 @@ pub struct RowIteratorMut<
 impl<'a, Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     std::iter::Iterator for RowIterator<'a, Item, ArrayImpl, 2>
 {
-    type Item = Array<Item, ArraySlice<Item, views::ArrayView<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
+    type Item = Array<Item, ArraySlice<Item, reference::ArrayRef<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row >= self.nrows {
             return None;
         }
-        let slice = self.arr.view().slice(0, self.current_row);
+        let slice = self.arr.r().slice(0, self.current_row);
         self.current_row += 1;
         Some(slice)
     }
@@ -227,17 +233,17 @@ impl<
             + Shape<2>,
     > std::iter::Iterator for RowIteratorMut<'a, Item, ArrayImpl, 2>
 {
-    type Item = Array<Item, ArraySlice<Item, views::ArrayViewMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
+    type Item = Array<Item, ArraySlice<Item, ArrayRefMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row >= self.nrows {
             return None;
         }
-        let slice = self.arr.view_mut().slice(0, self.current_row);
+        let slice = self.arr.r_mut().slice(0, self.current_row);
         self.current_row += 1;
         unsafe {
             Some(std::mem::transmute::<
-                Array<Item, ArraySlice<Item, views::ArrayViewMut<'_, Item, ArrayImpl, 2>, 2, 1>, 1>,
-                Array<Item, ArraySlice<Item, views::ArrayViewMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>,
+                Array<Item, ArraySlice<Item, ArrayRefMut<'_, Item, ArrayImpl, 2>, 2, 1>, 1>,
+                Array<Item, ArraySlice<Item, ArrayRefMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>,
             >(slice))
         }
     }
@@ -303,12 +309,12 @@ pub struct ColIteratorMut<
 impl<'a, Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
     std::iter::Iterator for ColIterator<'a, Item, ArrayImpl, 2>
 {
-    type Item = Array<Item, ArraySlice<Item, views::ArrayView<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
+    type Item = Array<Item, ArraySlice<Item, reference::ArrayRef<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_col >= self.ncols {
             return None;
         }
-        let slice = self.arr.view().slice(1, self.current_col);
+        let slice = self.arr.r().slice(1, self.current_col);
         self.current_col += 1;
         Some(slice)
     }
@@ -322,17 +328,17 @@ impl<
             + Shape<2>,
     > std::iter::Iterator for ColIteratorMut<'a, Item, ArrayImpl, 2>
 {
-    type Item = Array<Item, ArraySlice<Item, views::ArrayViewMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
+    type Item = Array<Item, ArraySlice<Item, ArrayRefMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_col >= self.ncols {
             return None;
         }
-        let slice = self.arr.view_mut().slice(1, self.current_col);
+        let slice = self.arr.r_mut().slice(1, self.current_col);
         self.current_col += 1;
         unsafe {
             Some(std::mem::transmute::<
-                Array<Item, ArraySlice<Item, views::ArrayViewMut<'_, Item, ArrayImpl, 2>, 2, 1>, 1>,
-                Array<Item, ArraySlice<Item, views::ArrayViewMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>,
+                Array<Item, ArraySlice<Item, ArrayRefMut<'_, Item, ArrayImpl, 2>, 2, 1>, 1>,
+                Array<Item, ArraySlice<Item, ArrayRefMut<'a, Item, ArrayImpl, 2>, 2, 1>, 1>,
             >(slice))
         }
     }

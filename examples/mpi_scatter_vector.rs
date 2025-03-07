@@ -1,10 +1,11 @@
 //! Scatter a vector on the root rank.
 
+use std::rc::Rc;
+
 use approx::assert_relative_eq;
 
-use mpi::traits::*;
+use mpi::traits::Communicator;
 
-use itertools;
 use rlst::prelude::*;
 
 const ROOT: usize = 0;
@@ -16,9 +17,9 @@ pub fn main() {
 
     let rank = world.rank() as usize;
 
-    let index_layout = DefaultMpiIndexLayout::new(NDIM, 1, &world);
+    let index_layout = Rc::new(IndexLayout::from_equidistributed_chunks(NDIM, 1, &world));
 
-    let mut vec = DistributedVector::<f64, _>::new(&index_layout);
+    let mut vec = DistributedVector::<_, f64>::new(index_layout);
 
     let local_index_range = vec.index_layout().index_range(rank).unwrap();
 
@@ -27,7 +28,7 @@ pub fn main() {
         for (index, elem) in arr.iter_mut().enumerate() {
             *elem = index as f64;
         }
-        vec.scatter_from_root(arr.view_mut());
+        vec.scatter_from_root(arr.r_mut());
     } else {
         vec.scatter_from(ROOT);
     }

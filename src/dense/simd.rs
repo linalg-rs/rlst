@@ -309,8 +309,8 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>);
 
-    /// Compute the sine and cosine of each element in the register,
-    /// assuming that its absolute value is smaller than or equal to `pi / 2`.
+    // /// Compute the sine and cosine of each element in the register,
+    // /// assuming that its absolute value is smaller than or equal to `pi / 2`.
     // fn simd_sin_cos_quarter_circle<S: Simd>(
     //     simd: S,
     //     value: Self::Scalars<S>,
@@ -408,7 +408,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f32s_equal(lhs, rhs)
+        simd.equal_f32s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_cmp_lt<S: Simd>(
@@ -416,7 +416,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f32s_less_than(lhs, rhs)
+        simd.less_than_f32s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_cmp_le<S: Simd>(
@@ -424,7 +424,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f32s_less_than_or_equal(lhs, rhs)
+        simd.less_than_or_equal_f32s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_select<S: Simd>(
@@ -433,27 +433,27 @@ impl RlstSimd for f32 {
         if_true: Self::Scalars<S>,
         if_false: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.m32s_select_f32s(mask, if_true, if_false)
+        simd.select_f32s_m32s(mask, if_true, if_false)
     }
 
     #[inline(always)]
     fn as_simd_slice<S: Simd>(slice: &[Self]) -> (&[Self::Scalars<S>], &[Self]) {
-        S::f32s_as_simd(slice)
+        S::as_simd_f32s(slice)
     }
 
     #[inline(always)]
     fn as_simd_slice_mut<S: Simd>(slice: &mut [Self]) -> (&mut [Self::Scalars<S>], &mut [Self]) {
-        S::f32s_as_mut_simd(slice)
+        S::as_mut_simd_f32s(slice)
     }
 
     #[inline(always)]
     fn simd_splat<S: Simd>(simd: S, value: Self) -> Self::Scalars<S> {
-        simd.f32s_splat(value)
+        simd.splat_f32s(value)
     }
 
     #[inline(always)]
     fn simd_neg<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        simd.f32s_neg(value)
+        simd.neg_f32s(value)
     }
 
     #[inline(always)]
@@ -462,7 +462,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f32s_add(lhs, rhs)
+        simd.add_f32s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -471,7 +471,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f32s_sub(lhs, rhs)
+        simd.sub_f32s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -480,7 +480,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f32s_mul(lhs, rhs)
+        simd.mul_f32s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -490,7 +490,7 @@ impl RlstSimd for f32 {
         rhs: Self::Scalars<S>,
         acc: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f32s_mul_add_e(lhs, rhs, acc)
+        simd.mul_add_e_f32s(lhs, rhs, acc)
     }
 
     #[inline(always)]
@@ -499,7 +499,7 @@ impl RlstSimd for f32 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f32s_div(lhs, rhs)
+        simd.div_f32s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -532,7 +532,7 @@ impl RlstSimd for f32 {
             let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
 
             for (value, s_out, c_out) in
-                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
+                itertools::izip!(value.iter(), s_out.iter_mut(), c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
                 *c_out = Self::cos(*value);
@@ -647,7 +647,7 @@ impl RlstSimd for f32 {
             return bytemuck::cast(out);
         }
 
-        let mut out = simd.f32s_splat(0.0);
+        let mut out = simd.splat_f32s(0.0);
         {
             let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
             let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
@@ -673,7 +673,7 @@ impl RlstSimd for f32 {
                 return to(simd.sqrt_f32x8(to(value)));
             }
         }
-        let mut out = simd.f32s_splat(0.0);
+        let mut out = simd.splat_f32s(0.0);
         {
             let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
             let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
@@ -699,7 +699,7 @@ impl RlstSimd for f32 {
         //         return to(simd.approx_reciprocal_f32x8(to(value)));
         //     }
         // }
-        simd.f32s_div(simd.f32s_splat(1.0), value)
+        simd.div_f32s(simd.splat_f32s(1.0), value)
     }
 
     #[inline(always)]
@@ -767,7 +767,7 @@ impl RlstSimd for f32 {
             }
         }
 
-        simd.f32s_reduce_sum(value)
+        simd.reduce_sum_f32s(value)
     }
 }
 
@@ -781,7 +781,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f64s_equal(lhs, rhs)
+        simd.equal_f64s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_cmp_lt<S: Simd>(
@@ -789,7 +789,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f64s_less_than(lhs, rhs)
+        simd.less_than_f64s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_cmp_le<S: Simd>(
@@ -797,7 +797,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Mask<S> {
-        simd.f64s_less_than_or_equal(lhs, rhs)
+        simd.less_than_or_equal_f64s(lhs, rhs)
     }
     #[inline(always)]
     fn simd_select<S: Simd>(
@@ -806,27 +806,27 @@ impl RlstSimd for f64 {
         if_true: Self::Scalars<S>,
         if_false: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.m64s_select_f64s(mask, if_true, if_false)
+        simd.select_f64s_m64s(mask, if_true, if_false)
     }
 
     #[inline(always)]
     fn as_simd_slice<S: Simd>(slice: &[Self]) -> (&[Self::Scalars<S>], &[Self]) {
-        S::f64s_as_simd(slice)
+        S::as_simd_f64s(slice)
     }
 
     #[inline(always)]
     fn as_simd_slice_mut<S: Simd>(slice: &mut [Self]) -> (&mut [Self::Scalars<S>], &mut [Self]) {
-        S::f64s_as_mut_simd(slice)
+        S::as_mut_simd_f64s(slice)
     }
 
     #[inline(always)]
     fn simd_splat<S: Simd>(simd: S, value: Self) -> Self::Scalars<S> {
-        simd.f64s_splat(value)
+        simd.splat_f64s(value)
     }
 
     #[inline(always)]
     fn simd_neg<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        simd.f64s_neg(value)
+        simd.neg_f64s(value)
     }
 
     #[inline(always)]
@@ -835,7 +835,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f64s_add(lhs, rhs)
+        simd.add_f64s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -844,7 +844,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f64s_sub(lhs, rhs)
+        simd.sub_f64s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -853,7 +853,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f64s_mul(lhs, rhs)
+        simd.mul_f64s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -863,7 +863,7 @@ impl RlstSimd for f64 {
         rhs: Self::Scalars<S>,
         acc: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f64s_mul_add_e(lhs, rhs, acc)
+        simd.mul_add_e_f64s(lhs, rhs, acc)
     }
 
     #[inline(always)]
@@ -872,7 +872,7 @@ impl RlstSimd for f64 {
         lhs: Self::Scalars<S>,
         rhs: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.f64s_div(lhs, rhs)
+        simd.div_f64s(lhs, rhs)
     }
 
     #[inline(always)]
@@ -906,7 +906,7 @@ impl RlstSimd for f64 {
             let s_out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut s_out));
 
             for (value, s_out, c_out) in
-                itertools::izip!(value.iter(), &mut s_out.iter_mut(), &mut c_out.iter_mut())
+                itertools::izip!(value.iter(), s_out.iter_mut(), c_out.iter_mut())
             {
                 *s_out = Self::sin(*value);
                 *c_out = Self::cos(*value);
@@ -1022,7 +1022,7 @@ impl RlstSimd for f64 {
             return bytemuck::cast(out);
         }
 
-        let mut out = simd.f64s_splat(0.0);
+        let mut out = simd.splat_f64s(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
             let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
@@ -1048,7 +1048,7 @@ impl RlstSimd for f64 {
                 return to(simd.sqrt_f64x4(to(value)));
             }
         }
-        let mut out = simd.f64s_splat(0.0);
+        let mut out = simd.splat_f64s(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
             let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
@@ -1061,7 +1061,7 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_approx_recip<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        simd.f64s_div(simd.f64s_splat(1.0), value)
+        simd.div_f64s(simd.splat_f64s(1.0), value)
     }
 
     #[inline(always)]
@@ -1129,7 +1129,7 @@ impl RlstSimd for f64 {
                 return simd.neon.vaddvq_f64(bytemuck::cast(value));
             }
         }
-        simd.f64s_reduce_sum(value)
+        simd.reduce_sum_f64s(value)
     }
 }
 

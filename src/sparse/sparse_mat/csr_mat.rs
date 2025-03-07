@@ -64,8 +64,6 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
 
     /// Matrix multiplication
     pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
-        assert_eq!(self.shape()[0], y.len());
-        assert_eq!(self.shape()[1], x.len());
         for (row, out) in y.iter_mut().enumerate() {
             *out = beta * *out
                 + alpha * {
@@ -106,18 +104,22 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
     ) -> RlstResult<Self> {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
-        let max_col = cols.iter().max().unwrap();
-        let max_row = rows.last().unwrap();
+        let max_col = if let Some(col) = cols.iter().max() {
+            *col
+        } else {
+            0
+        };
+        let max_row = if let Some(row) = rows.last() { *row } else { 0 };
 
         assert!(
-            *max_col < shape[1],
+            max_col < shape[1],
             "Maximum column {} must be smaller than `shape.1` {}",
             max_col,
             shape[1]
         );
 
         assert!(
-            *max_row < shape[0],
+            max_row < shape[0],
             "Maximum row {} must be smaller than `shape.0` {}",
             max_row,
             shape[0]
@@ -162,7 +164,7 @@ impl<'a, Item: RlstScalar> CsrAijIterator<'a, Item> {
     }
 }
 
-impl<'a, Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
+impl<Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'_, Item> {
     type Item = (usize, usize, Item);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -196,7 +198,10 @@ impl<'a, Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'a, Item> {
 
 impl<Item: RlstScalar> AijIterator for CsrMatrix<Item> {
     type Item = Item;
-    type Iter<'a> = CsrAijIterator<'a, Item> where Self: 'a;
+    type Iter<'a>
+        = CsrAijIterator<'a, Item>
+    where
+        Self: 'a;
 
     fn iter_aij(&self) -> Self::Iter<'_> {
         CsrAijIterator::new(self)

@@ -1,9 +1,12 @@
 //! Definition of a general linear operator.
 
-use crate::dense::types::RlstResult;
-use crate::operator::{FieldType, LinearSpace};
+use crate::operator::LinearSpace;
+use crate::RlstScalar;
 use num::{One, Zero};
 use std::fmt::Debug;
+use std::rc::Rc;
+
+use super::{zero_element, Element, ElementContainer, ElementContainerMut, ElementType};
 
 /// A base operator trait.
 pub trait OperatorBase: Debug {
@@ -13,15 +16,16 @@ pub trait OperatorBase: Debug {
     type Range: LinearSpace;
 
     /// Get the domain
-    fn domain(&self) -> &Self::Domain;
+    fn domain(&self) -> Rc<Self::Domain>;
     /// Get the range
-    fn range(&self) -> &Self::Range;
+    fn range(&self) -> Rc<Self::Range>;
+
     /// Convert to RLST reference
-    fn as_ref_obj(&self) -> RlstOperatorReference<'_, Self>
+    fn r(&self) -> Operator<RlstOperatorReference<'_, Self>>
     where
         Self: Sized,
     {
-        RlstOperatorReference(self)
+        Operator::new(RlstOperatorReference(self))
     }
     /// Form a new operator alpha * self.
     fn scale(self, alpha: <Self::Range as LinearSpace>::F) -> ScalarTimesOperator<Self>
@@ -39,6 +43,25 @@ pub trait OperatorBase: Debug {
         Self: Sized,
     {
         OperatorSum(self, other)
+    }
+
+    /// Take the difference self - other.
+    fn sub<Op: OperatorBase<Domain = Self::Domain, Range = Self::Range> + Sized>(
+        self,
+        other: Op,
+    ) -> OperatorSum<Self::Domain, Self::Range, Self, ScalarTimesOperator<Op>>
+    where
+        Self: Sized,
+    {
+        self.sum(other.neg())
+    }
+
+    /// Return the negative -self.
+    fn neg(self) -> ScalarTimesOperator<Self>
+    where
+        Self: Sized,
+    {
+        ScalarTimesOperator(self, -<<Self::Range as LinearSpace>::F as One>::one())
     }
 
     /// Form a new operator self * other.
@@ -59,26 +82,32 @@ pub trait OperatorBase: Debug {
 /// Apply an operator as y -> alpha * Ax + beta y
 pub trait AsApply: OperatorBase {
     /// Apply an operator as y -> alpha * Ax + beta y
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
-    ) -> RlstResult<()>;
+        y: Element<ContainerOut>,
+    );
 
-    /// Apply
-    fn apply(&self, x: &<Self::Domain as LinearSpace>::E) -> <Self::Range as LinearSpace>::E {
-        let mut out = self.range().zero();
+    /// Apply an operator to a vector
+    fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
+        &self,
+        x: Element<ContainerIn>,
+    ) -> ElementType<<Self::Range as LinearSpace>::E> {
+        let mut y = zero_element(self.range());
 
         self.apply_extended(
-            <FieldType<Self::Range> as One>::one(),
+            <<Self::Range as LinearSpace>::F as One>::one(),
             x,
-            <FieldType<Self::Range> as Zero>::zero(),
-            &mut out,
-        )
-        .unwrap();
-        out
+            <<Self::Range as LinearSpace>::F as Zero>::zero(),
+            y.r_mut(),
+        );
+
+        y
     }
 }
 
@@ -96,24 +125,170 @@ impl<Op: OperatorBase> OperatorBase for RlstOperatorReference<'_, Op> {
 
     type Range = Op::Range;
 
-    fn domain(&self) -> &Self::Domain {
-        self.0.domain()
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.0.domain().clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        self.0.range()
+    fn range(&self) -> Rc<Self::Range> {
+        self.0.range().clone()
     }
 }
 
 impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
-    ) -> RlstResult<()> {
-        self.0.apply_extended(alpha, x, beta, y)
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended(alpha, x, beta, y);
+    }
+}
+
+/// A concrete operator.
+pub struct Operator<OpImpl: OperatorBase>(OpImpl);
+
+impl<OpImpl: OperatorBase> std::fmt::Debug for Operator<OpImpl> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Operator").field(&self.0).finish()
+    }
+}
+
+impl<OpImpl: OperatorBase> OperatorBase for Operator<OpImpl> {
+    type Domain = OpImpl::Domain;
+
+    type Range = OpImpl::Range;
+
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.0.domain().clone()
+    }
+
+    fn range(&self) -> Rc<Self::Range> {
+        self.0.range().clone()
+    }
+}
+
+impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended(alpha, x, beta, y);
+    }
+}
+
+impl<OpImpl: OperatorBase> Operator<OpImpl> {
+    /// Create a new Operator
+    pub fn new(op: OpImpl) -> Self {
+        Operator(op)
+    }
+}
+
+impl<
+        Domain: LinearSpace,
+        Range: LinearSpace,
+        OpImpl1: OperatorBase<Domain = Domain, Range = Range>,
+        OpImpl2: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Add<Operator<OpImpl2>> for Operator<OpImpl1>
+{
+    type Output = Operator<OperatorSum<Domain, Range, OpImpl1, OpImpl2>>;
+
+    fn add(self, rhs: Operator<OpImpl2>) -> Self::Output {
+        Operator::new(self.0.sum(rhs.0))
+    }
+}
+
+impl<
+        Domain: LinearSpace,
+        Range: LinearSpace,
+        OpImpl1: OperatorBase<Domain = Domain, Range = Range>,
+        OpImpl2: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Sub<Operator<OpImpl2>> for Operator<OpImpl1>
+{
+    type Output = Operator<OperatorSum<Domain, Range, OpImpl1, ScalarTimesOperator<OpImpl2>>>;
+
+    fn sub(self, rhs: Operator<OpImpl2>) -> Self::Output {
+        Operator::new(self.0.sub(rhs.0))
+    }
+}
+
+/// Trait that is satisfied by each scalar type that can multiply an operator from the left.
+pub trait OperatorLeftScalarMul<OpImpl: OperatorBase>: std::ops::Mul<Operator<OpImpl>> {}
+
+impl<
+        T: RlstScalar + std::ops::Mul<Operator<OpImpl>>,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > OperatorLeftScalarMul<OpImpl> for T
+{
+}
+
+macro_rules! impl_operator_mul {
+    ($dtype:ty) => {
+        impl<
+                Domain: LinearSpace,
+                Range: LinearSpace<F = $dtype>,
+                OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+            > std::ops::Mul<Operator<OpImpl>> for $dtype
+        {
+            type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+            fn mul(self, rhs: Operator<OpImpl>) -> Self::Output {
+                Operator::new(rhs.0.scale(self))
+            }
+        }
+    };
+}
+
+impl_operator_mul!(f32);
+impl_operator_mul!(f64);
+impl_operator_mul!(crate::dense::types::c32);
+impl_operator_mul!(crate::dense::types::c64);
+
+impl<OpImpl: OperatorBase> std::ops::Neg for Operator<OpImpl> {
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn neg(self) -> Self::Output {
+        Operator::new(self.0.neg())
+    }
+}
+
+impl<
+        T: RlstScalar,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Mul<T> for Operator<OpImpl>
+{
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Operator::new(self.0.scale(rhs))
+    }
+}
+
+impl<
+        T: RlstScalar,
+        Domain: LinearSpace,
+        Range: LinearSpace<F = T>,
+        OpImpl: OperatorBase<Domain = Domain, Range = Range>,
+    > std::ops::Div<T> for Operator<OpImpl>
+{
+    type Output = Operator<ScalarTimesOperator<OpImpl>>;
+
+    fn div(self, rhs: T) -> Self::Output {
+        Operator::new(self.0.scale(T::one() / rhs))
     }
 }
 
@@ -151,12 +326,12 @@ impl<
 
     type Range = Range;
 
-    fn domain(&self) -> &Self::Domain {
-        self.0.domain()
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.0.domain().clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        self.0.range()
+    fn range(&self) -> Rc<Self::Range> {
+        self.0.range().clone()
     }
 }
 
@@ -167,17 +342,19 @@ impl<
         Op2: AsApply<Domain = Domain, Range = Range>,
     > AsApply for OperatorSum<Domain, Range, Op1, Op2>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
-    ) -> RlstResult<()> {
-        self.0.apply_extended(alpha, x, beta, y)?;
+        mut y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended(alpha, x.r(), beta, y.r_mut());
         self.1
-            .apply_extended(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y)?;
-        Ok(())
+            .apply_extended(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y);
     }
 }
 
@@ -198,25 +375,27 @@ impl<Op: OperatorBase> OperatorBase for ScalarTimesOperator<Op> {
 
     type Range = Op::Range;
 
-    fn domain(&self) -> &Self::Domain {
-        self.0.domain()
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.0.domain().clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        self.0.range()
+    fn range(&self) -> Rc<Self::Range> {
+        self.0.range().clone()
     }
 }
 
 impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
-    ) -> RlstResult<()> {
-        self.0.apply_extended(self.1 * alpha, x, beta, y)?;
-        Ok(())
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended(self.1 * alpha, x, beta, y);
     }
 }
 
@@ -248,25 +427,41 @@ impl<Space: LinearSpace, Op1: OperatorBase<Range = Space>, Op2: OperatorBase<Dom
 
     type Range = Op2::Range;
 
-    fn domain(&self) -> &Self::Domain {
-        self.op1.domain()
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.op1.domain().clone()
     }
 
-    fn range(&self) -> &Self::Range {
-        self.op2.range()
+    fn range(&self) -> Rc<Self::Range> {
+        self.op2.range().clone()
     }
 }
 
 impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Space>> AsApply
     for OperatorProduct<Space, Op1, Op2>
 {
-    fn apply_extended(
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: &<Self::Domain as LinearSpace>::E,
+        x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
-        y: &mut <Self::Range as LinearSpace>::E,
-    ) -> RlstResult<()> {
-        self.op2.apply_extended(alpha, &self.op1.apply(x), beta, y)
+        y: Element<ContainerOut>,
+    ) {
+        self.op2.apply_extended(alpha, self.op1.apply(x), beta, y);
+    }
+}
+
+impl<
+        Space: LinearSpace,
+        OpImpl1: OperatorBase<Range = Space>,
+        OpImpl2: OperatorBase<Domain = Space>,
+    > std::ops::Mul<Operator<OpImpl1>> for Operator<OpImpl2>
+{
+    type Output = Operator<OperatorProduct<Space, OpImpl1, OpImpl2>>;
+
+    fn mul(self, rhs: Operator<OpImpl1>) -> Self::Output {
+        Operator::new(self.0.product(rhs.0))
     }
 }

@@ -206,6 +206,16 @@ impl<
         }
     }
 
+    /// Subtract other array into array.
+    pub fn sub_into<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
+        &mut self,
+        other: Array<Item, ArrayImplOther, NDIM>,
+    ) {
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item -= other_item;
+        }
+    }
+
     /// Componentwise multiply other array into array.
     pub fn cmp_mult_into<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
@@ -481,7 +491,7 @@ where
         use linalg::lu::MatrixLuDecomposition;
 
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_vec(trans, rhs.view_mut())?;
+        ludecomp.solve_vec(trans, rhs.r_mut())?;
         Ok(rhs)
     }
 
@@ -521,7 +531,7 @@ where
         use linalg::lu::MatrixLuDecomposition;
 
         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_mat(trans, rhs.view_mut())?;
+        ludecomp.solve_mat(trans, rhs.r_mut())?;
         Ok(rhs)
     }
 }

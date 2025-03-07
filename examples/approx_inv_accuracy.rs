@@ -1,4 +1,4 @@
-//! Test the accuracy of the inverse sqrt
+//! Test the accuracy of the inverse
 
 const NSAMPLES: usize = 10000;
 use rand::prelude::*;
