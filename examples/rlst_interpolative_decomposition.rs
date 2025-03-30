@@ -1,5 +1,6 @@
-//! Interpolative decomposition.
+//! Demo interpolative decomposition of a matrix.
 
+use rlst::dense::linalg::interpolative_decomposition::{Accuracy, MatrixIdDecomposition};
 pub use rlst::prelude::*;
 
 //Function that creates a low rank matrix by calculating a kernel given a random point distribution on an unit sphere.
@@ -50,27 +51,31 @@ pub fn main() {
     let tol: f64 = 1e-5;
 
     //Create a low rank matrix
-    let mut arr = rlst_dynamic_array2!(f64, [slice, n]);
+    let mut arr: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, n]);
     low_rank_matrix(n, &mut arr);
 
-    let mut res = arr.r_mut().into_id_alloc(tol, None).unwrap();
+    let res: IdDecomposition<f64> = arr.r_mut().into_id_alloc(Accuracy::Tol(tol)).unwrap();
 
-    println!("The permuted matrix is:");
-    res.arr.pretty_print();
+    println!("The skeleton of the matrix is given by");
+    res.skel.pretty_print();
 
     println!("The interpolative decomposition matrix is:");
     res.id_mat.pretty_print();
 
     println!("The rank of this matrix is {}\n", res.rank);
 
-    let a_rs_app = empty_array().simple_mult_into_resize(
-        res.id_mat.r(),
-        res.arr.r_mut().into_subview([0, 0], [res.rank, n]),
-    );
-    let a_rs = res
-        .arr
-        .r_mut()
-        .into_subview([res.rank, 0], [slice - res.rank, n]);
+    //We extract the residuals of the matrix
+    let mut perm_mat: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, slice]);
+    res.get_p(perm_mat.r_mut());
+    let perm_arr: DynamicArray<f64, 2> =
+        empty_array::<f64, 2>().simple_mult_into_resize(perm_mat.r_mut(), arr.r());
+
+    let mut a_rs: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice - res.rank, n]);
+    a_rs.fill_from(perm_arr.into_subview([res.rank, 0], [slice - res.rank, n]));
+
+    //We compute an approximation of the residual columns of the matrix
+    let a_rs_app: DynamicArray<f64, 2> =
+        empty_array().simple_mult_into_resize(res.id_mat.r(), res.skel);
 
     let error: f64 = a_rs.r().sub(a_rs_app.r()).view_flat().norm_2();
     println!("Interpolative Decomposition L2 absolute error: {}", error);
