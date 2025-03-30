@@ -9,7 +9,7 @@ pub fn main() {
     let null_res = arr.r_mut().into_null_alloc(tol).unwrap();
     let res: Array<f64, BaseArray<f64, VectorContainer<f64>, 2>, 2> =
         empty_array().simple_mult_into_resize(arr.r_mut(), null_res.null_space_arr.r());
-
+    //Result
     println!(
         "Value of |A*B|_2, where B=null(A): {}",
         res.view_flat().norm_2()
