@@ -1,10 +1,11 @@
+//! Null space.
 use crate::dense::array::Array;
-use crate::dense::traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue, DefaultIterator};
-use crate::dense::types::{RlstResult, RlstScalar};
-use crate::{empty_array, rlst_dynamic_array1, rlst_dynamic_array2, BaseArray, DynamicArray, MatrixSvd, SvdMode, VectorContainer};
+use crate::dense::traits::DefaultIterator;
+use crate::dense::traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue};
+use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
+use crate::empty_array;
+use crate::{rlst_dynamic_array1, rlst_dynamic_array2, BaseArray, VectorContainer};
 use itertools::min;
-use num::{One, Zero};
-
 
 /// Compute the matrix nullspace.
 ///
@@ -13,16 +14,15 @@ use num::{One, Zero};
 ///
 /// # Example
 ///
-/// The following command computes the nullspace of an array `a`. 
-/// The nullspace is found in 
+/// The following command computes the nullspace of an array `a`.
+/// The nullspace is found in
 /// ```
 /// # use rlst::rlst_dynamic_array2;
 /// # use rlst::dense::linalg::null_space::{NullSpaceType, MatrixNull};
 /// # let mut a = rlst_dynamic_array2!(f64, [3, 4]);
 /// # a.fill_from_seed_equally_distributed(0);
-/// # let null_res = a.view_mut().into_null_alloc(NullSpaceType::Row).unwrap();
+/// # let null_res = a.r_mut().into_null_alloc(NullSpaceType::Row).unwrap();
 /// ```
-
 /// This method allocates memory for the nullspace computation.
 pub trait MatrixNull: RlstScalar {
     /// Compute the matrix null space
@@ -33,24 +33,32 @@ pub trait MatrixNull: RlstScalar {
             + RawAccessMut<Item = Self>,
     >(
         arr: Array<Self, ArrayImpl, 2>,
-        tol: <Self as RlstScalar>::Real
+        null_space_type: NullSpaceType,
     ) -> RlstResult<NullSpace<Self>>;
 }
 
-
-impl <T: RlstScalar + MatrixSvd> MatrixNull for T {
-    fn into_null_alloc<
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
-            + Stride<2>
-            + Shape<2>
-            + RawAccessMut<Item = Self>,
-    >(
-        arr: Array<Self, ArrayImpl, 2>,
-        tol: <Self as RlstScalar>::Real
-    ) -> RlstResult<NullSpace<Self>> {
-        NullSpace::<Self>::new(arr, tol)
-    }
+macro_rules! implement_into_null {
+    ($scalar:ty) => {
+        impl MatrixNull for $scalar {
+            fn into_null_alloc<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = Self>,
+            >(
+                arr: Array<Self, ArrayImpl, 2>,
+                null_space_type: NullSpaceType,
+            ) -> RlstResult<NullSpace<Self>> {
+                NullSpace::<$scalar>::new(arr, null_space_type)
+            }
+        }
+    };
 }
+
+implement_into_null!(f32);
+implement_into_null!(f64);
+implement_into_null!(c32);
+implement_into_null!(c64);
 
 impl<
         Item: RlstScalar + MatrixNull,
@@ -61,80 +69,137 @@ impl<
     > Array<Item, ArrayImpl, 2>
 {
     /// Compute the Column or Row nullspace of a given 2-dimensional array.
-    pub fn into_null_alloc(self, tol: <Item as RlstScalar>::Real) -> RlstResult<NullSpace<Item>> {
-        <Item as MatrixNull>::into_null_alloc(self, tol)
+    pub fn into_null_alloc(self, null_space_type: NullSpaceType) -> RlstResult<NullSpace<Item>> {
+        <Item as MatrixNull>::into_null_alloc(self, null_space_type)
     }
 }
 
+///Null space
+#[derive(Clone, Copy)]
+#[repr(u8)]
+pub enum NullSpaceType {
+    /// Row Nullspace
+    Row = b'R',
+    /// Column Nullspace
+    Column = b'C',
+}
 
-type RealScalar<T> = <T as RlstScalar>::Real;
-/// Null Space
-pub struct NullSpace<
-    Item: RlstScalar
-> {
+/// QR decomposition
+pub struct NullSpace<Item: RlstScalar> {
+    ///Row or column nullspace
+    pub null_space_type: NullSpaceType,
     ///Computed null space
     pub null_space_arr: Array<Item, BaseArray<Item, VectorContainer<Item>, 2>, 2>,
 }
 
-///NullSpaceComputation creates the null space decomposition and saves it in the NullSpace Struct
-pub trait NullSpaceComputation{
-    ///This trait is implemented for RlstScalar (ie. f32, f64, c32, c64)
-    type Item: RlstScalar;
+macro_rules! implement_null_space {
+    ($scalar:ty) => {
+        impl NullSpace<$scalar> {
+            fn new<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = $scalar>,
+            >(
+                arr: Array<$scalar, ArrayImpl, 2>,
+                null_space_type: NullSpaceType,
+            ) -> RlstResult<Self> {
+                let shape = arr.shape();
 
-    ///We create the null space decomposition
-    fn new<ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-    + Stride<2> + RawAccessMut<Item = Self::Item> + Shape<2>>
-    (arr: Array<Self::Item, ArrayImpl, 2>, tol: RealScalar<Self::Item>) -> RlstResult<Self> where Self: Sized;
-    
-    ///This function helps us to find the matrix rank
-    fn find_matrix_rank(singular_values: &mut DynamicArray<RealScalar<Self::Item>, 1>, dim: usize, tol:RealScalar<Self::Item>)->usize;
-}
+                match null_space_type {
+                    NullSpaceType::Row => {
+                        let mut arr_qr: Array<
+                            $scalar,
+                            BaseArray<$scalar, VectorContainer<$scalar>, 2>,
+                            2,
+                        > = rlst_dynamic_array2!($scalar, [shape[1], shape[0]]);
+                        arr_qr.fill_from(arr.r().conj().transpose());
+                        let mut null_space_arr = empty_array();
+                        Self::find_null_space(arr_qr, &mut null_space_arr);
+                        Ok(Self {
+                            null_space_type,
+                            null_space_arr,
+                        })
+                    }
+                    NullSpaceType::Column => {
+                        let mut null_space_arr = empty_array();
+                        Self::find_null_space(arr, &mut null_space_arr);
+                        Ok(Self {
+                            null_space_type,
+                            null_space_arr,
+                        })
+                    }
+                }
+            }
 
+            fn find_null_space<
+                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Stride<2>
+                    + Shape<2>
+                    + RawAccessMut<Item = $scalar>,
+            >(
+                arr: Array<$scalar, ArrayImpl, 2>,
+                null_space_arr: &mut Array<
+                    $scalar,
+                    BaseArray<$scalar, VectorContainer<$scalar>, 2>,
+                    2,
+                >,
+            ) {
+                let shape = arr.shape();
+                let dim: usize = min(shape).unwrap();
+                let qr = arr.into_qr_alloc().unwrap();
 
-impl <T: RlstScalar + MatrixSvd> NullSpaceComputation for NullSpace<T> {
-    type Item = T;
+                //We compute the QR decomposition to find a linearly independent basis of the space.
+                let mut q: Array<$scalar, BaseArray<$scalar, VectorContainer<$scalar>, 2>, 2> =
+                    rlst_dynamic_array2!($scalar, [shape[0], shape[0]]);
+                let _ = qr.get_q_alloc(q.r_mut());
 
-   fn new<ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-   + Stride<2>
-   + RawAccessMut<Item = Self::Item>
-   + Shape<2>>(arr: Array<Self::Item, ArrayImpl, 2>, tol: RealScalar<Self::Item>) -> RlstResult<Self> {
+                let mut r_mat = rlst_dynamic_array2!($scalar, [dim, dim]);
+                qr.get_r(r_mat.r_mut());
 
-        let shape: [usize; 2] = arr.shape();
-        let dim: usize = min(shape).unwrap();
-        let mut singular_values: DynamicArray<RealScalar<Self::Item>, 1> = rlst_dynamic_array1!(RealScalar<Self::Item>, [dim]);
-        let mode: SvdMode = SvdMode::Full;
-        let mut u: DynamicArray<Self::Item, 2> = rlst_dynamic_array2!(Self::Item, [shape[0], shape[0]]);
-        let mut vt: DynamicArray<Self::Item, 2> = rlst_dynamic_array2!(Self::Item, [shape[1], shape[1]]);
+                //For a full rank rectangular matrix, then rank = dim.
+                //find_matrix_rank checks if the matrix is full rank and recomputes the rank.
+                let rank: usize = Self::find_matrix_rank(r_mat, dim);
 
-        arr.into_svd_alloc(u.view_mut(), vt.view_mut(), singular_values.data_mut(), mode).unwrap();
+                null_space_arr
+                    .fill_from_resize(q.into_subview([0, shape[1]], [shape[0], shape[0] - rank]));
+            }
 
-        //For a full rank rectangular matrix, then rank = dim. 
-        //find_matrix_rank checks if the matrix is full rank and recomputes the rank.
-        let rank: usize = Self::find_matrix_rank(&mut singular_values, dim, tol);
+            fn find_matrix_rank(
+                r_mat: Array<$scalar, BaseArray<$scalar, VectorContainer<$scalar>, 2>, 2>,
+                dim: usize,
+            ) -> usize {
+                //We compute the rank of the matrix by expecting the values of the elements in the diagonal of R.
+                let mut r_diag: Array<$scalar, BaseArray<$scalar, VectorContainer<$scalar>, 1>, 1> =
+                    rlst_dynamic_array1!($scalar, [dim]);
+                r_mat.get_diag(r_diag.r_mut());
 
-        //The null space is given by the last shape[1]-rank columns of V
-        let mut null_space_arr: DynamicArray<Self::Item, 2> = empty_array();
-        null_space_arr.fill_from_resize(vt.conj().transpose().into_subview([0, rank], [shape[1], shape[1]-rank]));
+                let max: $scalar = r_diag
+                    .iter()
+                    .max_by(|a, b| a.abs().total_cmp(&b.abs()))
+                    .unwrap()
+                    .abs()
+                    .into();
+                let rank: usize;
 
-        Ok(Self{null_space_arr})
-
-    }
-
-    fn find_matrix_rank(singular_values: &mut DynamicArray<RealScalar<Self::Item>, 1>, dim: usize, tol:<Self::Item as RlstScalar>::Real)->usize{
-        //We compute the rank of the matrix by expecting the values of the elements in the diagonal of R.
-        let max: RealScalar<Self::Item> = singular_values.view().iter().max_by(|a, b| (a.abs().partial_cmp(&b.abs())).unwrap()).unwrap().abs();
-        let mut rank: usize = dim;
-
-        if max.re() > <RealScalar<Self::Item> as Zero>::zero(){
-            let alpha: RealScalar<Self::Item> = <RealScalar<Self::Item> as One>::one()/max;
-            singular_values.scale_inplace(alpha);
-            let aux_vec: Vec<RealScalar<Self::Item>> = singular_values.iter().filter(|el| el.abs() > tol ).collect::<Vec<RealScalar<Self::Item>>>();
-            rank = aux_vec.len();
+                if max.re() > 0.0 {
+                    let alpha: $scalar = (1.0 / max) as $scalar;
+                    r_diag.scale_inplace(alpha);
+                    let aux_vec = r_diag
+                        .iter()
+                        .filter(|el| el.abs() > 1e-15)
+                        .collect::<Vec<_>>();
+                    rank = aux_vec.len();
+                } else {
+                    rank = dim;
+                }
+                rank
+            }
         }
-
-        rank
-
-    }
+    };
 }
 
-
+implement_null_space!(f64);
+implement_null_space!(f32);
+implement_null_space!(c64);
+implement_null_space!(c32);

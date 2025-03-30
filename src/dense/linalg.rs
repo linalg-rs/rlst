@@ -1,17 +1,18 @@
 //! Linear algebra routines
 
-
-use crate::{MatrixInverse, MatrixPseudoInverse, MatrixQr, MatrixId, MatrixSvd, MatrixNull, RlstScalar};
+use crate::{
+    MatrixId, MatrixInverse, MatrixNull, MatrixPseudoInverse, MatrixQr, MatrixSvd, RlstScalar,
+};
 
 use self::lu::MatrixLu;
 
+pub mod interpolative_decomposition;
 pub mod inverse;
 pub mod lu;
+pub mod null_space;
 pub mod pseudo_inverse;
 pub mod qr;
 pub mod svd;
-pub mod interpolative_decomposition;
-pub mod null_space;
 
 /// Return true if stride is column major as required by Lapack.
 pub fn assert_lapack_stride(stride: [usize; 2]) {
@@ -23,10 +24,21 @@ pub fn assert_lapack_stride(stride: [usize; 2]) {
 }
 
 /// Marker trait for objects that support Matrix decompositions.
-pub trait LinAlg: MatrixInverse + MatrixQr + MatrixSvd + MatrixLu + MatrixPseudoInverse + MatrixId + MatrixNull{}
+pub trait LinAlg:
+    MatrixInverse + MatrixQr + MatrixSvd + MatrixLu + MatrixPseudoInverse + MatrixId + MatrixNull
+{
+}
 
-impl<T: RlstScalar + MatrixInverse + MatrixQr + MatrixSvd + MatrixLu + MatrixPseudoInverse + MatrixId + MatrixNull> LinAlg
-    for T
+impl<
+        T: RlstScalar
+            + MatrixInverse
+            + MatrixQr
+            + MatrixSvd
+            + MatrixLu
+            + MatrixPseudoInverse
+            + MatrixId
+            + MatrixNull,
+    > LinAlg for T
 {
 }
 
