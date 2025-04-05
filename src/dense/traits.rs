@@ -10,6 +10,17 @@ use crate::RlstScalar;
 use super::types::RlstBase;
 use super::types::RlstNum;
 
+/// Memory layout of an object
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemoryLayout {
+    /// Column major
+    ColumnMajor,
+    /// Row major
+    RowMajor,
+    /// Unknown
+    Unknown,
+}
+
 /// Shape of an object
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.
@@ -31,6 +42,11 @@ pub trait Shape<const NDIM: usize> {
 pub trait Stride<const NDIM: usize> {
     /// Return the stride of the object.
     fn stride(&self) -> [usize; NDIM];
+
+    /// Return the memory layout
+    fn memory_layout(&self) -> MemoryLayout {
+        MemoryLayout::Unknown
+    }
 }
 
 /// Number of elements

@@ -4,6 +4,7 @@ use crate::dense::array::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomA
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::dense::traits::AsMultiIndex;
 use crate::dense::types::RlstBase;
+use crate::RawAccess;
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
