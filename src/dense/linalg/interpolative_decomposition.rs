@@ -1,5 +1,6 @@
 //! Interpolative decomposition of a matrix.
 use crate::dense::array::Array;
+use crate::dense::linalg::qr::MatrixQrDecomposition;
 use crate::dense::traits::{
     DefaultIterator, MultIntoResize, RandomAccessMut, RawAccessMut, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
