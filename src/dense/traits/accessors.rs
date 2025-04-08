@@ -31,6 +31,23 @@ pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item;
 }
 
+/// This trait provides unsafe access to the underlying data using a 1d index.
+///
+/// 1d indexing is always in column-major order.
+///
+/// # Safety
+/// `index` must not be out of bounds.
+pub trait UnsafeRandom1DAccessByValue {
+    /// Item type
+    type Item: RlstBase;
+
+    /// Return the element at position determined by `multi_index`.
+    ///
+    /// # Safety
+    /// `multi_index` must not be out of bounds.
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item;
+}
+
 /// This trait provides unsafe access by reference to the underlying data.
 pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
     /// Item type
@@ -43,6 +60,18 @@ pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item;
 }
 
+/// This trait provides unsafe access by reference to the underlying data using a 1d index.
+pub trait UnsafeRandom1DAccessByRef {
+    /// Item type
+    type Item: RlstBase;
+
+    /// Return a mutable reference to the element at position determined by `multi_index`.
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item;
+}
+
 /// This trait provides unsafe mutable access to the underlying data.
 pub trait UnsafeRandomAccessMut<const NDIM: usize> {
     /// Item type
@@ -53,6 +82,18 @@ pub trait UnsafeRandomAccessMut<const NDIM: usize> {
     /// # Safety
     /// `multi_index` must not be out of bounds.
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item;
+}
+
+/// This trait provides unsafe mutable access to the underlying data using a 1D index.
+pub trait UnsafeRandom1DAccessMut {
+    /// Item type
+    type Item: RlstBase;
+
+    /// Return a mutable reference to the element at position determined by `multi_index`.
+    ///
+    /// # Safety
+    /// `index` must not be out of bounds.
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item;
 }
 
 /// This trait provides bounds checked access to the underlying data by value.

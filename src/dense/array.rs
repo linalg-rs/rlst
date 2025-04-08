@@ -4,6 +4,12 @@
 //! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
+use std::iter::Copied;
+use std::slice::Iter;
+use std::slice::IterMut;
+
+use iterators::ArrayDefaultIterator;
+
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
@@ -14,7 +20,13 @@ use crate::dense::traits::{
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::DataChunk;
+use crate::RlstScalar;
 
+use super::traits::ArrayIterator;
+use super::traits::ArrayIteratorMut;
+use super::traits::UnsafeRandom1DAccessByRef;
+use super::traits::UnsafeRandom1DAccessByValue;
+use super::traits::UnsafeRandom1DAccessMut;
 use super::types::RlstBase;
 
 pub mod empty_axis;
@@ -348,5 +360,86 @@ impl<
             write!(f, "{},", item).unwrap();
         }
         write!(f, "]")
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ArrayIterator<Item = Item>,
+        const NDIM: usize,
+    > ArrayIterator for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    type Iter<'a>
+        = <ArrayImpl as ArrayIterator>::Iter<'a>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn iter(&self) -> Self::Iter<'_> {
+        self.0.iter()
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ArrayIteratorMut<Item = Item>,
+        const NDIM: usize,
+    > ArrayIteratorMut for Array<Item, ArrayImpl, NDIM>
+{
+    type IterMut<'a>
+        = <ArrayImpl as ArrayIteratorMut>::IterMut<'a>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn iter_mut(&self) -> Self::IterMut<'_> {
+        self.0.iter_mut()
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.0.get_value_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByRef<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.0.get_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessMut<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.0.get_1d_unchecked_mut(index)
     }
 }

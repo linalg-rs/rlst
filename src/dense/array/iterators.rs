@@ -4,7 +4,6 @@ use crate::dense::array::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomA
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::dense::traits::AsMultiIndex;
 use crate::dense::types::RlstBase;
-use crate::RawAccess;
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -150,41 +149,41 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    type Iter<'a>
-        = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
-    where
-        Self: 'a;
+// impl<
+//         Item: RlstBase,
+//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+//         const NDIM: usize,
+//     > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
+// {
+//     type Item = Item;
+//     type Iter<'a>
+//         = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+//     where
+//         Self: 'a;
 
-    fn iter(&self) -> Self::Iter<'_> {
-        ArrayDefaultIterator::new(self)
-    }
-}
+//     fn iter(&self) -> Self::Iter<'_> {
+//         ArrayDefaultIterator::new(self)
+//     }
+// }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    type IterMut<'a>
-        = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
-    where
-        Self: 'a;
+// impl<
+//         Item: RlstBase,
+//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+//             + Shape<NDIM>
+//             + UnsafeRandomAccessMut<NDIM, Item = Item>,
+//         const NDIM: usize,
+//     > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
+// {
+//     type Item = Item;
+//     type IterMut<'a>
+//         = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+//     where
+//         Self: 'a;
 
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        ArrayDefaultIteratorMut::new(self)
-    }
-}
+//     fn iter_mut(&mut self) -> Self::IterMut<'_> {
+//         ArrayDefaultIteratorMut::new(self)
+//     }
+// }
 
 /// Row iterator
 pub struct RowIterator<

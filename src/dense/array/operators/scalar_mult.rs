@@ -1,6 +1,7 @@
 //! Container representing multiplication with a scalar
 
 use crate::dense::array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue};
+use crate::dense::traits::UnsafeRandom1DAccessByValue;
 use crate::dense::types::{c32, c64, RlstNum};
 use crate::RlstScalar;
 
@@ -97,6 +98,22 @@ impl<
     fn neg(self) -> Self::Output {
         let minus_one = -<Item as num::One>::one();
         Array::new(ArrayScalarMult::new(minus_one, self))
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayScalarMult<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.scalar * self.operator.get_value_1d_unchecked(index)
     }
 }
 

@@ -183,3 +183,28 @@ pub trait AsOperatorApply {
         y: &mut [Self::Item],
     );
 }
+
+/// Provides a default iterator over elements of an array.
+///
+/// The returned iterator is expected to iterate through the array
+/// in column major order independent of the underlying memory layout.
+pub trait ArrayIterator {
+    type Item: RlstBase;
+    type Iter<'a>: Iterator<Item = Self::Item>
+    where
+        Self: 'a;
+
+    fn iter(&self) -> Self::Iter<'_>;
+}
+
+/// Provides a default mutable iterator over elements of an array.
+///
+/// The returned iterator is expected to iterate through the array
+/// in column major order independent of the underlying memory layout.
+pub trait ArrayIteratorMut: ArrayIterator {
+    type IterMut<'a>: Iterator<Item = &'a mut Self::Item>
+    where
+        Self: 'a;
+
+    fn iter_mut(&self) -> Self::IterMut<'_>;
+}

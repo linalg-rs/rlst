@@ -5,7 +5,7 @@ use crate::dense::{
     types::RlstNum,
 };
 
-/// Addition
+/// Subtraction
 pub struct ArraySubtraction<
     Item: RlstNum,
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,

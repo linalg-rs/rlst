@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 
 use crate::dense::{
     array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
+    traits::UnsafeRandom1DAccessByValue,
     types::RlstNum,
 };
 
@@ -99,5 +100,22 @@ impl<
     /// Cast array to type `T`.
     pub fn cast<T: RlstNum>(self) -> Array<T, ArrayCast<Item, T, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayCast::new(self))
+    }
+}
+
+impl<
+        Item: RlstNum,
+        Target: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayCast<Item, Target, ArrayImpl, NDIM>
+{
+    type Item = Target;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        num::cast::<Item, Target>(self.operator.get_value_1d_unchecked(index)).unwrap()
     }
 }

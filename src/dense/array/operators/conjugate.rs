@@ -2,6 +2,7 @@
 
 use crate::dense::{
     array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
+    traits::UnsafeRandom1DAccessByValue,
     types::RlstScalar,
 };
 
@@ -80,5 +81,21 @@ impl<
         } else {
             None
         }
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayConjugate<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.operator.get_value_1d_unchecked(index).conj()
     }
 }

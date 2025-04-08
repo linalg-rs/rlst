@@ -2,6 +2,7 @@
 
 use crate::dense::{
     array::{Array, ChunkedAccess, Shape, UnsafeRandomAccessByValue},
+    traits::UnsafeRandom1DAccessByValue,
     types::RlstNum,
 };
 
@@ -50,7 +51,7 @@ impl<
     > UnsafeRandomAccessByValue<NDIM> for CmpWiseDivision<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
     type Item = Item;
-    #[inline]
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.operator1.get_value_unchecked(multi_index)
             / self.operator2.get_value_unchecked(multi_index)
@@ -111,5 +112,24 @@ impl<
             operator1: self,
             operator2: rhs,
         })
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for CmpWiseDivision<Item, ArrayImpl1, ArrayImpl2, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.operator1.get_value_1d_unchecked(index) / self.operator2.get_value_1d_unchecked(index)
     }
 }
