@@ -48,7 +48,7 @@ pub fn main() {
     let n: usize = 100;
     let slice: usize = 50;
     //Tolerance given for the
-    let tol: f64 = 1e-5;
+    let tol: f64 = 1e-4;
 
     //Create a low rank matrix
     let mut arr: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, n]);
@@ -64,12 +64,13 @@ pub fn main() {
 
     println!("The rank of this matrix is {}\n", res.rank);
 
+    println!("12");
     //We extract the residuals of the matrix
     let mut perm_mat: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, slice]);
     res.get_p(perm_mat.r_mut());
     let perm_arr: DynamicArray<f64, 2> =
         empty_array::<f64, 2>().simple_mult_into_resize(perm_mat.r_mut(), arr.r());
-
+    println!("13");
     let mut a_rs: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice - res.rank, n]);
     a_rs.fill_from(perm_arr.into_subview([res.rank, 0], [slice - res.rank, n]));
 
