@@ -236,8 +236,6 @@ macro_rules! implement_solve_upper_triangular {
                     }
                 }
 
-                println!("Diff: {}", (arr.r() - upper.r()).norm_1());
-
                 if (arr.r() - upper.r()).norm_1() < 1e-15 {
                     Ok(Self { upper })
                 } else {
@@ -360,7 +358,6 @@ macro_rules! impl_id {
                     let shape: [usize; 2] = [shape[1], shape[1]];
                     let mut id_mat: DynamicArray<$scalar, 2> =
                         rlst_dynamic_array2!($scalar, [dim - rank, rank]);
-                    println!("9");
                     let r11 = UpperTriangularMatrix::<$scalar>::new(
                         u_tri.r_mut().into_subview([0, 0], [rank, rank]),
                     )
