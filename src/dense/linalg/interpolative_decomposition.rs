@@ -3,8 +3,8 @@ use crate::dense::array::Array;
 use crate::dense::linalg::qr::MatrixQrDecomposition;
 use crate::dense::traits::ResizeInPlace;
 use crate::dense::traits::{
-    MultIntoResize, RandomAccessByRef, RandomAccessMut, RawAccessMut, Shape, Stride,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    MultIntoResize, RandomAccessByRef, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
 use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
@@ -154,7 +154,6 @@ pub trait UpperTriangular: RlstScalar {
             + RandomAccessByRef<2, Item = Self>,
     >(
         arr: Array<Self, ArrayImpl, 2>,
-        extract: bool,
     ) -> RlstResult<UpperTriangularMatrix<Self>>;
 }
 
@@ -169,9 +168,8 @@ macro_rules! implement_into_upper_triangular {
                     + RandomAccessByRef<2, Item = Self>,
             >(
                 arr: Array<Self, ArrayImpl, 2>,
-                extract: bool,
             ) -> RlstResult<UpperTriangularMatrix<Self>> {
-                UpperTriangularMatrix::<$scalar>::new(arr, extract)
+                UpperTriangularMatrix::<$scalar>::new(arr)
             }
         }
     };
@@ -201,7 +199,6 @@ pub trait UppperTriangularOperations: Sized {
             + RandomAccessByRef<2, Item = Self::Item>,
     >(
         arr: Array<Self::Item, ArrayImpl, 2>,
-        extract: bool,
     ) -> RlstResult<Self>;
     ///Solves the upper-triangular system
     fn solve_upper_triangular<
@@ -228,23 +225,16 @@ macro_rules! implement_solve_upper_triangular {
                     + RandomAccessByRef<2, Item = Self::Item>,
             >(
                 arr: Array<Self::Item, ArrayImpl, 2>,
-                extract: bool,
             ) -> RlstResult<Self> {
                 let shape = arr.shape();
-
-                if extract {
-                    let mut upper = rlst_dynamic_array2!(Self::Item, shape);
-                    for i in 0..shape[0] {
-                        for j in i..shape[1] {
-                            *upper.get_mut([i, j]).unwrap() = *arr.get([i, j]).unwrap();
-                        }
+                let mut upper = rlst_dynamic_array2!(Self::Item, shape);
+                let mut view = upper.r_mut();
+                for i in 0..shape[0] {
+                    for j in i..shape[1] {
+                        view[[i, j]] = arr[[i, j]];
                     }
-                    Ok(Self { upper })
-                } else {
-                    let mut upper = empty_array::<$scalar, 2>();
-                    upper.fill_from_resize(arr.r());
-                    Ok(Self { upper })
                 }
+                Ok(Self { upper })
             }
 
             fn solve_upper_triangular<
@@ -333,8 +323,10 @@ macro_rules! impl_id {
                 let mut permutation = rlst_dynamic_array2!($scalar, [shape[1], shape[1]]);
                 permutation.set_zero();
 
+                let mut view = permutation.r_mut();
+
                 for (index, &elem) in perm.iter().enumerate() {
-                    *permutation.get_mut([index, elem]).unwrap() = <$scalar as num::One>::one();
+                    view[[index, elem]] = <$scalar as num::One>::one();
                 }
                 let mut perm_arr = empty_array::<$scalar, 2>();
                 perm_arr
@@ -362,7 +354,6 @@ macro_rules! impl_id {
                         rlst_dynamic_array2!($scalar, [dim - rank, rank]);
                     let r11 = UpperTriangularMatrix::<$scalar>::new(
                         u_tri.r_mut().into_subview([0, 0], [rank, rank]),
-                        false,
                     )
                     .unwrap();
 
@@ -417,8 +408,10 @@ macro_rules! impl_id {
                 mut arr: Array<$scalar, ArrayImplMut, 2>,
             ) {
                 arr.set_zero();
+                let mut view = arr.r_mut();
+
                 for (index, &elem) in self.perm.iter().enumerate() {
-                    *arr.get_mut([index, elem]).unwrap() = <$scalar as num::One>::one();
+                    view[[index, elem]] = <$scalar as num::One>::one();
                 }
             }
         }
