@@ -3,13 +3,11 @@ use crate::dense::array::Array;
 use crate::dense::linalg::qr::MatrixQrDecomposition;
 use crate::dense::traits::ResizeInPlace;
 use crate::dense::traits::{
-    DefaultIterator, MultIntoResize, RandomAccessByRef, RandomAccessMut, RawAccessMut, Shape,
-    Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    MultIntoResize, RandomAccessByRef, RandomAccessMut, RawAccessMut, Shape, Stride,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
-use crate::{
-    empty_array, rlst_dynamic_array1, rlst_dynamic_array2, BaseArray, RlstError, VectorContainer,
-};
+use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
 use crate::{DynamicArray, RawAccess};
 use blas::{ctrsm, dtrsm, strsm, ztrsm};
 /// Compute the matrix interpolative decomposition, by providing a rank and an interpolation matrix.
@@ -156,6 +154,7 @@ pub trait UpperTriangular: RlstScalar {
             + RandomAccessByRef<2, Item = Self>,
     >(
         arr: Array<Self, ArrayImpl, 2>,
+        extract: bool,
     ) -> RlstResult<UpperTriangularMatrix<Self>>;
 }
 
@@ -170,8 +169,9 @@ macro_rules! implement_into_upper_triangular {
                     + RandomAccessByRef<2, Item = Self>,
             >(
                 arr: Array<Self, ArrayImpl, 2>,
+                extract: bool,
             ) -> RlstResult<UpperTriangularMatrix<Self>> {
-                UpperTriangularMatrix::<$scalar>::new(arr)
+                UpperTriangularMatrix::<$scalar>::new(arr, extract)
             }
         }
     };
@@ -201,6 +201,7 @@ pub trait UppperTriangularOperations: Sized {
             + RandomAccessByRef<2, Item = Self::Item>,
     >(
         arr: Array<Self::Item, ArrayImpl, 2>,
+        extract: bool,
     ) -> RlstResult<Self>;
     ///Solves the upper-triangular system
     fn solve_upper_triangular<
@@ -227,21 +228,22 @@ macro_rules! implement_solve_upper_triangular {
                     + RandomAccessByRef<2, Item = Self::Item>,
             >(
                 arr: Array<Self::Item, ArrayImpl, 2>,
+                extract: bool,
             ) -> RlstResult<Self> {
                 let shape = arr.shape();
-                let mut upper = rlst_dynamic_array2!(Self::Item, shape);
-                for i in 0..shape[0] {
-                    for j in i..shape[1] {
-                        *upper.get_mut([i, j]).unwrap() = *arr.get([i, j]).unwrap();
-                    }
-                }
 
-                if (arr.r() - upper.r()).norm_1() < 1e-15 {
+                if extract {
+                    let mut upper = rlst_dynamic_array2!(Self::Item, shape);
+                    for i in 0..shape[0] {
+                        for j in i..shape[1] {
+                            *upper.get_mut([i, j]).unwrap() = *arr.get([i, j]).unwrap();
+                        }
+                    }
                     Ok(Self { upper })
                 } else {
-                    Err(RlstError::OperationFailed(
-                        "Not upper triangular".to_string(),
-                    ))
+                    let mut upper = empty_array::<$scalar, 2>();
+                    upper.fill_from_resize(arr.r());
+                    Ok(Self { upper })
                 }
             }
 
@@ -360,6 +362,7 @@ macro_rules! impl_id {
                         rlst_dynamic_array2!($scalar, [dim - rank, rank]);
                     let r11 = UpperTriangularMatrix::<$scalar>::new(
                         u_tri.r_mut().into_subview([0, 0], [rank, rank]),
+                        false,
                     )
                     .unwrap();
 
@@ -388,25 +391,17 @@ macro_rules! impl_id {
                 tol: <$scalar as RlstScalar>::Real,
             ) -> usize {
                 let dim = ut_mat.shape()[0];
-                let mut r_diag: Array<$scalar, BaseArray<$scalar, VectorContainer<$scalar>, 1>, 1> =
-                    rlst_dynamic_array1!($scalar, [dim]);
-                ut_mat.get_diag(r_diag.r_mut());
-                let max: $scalar = r_diag
-                    .iter()
-                    .max_by(|a, b| a.abs().total_cmp(&b.abs()))
-                    .unwrap()
-                    .abs()
-                    .into();
+                let max = ut_mat.get([0, 0]).unwrap().abs();
 
                 //We compute the rank of the matrix
                 if max.re() > 0.0 {
-                    let alpha: $scalar = (1.0 / max) as $scalar;
-                    r_diag.scale_inplace(alpha);
-                    let aux_vec = r_diag
-                        .iter()
-                        .filter(|el| el.abs() > tol.into())
-                        .collect::<Vec<_>>();
-                    aux_vec.len()
+                    let mut rank = 0;
+                    for i in 0..dim {
+                        if ut_mat.get([i, i]).unwrap().abs() > tol * max {
+                            rank += 1;
+                        }
+                    }
+                    rank
                 } else {
                     dim
                 }
