@@ -2,6 +2,7 @@
 
 use crate::dense::{
     number_types::{IsSmallerByOne, NumberType},
+    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
     types::RlstBase,
 };
 
@@ -68,6 +69,63 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
             + Shape<ADIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsSmallerByOne<NDIM>,
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.arr.get_value_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + UnsafeRandom1DAccessByRef<Item = Item>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsSmallerByOne<NDIM>,
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.arr.get_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + UnsafeRandom1DAccessMut<Item = Item>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsSmallerByOne<NDIM>,
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.arr.get_1d_unchecked_mut(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
             + UnsafeRandomAccessByRef<ADIM, Item = Item>,
         const ADIM: usize,
         const NDIM: usize,
@@ -77,6 +135,7 @@ where
 {
     type Item = Item;
 
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         self.arr
             .get_unchecked(multi_index_to_orig(multi_index, self.axis_position))
@@ -96,6 +155,7 @@ where
 {
     type Item = Item;
 
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         self.arr
             .get_unchecked_mut(multi_index_to_orig(multi_index, self.axis_position))

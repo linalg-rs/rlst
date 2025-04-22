@@ -167,17 +167,6 @@
 //!
 //! # Strides
 //!
-//! The stride of an array denotes how elements are mapped from n-dimensions to 1-dimensional memory locations. Let the stride
-//! be [s1, s2, s3, ..] then an index (a1, a2, a3, ...) is mapped to a 1-dimensional index through `ind = a1 * s1 + a2 * s2 + a3 * s3 + ...`.
-//! The default stride in RLST is column-major. This means that the first dimension is consecutive in memory. For heap based arrays
-//! a non-default stride can be provided
-//! ```
-//! # use rlst::prelude::*;
-//! let stride = [4, 1];
-//! let mut arr = DynamicArray::<f64, 2>::from_shape_with_stride([5, 4], stride);
-//! ```
-//! The above array uses a row-major stride, meaning consecutive elements in a row are consecutive in memory.
-//! RLST supports arbitrary strides. However, operations that rely on extenal BLAS or Lapack interfaces require a column-major ordering.
 //!
 //! # Views and mutable views
 //!

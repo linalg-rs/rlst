@@ -6,6 +6,7 @@ use crate::dense::{
         UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
     },
     layout::convert_1d_nd_from_shape,
+    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
     types::RlstNum,
 };
 
@@ -96,6 +97,55 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayTranspose<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.operator
+            .get_value_unchecked(convert_1d_nd_from_shape(index, self.operator.shape()))
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArrayTranspose<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.operator
+            .get_unchecked(convert_1d_nd_from_shape(index, self.operator.shape()))
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for ArrayTranspose<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.operator
+            .get_unchecked_mut(convert_1d_nd_from_shape(index, self.operator.shape()))
     }
 }
 

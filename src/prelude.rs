@@ -41,8 +41,6 @@ pub use crate::dense::traits::{
     UnsafeRandomAccessMut,
 };
 
-pub use crate::dense::batched_gemm::{BatchedGemm, DefaultCpuBatchedGemm};
-
 pub use crate::dense::linalg::LinAlg;
 
 pub use crate::dense::traits::{

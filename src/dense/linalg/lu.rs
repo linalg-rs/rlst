@@ -3,7 +3,8 @@ use super::assert_lapack_stride;
 use crate::dense::array::Array;
 use crate::dense::traits::{
     RandomAccessByValue, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
 use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar, TransMode};
 use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};

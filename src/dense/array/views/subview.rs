@@ -5,7 +5,8 @@ use crate::dense::array::Array;
 use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
 
 use crate::dense::traits::{
-    ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
+    ChunkedAccess, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef,
+    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::RlstBase;
@@ -133,7 +134,57 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArraySubView<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.arr.get_value_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByRef<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArraySubView<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.arr.get_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessMut<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for ArraySubView<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.arr.get_1d_unchecked_mut(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + ChunkedAccess<N, Item = Item>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArraySubView<Item, ArrayImpl, NDIM>
@@ -153,10 +204,7 @@ impl<
             if let Some(mut chunk) = crate::dense::array::empty_chunk(chunk_index, nelements) {
                 for count in 0..chunk.valid_entries {
                     unsafe {
-                        chunk.data[count] = self.get_value_unchecked(convert_1d_nd_from_shape(
-                            chunk.start_index + count,
-                            self.shape(),
-                        ))
+                        chunk.data[count] = self.get_value_1d_unchecked(chunk.start_index + count)
                     }
                 }
                 Some(chunk)

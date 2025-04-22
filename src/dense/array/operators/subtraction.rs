@@ -2,6 +2,7 @@
 
 use crate::dense::{
     array::{Array, ChunkedAccess, Shape, UnsafeRandomAccessByValue},
+    traits::UnsafeRandom1DAccessByValue,
     types::RlstNum,
 };
 
@@ -94,6 +95,25 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator1.shape()
+    }
+}
+
+impl<
+        Item: RlstNum,
+        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.operator1.get_value_1d_unchecked(index) - self.operator2.get_value_1d_unchecked(index)
     }
 }
 

@@ -3,6 +3,7 @@
 use crate::dense::{
     layout::{convert_1d_nd_from_shape, convert_nd_raw},
     number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
+    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
     types::RlstBase,
 };
 
@@ -262,6 +263,63 @@ where
         let mut orig_index = multi_index_to_orig(multi_index, self.mask);
         orig_index[self.slice[0]] = self.slice[1];
         self.arr.get_unchecked_mut(orig_index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item> + Shape<ADIM>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + UnsafeRandomAccessByRef<ADIM, Item = Item>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    type Item = Item;
+
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<ADIM, Item = Item>
+            + Shape<ADIM>
+            + UnsafeRandomAccessMut<ADIM, Item = Item>,
+        const ADIM: usize,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for ArraySlice<Item, ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape()))
     }
 }
 

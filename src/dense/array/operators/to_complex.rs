@@ -1,5 +1,6 @@
 //! Container representing multiplication with a scalar
 
+use crate::dense::traits::UnsafeRandom1DAccessByValue;
 use crate::dense::types::{c32, c64};
 use std::marker::PhantomData;
 
@@ -53,6 +54,21 @@ impl<
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator.shape()
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = <Item as RlstScalar>::Real>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayToComplex<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        <Self::Item as RlstScalar>::from_real(self.operator.get_value_1d_unchecked(index))
     }
 }
 

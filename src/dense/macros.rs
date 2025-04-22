@@ -110,7 +110,9 @@ macro_rules! rlst_dynamic_array5 {
 #[macro_export]
 macro_rules! rlst_array_from_slice1 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<_, 1>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArray::<_, 1>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
     ($slice:expr, $shape:expr) => {{
         $crate::dense::array::SliceArray::<_, 1>::from_shape($slice, $shape)
@@ -133,7 +135,9 @@ macro_rules! rlst_array_from_slice1 {
 #[macro_export]
 macro_rules! rlst_array_from_slice2 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<_, 2>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArray::<_, 2>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -157,7 +161,9 @@ macro_rules! rlst_array_from_slice2 {
 #[macro_export]
 macro_rules! rlst_array_from_slice3 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<_, 3>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArray::<_, 3>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -181,7 +187,9 @@ macro_rules! rlst_array_from_slice3 {
 #[macro_export]
 macro_rules! rlst_array_from_slice4 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<_, 4>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArray::<_, 4>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -205,7 +213,9 @@ macro_rules! rlst_array_from_slice4 {
 #[macro_export]
 macro_rules! rlst_array_from_slice5 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArray::<_, 5>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArray::<_, 5>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -229,7 +239,9 @@ macro_rules! rlst_array_from_slice5 {
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut1 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<_, 1>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArrayMut::<_, 1>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -253,7 +265,9 @@ macro_rules! rlst_array_from_slice_mut1 {
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut2 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<_, 2>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArrayMut::<_, 2>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -277,7 +291,9 @@ macro_rules! rlst_array_from_slice_mut2 {
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut3 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<_, 3>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArrayMut::<_, 3>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -301,7 +317,9 @@ macro_rules! rlst_array_from_slice_mut3 {
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut4 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<_, 4>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArrayMut::<_, 4>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{
@@ -325,7 +343,9 @@ macro_rules! rlst_array_from_slice_mut4 {
 #[macro_export]
 macro_rules! rlst_array_from_slice_mut5 {
     ($slice:expr, $shape:expr, $stride:expr) => {{
-        $crate::dense::array::SliceArrayMut::<_, 5>::from_shape_with_stride($slice, $shape, $stride)
+        $crate::dense::array::StridedSliceArrayMut::<_, 5>::from_shape_and_stride(
+            $slice, $shape, $stride,
+        )
     }};
 
     ($slice:expr, $shape:expr) => {{

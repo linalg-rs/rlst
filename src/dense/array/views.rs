@@ -12,7 +12,11 @@ pub use subview::ArraySubView;
 pub use view::{ArrayView, ArrayViewMut};
 
 use crate::{
-    dense::{layout::convert_nd_raw, types::RlstBase},
+    dense::{
+        layout::convert_nd_raw,
+        traits::{UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+        types::RlstBase,
+    },
     Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
@@ -36,7 +40,9 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
@@ -56,7 +62,9 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessByValue<Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {

@@ -2,7 +2,8 @@
 
 use crate::dense::tools::RandScalar;
 use crate::dense::traits::{
-    DefaultIteratorMut, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    DefaultIteratorMut, Shape, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
 use crate::dense::types::RlstScalar;
 use rand::prelude::*;
@@ -16,7 +17,8 @@ impl<
         Item: RlstScalar + RandScalar,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + Shape<NDIM>,
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 where

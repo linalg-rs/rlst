@@ -22,6 +22,7 @@ use crate::dense::traits::{
 use crate::dense::types::DataChunk;
 use crate::RlstScalar;
 
+use super::strided_base_array::StridedBaseArray;
 use super::traits::ArrayIterator;
 use super::traits::ArrayIteratorMut;
 use super::traits::UnsafeRandom1DAccessByRef;
@@ -48,9 +49,17 @@ pub type DynamicArray<Item, const NDIM: usize> =
 pub type SliceArray<'a, Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
 
+/// A dynamically allocated array from a data slice with a given stride.
+pub type StridedSliceArray<'a, Item, const NDIM: usize> =
+    Array<Item, StridedBaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
+
 /// A mutable dynamically allocated array from a data slice.
 pub type SliceArrayMut<'a, Item, const NDIM: usize> =
     Array<Item, BaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
+
+/// A mutable dynamically allocated array from a data slice with a given stride.
+pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
+    Array<Item, StridedBaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
 /// A view onto a matrix
 pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
@@ -88,16 +97,6 @@ impl<Item: RlstBase, const NDIM: usize> DynamicArray<Item, NDIM> {
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
-    }
-
-    /// Create a new heap allocated array from a given shape.
-    pub fn from_shape_with_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
-        let size = shape.iter().product();
-        Self::new(BaseArray::new_with_stride(
-            VectorContainer::new(size),
-            shape,
-            stride,
-        ))
     }
 }
 
@@ -310,19 +309,6 @@ impl<'a, Item: RlstBase, const NDIM: usize> SliceArray<'a, Item, NDIM> {
     pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
         Array::new(BaseArray::new(SliceContainer::new(slice), shape))
     }
-
-    /// Create a new array from a slice with a given `shape` and `stride`.
-    pub fn from_shape_with_stride(
-        slice: &'a [Item],
-        shape: [usize; NDIM],
-        stride: [usize; NDIM],
-    ) -> Self {
-        Array::new(BaseArray::new_with_stride(
-            SliceContainer::new(slice),
-            shape,
-            stride,
-        ))
-    }
 }
 
 impl<'a, Item: RlstBase, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
@@ -332,14 +318,34 @@ impl<'a, Item: RlstBase, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
     pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
         Array::new(BaseArray::new(SliceContainerMut::new(slice), shape))
     }
+}
 
+impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
     /// Create a new array from a slice with a given `shape` and `stride`.
-    pub fn from_shape_with_stride(
+    ///
+    pub fn from_shape_and_stride(
+        slice: &'a [Item],
+        shape: [usize; NDIM],
+        stride: [usize; NDIM],
+    ) -> Self {
+        Array::new(StridedBaseArray::new(
+            SliceContainer::new(slice),
+            shape,
+            stride,
+        ))
+    }
+}
+
+impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape` and `stride`.
+    ///
+    /// The `stride` is automatically assumed to be column major.
+    pub fn from_shape_and_stride(
         slice: &'a mut [Item],
         shape: [usize; NDIM],
         stride: [usize; NDIM],
     ) -> Self {
-        Array::new(BaseArray::new_with_stride(
+        Array::new(StridedBaseArray::new(
             SliceContainerMut::new(slice),
             shape,
             stride,
@@ -409,6 +415,7 @@ impl<
 {
     type Item = Item;
 
+    #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.0.get_value_1d_unchecked(index)
     }
@@ -424,6 +431,7 @@ impl<
 {
     type Item = Item;
 
+    #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get_1d_unchecked(index)
     }
@@ -439,6 +447,7 @@ impl<
 {
     type Item = Item;
 
+    #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get_1d_unchecked_mut(index)
     }

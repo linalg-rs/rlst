@@ -12,7 +12,7 @@ use super::{
     RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::traits::ResizeInPlace;
+use crate::dense::traits::{ResizeInPlace, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut};
 
 use crate::dense::types::RlstScalar;
 
@@ -61,7 +61,8 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
@@ -71,7 +72,8 @@ impl<
     pub fn set_diag<
         ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
             + Shape<1>
-            + UnsafeRandomAccessMut<1, Item = Item>,
+            + UnsafeRandomAccessMut<1, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
     >(
         &mut self,
         other: Array<Item, ArrayImplOther, 1>,
@@ -86,7 +88,11 @@ impl<
     }
 
     /// Fill an array with values from another array.
-    pub fn fill_from<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
+    pub fn fill_from<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    >(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
     ) {
@@ -99,7 +105,9 @@ impl<
 
     /// Fill an array from another array and resize if necessary.
     pub fn fill_from_resize<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
     >(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
@@ -162,7 +170,8 @@ impl<
         Item: RlstNum,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
@@ -197,7 +206,11 @@ impl<
     }
 
     /// Sum other array into array.
-    pub fn sum_into<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
+    pub fn sum_into<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    >(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
     ) {
@@ -207,7 +220,11 @@ impl<
     }
 
     /// Subtract other array into array.
-    pub fn sub_into<ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>>(
+    pub fn sub_into<
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    >(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
     ) {
@@ -218,7 +235,9 @@ impl<
 
     /// Componentwise multiply other array into array.
     pub fn cmp_mult_into<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
     >(
         &mut self,
         other: Array<Item, ArrayImplOther, NDIM>,
@@ -303,7 +322,9 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
         const NDIM: usize,
     > Array<Item, ArrayImpl, NDIM>
 {
@@ -322,15 +343,23 @@ impl<
     }
 }
 
-impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
-    Array<Item, ArrayImpl, 1>
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    > Array<Item, ArrayImpl, 1>
 where
     Item::Real: num::Float,
 {
     /// Compute the inner product between two vectors.
     ///
     /// The inner product takes the complex conjugate of the `other` argument.
-    pub fn inner<ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>(
+    pub fn inner<
+        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
+            + Shape<1>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    >(
         &self,
         other: Array<Item, ArrayImplOther, 1>,
     ) -> Item {
@@ -430,8 +459,12 @@ where
     }
 }
 
-impl<Item: RlstScalar, ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>>
-    Array<Item, ArrayImpl, 2>
+impl<
+        Item: RlstScalar,
+        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+            + Shape<2>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+    > Array<Item, ArrayImpl, 2>
 {
     /// Compute the Frobenius-norm of a matrix.
     pub fn norm_fro(self) -> Item::Real {

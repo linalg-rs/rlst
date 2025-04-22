@@ -8,8 +8,9 @@ use crate::dense::types::RlstBase;
 use crate::dense::array::Array;
 
 use crate::dense::traits::{
-    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 /// Basic structure for a `View`
@@ -91,6 +92,38 @@ impl<
     #[inline]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.arr.get_value_unchecked(multi_index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayRef<'_, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.arr.get_value_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByRef<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArrayRef<'_, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.arr.get_1d_unchecked(index)
     }
 }
 
@@ -238,6 +271,57 @@ impl<
     #[inline]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.arr.get_value_unchecked(multi_index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByValue for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.arr.get_value_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessByRef<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessByRef for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
+        self.arr.get_1d_unchecked(index)
+    }
+}
+
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
+        const NDIM: usize,
+    > UnsafeRandom1DAccessMut for ArrayRefMut<'_, Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        self.arr.get_1d_unchecked_mut(index)
     }
 }
 

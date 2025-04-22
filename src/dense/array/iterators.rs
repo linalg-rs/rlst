@@ -2,7 +2,7 @@
 
 use crate::dense::array::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::layout::convert_1d_nd_from_shape;
-use crate::dense::traits::AsMultiIndex;
+use crate::dense::traits::{AsMultiIndex, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut};
 use crate::dense::types::RlstBase;
 
 use super::reference::{self, ArrayRefMut};
@@ -14,7 +14,9 @@ use super::slice::ArraySlice;
 pub struct ArrayDefaultIterator<
     'a,
     Item: RlstBase,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+        + Shape<NDIM>
+        + UnsafeRandom1DAccessByValue<Item = Item>,
     const NDIM: usize,
 > {
     arr: &'a Array<Item, ArrayImpl, NDIM>,
@@ -29,7 +31,8 @@ pub struct ArrayDefaultIteratorMut<
     Item: RlstBase,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
         + Shape<NDIM>
-        + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        + UnsafeRandomAccessMut<NDIM, Item = Item>
+        + UnsafeRandom1DAccessMut<Item = Item>,
     const NDIM: usize,
 > {
     arr: &'a mut Array<Item, ArrayImpl, NDIM>,
@@ -67,7 +70,9 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, ND
 impl<
         'a,
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
         const NDIM: usize,
     > ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
 {
@@ -86,7 +91,8 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
 {
@@ -103,7 +109,9 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
         const NDIM: usize,
     > std::iter::Iterator for ArrayDefaultIterator<'_, Item, ArrayImpl, NDIM>
 {
@@ -130,7 +138,8 @@ impl<
         Item: RlstBase,
         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
             + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + Shape<NDIM>,
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessMut<Item = Item>,
         const NDIM: usize,
     > std::iter::Iterator for ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
 {
@@ -149,41 +158,44 @@ impl<
     }
 }
 
-// impl<
-//         Item: RlstBase,
-//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-//         const NDIM: usize,
-//     > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
-// {
-//     type Item = Item;
-//     type Iter<'a>
-//         = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
-//     where
-//         Self: 'a;
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandom1DAccessByValue<Item = Item>,
+        const NDIM: usize,
+    > crate::dense::traits::DefaultIterator for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    type Iter<'a>
+        = ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
-//     fn iter(&self) -> Self::Iter<'_> {
-//         ArrayDefaultIterator::new(self)
-//     }
-// }
+    fn iter(&self) -> Self::Iter<'_> {
+        ArrayDefaultIterator::new(self)
+    }
+}
 
-// impl<
-//         Item: RlstBase,
-//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-//             + Shape<NDIM>
-//             + UnsafeRandomAccessMut<NDIM, Item = Item>,
-//         const NDIM: usize,
-//     > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
-// {
-//     type Item = Item;
-//     type IterMut<'a>
-//         = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
-//     where
-//         Self: 'a;
+impl<
+        Item: RlstBase,
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+            + Shape<NDIM>
+            + UnsafeRandomAccessMut<NDIM, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
+        const NDIM: usize,
+    > crate::dense::traits::DefaultIteratorMut for Array<Item, ArrayImpl, NDIM>
+{
+    type Item = Item;
+    type IterMut<'a>
+        = ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
-//     fn iter_mut(&mut self) -> Self::IterMut<'_> {
-//         ArrayDefaultIteratorMut::new(self)
-//     }
-// }
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        ArrayDefaultIteratorMut::new(self)
+    }
+}
 
 /// Row iterator
 pub struct RowIterator<

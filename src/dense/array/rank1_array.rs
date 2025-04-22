@@ -1,6 +1,7 @@
 //! A rank1 update of a two-dimensional array.
 
 use crate::dense::layout::convert_1d_nd_from_shape;
+use crate::dense::traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue};
 use crate::dense::types::{c32, c64};
 
 use crate::{Array, ChunkedAccess, DataChunk, RlstScalar, Shape, UnsafeRandomAccessByValue};
@@ -24,6 +25,8 @@ impl<
     > Rank1Array<Item, ArrayImplU, ArrayImplV>
 {
     /// Initialize a rank 1 update of the form `arr + uv^T`.
+    ///
+    /// The argument `v` is only transposed and not conjugate transposed.
     pub fn new(u: Array<Item, ArrayImplU, 1>, v: Array<Item, ArrayImplV, 1>) -> Self {
         Self { u, v }
     }
@@ -64,6 +67,20 @@ impl<
         } else {
             panic!("Unknown type");
         }
+    }
+}
+
+impl<
+        Item: RlstScalar,
+        ArrayImplU: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+        ArrayImplV: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    > UnsafeRandom1DAccessByValue for Rank1Array<Item, ArrayImplU, ArrayImplV>
+{
+    type Item = Item;
+
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape()))
     }
 }
 
