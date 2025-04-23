@@ -2,15 +2,15 @@
 
 use crate::dense::{
     array::{Array, ChunkedAccess, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+    traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl},
     types::RlstNum,
 };
 
 /// Subtraction
 pub struct ArraySubtraction<
     Item: RlstNum,
-    ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-    ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+    ArrayImpl2: ValueArrayImpl<NDIM, Item>,
     const NDIM: usize,
 > {
     operator1: Array<Item, ArrayImpl1, NDIM>,
@@ -19,8 +19,8 @@ pub struct ArraySubtraction<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
@@ -45,8 +45,8 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > UnsafeRandomAccessByValue<NDIM> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
@@ -60,8 +60,8 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
@@ -88,8 +88,8 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > Shape<NDIM> for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
@@ -100,12 +100,8 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > UnsafeRandom1DAccessByValue for ArraySubtraction<Item, ArrayImpl1, ArrayImpl2, NDIM>
 {
@@ -119,8 +115,8 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+        ArrayImpl1: ValueArrayImpl<NDIM, Item>,
+        ArrayImpl2: ValueArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > std::ops::Sub<Array<Item, ArrayImpl2, NDIM>> for Array<Item, ArrayImpl1, NDIM>
 {

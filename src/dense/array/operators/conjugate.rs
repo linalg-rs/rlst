@@ -2,24 +2,21 @@
 
 use crate::dense::{
     array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+    traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl},
     types::RlstScalar,
 };
 
 /// Conjugate
 pub struct ArrayConjugate<
     Item: RlstScalar,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    ArrayImpl: ValueArrayImpl<NDIM, Item>,
     const NDIM: usize,
 > {
     operator: Array<Item, ArrayImpl, NDIM>,
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > ArrayConjugate<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    ArrayConjugate<Item, ArrayImpl, NDIM>
 {
     /// Create new
     pub fn new(operator: Array<Item, ArrayImpl, NDIM>) -> Self {
@@ -27,11 +24,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayConjugate<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayConjugate<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -40,22 +34,16 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayConjugate<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
+    for ArrayConjugate<Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator.shape()
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Array<Item, ArrayImpl, NDIM>
 {
     /// Conjugate
     pub fn conj(self) -> Array<Item, ArrayConjugate<Item, ArrayImpl, NDIM>, NDIM> {
@@ -65,7 +53,7 @@ impl<
 
 impl<
         Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayConjugate<Item, ArrayImpl, NDIM>
@@ -84,13 +72,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayConjugate<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArrayConjugate<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 

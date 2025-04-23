@@ -6,14 +6,17 @@ use crate::dense::{
         UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
     },
     layout::convert_1d_nd_from_shape,
-    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+    traits::{
+        MutableArrayImpl, RefArrayImpl, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+        UnsafeRandom1DAccessMut, ValueArrayImpl,
+    },
     types::RlstNum,
 };
 
 /// Transpose array
 pub struct ArrayTranspose<
     Item: RlstNum,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    ArrayImpl: ValueArrayImpl<NDIM, Item> + Shape<NDIM>,
     const NDIM: usize,
 > {
     operator: Array<Item, ArrayImpl, NDIM>,
@@ -21,11 +24,8 @@ pub struct ArrayTranspose<
     shape: [usize; NDIM],
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     /// Create new transpose array
     pub fn new(operator: Array<Item, ArrayImpl, NDIM>, permutation: [usize; NDIM]) -> Self {
@@ -43,11 +43,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -57,13 +54,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByRef<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -73,13 +65,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessMut<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -89,22 +76,16 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
+    for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.shape
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -115,13 +96,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByRef for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByRef for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -132,13 +108,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessMut for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessMut for ArrayTranspose<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -149,11 +120,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Array<Item, ArrayImpl, NDIM>
 {
     /// Permute axes of an array
     pub fn permute_axes(
@@ -177,7 +145,7 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayTranspose<Item, ArrayImpl, NDIM>

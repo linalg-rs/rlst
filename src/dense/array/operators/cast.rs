@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use crate::dense::{
     array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+    traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl},
     types::RlstNum,
 };
 
@@ -12,7 +12,7 @@ use crate::dense::{
 pub struct ArrayCast<
     Item: RlstNum,
     Target: RlstNum,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    ArrayImpl: ValueArrayImpl<NDIM, Item>,
     const NDIM: usize,
 > {
     operator: Array<Item, ArrayImpl, NDIM>,
@@ -20,12 +20,8 @@ pub struct ArrayCast<
     _marker2: PhantomData<Target>,
 }
 
-impl<
-        Item: RlstNum,
-        Target: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    ArrayCast<Item, Target, ArrayImpl, NDIM>
 {
     /// Create new
     pub fn new(operator: Array<Item, ArrayImpl, NDIM>) -> Self {
@@ -37,12 +33,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        Target: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
 {
     type Item = Target;
     #[inline(always)]
@@ -51,12 +43,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        Target: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Shape<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator.shape()
@@ -66,7 +54,7 @@ impl<
 impl<
         Item: RlstNum,
         Target: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayCast<Item, Target, ArrayImpl, NDIM>
@@ -91,11 +79,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Array<Item, ArrayImpl, NDIM>
 {
     /// Cast array to type `T`.
     pub fn cast<T: RlstNum>(self) -> Array<T, ArrayCast<Item, T, ArrayImpl, NDIM>, NDIM> {
@@ -103,14 +88,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        Target: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArrayCast<Item, Target, ArrayImpl, NDIM>
 {
     type Item = Target;
 

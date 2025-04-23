@@ -1,6 +1,6 @@
 //! Container representing multiplication with a scalar
 
-use crate::dense::traits::UnsafeRandom1DAccessByValue;
+use crate::dense::traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl};
 use crate::dense::types::{c32, c64};
 use std::marker::PhantomData;
 
@@ -11,18 +11,15 @@ use crate::dense::types::RlstScalar;
 /// Array to complex
 pub struct ArrayToComplex<
     Item: RlstScalar,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
+    ArrayImpl: ValueArrayImpl<NDIM, Item::Real>,
     const NDIM: usize,
 > {
     operator: Array<<Item as RlstScalar>::Real, ArrayImpl, NDIM>,
     _marker: PhantomData<Item>,
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
-        const NDIM: usize,
-    > ArrayToComplex<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item::Real>, const NDIM: usize>
+    ArrayToComplex<Item, ArrayImpl, NDIM>
 {
     /// Create new
     pub fn new(operator: Array<<Item as RlstScalar>::Real, ArrayImpl, NDIM>) -> Self {
@@ -33,11 +30,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayToComplex<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item::Real>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayToComplex<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -46,24 +40,16 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayToComplex<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item::Real>, const NDIM: usize> Shape<NDIM>
+    for ArrayToComplex<Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator.shape()
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = <Item as RlstScalar>::Real>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayToComplex<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item::Real>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArrayToComplex<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -74,9 +60,7 @@ impl<
 
 impl<
         Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = <Item as RlstScalar>::Real>
-            + Shape<NDIM>
-            + ChunkedAccess<N, Item = <Item as RlstScalar>::Real>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item::Real> + ChunkedAccess<N, Item = Item::Real>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayToComplex<Item, ArrayImpl, NDIM>
@@ -101,34 +85,28 @@ impl<
     }
 }
 
-impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f32> + Shape<NDIM>, const NDIM: usize>
-    Array<f32, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: ValueArrayImpl<NDIM, f32>, const NDIM: usize> Array<f32, ArrayImpl, NDIM> {
     /// Convert to complex
     pub fn to_complex(self) -> Array<c32, ArrayToComplex<c32, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
 }
 
-impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = f64> + Shape<NDIM>, const NDIM: usize>
-    Array<f64, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: ValueArrayImpl<NDIM, f64>, const NDIM: usize> Array<f64, ArrayImpl, NDIM> {
     /// Convert to complex
     pub fn to_complex(self) -> Array<c64, ArrayToComplex<c64, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayToComplex::new(self))
     }
 }
 
-impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c64> + Shape<NDIM>, const NDIM: usize>
-    Array<c64, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: ValueArrayImpl<NDIM, c64>, const NDIM: usize> Array<c64, ArrayImpl, NDIM> {
     /// Convert to complex
     pub fn to_complex(self) -> Self {
         self
     }
 }
 
-impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = c32> + Shape<NDIM>, const NDIM: usize>
+impl<ArrayImpl: ValueArrayImpl<NDIM, c32> + Shape<NDIM>, const NDIM: usize>
     Array<c32, ArrayImpl, NDIM>
 {
     /// Convert to complex

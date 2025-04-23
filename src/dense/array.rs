@@ -4,12 +4,6 @@
 //! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
-use std::iter::Copied;
-use std::slice::Iter;
-use std::slice::IterMut;
-
-use iterators::ArrayDefaultIterator;
-
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
@@ -20,14 +14,16 @@ use crate::dense::traits::{
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::DataChunk;
-use crate::RlstScalar;
 
 use super::strided_base_array::StridedBaseArray;
 use super::traits::ArrayIterator;
 use super::traits::ArrayIteratorMut;
+use super::traits::MutableArrayImpl;
+use super::traits::RefArrayImpl;
 use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
+use super::traits::ValueArrayImpl;
 use super::types::RlstBase;
 
 pub mod empty_axis;
@@ -70,20 +66,17 @@ pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
     Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
-pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl)
+pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl, std::marker::PhantomData<Item>)
 where
     Item: RlstBase,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>;
+    ArrayImpl: ValueArrayImpl<NDIM, Item>;
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Array<Item, ArrayImpl, NDIM>
 {
     /// Instantiate a new array from an `ArrayImpl` structure.
     pub fn new(arr: ArrayImpl) -> Self {
-        Self(arr)
+        Self(arr, std::marker::PhantomData)
     }
 
     /// Return the number of elements in the array.
@@ -100,22 +93,16 @@ impl<Item: RlstBase, const NDIM: usize> DynamicArray<Item, NDIM> {
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
+    for Array<Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.0.shape()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline(always)]
@@ -126,7 +113,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for Array<Item, ArrayImpl, NDIM>
@@ -141,13 +128,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByRef<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline(always)]
@@ -156,13 +138,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessMut<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline(always)]
@@ -171,13 +148,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>,
-        const NDIM: usize,
-    > std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
+    std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
     type Output = Item;
     #[inline(always)]
@@ -188,10 +160,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessByRef<NDIM, Item = Item>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>,
+        ArrayImpl: MutableArrayImpl<NDIM, Item> + RefArrayImpl<NDIM, Item>,
         const NDIM: usize,
     > std::ops::IndexMut<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
 {
@@ -225,7 +194,7 @@ pub(crate) fn empty_chunk<const N: usize, Item: RlstBase>(
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccess<Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccess<Item = Item>,
         const NDIM: usize,
     > RawAccess for Array<Item, ArrayImpl, NDIM>
 {
@@ -246,7 +215,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + RawAccessMut<Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccessMut<Item = Item>,
         const NDIM: usize,
     > RawAccessMut for Array<Item, ArrayImpl, NDIM>
 {
@@ -259,22 +228,16 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > NumberOfElements for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> NumberOfElements
+    for Array<Item, ArrayImpl, NDIM>
 {
     fn number_of_elements(&self) -> usize {
         self.shape().iter().product()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + Stride<NDIM>,
-        const NDIM: usize,
-    > Stride<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item> + Stride<NDIM>, const NDIM: usize>
+    Stride<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
     fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
@@ -283,7 +246,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ResizeInPlace<NDIM>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ResizeInPlace<NDIM>,
         const NDIM: usize,
     > ResizeInPlace<NDIM> for Array<Item, ArrayImpl, NDIM>
 {
@@ -353,11 +316,8 @@ impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM>
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > std::fmt::Debug for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> std::fmt::Debug
+    for Array<Item, ArrayImpl, NDIM>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let shape = self.shape();
@@ -371,7 +331,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ArrayIterator<Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ArrayIterator<Item = Item>,
         const NDIM: usize,
     > ArrayIterator for Array<Item, ArrayImpl, NDIM>
 {
@@ -390,7 +350,7 @@ impl<
 
 impl<
         Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ArrayIteratorMut<Item = Item>,
+        ArrayImpl: MutableArrayImpl<NDIM, Item> + ArrayIteratorMut<Item = Item>,
         const NDIM: usize,
     > ArrayIteratorMut for Array<Item, ArrayImpl, NDIM>
 {
@@ -405,13 +365,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -421,13 +376,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByRef<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByRef for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByRef for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -437,13 +387,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessMut<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessMut for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessMut for Array<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 

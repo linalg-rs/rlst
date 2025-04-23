@@ -208,3 +208,48 @@ pub trait ArrayIteratorMut: ArrayIterator {
 
     fn iter_mut(&self) -> Self::IterMut<'_>;
 }
+
+/// Basic trait for arrays that provide random access to values.
+pub trait ValueArrayImpl<const NDIM: usize, Item: RlstBase>:
+    UnsafeRandomAccessByValue<NDIM, Item = Item>
+    + Shape<NDIM>
+    + UnsafeRandom1DAccessByValue<Item = Item>
+{
+}
+
+/// Basic trait for arrays that provide mutable random access to values.
+pub trait MutableArrayImpl<const NDIM: usize, Item: RlstBase>:
+    ValueArrayImpl<NDIM, Item>
+    + UnsafeRandomAccessMut<NDIM, Item = Item>
+    + UnsafeRandom1DAccessMut<Item = Item>
+{
+}
+
+/// Basic trait for arrays that provide access by reference
+pub trait RefArrayImpl<const NDIM: usize, Item: RlstBase>:
+    ValueArrayImpl<NDIM, Item>
+    + UnsafeRandomAccessByRef<NDIM, Item = Item>
+    + UnsafeRandom1DAccessByRef<Item = Item>
+{
+}
+
+impl<const NDIM: usize, Item: RlstBase, ArrayImpl> ValueArrayImpl<NDIM, Item> for ArrayImpl where
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+        + UnsafeRandom1DAccessByValue<Item = Item>
+        + Shape<NDIM>
+{
+}
+
+impl<const NDIM: usize, Item: RlstBase, ArrayImpl> RefArrayImpl<NDIM, Item> for ArrayImpl where
+    ArrayImpl: ValueArrayImpl<NDIM, Item>
+        + UnsafeRandomAccessByRef<NDIM, Item = Item>
+        + UnsafeRandom1DAccessByRef<Item = Item>
+{
+}
+
+impl<const NDIM: usize, Item: RlstBase, ArrayImpl> MutableArrayImpl<NDIM, Item> for ArrayImpl where
+    ArrayImpl: ValueArrayImpl<NDIM, Item>
+        + UnsafeRandomAccessMut<NDIM, Item = Item>
+        + UnsafeRandom1DAccessMut<Item = Item>
+{
+}

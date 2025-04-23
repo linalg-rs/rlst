@@ -8,7 +8,7 @@ fn main() {
 
     a.fill_from_seed_normally_distributed(1);
 
-    b.fill_from(3.0 * a);
+    b.fill_from(3.0 * a.r() + a.r());
 
     println!("Finished: {:?}", b[[0]]);
 }

@@ -1,25 +1,19 @@
 //! Container representing multiplication with a scalar
 
 use crate::dense::array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue};
-use crate::dense::traits::UnsafeRandom1DAccessByValue;
+use crate::dense::traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl};
 use crate::dense::types::{c32, c64, RlstNum};
 use crate::RlstScalar;
 
 /// Scalar multiplication of array
-pub struct ArrayScalarMult<
-    Item: RlstNum,
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-    const NDIM: usize,
-> {
+pub struct ArrayScalarMult<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+{
     scalar: Item,
     operator: Array<Item, ArrayImpl, NDIM>,
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > ArrayScalarMult<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    ArrayScalarMult<Item, ArrayImpl, NDIM>
 {
     /// Create new
     pub fn new(scalar: Item, operator: Array<Item, ArrayImpl, NDIM>) -> Self {
@@ -27,11 +21,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
     #[inline]
@@ -40,11 +31,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayScalarMult<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
+    for ArrayScalarMult<Item, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
         self.operator.shape()
@@ -53,7 +41,7 @@ impl<
 
 impl<
         Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
+        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
         const NDIM: usize,
         const N: usize,
     > ChunkedAccess<N> for ArrayScalarMult<Item, ArrayImpl, NDIM>
@@ -72,11 +60,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    Array<Item, ArrayImpl, NDIM>
 {
     /// Multiplication by a scalar
     pub fn scalar_mul(
@@ -87,11 +72,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > std::ops::Neg for Array<Item, ArrayImpl, NDIM>
+impl<Item: RlstScalar, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> std::ops::Neg
+    for Array<Item, ArrayImpl, NDIM>
 {
     type Output = Array<Item, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
 
@@ -101,13 +83,8 @@ impl<
     }
 }
 
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayScalarMult<Item, ArrayImpl, NDIM>
+impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArrayScalarMult<Item, ArrayImpl, NDIM>
 {
     type Item = Item;
 
@@ -119,10 +96,8 @@ impl<
 
 macro_rules! impl_scalar_mult {
     ($ScalarType:ty) => {
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = $ScalarType> + Shape<NDIM>,
-                const NDIM: usize,
-            > std::ops::Mul<Array<$ScalarType, ArrayImpl, NDIM>> for $ScalarType
+        impl<ArrayImpl: ValueArrayImpl<NDIM, $ScalarType>, const NDIM: usize>
+            std::ops::Mul<Array<$ScalarType, ArrayImpl, NDIM>> for $ScalarType
         {
             type Output = Array<$ScalarType, ArrayScalarMult<$ScalarType, ArrayImpl, NDIM>, NDIM>;
 
@@ -131,10 +106,8 @@ macro_rules! impl_scalar_mult {
             }
         }
 
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = $ScalarType> + Shape<NDIM>,
-                const NDIM: usize,
-            > std::ops::Mul<$ScalarType> for Array<$ScalarType, ArrayImpl, NDIM>
+        impl<ArrayImpl: ValueArrayImpl<NDIM, $ScalarType>, const NDIM: usize>
+            std::ops::Mul<$ScalarType> for Array<$ScalarType, ArrayImpl, NDIM>
         {
             type Output = Array<$ScalarType, ArrayScalarMult<$ScalarType, ArrayImpl, NDIM>, NDIM>;
 
