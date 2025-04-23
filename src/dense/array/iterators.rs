@@ -118,11 +118,12 @@ impl<
     type Item = Item;
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos >= self.nelements {
-            return None;
+            None
+        } else {
+            let value = unsafe { Some(self.arr.get_value_1d_unchecked(self.pos)) };
+            self.pos += 1;
+            value
         }
-        let multi_index = convert_1d_nd_from_shape(self.pos, self.shape);
-        self.pos += 1;
-        unsafe { Some(self.arr.get_value_unchecked(multi_index)) }
     }
 }
 
@@ -146,14 +147,15 @@ impl<
     type Item = &'a mut Item;
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos >= self.nelements {
-            return None;
-        }
-        let multi_index = convert_1d_nd_from_shape(self.pos, self.shape);
-        self.pos += 1;
-        unsafe {
-            Some(std::mem::transmute::<&mut Item, &'a mut Item>(
-                self.arr.get_unchecked_mut(multi_index),
-            ))
+            None
+        } else {
+            let value = unsafe {
+                Some(std::mem::transmute::<&mut Item, &'a mut Item>(
+                    self.arr.get_1d_unchecked_mut(self.pos),
+                ))
+            };
+            self.pos += 1;
+            value
         }
     }
 }
