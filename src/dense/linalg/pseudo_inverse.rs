@@ -2,8 +2,8 @@
 
 use crate::dense::array::Array;
 use crate::dense::traits::{
-    MultInto, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+    MultInto, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandom1DAccessMut,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
 use crate::rlst_dynamic_array2;
@@ -32,6 +32,7 @@ pub trait MatrixPseudoInverse: RlstScalar + MatrixSvd {
             + Shape<2>
             + RawAccessMut<Item = Self>
             + UnsafeRandomAccessMut<2, Item = Self>
+            + UnsafeRandom1DAccessMut<Item = Self>
             + ResizeInPlace<2>,
     >(
         arr: Array<Self, ArrayImpl, 2>,
@@ -58,7 +59,8 @@ pub trait MatrixPseudoInverse: RlstScalar + MatrixSvd {
             + Stride<2>
             + Shape<2>
             + RawAccessMut<Item = Self>
-            + UnsafeRandomAccessMut<2, Item = Self>,
+            + UnsafeRandomAccessMut<2, Item = Self>
+            + UnsafeRandom1DAccessMut<Item = Self>,
     >(
         arr: Array<Self, ArrayImpl, 2>,
         pinv: Array<Self, ArrayImplPInv, 2>,
@@ -88,6 +90,7 @@ impl<
             + Shape<2>
             + RawAccessMut<Item = Item>
             + UnsafeRandomAccessMut<2, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>
             + ResizeInPlace<2>,
     >(
         self,
@@ -111,7 +114,8 @@ impl<
             + Stride<2>
             + Shape<2>
             + RawAccessMut<Item = Item>
-            + UnsafeRandomAccessMut<2, Item = Item>,
+            + UnsafeRandomAccessMut<2, Item = Item>
+            + UnsafeRandom1DAccessMut<Item = Item>,
     >(
         self,
         pinv: Array<Item, ArrayImplPInv, 2>,
@@ -135,6 +139,7 @@ macro_rules! impl_pinv {
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + ResizeInPlace<2>,
             >(
                 arr: Array<Self, ArrayImpl, 2>,
@@ -159,7 +164,8 @@ macro_rules! impl_pinv {
                     + Stride<2>
                     + Shape<2>
                     + RawAccessMut<Item = $scalar>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>,
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>,
             >(
                 arr: Array<$scalar, ArrayImpl, 2>,
                 mut pinv: Array<$scalar, ArrayImplPInv, 2>,

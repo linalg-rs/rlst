@@ -118,6 +118,7 @@ pub trait MatrixLuDecomposition: Sized {
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
             + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>
             + ResizeInPlace<2>,
     >(
         &self,
@@ -132,7 +133,8 @@ pub trait MatrixLuDecomposition: Sized {
         ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>,
     >(
         &self,
         arr: Array<Self::Item, ArrayImplMut, 2>,
@@ -146,6 +148,7 @@ pub trait MatrixLuDecomposition: Sized {
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
             + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>
             + ResizeInPlace<2>,
     >(
         &self,
@@ -160,6 +163,7 @@ pub trait MatrixLuDecomposition: Sized {
         ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>
             + UnsafeRandomAccessByRef<2, Item = Self::Item>,
     >(
         &self,
@@ -174,6 +178,7 @@ pub trait MatrixLuDecomposition: Sized {
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
             + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>
             + ResizeInPlace<2>,
     >(
         &self,
@@ -193,7 +198,8 @@ pub trait MatrixLuDecomposition: Sized {
         ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
             + Shape<2>
             + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>
+            + UnsafeRandom1DAccessMut<Item = Self::Item>,
     >(
         &self,
         arr: Array<Self::Item, ArrayImplMut, 2>,
@@ -327,6 +333,7 @@ macro_rules! impl_lu {
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + ResizeInPlace<2>,
             >(
                 &self,
@@ -344,7 +351,8 @@ macro_rules! impl_lu {
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>,
             >(
                 &self,
                 mut arr: Array<$scalar, ArrayImplMut, 2>,
@@ -379,6 +387,7 @@ macro_rules! impl_lu {
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + ResizeInPlace<2>,
             >(
                 &self,
@@ -396,6 +405,7 @@ macro_rules! impl_lu {
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + UnsafeRandomAccessByRef<2, Item = $scalar>,
             >(
                 &self,
@@ -427,6 +437,7 @@ macro_rules! impl_lu {
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
                     + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + ResizeInPlace<2>,
             >(
                 &self,
@@ -458,7 +469,8 @@ macro_rules! impl_lu {
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>,
             >(
                 &self,
                 mut arr: Array<$scalar, ArrayImplMut, 2>,

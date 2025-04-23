@@ -4,7 +4,7 @@ use super::assert_lapack_stride;
 use crate::dense::array::Array;
 use crate::dense::traits::{
     RandomAccessByValue, RandomAccessMut, RawAccess, RawAccessMut, Shape, Stride,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use itertools::Itertools;
 use lapack::{cgeqp3, cunmqr, dgeqp3, dormqr, sgeqp3, sormqr, zgeqp3, zunmqr};
@@ -183,6 +183,7 @@ macro_rules! implement_qr_real {
             pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>
                     + Stride<2>,
@@ -236,6 +237,7 @@ macro_rules! implement_qr_real {
             pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>
                     + Stride<2>,
@@ -451,6 +453,7 @@ macro_rules! implement_qr_complex {
             pub fn get_r<
                 ArrayImplR: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>
                     + Stride<2>,
@@ -504,6 +507,7 @@ macro_rules! implement_qr_complex {
             pub fn get_q_alloc<
                 ArrayImplQ: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandom1DAccessMut<Item = $scalar>
                     + RawAccessMut<Item = $scalar>
                     + Shape<2>
                     + Stride<2>,
