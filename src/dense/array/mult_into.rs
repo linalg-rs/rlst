@@ -3,6 +3,8 @@
 use crate::dense::gemm::Gemm;
 use crate::dense::traits::MultInto;
 use crate::dense::traits::MultIntoResize;
+use crate::dense::traits::MutableArrayImpl;
+use crate::dense::traits::ValueArrayImpl;
 pub use crate::dense::types::TransMode;
 
 use super::{
@@ -14,13 +16,9 @@ use crate::dense::types::RlstScalar;
 
 impl<
         Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImpl: ValueArrayImpl<2, Item> + Stride<2> + RawAccessMut<Item = Item>,
+        ArrayImplFirst: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplSecond: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
     > MultInto<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 2>>
     for Array<Item, ArrayImpl, 2>
 {
@@ -44,13 +42,9 @@ impl<
 
 impl<
         Item: RlstScalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + Shape<1>
-            + Stride<1>
-            + RawAccessMut<Item = Item>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
+        ArrayImpl: ValueArrayImpl<1, Item> + Stride<1> + RawAccessMut<Item = Item>,
+        ArrayImplFirst: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplSecond: ValueArrayImpl<1, Item> + Stride<1> + RawAccess<Item = Item>,
     > MultInto<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 1>>
     for Array<Item, ArrayImpl, 1>
 {
