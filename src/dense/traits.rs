@@ -3,11 +3,10 @@
 pub mod accessors;
 
 pub use accessors::*;
+use typenum::Unsigned;
 
 use crate::dense::types::TransMode;
-use crate::RlstScalar;
 
-use super::types::RlstBase;
 use super::types::RlstNum;
 
 /// Memory layout of an object
@@ -64,11 +63,13 @@ pub trait ResizeInPlace<const NDIM: usize> {
 /// Multiply into
 pub trait MultInto<First, Second> {
     /// Item type
-    type Item: RlstNum;
+    type Item;
     /// Multiply First * Second and sum into Self
     fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
+        Self::Item: num::One,
+        Self::Item: num::Zero,
     {
         self.mult_into(
             TransMode::NoTrans,
@@ -124,7 +125,7 @@ pub trait MultIntoResize<First, Second> {
 /// Default iterator.
 pub trait DefaultIterator {
     /// Item type
-    type Item: RlstBase;
+    type Item;
     /// Iterator type
     type Iter<'a>: std::iter::Iterator<Item = Self::Item>
     where
@@ -136,7 +137,7 @@ pub trait DefaultIterator {
 /// Mutable default iterator.
 pub trait DefaultIteratorMut {
     /// Item type
-    type Item: RlstBase;
+    type Item;
     /// Iterator
     type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
     where
@@ -150,7 +151,7 @@ pub trait DefaultIteratorMut {
 /// element.
 pub trait AijIterator {
     /// Item type
-    type Item: RlstBase;
+    type Item;
     /// Iterator
     type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where
@@ -159,20 +160,20 @@ pub trait AijIterator {
     fn iter_aij(&self) -> Self::Iter<'_>;
 }
 
-/// Helper trait that returns from an enumeration iterator a new iterator
-/// that converts the 1d index into a multi-index.
-pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
-    /// Get multi-index
-    fn multi_index(
-        self,
-        shape: [usize; NDIM],
-    ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
-}
+// /// Helper trait that returns from an enumeration iterator a new iterator
+// /// that converts the 1d index into a multi-index.
+// pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+//     /// Get multi-index
+//     fn multi_index(
+//         self,
+//         shape: [usize; NDIM],
+//     ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
+// }
 
 /// A helper trait to implement generic operators over matrices.
 pub trait AsOperatorApply {
     /// Item type
-    type Item: RlstScalar;
+    type Item;
 
     /// Apply the operator to a vector.
     fn apply_extended(
@@ -189,11 +190,14 @@ pub trait AsOperatorApply {
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
 pub trait ArrayIterator {
-    type Item: RlstBase;
+    /// Item type of the iterator.
+    type Item;
+    /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
         Self: 'a;
 
+    /// Returns an iterator that produces elements of type `Self::Item`.
     fn iter(&self) -> Self::Iter<'_>;
 }
 
@@ -202,54 +206,56 @@ pub trait ArrayIterator {
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
 pub trait ArrayIteratorMut: ArrayIterator {
+    /// Type of the iterator.
     type IterMut<'a>: Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
+    /// Returns an iterator that produces mutable references to elements of type `Self::Item`.
     fn iter_mut(&self) -> Self::IterMut<'_>;
 }
 
-/// Basic trait for arrays that provide random access to values.
-pub trait ValueArrayImpl<const NDIM: usize, Item: RlstBase>:
-    UnsafeRandomAccessByValue<NDIM, Item = Item>
-    + Shape<NDIM>
-    + UnsafeRandom1DAccessByValue<Item = Item>
-{
-}
+// /// Basic trait for arrays that provide random access to values.
+// pub trait ValueArrayImpl<const NDIM: usize, Item: RlstBase>:
+//     UnsafeRandomAccessByValue<NDIM, Item = Item>
+//     + Shape<NDIM>
+//     + UnsafeRandom1DAccessByValue<Item = Item>
+// {
+// }
 
-/// Basic trait for arrays that provide mutable random access to values.
-pub trait MutableArrayImpl<const NDIM: usize, Item: RlstBase>:
-    ValueArrayImpl<NDIM, Item>
-    + UnsafeRandomAccessMut<NDIM, Item = Item>
-    + UnsafeRandom1DAccessMut<Item = Item>
-{
-}
+// /// Basic trait for arrays that provide mutable random access to values.
+// pub trait MutableArrayImpl<const NDIM: usize, Item: RlstBase>:
+//     ValueArrayImpl<NDIM, Item>
+//     + UnsafeRandomAccessMut<NDIM, Item = Item>
+//     + UnsafeRandom1DAccessMut<Item = Item>
+// {
+// }
 
-/// Basic trait for arrays that provide access by reference
-pub trait RefArrayImpl<const NDIM: usize, Item: RlstBase>:
-    ValueArrayImpl<NDIM, Item>
-    + UnsafeRandomAccessByRef<NDIM, Item = Item>
-    + UnsafeRandom1DAccessByRef<Item = Item>
-{
-}
+// /// Basic trait for arrays that provide access by reference
+// pub trait RefArrayImpl<const NDIM: usize, Item: RlstBase>:
+//     ValueArrayImpl<NDIM, Item>
+//     + UnsafeRandomAccessByRef<NDIM, Item = Item>
+//     + UnsafeRandom1DAccessByRef<Item = Item>
+// {
+// }
 
-impl<const NDIM: usize, Item: RlstBase, ArrayImpl> ValueArrayImpl<NDIM, Item> for ArrayImpl where
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-        + UnsafeRandom1DAccessByValue<Item = Item>
-        + Shape<NDIM>
-{
-}
+// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> ValueArrayImpl<NDIM, Item> for ArrayImpl where
+//     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
+//         + UnsafeRandom1DAccessByValue<Item = Item>
+//         + Shape<NDIM>
+// {
+// }
 
-impl<const NDIM: usize, Item: RlstBase, ArrayImpl> RefArrayImpl<NDIM, Item> for ArrayImpl where
-    ArrayImpl: ValueArrayImpl<NDIM, Item>
-        + UnsafeRandomAccessByRef<NDIM, Item = Item>
-        + UnsafeRandom1DAccessByRef<Item = Item>
-{
-}
+// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> RefArrayImpl<NDIM, Item> for ArrayImpl where
+//     ArrayImpl: ValueArrayImpl<NDIM, Item>
+//         + UnsafeRandomAccessByRef<NDIM, Item = Item>
+//         + UnsafeRandom1DAccessByRef<Item = Item>
+// {
+// }
 
-impl<const NDIM: usize, Item: RlstBase, ArrayImpl> MutableArrayImpl<NDIM, Item> for ArrayImpl where
-    ArrayImpl: ValueArrayImpl<NDIM, Item>
-        + UnsafeRandomAccessMut<NDIM, Item = Item>
-        + UnsafeRandom1DAccessMut<Item = Item>
-{
-}
+// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> MutableArrayImpl<NDIM, Item> for ArrayImpl where
+//     ArrayImpl: ValueArrayImpl<NDIM, Item>
+//         + UnsafeRandomAccessMut<NDIM, Item = Item>
+//         + UnsafeRandom1DAccessMut<Item = Item>
+// {
+// }

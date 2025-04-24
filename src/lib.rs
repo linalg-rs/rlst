@@ -24,18 +24,18 @@
 #![warn(missing_docs)]
 
 pub mod dense;
-pub mod doc;
-pub mod external;
-pub mod io;
-pub mod sparse;
-pub mod tracing;
+// pub mod doc;
+// pub mod external;
+// pub mod io;
+// pub mod sparse;
+// pub mod tracing;
 
-pub mod prelude;
-pub mod threading;
+// pub mod prelude;
+// pub mod threading;
 
-pub mod operator;
+// pub mod operator;
 
-pub use prelude::*;
+// pub use prelude::*;
 
 #[cfg(test)]
 mod test {

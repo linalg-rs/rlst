@@ -27,7 +27,8 @@ lapack = "0.19"
 thiserror = "2"
 serde = "1"
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
-log = { version = "0.4", optional = true}
+log = { version = "0.4", optional = true }
+typenum = "1"
 
 coe-rs = "0.1.2"
 pulp = { version = "0.21" }

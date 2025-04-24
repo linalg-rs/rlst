@@ -76,7 +76,29 @@ use std::ops::Neg;
 pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
 
-use crate::dense::gemm::Gemm;
+/// Gemm
+pub trait Gemm: Sized {
+    /// Gemm
+    #[allow(clippy::too_many_arguments)]
+    fn gemm(
+        transa: TransMode,
+        transb: TransMode,
+        m: usize,
+        n: usize,
+        k: usize,
+        alpha: Self,
+        a: &[Self],
+        rsa: usize,
+        csa: usize,
+        b: &[Self],
+        rsb: usize,
+        csb: usize,
+        beta: Self,
+        c: &mut [Self],
+        rsc: usize,
+        csc: usize,
+    );
+}
 
 /// Base trait for Rlst admissible objects
 pub trait RlstBase:
@@ -107,7 +129,7 @@ pub trait RlstScalar:
     + UpperExp
     + Serialize
     + Pod
-    + Gemm
+    // + Gemm
     + for<'de> Deserialize<'de>
     + 'static
 {

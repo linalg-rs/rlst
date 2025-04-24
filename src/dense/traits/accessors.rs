@@ -17,12 +17,11 @@
 //! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
 
 use crate::dense::traits::Shape;
-use crate::dense::types::{DataChunk, RlstBase};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return the element at position determined by `multi_index`.
     ///
@@ -39,7 +38,7 @@ pub trait UnsafeRandomAccessByValue<const NDIM: usize> {
 /// `index` must not be out of bounds.
 pub trait UnsafeRandom1DAccessByValue {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return the element at position determined by `multi_index`.
     ///
@@ -51,7 +50,7 @@ pub trait UnsafeRandom1DAccessByValue {
 /// This trait provides unsafe access by reference to the underlying data.
 pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -63,7 +62,7 @@ pub trait UnsafeRandomAccessByRef<const NDIM: usize> {
 /// This trait provides unsafe access by reference to the underlying data using a 1d index.
 pub trait UnsafeRandom1DAccessByRef {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -75,7 +74,7 @@ pub trait UnsafeRandom1DAccessByRef {
 /// This trait provides unsafe mutable access to the underlying data.
 pub trait UnsafeRandomAccessMut<const NDIM: usize> {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -87,7 +86,7 @@ pub trait UnsafeRandomAccessMut<const NDIM: usize> {
 /// This trait provides unsafe mutable access to the underlying data using a 1D index.
 pub trait UnsafeRandom1DAccessMut {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
     /// Return a mutable reference to the element at position determined by `multi_index`.
     ///
@@ -97,29 +96,27 @@ pub trait UnsafeRandom1DAccessMut {
 }
 
 /// This trait provides bounds checked access to the underlying data by value.
-pub trait RandomAccessByValue<const NDIM: usize>: UnsafeRandomAccessByValue<NDIM> {
+pub trait RandomAccessByValue<const NDIM: usize> {
+    /// The type of the item.
+    type Item;
     /// Return the element at position determined by `multi_index`.
     fn get_value(&self, multi_index: [usize; NDIM]) -> Option<Self::Item>;
 }
 
 /// This trait provides bounds checked access to the underlying data by reference.
-pub trait RandomAccessByRef<const NDIM: usize>: UnsafeRandomAccessByRef<NDIM> {
+pub trait RandomAccessByRef<const NDIM: usize> {
+    /// The type of the item.
+    type Item;
     /// Return a reference to the element at position determined by `multi_index`.
     fn get(&self, multi_index: [usize; NDIM]) -> Option<&Self::Item>;
 }
 
 /// This trait provides bounds checked mutable access to the underlying data.
-pub trait RandomAccessMut<const NDIM: usize>: UnsafeRandomAccessMut<NDIM> {
+pub trait RandomAccessMut<const NDIM: usize> {
+    /// The type of the item.
+    type Item;
     /// Return a mutable reference to the element at position determined by `multi_index`.
     fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut Self::Item>;
-}
-
-/// Return chunks of data of size N;
-pub trait ChunkedAccess<const N: usize> {
-    /// Item type
-    type Item: RlstBase;
-    /// Get chunk
-    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>>;
 }
 
 /// Get raw access to the underlying data.
@@ -133,25 +130,17 @@ pub trait ChunkedAccess<const N: usize> {
 ///   etc. it may be different from zero.
 pub trait RawAccess {
     /// Item type
-    type Item: RlstBase;
+    type Item;
 
-    /// Get a slice of the whole data.
+    /// Get a slice of the data.
     fn data(&self) -> &[Self::Item];
-
-    /// Return a pointer to the start of the underlying buffer.
-    fn buff_ptr(&self) -> *const Self::Item;
-
-    /// Offset of beginning of data from start ptr.
-    fn offset(&self) -> usize;
 }
 
 /// Get mutable raw access to the underlying data.
-pub trait RawAccessMut: RawAccess {
+pub trait RawAccessMut {
     /// Get a mutable slice of the whole data.
+    type Item;
     fn data_mut(&mut self) -> &mut [Self::Item];
-
-    /// Return a pointer to the start of the underlying buffer.
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item;
 }
 
 /// Check if `multi_index` not out of bounds with respect to `shape`.
@@ -163,12 +152,11 @@ fn check_dimension<const NDIM: usize>(multi_index: [usize; NDIM], shape: [usize;
         .fold(true, |acc, (ind, s)| acc && (ind < s))
 }
 
-impl<
-        Item: RlstBase,
-        Mat: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > RandomAccessByValue<NDIM> for Mat
+impl<Mat: UnsafeRandomAccessByValue<NDIM> + Shape<NDIM>, const NDIM: usize>
+    RandomAccessByValue<NDIM> for Mat
 {
+    type Item = Mat::Item;
+
     fn get_value(&self, multi_index: [usize; NDIM]) -> Option<Self::Item> {
         if check_dimension(multi_index, self.shape()) {
             Some(unsafe { self.get_value_unchecked(multi_index) })
@@ -178,12 +166,11 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        Mat: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > RandomAccessMut<NDIM> for Mat
+impl<Item, Mat: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>, const NDIM: usize>
+    RandomAccessMut<NDIM> for Mat
 {
+    type Item = Mat::Item;
+
     fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut Self::Item> {
         if check_dimension(multi_index, self.shape()) {
             unsafe { Some(self.get_unchecked_mut(multi_index)) }
@@ -193,12 +180,11 @@ impl<
     }
 }
 
-impl<
-        Item: RlstBase,
-        Mat: UnsafeRandomAccessByRef<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > RandomAccessByRef<NDIM> for Mat
+impl<Item, Mat: UnsafeRandomAccessByRef<NDIM, Item = Item> + Shape<NDIM>, const NDIM: usize>
+    RandomAccessByRef<NDIM> for Mat
 {
+    type Item = Mat::Item;
+
     fn get(&self, multi_index: [usize; NDIM]) -> Option<&Self::Item> {
         if check_dimension(multi_index, self.shape()) {
             unsafe { Some(self.get_unchecked(multi_index)) }

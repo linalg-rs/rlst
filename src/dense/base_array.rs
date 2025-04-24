@@ -3,33 +3,28 @@
 //! A [BaseArray] is a simple container for array data. It is mainly a convient interface
 //! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
 
-use std::iter::Copied;
-
-use crate::dense::array::empty_chunk;
-use crate::dense::data_container::{DataContainer, DataContainerMut, ResizeableDataContainerMut};
-use crate::dense::layout::{
-    check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw, stride_from_shape,
-};
+use crate::dense::layout::{check_multi_index_in_bounds, stride_from_shape};
 use crate::dense::traits::{
-    ChunkedAccess, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
+    RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
+use super::data_container::{
+    DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
+    RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
+};
 use super::traits::{
     ArrayIterator, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
 };
-use super::types::RlstBase;
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores
 /// the shape of the array, and `stride` contains the `stride` of the underlying data.
-pub struct BaseArray<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> {
+pub struct BaseArray<Data, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
-    BaseArray<Item, Data, NDIM>
-{
+impl<Data: DataContainer, const NDIM: usize> BaseArray<Data, NDIM> {
     /// Create new
     pub fn new(data: Data, shape: [usize; NDIM]) -> Self {
         assert_eq!(
@@ -44,20 +39,19 @@ impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> Shape<NDIM>
-    for BaseArray<Item, Data, NDIM>
-{
+impl<Data, const NDIM: usize> Shape<NDIM> for BaseArray<Data, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.shape
     }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for BaseArray<Item, Data, NDIM>
+impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
-    #[inline]
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.data
@@ -65,10 +59,10 @@ impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for BaseArray<Item, Data, NDIM>
+impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
@@ -76,10 +70,10 @@ impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> UnsafeRandom1DAccessByRef
-    for BaseArray<Item, Data, NDIM>
+impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
@@ -87,13 +81,10 @@ impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> Unsafe
     }
 }
 
-impl<
-        Item: RlstBase,
-        Data: DataContainer<Item = Item> + DataContainerMut<Item = Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessMut for BaseArray<Item, Data, NDIM>
+impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
@@ -101,12 +92,12 @@ impl<
     }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for BaseArray<Item, Data, NDIM>
+impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
-    #[inline]
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.data
@@ -114,12 +105,12 @@ impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const NDIM: usize>
-    UnsafeRandomAccessMut<NDIM> for BaseArray<Item, Data, NDIM>
+impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
+    for BaseArray<Data, NDIM>
 {
-    type Item = Item;
+    type Item = Data::Item;
 
-    #[inline]
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.data
@@ -127,71 +118,37 @@ impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const N: usize, const NDIM: usize>
-    ChunkedAccess<N> for BaseArray<Item, Data, NDIM>
-{
-    type Item = Item;
+impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for BaseArray<Data, NDIM> {
+    type Item = Data::Item;
 
-    #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
-        let nelements = self.shape().iter().product();
-        if let Some(mut chunk) = empty_chunk(chunk_index, nelements) {
-            for count in 0..chunk.valid_entries {
-                unsafe {
-                    chunk.data[count] = self.data.get_unchecked_value(chunk.start_index + count);
-                }
-            }
-            Some(chunk)
-        } else {
-            None
-        }
-    }
-}
-
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> RawAccess
-    for BaseArray<Item, Data, NDIM>
-{
-    type Item = Item;
-
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.data.data()
     }
-
-    fn offset(&self) -> usize {
-        0
-    }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        &self.data.data()[0]
-    }
 }
 
-impl<Item: RlstBase, Data: DataContainerMut<Item = Item>, const NDIM: usize> RawAccessMut
-    for BaseArray<Item, Data, NDIM>
+impl<Data: MutableRawAccessDataContainer, const NDIM: usize> RawAccessMut
+    for BaseArray<Data, NDIM>
 {
+    type Item = Data::Item;
+
+    #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data.data_mut()
     }
-
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
-        &mut self.data.data_mut()[0]
-    }
 }
 
-impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> Stride<NDIM>
-    for BaseArray<Item, Data, NDIM>
-{
+impl<Data, const NDIM: usize> Stride<NDIM> for BaseArray<Data, NDIM> {
+    #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
         stride_from_shape(self.shape)
     }
 }
 
-impl<Item: RlstBase, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: usize>
-    ResizeInPlace<NDIM> for BaseArray<Item, Data, NDIM>
+impl<Data: ResizeableDataContainer, const NDIM: usize> ResizeInPlace<NDIM>
+    for BaseArray<Data, NDIM>
 {
+    #[inline(always)]
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         let new_len = shape.iter().product();
         self.data.resize(new_len);
@@ -199,7 +156,7 @@ impl<Item: RlstBase, Data: ResizeableDataContainerMut<Item = Item>, const NDIM: 
     }
 }
 
-#[inline]
+#[inline(always)]
 fn compute_col_major_index<const NDIM: usize>(
     multi_index: [usize; NDIM],
     shape: [usize; NDIM],

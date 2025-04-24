@@ -7,6 +7,7 @@
 /// Compute stride from a shape.
 ///
 /// Given an array shape, compute the corresponding stride assuming column-major ordering.
+#[inline(always)]
 pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {
     let mut output = [0; NDIM];
 

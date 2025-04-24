@@ -1,30 +1,6 @@
 //! Gemm trait for matrix multiplication
-use crate::dense::types::{c32, c64, TransMode};
+use crate::dense::types::{c32, c64, Gemm, TransMode};
 use blas::{cgemm, dgemm, sgemm, zgemm};
-
-/// Gemm
-pub trait Gemm: Sized {
-    /// Gemm
-    #[allow(clippy::too_many_arguments)]
-    fn gemm(
-        transa: TransMode,
-        transb: TransMode,
-        m: usize,
-        n: usize,
-        k: usize,
-        alpha: Self,
-        a: &[Self],
-        rsa: usize,
-        csa: usize,
-        b: &[Self],
-        rsb: usize,
-        csb: usize,
-        beta: Self,
-        c: &mut [Self],
-        rsc: usize,
-        csc: usize,
-    );
-}
 
 /// Compute expected size of a data slice from stride and shape.
 fn get_expected_data_size(stride: [usize; 2], shape: [usize; 2]) -> usize {

@@ -9,21 +9,19 @@ use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::traits::{
-    ChunkedAccess, DefaultIterator, DefaultIteratorMut, NumberOfElements, RandomAccessByRef,
-    RandomAccessByValue, RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    DefaultIterator, DefaultIteratorMut, NumberOfElements, RandomAccessByRef, RandomAccessByValue,
+    RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::DataChunk;
 
+use super::data_container::DataContainer;
 use super::strided_base_array::StridedBaseArray;
 use super::traits::ArrayIterator;
 use super::traits::ArrayIteratorMut;
-use super::traits::MutableArrayImpl;
-use super::traits::RefArrayImpl;
 use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
-use super::traits::ValueArrayImpl;
 use super::types::RlstBase;
 
 pub mod empty_axis;
@@ -37,132 +35,110 @@ pub mod reference;
 pub mod slice;
 pub mod views;
 
-/// A basic dynamically allocated array.
-pub type DynamicArray<Item, const NDIM: usize> =
-    Array<Item, BaseArray<Item, VectorContainer<Item>, NDIM>, NDIM>;
+// /// A basic dynamically allocated array.
+// pub type DynamicArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Item>, NDIM>>;
 
-/// A dynamically allocated array from a data slice.
-pub type SliceArray<'a, Item, const NDIM: usize> =
-    Array<Item, BaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
+// /// A dynamically allocated array from a data slice.
+// pub type SliceArray<'a, Item, const NDIM: usize> = Array<BaseArray<SliceContainer<'a, Item>, NDIM>>;
 
-/// A dynamically allocated array from a data slice with a given stride.
-pub type StridedSliceArray<'a, Item, const NDIM: usize> =
-    Array<Item, StridedBaseArray<Item, SliceContainer<'a, Item>, NDIM>, NDIM>;
+// /// A dynamically allocated array from a data slice with a given stride.
+// pub type StridedSliceArray<'a, Item, const NDIM: usize> =
+//     Array<StridedBaseArray<SliceContainer<'a, Item>, NDIM>>;
 
-/// A mutable dynamically allocated array from a data slice.
-pub type SliceArrayMut<'a, Item, const NDIM: usize> =
-    Array<Item, BaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
+// /// A mutable dynamically allocated array from a data slice.
+// pub type SliceArrayMut<'a, Item, const NDIM: usize> =
+//     Array<BaseArray<SliceContainerMut<'a, Item>, NDIM>>;
 
-/// A mutable dynamically allocated array from a data slice with a given stride.
-pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
-    Array<Item, StridedBaseArray<Item, SliceContainerMut<'a, Item>, NDIM>, NDIM>;
+// /// A mutable dynamically allocated array from a data slice with a given stride.
+// pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
+//     Array<StridedBaseArray<SliceContainerMut<'a, Item>, NDIM>>;
 
-/// A view onto a matrix
-pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
-    Array<Item, crate::dense::array::views::ArrayView<'a, Item, ArrayImpl, NDIM>, NDIM>;
+// /// A view onto a matrix
+// pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
+//     Array<crate::dense::array::views::ArrayView<'a, Item, ArrayImpl, NDIM>, NDIM>;
 
-/// A mutable view onto a matrix
-pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
-    Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
+// /// A mutable view onto a matrix
+// pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
+//     Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
 
 /// The basic tuple type defining an array.
-pub struct Array<Item, ArrayImpl, const NDIM: usize>(ArrayImpl, std::marker::PhantomData<Item>)
-where
-    Item: RlstBase,
-    ArrayImpl: ValueArrayImpl<NDIM, Item>;
+pub struct Array<ArrayImpl, const NDIM: usize>(ArrayImpl);
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl> {
     /// Instantiate a new array from an `ArrayImpl` structure.
     pub fn new(arr: ArrayImpl) -> Self {
-        Self(arr, std::marker::PhantomData)
+        Self(arr)
     }
+}
 
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Return the number of elements in the array.
+    #[inline(always)]
     pub fn number_of_elements(&self) -> usize {
         self.0.shape().iter().product()
     }
 }
 
-impl<Item: RlstBase, const NDIM: usize> DynamicArray<Item, NDIM> {
+impl<Data: DataContainer, const NDIM: usize> Array<BaseArray<Data, NDIM>, NDIM> {
     /// Create a new heap allocated array from a given shape.
+    #[inline(always)]
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
-    for Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for Array<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.0.shape()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.0.get_value_unchecked(multi_index)
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline(always)]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
-        self.0.get_chunk(chunk_index)
-    }
-}
-
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for Array<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         self.0.get_unchecked(multi_index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessMut<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         self.0.get_unchecked_mut(multi_index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    std::ops::Index<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: RandomAccessByRef<NDIM>, const NDIM: usize> std::ops::Index<[usize; NDIM]>
+    for Array<ArrayImpl, NDIM>
 {
-    type Output = Item;
+    type Output = ArrayImpl::Item;
     #[inline(always)]
     fn index(&self, index: [usize; NDIM]) -> &Self::Output {
         self.0.get(index).unwrap()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + RefArrayImpl<NDIM, Item>,
-        const NDIM: usize,
-    > std::ops::IndexMut<[usize; NDIM]> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: RandomAccessMut<NDIM>, const NDIM: usize> std::ops::IndexMut<[usize; NDIM]>
+    for Array<ArrayImpl, NDIM>
+where
+    Array<ArrayImpl, NDIM>: std::ops::Index<[usize; NDIM]>,
 {
     #[inline(always)]
     fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
@@ -170,61 +146,19 @@ impl<
     }
 }
 
-/// Create an empty chunk.
-pub(crate) fn empty_chunk<const N: usize, Item: RlstBase>(
-    chunk_index: usize,
-    nelements: usize,
-) -> Option<DataChunk<Item, N>> {
-    let start_index = N * chunk_index;
-    if start_index >= nelements {
-        return None;
-    }
-    let end_index = (1 + chunk_index) * N;
-    let valid_entries = if end_index > nelements {
-        nelements - start_index
-    } else {
-        N
-    };
-    Some(DataChunk {
-        data: [<Item as Default>::default(); N],
-        start_index,
-        valid_entries,
-    })
-}
-
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccess<Item = Item>,
-        const NDIM: usize,
-    > RawAccess for Array<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for Array<ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
     fn data(&self) -> &[Self::Item] {
         self.0.data()
     }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        self.0.buff_ptr()
-    }
-
-    fn offset(&self) -> usize {
-        self.0.offset()
-    }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccessMut<Item = Item>,
-        const NDIM: usize,
-    > RawAccessMut for Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for Array<ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
+
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.0.data_mut()
-    }
-
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
-        self.0.buff_ptr_mut()
     }
 }
 
