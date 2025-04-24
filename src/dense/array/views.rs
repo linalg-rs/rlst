@@ -11,29 +11,23 @@ pub use flattened::{ArrayFlatView, ArrayFlatViewMut};
 pub use subview::ArraySubView;
 pub use view::{ArrayView, ArrayViewMut};
 
-use crate::{
-    dense::{
-        layout::convert_nd_raw,
-        traits::{UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
-        types::RlstBase,
-    },
-    Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+use crate::dense::{
+    layout::convert_nd_raw,
+    traits::{UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+    types::RlstBase,
 };
+
+use super::Array;
 
 // Basic traits for ArrayViewMut
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Move the array into a subview specified by an offset and shape of the subview.
     pub fn into_subview(
         self,
         offset: [usize; NDIM],
         shape: [usize; NDIM],
-    ) -> Array<Item, ArraySubView<Item, ArrayImpl, NDIM>, NDIM> {
+    ) -> Array<ArraySubView<ArrayImpl, NDIM>, NDIM> {
         Array::new(ArraySubView::new(self, offset, shape))
     }
 }
