@@ -9,49 +9,47 @@ use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::traits::{
-    DefaultIterator, DefaultIteratorMut, NumberOfElements, RandomAccessByRef, RandomAccessByValue,
-    RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    NumberOfElements, RandomAccessByRef, RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace,
+    Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::DataChunk;
 
-use super::data_container::DataContainer;
 use super::strided_base_array::StridedBaseArray;
 use super::traits::ArrayIterator;
 use super::traits::ArrayIteratorMut;
 use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
-use super::types::RlstBase;
 
-pub mod empty_axis;
-pub mod iterators;
-pub mod mult_into;
-pub mod operations;
-pub mod operators;
-pub mod random;
-pub mod rank1_array;
+// pub mod empty_axis;
+// pub mod iterators;
+// pub mod mult_into;
+// pub mod operations;
+// pub mod operators;
+// pub mod random;
+// pub mod rank1_array;
 pub mod reference;
-pub mod slice;
-pub mod views;
+// pub mod slice;
+// pub mod views;
 
-// /// A basic dynamically allocated array.
-// pub type DynamicArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Item>, NDIM>>;
+/// A basic dynamically allocated array.
+pub type DynamicArray<Item, const NDIM: usize> =
+    Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>;
 
-// /// A dynamically allocated array from a data slice.
-// pub type SliceArray<'a, Item, const NDIM: usize> = Array<BaseArray<SliceContainer<'a, Item>, NDIM>>;
+/// A dynamically allocated array from a data slice.
+pub type SliceArray<'a, Item, const NDIM: usize> =
+    Array<BaseArray<SliceContainer<'a, Item>, NDIM>, NDIM>;
 
-// /// A dynamically allocated array from a data slice with a given stride.
-// pub type StridedSliceArray<'a, Item, const NDIM: usize> =
-//     Array<StridedBaseArray<SliceContainer<'a, Item>, NDIM>>;
+/// A dynamically allocated array from a data slice with a given stride.
+pub type StridedSliceArray<'a, Item, const NDIM: usize> =
+    Array<StridedBaseArray<SliceContainer<'a, Item>, NDIM>, NDIM>;
 
-// /// A mutable dynamically allocated array from a data slice.
-// pub type SliceArrayMut<'a, Item, const NDIM: usize> =
-//     Array<BaseArray<SliceContainerMut<'a, Item>, NDIM>>;
+/// A mutable dynamically allocated array from a data slice.
+pub type SliceArrayMut<'a, Item, const NDIM: usize> =
+    Array<BaseArray<SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
-// /// A mutable dynamically allocated array from a data slice with a given stride.
-// pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
-//     Array<StridedBaseArray<SliceContainerMut<'a, Item>, NDIM>>;
+/// A mutable dynamically allocated array from a data slice with a given stride.
+pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
+    Array<StridedBaseArray<SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
 // /// A view onto a matrix
 // pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
@@ -64,7 +62,7 @@ pub mod views;
 /// The basic tuple type defining an array.
 pub struct Array<ArrayImpl, const NDIM: usize>(ArrayImpl);
 
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl> {
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Instantiate a new array from an `ArrayImpl` structure.
     pub fn new(arr: ArrayImpl) -> Self {
         Self(arr)
@@ -79,7 +77,7 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     }
 }
 
-impl<Data: DataContainer, const NDIM: usize> Array<BaseArray<Data, NDIM>, NDIM> {
+impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
     /// Create a new heap allocated array from a given shape.
     #[inline(always)]
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
@@ -138,10 +136,10 @@ impl<ArrayImpl: RandomAccessByRef<NDIM>, const NDIM: usize> std::ops::Index<[usi
 impl<ArrayImpl: RandomAccessMut<NDIM>, const NDIM: usize> std::ops::IndexMut<[usize; NDIM]>
     for Array<ArrayImpl, NDIM>
 where
-    Array<ArrayImpl, NDIM>: std::ops::Index<[usize; NDIM]>,
+    Array<ArrayImpl, NDIM>: std::ops::Index<[usize; NDIM], Output = ArrayImpl::Item>,
 {
     #[inline(always)]
-    fn index_mut(&mut self, index: [usize; NDIM]) -> &mut Self::Output {
+    fn index_mut(&mut self, index: [usize; NDIM]) -> &mut ArrayImpl::Item {
         self.0.get_mut(index).unwrap()
     }
 }
@@ -149,6 +147,7 @@ where
 impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for Array<ArrayImpl, NDIM> {
     type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.0.data()
     }
@@ -157,32 +156,28 @@ impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for Array<ArrayImpl, NDI
 impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for Array<ArrayImpl, NDIM> {
     type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.0.data_mut()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> NumberOfElements
-    for Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> NumberOfElements for Array<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn number_of_elements(&self) -> usize {
         self.shape().iter().product()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item> + Stride<NDIM>, const NDIM: usize>
-    Stride<NDIM> for Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for Array<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ResizeInPlace<NDIM>,
-        const NDIM: usize,
-    > ResizeInPlace<NDIM> for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
+    for Array<ArrayImpl, NDIM>
 {
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.0.resize_in_place(shape)
@@ -193,31 +188,14 @@ impl<
 ///
 /// Empty arrays serve as convenient containers for input into functions that
 /// resize an array before filling it with data.
-pub fn empty_array<Item: RlstBase, const NDIM: usize>() -> DynamicArray<Item, NDIM> {
+pub fn empty_array<Item: Clone + Default, const NDIM: usize>(
+) -> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
 }
 
-impl<'a, Item: RlstBase, const NDIM: usize> SliceArray<'a, Item, NDIM> {
-    /// Create a new array from a slice with a given `shape`.
-    ///
-    /// The `stride` is automatically assumed to be column major.
-    pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
-        Array::new(BaseArray::new(SliceContainer::new(slice), shape))
-    }
-}
-
-impl<'a, Item: RlstBase, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
-    /// Create a new array from a slice with a given `shape`.
-    ///
-    /// The `stride` is automatically assumed to be column major.
-    pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
-        Array::new(BaseArray::new(SliceContainerMut::new(slice), shape))
-    }
-}
-
-impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
     /// Create a new array from a slice with a given `shape` and `stride`.
     ///
     pub fn from_shape_and_stride(
@@ -233,7 +211,7 @@ impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
     }
 }
 
-impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM> {
     /// Create a new array from a slice with a given `shape` and `stride`.
     ///
     /// The `stride` is automatically assumed to be column major.
@@ -250,9 +228,7 @@ impl<'a, Item: RlstBase, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM>
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> std::fmt::Debug
-    for Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> std::fmt::Debug for Array<ArrayImpl, NDIM> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let shape = self.shape();
         write!(f, "Array[").unwrap();
@@ -263,46 +239,41 @@ impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> s
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ArrayIterator<Item = Item>,
-        const NDIM: usize,
-    > ArrayIterator for Array<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+impl<ArrayImpl: ArrayIterator, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
     type Iter<'a>
         = <ArrayImpl as ArrayIterator>::Iter<'a>
     where
         Self: 'a;
 
-    #[inline]
+    #[inline(always)]
     fn iter(&self) -> Self::Iter<'_> {
         self.0.iter()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + ArrayIteratorMut<Item = Item>,
-        const NDIM: usize,
-    > ArrayIteratorMut for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ArrayIteratorMut,
 {
+    type Item = ArrayImpl::Item;
+
     type IterMut<'a>
         = <ArrayImpl as ArrayIteratorMut>::IterMut<'a>
     where
         Self: 'a;
 
-    #[inline]
+    #[inline(always)]
     fn iter_mut(&self) -> Self::IterMut<'_> {
         self.0.iter_mut()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
@@ -310,10 +281,10 @@ impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByRef for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
@@ -321,10 +292,10 @@ impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessMut for Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccessMut
+    for Array<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {

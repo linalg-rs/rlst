@@ -66,7 +66,7 @@ pub trait ResizeableDataContainer: DataContainer {
 /// Definition of a data container that allows raw access.
 pub trait RawAccessDataContainer: DataContainer {
     /// Return a raw pointer to the data.
-    fn data(&mut self) -> &[Self::Item];
+    fn data(&self) -> &[Self::Item];
 }
 
 /// Definition of a data container that allows raw access.
@@ -142,7 +142,7 @@ impl<Item: Default> ResizeableDataContainer for VectorContainer<Item> {
 
 impl<Item> RawAccessDataContainer for VectorContainer<Item> {
     #[inline(always)]
-    fn data(&mut self) -> &[Self::Item] {
+    fn data(&self) -> &[Self::Item] {
         self.data.as_slice()
     }
 }
@@ -222,7 +222,7 @@ impl<Item: Copy, const N: usize> ModifiableDataContainer for ArrayContainer<Item
 
 impl<Item: Copy, const N: usize> RawAccessDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
-    fn data(&mut self) -> &[Self::Item] {
+    fn data(&self) -> &[Self::Item] {
         &self.data
     }
 }
@@ -274,7 +274,7 @@ impl<Item> RefDataContainer for SliceContainer<'_, Item> {
 
 impl<Item> RawAccessDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
-    fn data(&mut self) -> &[Self::Item] {
+    fn data(&self) -> &[Self::Item] {
         self.data
     }
 }
@@ -334,7 +334,7 @@ impl<Item> ModifiableDataContainer for SliceContainerMut<'_, Item> {
 
 impl<Item> RawAccessDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
-    fn data(&mut self) -> &[Self::Item] {
+    fn data(&self) -> &[Self::Item] {
         self.data
     }
 }

@@ -205,7 +205,9 @@ pub trait ArrayIterator {
 ///
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
-pub trait ArrayIteratorMut: ArrayIterator {
+pub trait ArrayIteratorMut {
+    /// Item type of the iterator.
+    type Item;
     /// Type of the iterator.
     type IterMut<'a>: Iterator<Item = &'a mut Self::Item>
     where
