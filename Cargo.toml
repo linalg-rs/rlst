@@ -64,47 +64,47 @@ enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 [lints.clippy]
 wildcard_imports = "forbid"
 
-[[bench]]
-name = "matrix_multiplication"
-harness = false
+# [[bench]]
+# name = "matrix_multiplication"
+# harness = false
 
-[[bench]]
-name = "inverse_sqrt_f64"
-harness = false
+# [[bench]]
+# name = "inverse_sqrt_f64"
+# harness = false
 
-[[bench]]
-name = "inverse_sqrt_f32"
-harness = false
+# [[bench]]
+# name = "inverse_sqrt_f32"
+# harness = false
 
-[[bench]]
-name = "sin_cos"
-harness = false
+# [[bench]]
+# name = "sin_cos"
+# harness = false
 
-[[bench]]
-name = "exp"
-harness = false
+# [[bench]]
+# name = "exp"
+# harness = false
 
 
-[[example]]
-name = "mpi_gather_to_all_vector"
-required-features = ["mpi"]
+# [[example]]
+# name = "mpi_gather_to_all_vector"
+# required-features = ["mpi"]
 
-[[example]]
-name = "mpi_gather_vector"
-required-features = ["mpi"]
+# [[example]]
+# name = "mpi_gather_vector"
+# required-features = ["mpi"]
 
-[[example]]
-name = "mpi_index_set"
-required-features = ["mpi"]
+# [[example]]
+# name = "mpi_index_set"
+# required-features = ["mpi"]
 
-[[example]]
-name = "mpi_scatter_vector"
-required-features = ["mpi"]
+# [[example]]
+# name = "mpi_scatter_vector"
+# required-features = ["mpi"]
 
-[[example]]
-name = "distributed_csr_matmul"
-required-features = ["mpi"]
+# [[example]]
+# name = "distributed_csr_matmul"
+# required-features = ["mpi"]
 
-[[example]]
-name = "cg_distributed"
-required-features = ["mpi"]
+# [[example]]
+# name = "cg_distributed"
+# required-features = ["mpi"]

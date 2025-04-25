@@ -29,7 +29,8 @@ use super::traits::UnsafeRandom1DAccessMut;
 // pub mod rank1_array;
 pub mod reference;
 // pub mod slice;
-pub mod views;
+pub mod flattened;
+pub mod subview;
 
 /// A basic dynamically allocated array.
 pub type DynamicArray<Item, const NDIM: usize> =
