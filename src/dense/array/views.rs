@@ -91,14 +91,21 @@ fn compute_raw_range<const NDIM: usize>(
     shape: [usize; NDIM],
 ) -> (usize, usize) {
     let start_multi_index = offset;
-    let mut end_multi_index = [0; NDIM];
-    for (index, value) in end_multi_index.iter_mut().enumerate() {
-        let sum = start_multi_index[index] + shape[index];
-        assert!(sum > 0);
-        *value = sum - 1;
-    }
+    if shape.iter().min().unwrap() == 0 {
+        // If there is a zero dimension, the start and end raw indices are the same
+        // as the subview is empty.
+        let start_raw = convert_nd_raw(start_multi_index, stride);
+        (start_raw, start_raw)
+    } else {
+        let mut end_multi_index = [0; NDIM];
+        for (index, value) in end_multi_index.iter_mut().enumerate() {
+            *value = start_multi_index[index] + shape[index] - 1;
+        }
 
-    let start_raw = convert_nd_raw(start_multi_index, stride);
-    let end_raw = convert_nd_raw(end_multi_index, stride);
-    (start_raw, 1 + end_raw)
+        let start_raw = convert_nd_raw(start_multi_index, stride);
+        let end_raw = convert_nd_raw(end_multi_index, stride);
+        // Need 1 + end_raw since `end_multi_index` is the last computed element and
+        // the range bound is one further than the last element.
+        (start_raw, 1 + end_raw)
+    }
 }

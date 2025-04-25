@@ -5,284 +5,203 @@ use crate::dense::types::RlstBase;
 use crate::dense::array::Array;
 
 use crate::dense::traits::{
-    ChunkedAccess, MutableArrayImpl, RawAccess, RawAccessMut, RefArrayImpl, ResizeInPlace, Shape,
-    Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut, ValueArrayImpl,
+    RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandom1DAccessByRef,
+    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 /// Basic structure for a `View`
-pub struct ArrayView<'a, Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> {
-    arr: &'a Array<Item, ArrayImpl, NDIM>,
-}
+pub struct ArrayView<'a, ArrayImpl, const NDIM: usize>(&'a Array<ArrayImpl, NDIM>);
 
-impl<'a, Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayView<'a, Item, ArrayImpl, NDIM>
-{
+impl<'a, ArrayImpl, const NDIM: usize> ArrayView<'a, ArrayImpl, NDIM> {
     /// Create new view
-    pub fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
-        Self { arr }
+    #[inline(always)]
+    pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
+        Self(arr)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
-    for ArrayView<'_, Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for ArrayView<'_, ArrayImpl, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
-        self.arr.shape()
+        self.0.shape()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item> + Stride<NDIM>, const NDIM: usize>
-    Stride<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArrayView<'_, ArrayImpl, NDIM> {
+    #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
-        self.arr.stride()
+        self.0.stride()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccess<Item = Item>,
-        const NDIM: usize,
-    > RawAccess for ArrayView<'_, Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArrayView<'_, ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
-        self.arr.data()
-    }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        self.arr.buff_ptr()
-    }
-
-    fn offset(&self) -> usize {
-        self.arr.offset()
+        self.0.data()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for ArrayView<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr.get_value_unchecked(multi_index)
+        self.0.get_value_unchecked(multi_index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for ArrayView<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for ArrayView<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.arr.get_unchecked(multi_index)
+        self.0.get_unchecked(multi_index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for ArrayView<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for ArrayView<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.get_value_1d_unchecked(index)
+        self.0.get_value_1d_unchecked(index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByRef for ArrayView<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for ArrayView<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.get_1d_unchecked(index)
-    }
-}
-
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArrayView<'_, Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
-        self.arr.get_chunk(chunk_index)
+        self.0.get_1d_unchecked(index)
     }
 }
 
 /////////// ArrayViewMut
 
 /// Mutable array view
-pub struct ArrayViewMut<
-    'a,
-    Item: RlstBase,
-    ArrayImpl: MutableArrayImpl<NDIM, Item>,
-    const NDIM: usize,
-> {
-    arr: &'a mut Array<Item, ArrayImpl, NDIM>,
-}
+pub struct ArrayViewMut<'a, ArrayImpl, const NDIM: usize>(&'a mut Array<ArrayImpl, NDIM>);
 
-impl<'a, Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayViewMut<'a, Item, ArrayImpl, NDIM>
-{
+impl<'a, ArrayImpl, const NDIM: usize> ArrayViewMut<'a, ArrayImpl, NDIM> {
     /// Create new mutable view
-    pub fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
-        Self { arr }
+    #[inline(always)]
+    pub fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
+        Self(arr)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
-    for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for ArrayViewMut<'_, ArrayImpl, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
-        self.arr.shape()
+        self.0.shape()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.get_value_1d_unchecked(index)
+        self.0.get_value_1d_unchecked(index)
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + RefArrayImpl<NDIM, Item>,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByRef for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.get_1d_unchecked(index)
+        self.0.get_1d_unchecked(index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessMut for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccessMut
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.get_1d_unchecked_mut(index)
+        self.0.get_1d_unchecked_mut(index)
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item> + Stride<NDIM>, const NDIM: usize>
-    Stride<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM>
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
+    #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
-        self.arr.stride()
+        self.0.stride()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + RawAccess<Item = Item>,
-        const NDIM: usize,
-    > RawAccess for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArrayViewMut<'_, ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
-        self.arr.data()
-    }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        self.arr.buff_ptr()
-    }
-
-    fn offset(&self) -> usize {
-        self.arr.offset()
+        self.0.data()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + RawAccessMut<Item = Item>,
-        const NDIM: usize,
-    > RawAccessMut for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
+    type Item = ArrayImpl::Item;
+
     fn data_mut(&mut self) -> &mut [Self::Item] {
-        self.arr.data_mut()
-    }
-
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
-        self.arr.buff_ptr_mut()
+        self.0.data_mut()
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr.get_value_unchecked(multi_index)
+        self.0.get_value_unchecked(multi_index)
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + RefArrayImpl<NDIM, Item>,
-        const NDIM: usize,
-    > UnsafeRandomAccessByRef<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.arr.get_unchecked(multi_index)
+        self.0.get_unchecked(multi_index)
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
-        self.arr.get_chunk(chunk_index)
-    }
-}
-
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessMut<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.arr.get_unchecked_mut(multi_index)
+        self.0.get_unchecked_mut(multi_index)
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<NDIM, Item> + ResizeInPlace<NDIM>,
-        const NDIM: usize,
-    > ResizeInPlace<NDIM> for ArrayViewMut<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
+    for ArrayViewMut<'_, ArrayImpl, NDIM>
 {
-    #[inline]
+    #[inline(always)]
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
-        self.arr.resize_in_place(shape)
+        self.0.resize_in_place(shape)
     }
 }

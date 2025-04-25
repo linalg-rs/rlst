@@ -2,31 +2,24 @@
 use crate::dense::array::views::{compute_raw_range, offset_multi_index};
 use crate::dense::array::Array;
 
-use crate::dense::layout::{check_multi_index_in_bounds, convert_nd_raw};
+use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use crate::dense::traits::{
-    ChunkedAccess, MutableArrayImpl, RawAccess, RawAccessMut, RefArrayImpl, Shape, Stride,
-    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut, ValueArrayImpl,
+    RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
-use crate::dense::types::RlstBase;
 
 /// Subview of an array
-pub struct ArraySubView<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> {
-    arr: Array<Item, ArrayImpl, NDIM>,
+pub struct ArraySubView<ArrayImpl, const NDIM: usize> {
+    arr: Array<ArrayImpl, NDIM>,
     offset: [usize; NDIM],
     shape: [usize; NDIM],
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArraySubView<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> ArraySubView<ArrayImpl, NDIM> {
     /// Create new array sub-view
-    pub fn new(
-        arr: Array<Item, ArrayImpl, NDIM>,
-        offset: [usize; NDIM],
-        shape: [usize; NDIM],
-    ) -> Self {
+    pub fn new(arr: Array<ArrayImpl, NDIM>, offset: [usize; NDIM], shape: [usize; NDIM]) -> Self {
         let arr_shape = arr.shape();
         for index in 0..NDIM {
             assert!(
@@ -43,52 +36,37 @@ impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
 
 // Basic traits for ArraySubView
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
-    for ArraySubView<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl, const NDIM: usize> Shape<NDIM> for ArraySubView<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.shape
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item> + Stride<NDIM>, const NDIM: usize>
-    Stride<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArraySubView<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccess<Item = Item> + Stride<NDIM>,
-        const NDIM: usize,
-    > RawAccess for ArraySubView<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
+impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArraySubView<ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         assert!(!self.is_empty());
         let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
 
         &self.arr.data()[start_raw..end_raw]
     }
-
-    fn offset(&self) -> usize {
-        let raw_offset = convert_nd_raw(self.offset, self.stride());
-        self.arr.offset() + raw_offset
-    }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        self.arr.buff_ptr()
-    }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.arr
@@ -96,11 +74,11 @@ impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
         self.arr
@@ -108,95 +86,57 @@ impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.get_value_1d_unchecked(index)
+        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape))
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByRef for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.get_1d_unchecked(index)
+        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape))
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessMut for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAccessMut
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
+    #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.get_1d_unchecked_mut(index)
+        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape))
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArraySubView<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    #[inline]
-    fn get_chunk(
-        &self,
-        chunk_index: usize,
-    ) -> Option<crate::dense::types::DataChunk<Self::Item, N>> {
-        if self.offset == [0; NDIM] && self.shape() == self.arr.shape() {
-            // If the view is on the full array we can just pass on the chunk request
-            self.arr.get_chunk(chunk_index)
-        } else {
-            // If the view is on a subsection of the array have to recalcuate the chunk
-            let nelements = self.shape().iter().product();
-            if let Some(mut chunk) = crate::dense::array::empty_chunk(chunk_index, nelements) {
-                for count in 0..chunk.valid_entries {
-                    unsafe {
-                        chunk.data[count] = self.get_value_1d_unchecked(chunk.start_index + count)
-                    }
-                }
-                Some(chunk)
-            } else {
-                None
-            }
-        }
-    }
-}
+impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for ArraySubView<ArrayImpl, NDIM> {
+    type Item = ArrayImpl::Item;
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + RawAccessMut<Item = Item> + crate::Stride<NDIM>,
-        const NDIM: usize,
-    > RawAccessMut for ArraySubView<Item, ArrayImpl, NDIM>
-{
+    #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
-        assert!(!self.is_empty());
         let (start_raw, end_raw) =
             crate::dense::array::views::compute_raw_range(self.offset, self.stride(), self.shape());
 
         &mut self.arr.data_mut()[start_raw..end_raw]
     }
-
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
-        self.arr.buff_ptr_mut()
-    }
 }
 
-impl<Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessMut<NDIM> for ArraySubView<Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
+    for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(crate::dense::layout::check_multi_index_in_bounds(
             multi_index,
