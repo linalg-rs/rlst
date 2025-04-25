@@ -1,8 +1,7 @@
 //! Subview onto an array
-use crate::dense::array::views::{compute_raw_range, offset_multi_index};
 use crate::dense::array::Array;
 
-use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
+use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
 
 use crate::dense::traits::{
     RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
@@ -50,7 +49,9 @@ impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArraySubView<A
     }
 }
 
-impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArraySubView<ArrayImpl, NDIM> {
+impl<ArrayImpl: RawAccess + Stride<NDIM>, const NDIM: usize> RawAccess
+    for ArraySubView<ArrayImpl, NDIM>
+{
     type Item = ArrayImpl::Item;
 
     #[inline(always)]
@@ -119,13 +120,14 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAc
     }
 }
 
-impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for ArraySubView<ArrayImpl, NDIM> {
+impl<ArrayImpl: RawAccessMut + Stride<NDIM>, const NDIM: usize> RawAccessMut
+    for ArraySubView<ArrayImpl, NDIM>
+{
     type Item = ArrayImpl::Item;
 
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
-        let (start_raw, end_raw) =
-            crate::dense::array::views::compute_raw_range(self.offset, self.stride(), self.shape());
+        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
 
         &mut self.arr.data_mut()[start_raw..end_raw]
     }
@@ -143,9 +145,42 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAcce
             self.shape()
         ));
         self.arr
-            .get_unchecked_mut(crate::dense::array::views::offset_multi_index(
-                multi_index,
-                self.offset,
-            ))
+            .get_unchecked_mut(offset_multi_index(multi_index, self.offset))
+    }
+}
+
+fn offset_multi_index<const NDIM: usize>(
+    multi_index: [usize; NDIM],
+    offset: [usize; NDIM],
+) -> [usize; NDIM] {
+    let mut output = [0; NDIM];
+    for (ind, elem) in output.iter_mut().enumerate() {
+        *elem = multi_index[ind] + offset[ind]
+    }
+    output
+}
+
+fn compute_raw_range<const NDIM: usize>(
+    offset: [usize; NDIM],
+    stride: [usize; NDIM],
+    shape: [usize; NDIM],
+) -> (usize, usize) {
+    let start_multi_index = offset;
+    if *shape.iter().min().unwrap() == 0 {
+        // If there is a zero dimension, the start and end raw indices are the same
+        // as the subview is empty.
+        let start_raw = convert_nd_raw(start_multi_index, stride);
+        (start_raw, start_raw)
+    } else {
+        let mut end_multi_index = [0; NDIM];
+        for (index, value) in end_multi_index.iter_mut().enumerate() {
+            *value = start_multi_index[index] + shape[index] - 1;
+        }
+
+        let start_raw = convert_nd_raw(start_multi_index, stride);
+        let end_raw = convert_nd_raw(end_multi_index, stride);
+        // Need 1 + end_raw since `end_multi_index` is the last computed element and
+        // the range bound is one further than the last element.
+        (start_raw, 1 + end_raw)
     }
 }

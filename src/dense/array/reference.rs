@@ -3,8 +3,6 @@
 //! A reference is an owned struct that holds a reference to an array. It is used to
 //! pass arrays to functions without transferring ownership.
 
-use crate::dense::types::RlstBase;
-
 use crate::dense::array::Array;
 
 use crate::dense::traits::{

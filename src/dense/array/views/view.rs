@@ -1,7 +1,5 @@
 //! Default view onto an array.
 
-use crate::dense::types::RlstBase;
-
 use crate::dense::array::Array;
 
 use crate::dense::traits::{
