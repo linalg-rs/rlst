@@ -3,98 +3,64 @@
 use std::marker::PhantomData;
 
 use crate::dense::{
-    array::{Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByValue},
-    traits::{UnsafeRandom1DAccessByValue, ValueArrayImpl},
-    types::RlstNum,
+    array::{Array, Shape, UnsafeRandomAccessByValue},
+    traits::UnsafeRandom1DAccessByValue,
 };
 
 /// Array to complex
-pub struct ArrayCast<
-    Item: RlstNum,
-    Target: RlstNum,
-    ArrayImpl: ValueArrayImpl<NDIM, Item>,
-    const NDIM: usize,
-> {
-    operator: Array<Item, ArrayImpl, NDIM>,
-    _marker1: PhantomData<Item>,
-    _marker2: PhantomData<Target>,
+pub struct ArrayCast<Target, ArrayImpl, const NDIM: usize> {
+    arr: Array<ArrayImpl, NDIM>,
+    _marker: PhantomData<Target>,
 }
 
-impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayCast<Item, Target, ArrayImpl, NDIM>
-{
+impl<Target, ArrayImpl, const NDIM: usize> ArrayCast<Target, ArrayImpl, NDIM> {
     /// Create new
-    pub fn new(operator: Array<Item, ArrayImpl, NDIM>) -> Self {
+    pub fn new(operator: Array<ArrayImpl, NDIM>) -> Self {
         Self {
-            operator,
-            _marker1: PhantomData,
-            _marker2: PhantomData,
+            arr: operator,
+            _marker: PhantomData,
         }
     }
 }
 
-impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Target, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize>
+    UnsafeRandomAccessByValue<NDIM> for ArrayCast<Target, ArrayImpl, NDIM>
+where
+    ArrayImpl::Item: num::NumCast,
+    Target: num::NumCast,
 {
     type Item = Target;
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        num::cast::<Item, Target>(self.operator.get_value_unchecked(multi_index)).unwrap()
+        num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_unchecked(multi_index)).unwrap()
     }
 }
 
-impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    Shape<NDIM> for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Target, ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM>
+    for ArrayCast<Target, ArrayImpl, NDIM>
 {
     fn shape(&self) -> [usize; NDIM] {
-        self.operator.shape()
+        self.arr.shape()
     }
 }
 
-impl<
-        Item: RlstNum,
-        Target: RlstNum,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArrayCast<Item, Target, ArrayImpl, NDIM>
-{
-    type Item = Target;
-    #[inline]
-    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>> {
-        if let Some(chunk) = self.operator.get_chunk(chunk_index) {
-            let mut data = [<Target as num::Zero>::zero(); N];
-
-            for (d, &c) in data.iter_mut().zip(chunk.data.iter()) {
-                *d = num::cast::<Item, Target>(c).unwrap();
-            }
-            Some(DataChunk::<Target, N> {
-                data,
-                start_index: chunk.start_index,
-                valid_entries: chunk.valid_entries,
-            })
-        } else {
-            None
-        }
-    }
-}
-
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    Array<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Cast array to type `T`.
-    pub fn cast<T: RlstNum>(self) -> Array<T, ArrayCast<Item, T, ArrayImpl, NDIM>, NDIM> {
+    pub fn cast<Target>(self) -> Array<ArrayCast<Target, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayCast::new(self))
     }
 }
 
-impl<Item: RlstNum, Target: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for ArrayCast<Item, Target, ArrayImpl, NDIM>
+impl<Target, ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for ArrayCast<Target, ArrayImpl, NDIM>
+where
+    ArrayImpl::Item: num::NumCast,
+    Target: num::NumCast,
 {
     type Item = Target;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        num::cast::<Item, Target>(self.operator.get_value_1d_unchecked(index)).unwrap()
+        num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_1d_unchecked(index)).unwrap()
     }
 }

@@ -24,7 +24,7 @@ use super::traits::UnsafeRandom1DAccessMut;
 // pub mod iterators;
 // pub mod mult_into;
 // pub mod operations;
-// pub mod operators;
+pub mod operators;
 // pub mod random;
 // pub mod rank1_array;
 pub mod reference;
