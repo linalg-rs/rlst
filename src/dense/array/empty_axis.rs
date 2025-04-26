@@ -2,16 +2,12 @@
 
 use crate::dense::{
     number_types::{IsSmallerByOne, NumberType},
-    traits::{
-        MutableArrayImpl, RefArrayImpl, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
-        UnsafeRandom1DAccessMut, ValueArrayImpl,
-    },
-    types::RlstBase,
+    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
 };
 
 use super::{
-    Array, ChunkedAccess, DataChunk, RawAccess, RawAccessMut, Shape, Stride,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    Array, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 /// Axis position.
@@ -24,43 +20,31 @@ pub enum AxisPosition {
 }
 
 /// Array implementation that provides an appended empty axis.
-pub struct ArrayAppendAxis<
-    Item: RlstBase,
-    ArrayImpl: ValueArrayImpl<ADIM, Item>,
-    const ADIM: usize,
-    const NDIM: usize,
-> where
+pub struct ArrayAppendAxis<ArrayImpl, const ADIM: usize, const NDIM: usize>
+where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
-    arr: Array<Item, ArrayImpl, ADIM>,
+    arr: Array<ArrayImpl, ADIM>,
     axis_position: AxisPosition,
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
     /// Create new
-    pub fn new(arr: Array<Item, ArrayImpl, ADIM>, axis_position: AxisPosition) -> Self {
+    pub fn new(arr: Array<ArrayImpl, ADIM>, axis_position: AxisPosition) -> Self {
         Self { arr, axis_position }
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandomAccessByValue<NDIM> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandomAccessByValue<ADIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
@@ -69,16 +53,13 @@ where
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessByValue,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
@@ -86,12 +67,13 @@ where
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<ADIM, Item>, const ADIM: usize, const NDIM: usize>
-    UnsafeRandom1DAccessByRef for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandom1DAccessByRef
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessByRef,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
@@ -99,16 +81,13 @@ where
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessMut for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandom1DAccessMut
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessMut,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
@@ -116,12 +95,13 @@ where
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: RefArrayImpl<ADIM, Item>, const ADIM: usize, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandomAccessByRef<ADIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
@@ -130,16 +110,13 @@ where
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: MutableArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandomAccessMut<NDIM> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: UnsafeRandomAccessMut<ADIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
@@ -148,14 +125,11 @@ where
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > Shape<NDIM> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> Shape<NDIM>
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: Shape<ADIM>,
 {
     fn shape(&self) -> [usize; NDIM] {
         let mut result = [1; NDIM];
@@ -169,55 +143,37 @@ where
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item> + RawAccess<Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > RawAccess for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl: RawAccess, const ADIM: usize, const NDIM: usize> RawAccess
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.arr.data()
     }
-
-    fn buff_ptr(&self) -> *const Self::Item {
-        self.arr.buff_ptr()
-    }
-
-    fn offset(&self) -> usize {
-        self.arr.offset()
-    }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item> + RawAccessMut<Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > RawAccessMut for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl: RawAccessMut, const ADIM: usize, const NDIM: usize> RawAccessMut
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
 {
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.arr.data_mut()
     }
-
-    fn buff_ptr_mut(&mut self) -> *mut Self::Item {
-        self.arr.buff_ptr_mut()
-    }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item> + Stride<ADIM>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > Stride<NDIM> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> Stride<NDIM>
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: Stride<ADIM> + Shape<ADIM>,
 {
     fn stride(&self) -> [usize; NDIM] {
         let mut result = [0; NDIM];
@@ -237,36 +193,16 @@ where
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<ADIM, Item>, const ADIM: usize>
-    Array<Item, ArrayImpl, ADIM>
-{
+impl<ArrayImpl, const ADIM: usize> Array<ArrayImpl, ADIM> {
     /// Insert empty axis
     pub fn insert_empty_axis<const NDIM: usize>(
         self,
         axis_position: AxisPosition,
-    ) -> Array<Item, ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>, NDIM>
+    ) -> Array<ArrayAppendAxis<ArrayImpl, ADIM, NDIM>, NDIM>
     where
         NumberType<ADIM>: IsSmallerByOne<NDIM>,
     {
         Array::new(ArrayAppendAxis::new(self, axis_position))
-    }
-}
-
-impl<
-        Item: RlstBase,
-        ArrayImpl: ValueArrayImpl<ADIM, Item> + ChunkedAccess<N, Item = Item>,
-        const ADIM: usize,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArrayAppendAxis<Item, ArrayImpl, ADIM, NDIM>
-where
-    NumberType<ADIM>: IsSmallerByOne<NDIM>,
-{
-    type Item = Item;
-
-    #[inline]
-    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>> {
-        self.arr.get_chunk(chunk_index)
     }
 }
 

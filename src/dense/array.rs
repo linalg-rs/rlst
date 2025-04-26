@@ -20,7 +20,7 @@ use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
 
-// pub mod empty_axis;
+pub mod empty_axis;
 // pub mod iterators;
 // pub mod mult_into;
 // pub mod operations;

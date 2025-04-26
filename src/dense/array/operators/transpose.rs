@@ -2,137 +2,136 @@
 
 use crate::dense::{
     array::{
-        empty_chunk, Array, ChunkedAccess, DataChunk, Shape, UnsafeRandomAccessByRef,
-        UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+        Array, Shape, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
     },
     layout::convert_1d_nd_from_shape,
-    traits::{
-        MutableArrayImpl, RefArrayImpl, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
-        UnsafeRandom1DAccessMut, ValueArrayImpl,
-    },
-    types::RlstNum,
+    traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
 };
 
 /// Transpose array
-pub struct ArrayTranspose<
-    Item: RlstNum,
-    ArrayImpl: ValueArrayImpl<NDIM, Item> + Shape<NDIM>,
-    const NDIM: usize,
-> {
-    operator: Array<Item, ArrayImpl, NDIM>,
+pub struct ArrayTranspose<ArrayImpl, const NDIM: usize> {
+    arr: Array<ArrayImpl, NDIM>,
     permutation: [usize; NDIM],
     shape: [usize; NDIM],
 }
 
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
 {
     /// Create new transpose array
-    pub fn new(operator: Array<Item, ArrayImpl, NDIM>, permutation: [usize; NDIM]) -> Self {
+    pub fn new(arr: Array<ArrayImpl, NDIM>, permutation: [usize; NDIM]) -> Self {
         let mut shape = [0; NDIM];
-        let operator_shape = operator.shape();
+        let operator_shape = arr.shape();
 
         for &index in &permutation {
             shape[index] = operator_shape[permutation[index]];
         }
         Self {
-            operator,
+            arr,
             permutation,
             shape,
         }
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByValue<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM>,
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.operator
+        self.arr
             .get_value_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessByRef<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandomAccessByRef<NDIM> for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessByRef<NDIM>,
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.operator
+        self.arr
             .get_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandomAccessMut<NDIM> for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandomAccessMut<NDIM> for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessMut<NDIM>,
 {
-    type Item = Item;
-    #[inline]
+    type Item = ArrayImpl::Item;
+
+    #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.operator
+        self.arr
             .get_unchecked_mut(inverse_permute_multi_index(multi_index, self.permutation))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> Shape<NDIM>
-    for ArrayTranspose<Item, ArrayImpl, NDIM>
-{
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for ArrayTranspose<ArrayImpl, NDIM> {
+    #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.shape
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByValue for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByValue for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM> + Shape<NDIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.operator
-            .get_value_unchecked(convert_1d_nd_from_shape(index, self.operator.shape()))
+        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape()))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: RefArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessByRef for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByRef for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessByRef<NDIM> + Shape<NDIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.operator
-            .get_unchecked(convert_1d_nd_from_shape(index, self.operator.shape()))
+        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape()))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    UnsafeRandom1DAccessMut for ArrayTranspose<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessMut for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessMut<NDIM> + Shape<NDIM>,
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
 
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.operator
-            .get_unchecked_mut(convert_1d_nd_from_shape(index, self.operator.shape()))
+        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape()))
     }
 }
 
-impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    Array<Item, ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
 {
     /// Permute axes of an array
     pub fn permute_axes(
         self,
         permutation: [usize; NDIM],
-    ) -> Array<Item, ArrayTranspose<Item, ArrayImpl, NDIM>, NDIM> {
+    ) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayTranspose::new(self, permutation))
     }
 
     /// Transpose an array
-    pub fn transpose(self) -> Array<Item, ArrayTranspose<Item, ArrayImpl, NDIM>, NDIM> {
+    pub fn transpose(self) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
         let mut permutation = [0; NDIM];
 
         for (ind, p) in (0..NDIM).rev().enumerate() {
@@ -140,33 +139,6 @@ impl<Item: RlstNum, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
         }
 
         self.permute_axes(permutation)
-    }
-}
-
-impl<
-        Item: RlstNum,
-        ArrayImpl: ValueArrayImpl<NDIM, Item> + ChunkedAccess<N, Item = Item>,
-        const NDIM: usize,
-        const N: usize,
-    > ChunkedAccess<N> for ArrayTranspose<Item, ArrayImpl, NDIM>
-{
-    type Item = Item;
-    #[inline]
-    fn get_chunk(&self, chunk_index: usize) -> Option<DataChunk<Self::Item, N>> {
-        let nelements = self.shape.iter().product();
-        if let Some(mut chunk) = empty_chunk::<N, Item>(chunk_index, nelements) {
-            for ind in 0..chunk.valid_entries {
-                chunk.data[ind] = unsafe {
-                    self.get_value_unchecked(convert_1d_nd_from_shape(
-                        chunk.start_index + ind,
-                        self.shape,
-                    ))
-                }
-            }
-            Some(chunk)
-        } else {
-            None
-        }
     }
 }
 

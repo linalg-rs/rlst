@@ -9,4 +9,4 @@ pub mod unary_op;
 pub mod scalar_mult;
 pub mod subtraction;
 // pub mod to_complex;
-// pub mod transpose;
+pub mod transpose;
