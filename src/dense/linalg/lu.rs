@@ -11,47 +11,36 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use num::One;
 
 /// Compute an LU decomposition from a given two-dimensional array.
-pub trait MatrixLu: RlstScalar {
+pub trait MatrixLu {
     /// Compute the matrix inverse
-    fn into_lu_alloc<
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
-            + Stride<2>
-            + Shape<2>
-            + RawAccessMut<Item = Self>,
+    fn into_lu<
+        ArrayImpl: Stride<2> + Shape<2> + RawAccess<Item = Self> + RawAccessMut<Item = Self>,
     >(
-        arr: Array<Self, ArrayImpl, 2>,
-    ) -> RlstResult<LuDecomposition<Self, ArrayImpl>>;
+        arr: Array<ArrayImpl, 2>,
+    ) -> RlstResult<LuDecomposition<ArrayImpl>>;
 }
 
 macro_rules! implement_into_lu {
     ($scalar:ty) => {
         impl MatrixLu for $scalar {
-            fn into_lu_alloc<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
-                    + Stride<2>
-                    + Shape<2>
-                    + RawAccessMut<Item = Self>,
-            >(
-                arr: Array<Self, ArrayImpl, 2>,
-            ) -> RlstResult<LuDecomposition<Self, ArrayImpl>> {
-                LuDecomposition::<$scalar, ArrayImpl>::new(arr)
+            fn into_lu<ArrayImpl: Stride<2> + Shape<2> + RawAccess<Item = Self> +RawAccessMut<Item = Self>>(
+                arr: Array<ArrayImpl, 2>,
+            ) -> RlstResult<LuDecomposition<ArrayImpl>> {
+                LuDecomposition::<ArrayImpl>::new(arr)
             }
         }
     };
 }
 
-implement_into_lu!(f32);
+// implement_into_lu!(f32);
 implement_into_lu!(f64);
-implement_into_lu!(c32);
-implement_into_lu!(c64);
+// implement_into_lu!(c32);
+// implement_into_lu!(c64);
 
 impl<
-        Item: RlstScalar + MatrixLu,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Stride<2>
-            + RawAccessMut<Item = Item>
-            + Shape<2>,
-    > Array<Item, ArrayImpl, 2>
+        Item: MatrixLu,
+        ArrayImpl: Stride<2> + RawAccess<Item = Item> + RawAccessMut<Item = Item> + Shape<2>,
+    > Array<ArrayImpl, 2>
 {
     /// Compute the LU decomposition of a matrix.
     ///
@@ -59,8 +48,8 @@ impl<
     /// by `A = PLU`, where `P` is an `(m, m)` permutation matrix,
     /// `L` is a `(m, k)` unit lower triangular matrix, and `U` is
     /// an `(k, n)` upper triangular matrix.
-    pub fn into_lu_alloc(self) -> RlstResult<LuDecomposition<Item, ArrayImpl>> {
-        <Item as MatrixLu>::into_lu_alloc(self)
+    pub fn into_lu(self) -> RlstResult<LuDecomposition<ArrayImpl>> {
+        <Item as MatrixLu>::into_lu(self)
     }
 }
 
@@ -72,118 +61,62 @@ impl<
 /// an `(k, n)` upper triangular matrix.
 pub trait MatrixLuDecomposition: Sized {
     /// Item type
-    type Item: RlstScalar;
+    type Item;
     /// Array implementaion
-    type ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
-        + Stride<2>
-        + RawAccessMut<Item = Self::Item>
-        + Shape<2>;
+    type ArrayImpl: Stride<2> + RawAccessMut<Item = Self::Item> + Shape<2>;
 
     /// Create a new LU Decomposition from a given array.
-    fn new(arr: Array<Self::Item, Self::ArrayImpl, 2>) -> RlstResult<Self>;
+    fn new(arr: Array<Self::ArrayImpl, 2>) -> RlstResult<Self>;
 
     /// Solve a linear system with a single right-hand side.
     ///
     /// The right-hand side is overwritten with the solution.
-    fn solve_vec<
-        ArrayImplMut: RawAccessMut<Item = Self::Item>
-            + UnsafeRandomAccessByValue<1, Item = Self::Item>
-            + Shape<1>
-            + Stride<1>,
-    >(
+    fn solve_vec<ArrayImplMut: RawAccessMut<Item = Self::Item> + Shape<1> + Stride<1>>(
         &self,
         trans: TransMode,
-        rhs: Array<Self::Item, ArrayImplMut, 1>,
+        rhs: Array<ArrayImplMut, 1>,
     ) -> RlstResult<()>;
 
     /// Solve a linear system with multiple right-hand sides.
     ///
     /// The right-hand sides are overwritten with the solution.
-    fn solve_mat<
-        ArrayImplMut: RawAccessMut<Item = Self::Item>
-            + UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
+    fn solve_mat<ArrayImplMut: RawAccessMut<Item = Self::Item> + Shape<2> + Stride<2>>(
         &self,
         trans: TransMode,
-        rhs: Array<Self::Item, ArrayImplMut, 2>,
+        rhs: Array<ArrayImplMut, 2>,
     ) -> RlstResult<()>;
 
     /// Get the L matrix of the LU Decomposition.
     ///
     /// This method resizes the input `arr` as required.
     fn get_l_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>
-            + ResizeInPlace<2>,
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item> + Shape<2> + ResizeInPlace<2>,
     >(
         &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
+        arr: Array<ArrayImplMut, 2>,
     );
 
     /// Get the L matrix of the LU decomposition.
     ///
     /// If A has the dimension `(m, n)` then the L matrix
     /// has the dimension `(m, k)` with `k = min(m, n)`.
-    fn get_l<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
-    );
+    fn get_l<ArrayImplMut: Shape<2>>(&self, arr: Array<ArrayImplMut, 2>);
 
     /// Get the R matrix of the LU Decomposition.
     ///
     /// This method resizes the input `arr` as required.
-    fn get_u_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>
-            + ResizeInPlace<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
-    );
+    fn get_u_resize<ArrayImplMut: Shape<2> + ResizeInPlace<2>>(&self, arr: Array<ArrayImplMut, 2>);
 
     /// Get the R matrix of the LU Decomposition.
     ///
     /// If A has the dimension `(m, n)` then the L matrix
     /// has the dimension `(k, n)` with `k = min(m, n)`.
-    fn get_u<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
-    );
+    fn get_u<ArrayImplMut: Shape<2>>(&self, arr: Array<ArrayImplMut, 2>);
 
     /// Get the P matrix of the LU Decomposition.
     ///
     /// This method resizes the input `arr` as required.
-    fn get_p_resize<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>
-            + ResizeInPlace<2>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
-    );
+    fn get_p_resize<ArrayImplMut: Shape<2> + ResizeInPlace<2>>(&self, arr: Array<ArrayImplMut, 2>);
 
     /// Get the permutation vector from the LU decomposition.
     ///
@@ -194,43 +127,27 @@ pub trait MatrixLuDecomposition: Sized {
     ///
     /// If A has the dimension `(m, n)` then the P matrix
     /// has the dimension (m, m).
-    fn get_p<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>
-            + UnsafeRandom1DAccessMut<Item = Self::Item>,
-    >(
-        &self,
-        arr: Array<Self::Item, ArrayImplMut, 2>,
-    );
+    fn get_p<ArrayImplMut: Shape<2>>(&self, arr: Array<ArrayImplMut, 2>);
 
     /// Compute the determinant of A.
     fn det(&self) -> Self::Item;
 }
 
 /// Container for the LU Decomposition of a matrix.
-pub struct LuDecomposition<
-    Item: RlstScalar,
-    ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
-> {
-    arr: Array<Item, ArrayImpl, 2>,
+pub struct LuDecomposition<ArrayImpl> {
+    arr: Array<ArrayImpl, 2>,
     ipiv: Vec<i32>,
 }
 
 macro_rules! impl_lu {
     ($scalar:ty, $getrf:expr, $getrs:expr) => {
-        impl<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Stride<2>
-                    + Shape<2>
-                    + RawAccessMut<Item = $scalar>,
-            > MatrixLuDecomposition for LuDecomposition<$scalar, ArrayImpl>
+        impl<ArrayImpl: Stride<2> + Shape<2> + RawAccess<Item = $scalar> + RawAccessMut<Item = $scalar>> MatrixLuDecomposition
+            for LuDecomposition<ArrayImpl>
         {
             type Item = $scalar;
             type ArrayImpl = ArrayImpl;
 
-            fn new(mut arr: Array<$scalar, ArrayImpl, 2>) -> RlstResult<Self> {
+            fn new(mut arr: Array<ArrayImpl, 2>) -> RlstResult<Self> {
                 let shape = arr.shape();
                 let stride = arr.stride();
 
@@ -259,15 +176,10 @@ macro_rules! impl_lu {
                 }
             }
 
-            fn solve_vec<
-                ArrayImplMut: RawAccessMut<Item = $scalar>
-                    + UnsafeRandomAccessByValue<1, Item = $scalar>
-                    + Shape<1>
-                    + Stride<1>,
-            >(
+            fn solve_vec<ArrayImplMut: RawAccessMut<Item = $scalar> + Shape<1> + Stride<1>>(
                 &self,
                 trans: TransMode,
-                rhs: Array<$scalar, ArrayImplMut, 1>,
+                rhs: Array<ArrayImplMut, 1>,
             ) -> RlstResult<()> {
                 self.solve_mat(
                     trans,
@@ -275,15 +187,10 @@ macro_rules! impl_lu {
                 )
             }
 
-            fn solve_mat<
-                ArrayImplMut: RawAccessMut<Item = $scalar>
-                    + UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + Stride<2>,
-            >(
+            fn solve_mat<ArrayImplMut: RawAccessMut<Item = $scalar> + Shape<2> + Stride<2>>(
                 &self,
                 trans: TransMode,
-                mut rhs: Array<$scalar, ArrayImplMut, 2>,
+                mut rhs: Array<ArrayImplMut, 2>,
             ) -> RlstResult<()> {
                 assert_eq!(self.arr.shape()[0], self.arr.shape()[1]);
                 let n = self.arr.shape()[0];
@@ -328,16 +235,9 @@ macro_rules! impl_lu {
                 }
             }
 
-            fn get_l_resize<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>
-                    + ResizeInPlace<2>,
-            >(
+            fn get_l_resize<ArrayImplMut: Shape<2> + ResizeInPlace<2>>(
                 &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
+                mut arr: Array<ArrayImplMut, 2>,
             ) {
                 let m = self.arr.shape()[0];
                 let n = self.arr.shape()[1];
@@ -347,16 +247,7 @@ macro_rules! impl_lu {
                 self.get_l(arr);
             }
 
-            fn get_l<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>,
-            >(
-                &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
-            ) {
+            fn get_l<ArrayImplMut: Shape<2>>(&self, mut arr: Array<ArrayImplMut, 2>) {
                 let m = self.arr.shape()[0];
                 let n = self.arr.shape()[1];
                 let k = std::cmp::min(m, n);
@@ -382,16 +273,9 @@ macro_rules! impl_lu {
                 }
             }
 
-            fn get_u_resize<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>
-                    + ResizeInPlace<2>,
-            >(
+            fn get_u_resize<ArrayImplMut: Shape<2> + ResizeInPlace<2>>(
                 &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
+                mut arr: Array<ArrayImplMut, 2>,
             ) {
                 let m = self.arr.shape()[0];
                 let n = self.arr.shape()[1];
@@ -401,16 +285,7 @@ macro_rules! impl_lu {
                 self.get_u(arr);
             }
 
-            fn get_u<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
-            >(
-                &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
-            ) {
+            fn get_u<ArrayImplMut: Shape<2>>(&self, mut arr: Array<ArrayImplMut, 2>) {
                 let m = self.arr.shape()[0];
                 let n = self.arr.shape()[1];
                 let k = std::cmp::min(m, n);
@@ -432,16 +307,9 @@ macro_rules! impl_lu {
                 }
             }
 
-            fn get_p_resize<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>
-                    + ResizeInPlace<2>,
-            >(
+            fn get_p_resize<ArrayImplMut: Shape<2> + ResizeInPlace<2>>(
                 &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
+                mut arr: Array<ArrayImplMut, 2>,
             ) {
                 let m = self.arr.shape()[0];
 
@@ -465,16 +333,7 @@ macro_rules! impl_lu {
                 perm
             }
 
-            fn get_p<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>
-                    + UnsafeRandom1DAccessMut<Item = $scalar>,
-            >(
-                &self,
-                mut arr: Array<$scalar, ArrayImplMut, 2>,
-            ) {
+            fn get_p<ArrayImplMut: Shape<2>>(&self, mut arr: Array<ArrayImplMut, 2>) {
                 let m = self.arr.shape()[0];
                 assert_eq!(
                     arr.shape(),
@@ -515,6 +374,6 @@ macro_rules! impl_lu {
 }
 
 impl_lu!(f64, dgetrf, dgetrs);
-impl_lu!(f32, sgetrf, sgetrs);
-impl_lu!(c64, zgetrf, zgetrs);
-impl_lu!(c32, cgetrf, cgetrs);
+// impl_lu!(f32, sgetrf, sgetrs);
+// impl_lu!(c64, zgetrf, zgetrs);
+// impl_lu!(c32, cgetrf, cgetrs);

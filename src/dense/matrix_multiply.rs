@@ -3,16 +3,15 @@
 //! This module implements the matrix multiplication. The current implementation
 //! uses the [rlst-blis] crate::dense.
 
-use crate::dense::gemm::Gemm;
+use crate::dense::traits::Gemm;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
-use crate::dense::types::RlstScalar;
 use crate::dense::types::TransMode;
 
 /// Matrix mulitplication
 ///
 /// TODO: document what this computes
 pub fn matrix_multiply<
-    Item: RlstScalar + Gemm,
+    Item: Gemm,
     MatA: RawAccess<Item = Item> + Shape<2> + Stride<2>,
     MatB: RawAccess<Item = Item> + Shape<2> + Stride<2>,
     MatC: RawAccessMut<Item = Item> + Shape<2> + Stride<2>,

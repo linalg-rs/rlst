@@ -1,12 +1,11 @@
 //! Subview onto an array
 use crate::dense::array::Array;
 
-use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
+use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
 
 use crate::dense::traits::{
-    RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
-    UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+    Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 /// Subview of an array
@@ -46,20 +45,6 @@ impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArraySubView<A
     #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
         self.arr.stride()
-    }
-}
-
-impl<ArrayImpl: RawAccess + Stride<NDIM>, const NDIM: usize> RawAccess
-    for ArraySubView<ArrayImpl, NDIM>
-{
-    type Item = ArrayImpl::Item;
-
-    #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
-        assert!(!self.is_empty());
-        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
-
-        &self.arr.data()[start_raw..end_raw]
     }
 }
 
@@ -120,19 +105,6 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAc
     }
 }
 
-impl<ArrayImpl: RawAccessMut + Stride<NDIM>, const NDIM: usize> RawAccessMut
-    for ArraySubView<ArrayImpl, NDIM>
-{
-    type Item = ArrayImpl::Item;
-
-    #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
-        let (start_raw, end_raw) = compute_raw_range(self.offset, self.stride(), self.shape());
-
-        &mut self.arr.data_mut()[start_raw..end_raw]
-    }
-}
-
 impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for ArraySubView<ArrayImpl, NDIM>
 {
@@ -160,30 +132,30 @@ fn offset_multi_index<const NDIM: usize>(
     output
 }
 
-fn compute_raw_range<const NDIM: usize>(
-    offset: [usize; NDIM],
-    stride: [usize; NDIM],
-    shape: [usize; NDIM],
-) -> (usize, usize) {
-    let start_multi_index = offset;
-    if *shape.iter().min().unwrap() == 0 {
-        // If there is a zero dimension, the start and end raw indices are the same
-        // as the subview is empty.
-        let start_raw = convert_nd_raw(start_multi_index, stride);
-        (start_raw, start_raw)
-    } else {
-        let mut end_multi_index = [0; NDIM];
-        for (index, value) in end_multi_index.iter_mut().enumerate() {
-            *value = start_multi_index[index] + shape[index] - 1;
-        }
+// fn compute_raw_range<const NDIM: usize>(
+//     offset: [usize; NDIM],
+//     stride: [usize; NDIM],
+//     shape: [usize; NDIM],
+// ) -> (usize, usize) {
+//     let start_multi_index = offset;
+//     if *shape.iter().min().unwrap() == 0 {
+//         // If there is a zero dimension, the start and end raw indices are the same
+//         // as the subview is empty.
+//         let start_raw = convert_nd_raw(start_multi_index, stride);
+//         (start_raw, start_raw)
+//     } else {
+//         let mut end_multi_index = [0; NDIM];
+//         for (index, value) in end_multi_index.iter_mut().enumerate() {
+//             *value = start_multi_index[index] + shape[index] - 1;
+//         }
 
-        let start_raw = convert_nd_raw(start_multi_index, stride);
-        let end_raw = convert_nd_raw(end_multi_index, stride);
-        // Need 1 + end_raw since `end_multi_index` is the last computed element and
-        // the range bound is one further than the last element.
-        (start_raw, 1 + end_raw)
-    }
-}
+//         let start_raw = convert_nd_raw(start_multi_index, stride);
+//         let end_raw = convert_nd_raw(end_multi_index, stride);
+//         // Need 1 + end_raw since `end_multi_index` is the last computed element and
+//         // the range bound is one further than the last element.
+//         (start_raw, 1 + end_raw)
+//     }
+// }
 
 impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Move the array into a subview specified by an offset and shape of the subview.

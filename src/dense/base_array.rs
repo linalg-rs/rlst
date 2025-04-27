@@ -14,7 +14,7 @@ use super::data_container::{
     RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
 };
 use super::traits::{
-    ArrayIterator, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
 };
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores

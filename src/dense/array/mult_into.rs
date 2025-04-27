@@ -1,26 +1,20 @@
 //! Implementation of array multiplication.
 
-use crate::dense::gemm::Gemm;
+use crate::dense::traits::Gemm;
 use crate::dense::traits::MultInto;
 use crate::dense::traits::MultIntoResize;
-use crate::dense::traits::MutableArrayImpl;
-use crate::dense::traits::ValueArrayImpl;
 pub use crate::dense::types::TransMode;
 
 use super::{
     empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
-use crate::dense::types::RlstScalar;
-
 impl<
-        Item: RlstScalar,
-        ArrayImpl: ValueArrayImpl<2, Item> + Stride<2> + RawAccessMut<Item = Item>,
-        ArrayImplFirst: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
-    > MultInto<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 2>>
-    for Array<Item, ArrayImpl, 2>
+        Item: Gemm,
+        ArrayImpl: RawAccessMut<Item = Item> + Stride<2> + Shape<2>,
+        ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+        ArrayImplSecond: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+    > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
     type Item = Item;
 
@@ -29,8 +23,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 2>,
-        arr_b: Array<Item, ArrayImplSecond, 2>,
+        arr_a: Array<ArrayImplFirst, 2>,
+        arr_b: Array<ArrayImplSecond, 2>,
         beta: Item,
     ) -> Self {
         crate::dense::matrix_multiply::matrix_multiply(
@@ -41,12 +35,11 @@ impl<
 }
 
 impl<
-        Item: RlstScalar + Gemm,
-        ArrayImpl: ValueArrayImpl<1, Item> + Stride<1> + RawAccessMut<Item = Item>,
-        ArrayImplFirst: ValueArrayImpl<2, Item> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: ValueArrayImpl<1, Item> + Stride<1> + RawAccess<Item = Item>,
-    > MultInto<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 1>>
-    for Array<Item, ArrayImpl, 1>
+        Item: Gemm,
+        ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
+        ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+        ArrayImplSecond: RawAccess<Item = Item> + Stride<1> + Shape<1>,
+    > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
     type Item = Item;
 
@@ -55,8 +48,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 2>,
-        arr_b: Array<Item, ArrayImplSecond, 1>,
+        arr_a: Array<ArrayImplFirst, 2>,
+        arr_b: Array<ArrayImplSecond, 1>,
         beta: Item,
     ) -> Self {
         let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Back);
@@ -76,16 +69,11 @@ impl<
 }
 
 impl<
-        Item: RlstScalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + Shape<1>
-            + Stride<1>
-            + RawAccessMut<Item = Item>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultInto<Array<Item, ArrayImplFirst, 1>, Array<Item, ArrayImplSecond, 2>>
-    for Array<Item, ArrayImpl, 1>
+        Item: Gemm,
+        ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
+        ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    > MultInto<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
     type Item = Item;
 
@@ -94,8 +82,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 1>,
-        arr_b: Array<Item, ArrayImplSecond, 2>,
+        arr_a: Array<ArrayImplFirst, 1>,
+        arr_b: Array<ArrayImplSecond, 2>,
         beta: Item,
     ) -> Self {
         let mut self_with_padded_dim = self.r_mut().insert_empty_axis(AxisPosition::Front);
@@ -117,17 +105,11 @@ impl<
 // MultIntoResize
 
 impl<
-        Item: RlstScalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>
-            + ResizeInPlace<2>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 2>>
-    for Array<Item, ArrayImpl, 2>
+        Item: Gemm,
+        ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Item> + ResizeInPlace<2>,
+        ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
     type Item = Item;
 
@@ -136,8 +118,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 2>,
-        arr_b: Array<Item, ArrayImplSecond, 2>,
+        arr_a: Array<ArrayImplFirst, 2>,
+        arr_b: Array<ArrayImplSecond, 2>,
         beta: Item,
     ) -> Self {
         let shapea = new_shape(arr_a.shape(), transa);
@@ -157,17 +139,11 @@ impl<
 }
 
 impl<
-        Item: RlstScalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + Shape<1>
-            + Stride<1>
-            + RawAccessMut<Item = Item>
-            + ResizeInPlace<1>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<Item, ArrayImplFirst, 2>, Array<Item, ArrayImplSecond, 1>>
-    for Array<Item, ArrayImpl, 1>
+        Item: Gemm,
+        ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
+        ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+        ArrayImplSecond: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+    > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
     type Item = Item;
 
@@ -176,8 +152,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 2>,
-        arr_b: Array<Item, ArrayImplSecond, 1>,
+        arr_a: Array<ArrayImplFirst, 2>,
+        arr_b: Array<ArrayImplSecond, 1>,
         beta: Item,
     ) -> Self {
         let shapea = new_shape(arr_a.shape(), transa);
@@ -205,17 +181,11 @@ impl<
 }
 
 impl<
-        Item: RlstScalar + Gemm,
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + Shape<1>
-            + Stride<1>
-            + RawAccessMut<Item = Item>
-            + ResizeInPlace<1>,
-        ArrayImplFirst: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + Stride<1> + RawAccess<Item = Item>,
-        ArrayImplSecond: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<Item, ArrayImplFirst, 1>, Array<Item, ArrayImplSecond, 2>>
-    for Array<Item, ArrayImpl, 1>
+        Item: Gemm,
+        ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
+        ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    > MultIntoResize<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
     type Item = Item;
 
@@ -224,8 +194,8 @@ impl<
         transa: TransMode,
         transb: TransMode,
         alpha: Item,
-        arr_a: Array<Item, ArrayImplFirst, 1>,
-        arr_b: Array<Item, ArrayImplSecond, 2>,
+        arr_a: Array<ArrayImplFirst, 1>,
+        arr_b: Array<ArrayImplSecond, 2>,
         beta: Item,
     ) -> Self {
         let shapeb = new_shape(arr_b.shape(), transb);

@@ -14,39 +14,29 @@ use super::slice::ArraySlice;
 /// Default column major iterator.
 ///
 /// This iterator returns elements of an array in standard column major order.
-pub struct ArrayDefaultIterator<
-    'a,
-    Item: RlstBase,
-    ArrayImpl: ValueArrayImpl<NDIM, Item>,
-    const NDIM: usize,
-> {
-    arr: &'a Array<Item, ArrayImpl, NDIM>,
+pub struct ArrayDefaultIterator<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a Array<ArrayImpl, NDIM>,
     shape: [usize; NDIM],
     pos: usize,
     nelements: usize,
 }
 
 /// Mutable default iterator. Like [ArrayDefaultIterator] but with mutable access.
-pub struct ArrayDefaultIteratorMut<
-    'a,
-    Item: RlstBase,
-    ArrayImpl: MutableArrayImpl<NDIM, Item>,
-    const NDIM: usize,
-> {
-    arr: &'a mut Array<Item, ArrayImpl, NDIM>,
+pub struct ArrayDefaultIteratorMut<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a mut Array<ArrayImpl, NDIM>,
     shape: [usize; NDIM],
     pos: usize,
     nelements: usize,
 }
 
 /// A multi-index iterator returns the corrent element and the corresponding multi-index.
-pub struct MultiIndexIterator<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+pub struct MultiIndexIterator<I, const NDIM: usize> {
     shape: [usize; NDIM],
     iter: I,
 }
 
 impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> Iterator
-    for MultiIndexIterator<T, I, NDIM>
+    for MultiIndexIterator<I, NDIM>
 {
     type Item = ([usize; NDIM], T);
 
@@ -60,15 +50,16 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> Iterator
 }
 
 impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, NDIM> for I {
-    fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<T, I, NDIM> {
+    fn multi_index(self, shape: [usize; NDIM]) -> MultiIndexIterator<I, NDIM> {
         MultiIndexIterator::<T, I, NDIM> { shape, iter: self }
     }
 }
 
-impl<'a, Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayDefaultIterator<'a, Item, ArrayImpl, NDIM>
+impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIterator<'a, ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
 {
-    fn new(arr: &'a Array<Item, ArrayImpl, NDIM>) -> Self {
+    fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         Self {
             arr,
             shape: arr.shape(),
@@ -78,10 +69,11 @@ impl<'a, Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usiz
     }
 }
 
-impl<'a, Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
 {
-    fn new(arr: &'a mut Array<Item, ArrayImpl, NDIM>) -> Self {
+    fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
         let shape = arr.shape();
         Self {
             arr,
@@ -92,10 +84,10 @@ impl<'a, Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: us
     }
 }
 
-impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> std::iter::Iterator
-    for ArrayDefaultIterator<'_, Item, ArrayImpl, NDIM>
+impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> std::iter::Iterator
+    for ArrayDefaultIterator<'_, ArrayImpl, NDIM>
 {
-    type Item = Item;
+    type Item = ArrayImpl::Item;
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos >= self.nelements {
             None
@@ -114,16 +106,16 @@ impl<Item: RlstBase, ArrayImpl: ValueArrayImpl<NDIM, Item>, const NDIM: usize> s
 // See also: https://stackoverflow.com/questions/62361624/lifetime-parameter-problem-in-custom-iterator-over-mutable-references
 // And also: https://users.rust-lang.org/t/when-is-transmuting-lifetimes-useful/56140
 
-impl<'a, Item: RlstBase, ArrayImpl: MutableArrayImpl<NDIM, Item>, const NDIM: usize>
-    std::iter::Iterator for ArrayDefaultIteratorMut<'a, Item, ArrayImpl, NDIM>
+impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Iterator
+    for ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
 {
-    type Item = &'a mut Item;
+    type Item = &'a mut ArrayImpl::Item;
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos >= self.nelements {
             None
         } else {
             let value = unsafe {
-                Some(std::mem::transmute::<&mut Item, &'a mut Item>(
+                Some(std::mem::transmute::<&mut Self::Item, &'a mut Self::Item>(
                     self.arr.get_1d_unchecked_mut(self.pos),
                 ))
             };

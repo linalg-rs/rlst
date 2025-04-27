@@ -3,11 +3,8 @@
 pub mod accessors;
 
 pub use accessors::*;
-use typenum::Unsigned;
 
 use crate::dense::types::TransMode;
-
-use super::types::RlstNum;
 
 /// Memory layout of an object
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -92,14 +89,40 @@ pub trait MultInto<First, Second> {
     ) -> Self;
 }
 
+/// Gemm
+pub trait Gemm: Sized {
+    /// Gemm
+    #[allow(clippy::too_many_arguments)]
+    fn gemm(
+        transa: TransMode,
+        transb: TransMode,
+        m: usize,
+        n: usize,
+        k: usize,
+        alpha: Self,
+        a: &[Self],
+        rsa: usize,
+        csa: usize,
+        b: &[Self],
+        rsb: usize,
+        csb: usize,
+        beta: Self,
+        c: &mut [Self],
+        rsc: usize,
+        csc: usize,
+    );
+}
+
 /// Multiply into with resize
 pub trait MultIntoResize<First, Second> {
     /// Item type
-    type Item: RlstNum;
+    type Item;
     /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
     where
         Self: Sized,
+        Self::Item: num::One,
+        Self::Item: num::Zero,
     {
         self.mult_into_resize(
             TransMode::NoTrans,
@@ -122,29 +145,29 @@ pub trait MultIntoResize<First, Second> {
     ) -> Self;
 }
 
-/// Default iterator.
-pub trait DefaultIterator {
-    /// Item type
-    type Item;
-    /// Iterator type
-    type Iter<'a>: std::iter::Iterator<Item = Self::Item>
-    where
-        Self: 'a;
-    /// Get iterator
-    fn iter(&self) -> Self::Iter<'_>;
-}
+// /// Default iterator.
+// pub trait DefaultIterator {
+//     /// Item type
+//     type Item;
+//     /// Iterator type
+//     type Iter<'a>: std::iter::Iterator<Item = Self::Item>
+//     where
+//         Self: 'a;
+//     /// Get iterator
+//     fn iter(&self) -> Self::Iter<'_>;
+// }
 
-/// Mutable default iterator.
-pub trait DefaultIteratorMut {
-    /// Item type
-    type Item;
-    /// Iterator
-    type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
-    where
-        Self: 'a;
-    /// Get mutable iterator
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
-}
+// /// Mutable default iterator.
+// pub trait DefaultIteratorMut {
+//     /// Item type
+//     type Item;
+//     /// Iterator
+//     type IterMut<'a>: std::iter::Iterator<Item = &'a mut Self::Item>
+//     where
+//         Self: 'a;
+//     /// Get mutable iterator
+//     fn iter_mut(&mut self) -> Self::IterMut<'_>;
+// }
 
 /// Iterate through the elements in `(i, j, data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding

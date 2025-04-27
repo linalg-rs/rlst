@@ -5,7 +5,6 @@ use std::ops::Mul;
 use crate::dense::{
     array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::UnsafeRandom1DAccessByValue,
-    types::RlstNum,
 };
 
 /// Component-wise product

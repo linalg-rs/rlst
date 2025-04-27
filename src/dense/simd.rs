@@ -1135,7 +1135,7 @@ impl RlstSimd for f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::RlstScalar;
+    use crate::dense::types::RlstScalar;
 
     use super::*;
     use approx::assert_relative_eq;

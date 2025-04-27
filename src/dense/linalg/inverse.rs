@@ -2,7 +2,7 @@
 //!
 //!
 use crate::dense::array::Array;
-use crate::dense::traits::{RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue};
+use crate::dense::traits::{RawAccessMut, Shape, Stride};
 use crate::dense::types::{c32, c64, RlstError, RlstResult, RlstScalar};
 use lapack::{cgetrf, cgetri, dgetrf, dgetri, sgetrf, sgetri, zgetrf, zgetri};
 use num::traits::Zero;
@@ -26,28 +26,18 @@ use super::assert_lapack_stride;
 /// a.r_mut().into_inverse_alloc().unwrap();
 /// ```
 /// This method allocates memory for the inverse computation.
-pub trait MatrixInverse: RlstScalar {
+pub trait MatrixInverse {
     /// Compute the matrix inverse
-    fn into_inverse_alloc<
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self>
-            + Stride<2>
-            + Shape<2>
-            + RawAccessMut<Item = Self>,
-    >(
-        arr: Array<Self, ArrayImpl, 2>,
+    fn into_inverse<ArrayImpl: Stride<2> + Shape<2> + RawAccessMut<Item = Self>>(
+        arr: Array<ArrayImpl, 2>,
     ) -> RlstResult<()>;
 }
 
 macro_rules! impl_inverse {
     ($scalar:ty, $getrf: expr, $getri:expr) => {
         impl MatrixInverse for $scalar {
-            fn into_inverse_alloc<
-                ArrayImpl: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Stride<2>
-                    + Shape<2>
-                    + RawAccessMut<Item = $scalar>,
-            >(
-                mut arr: Array<Self, ArrayImpl, 2>,
+            fn into_inverse<ArrayImpl: Stride<2> + Shape<2> + RawAccessMut<Item = $scalar>>(
+                mut arr: Array<ArrayImpl, 2>,
             ) -> RlstResult<()> {
                 assert_lapack_stride(arr.stride());
 
@@ -99,16 +89,11 @@ impl_inverse!(f32, sgetrf, sgetri);
 impl_inverse!(c32, cgetrf, cgetri);
 impl_inverse!(c64, zgetrf, zgetri);
 
-impl<
-        Item: RlstScalar + MatrixInverse,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Stride<2>
-            + Shape<2>
-            + RawAccessMut<Item = Item>,
-    > Array<Item, ArrayImpl, 2>
+impl<Item: MatrixInverse, ArrayImpl: Stride<2> + Shape<2> + RawAccessMut<Item = Item>>
+    Array<ArrayImpl, 2>
 {
     /// Return the matrix inverse.
-    pub fn into_inverse_alloc(self) -> RlstResult<()> {
-        <Item as MatrixInverse>::into_inverse_alloc(self)
+    pub fn into_inverse(self) -> RlstResult<()> {
+        <Item as MatrixInverse>::into_inverse(self)
     }
 }

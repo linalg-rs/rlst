@@ -14,22 +14,20 @@ use crate::dense::traits::{
 };
 
 use super::strided_base_array::StridedBaseArray;
-use super::traits::ArrayIterator;
-use super::traits::ArrayIteratorMut;
 use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
 
 pub mod empty_axis;
-// pub mod iterators;
-// pub mod mult_into;
+pub mod iterators;
+pub mod mult_into;
 // pub mod operations;
 pub mod operators;
 // pub mod random;
 // pub mod rank1_array;
-pub mod reference;
-// pub mod slice;
 pub mod flattened;
+pub mod reference;
+pub mod slice;
 pub mod subview;
 
 /// A basic dynamically allocated array.
@@ -240,36 +238,36 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> std::fmt::Debug for Array<ArrayI
     }
 }
 
-impl<ArrayImpl: ArrayIterator, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM> {
-    type Item = ArrayImpl::Item;
+// impl<ArrayImpl: ArrayIterator, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM> {
+//     type Item = ArrayImpl::Item;
 
-    type Iter<'a>
-        = <ArrayImpl as ArrayIterator>::Iter<'a>
-    where
-        Self: 'a;
+//     type Iter<'a>
+//         = <ArrayImpl as ArrayIterator>::Iter<'a>
+//     where
+//         Self: 'a;
 
-    #[inline(always)]
-    fn iter(&self) -> Self::Iter<'_> {
-        self.0.iter()
-    }
-}
+//     #[inline(always)]
+//     fn iter(&self) -> Self::Iter<'_> {
+//         self.0.iter()
+//     }
+// }
 
-impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: ArrayIteratorMut,
-{
-    type Item = ArrayImpl::Item;
+// impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
+// where
+//     ArrayImpl: ArrayIteratorMut,
+// {
+//     type Item = ArrayImpl::Item;
 
-    type IterMut<'a>
-        = <ArrayImpl as ArrayIteratorMut>::IterMut<'a>
-    where
-        Self: 'a;
+//     type IterMut<'a>
+//         = <ArrayImpl as ArrayIteratorMut>::IterMut<'a>
+//     where
+//         Self: 'a;
 
-    #[inline(always)]
-    fn iter_mut(&self) -> Self::IterMut<'_> {
-        self.0.iter_mut()
-    }
-}
+//     #[inline(always)]
+//     fn iter_mut(&self) -> Self::IterMut<'_> {
+//         self.0.iter_mut()
+//     }
+// }
 
 impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
     for Array<ArrayImpl, NDIM>

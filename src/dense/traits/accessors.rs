@@ -140,6 +140,8 @@ pub trait RawAccess {
 pub trait RawAccessMut {
     /// Get a mutable slice of the whole data.
     type Item;
+
+    /// Get a mutable slice of the whole data.
     fn data_mut(&mut self) -> &mut [Self::Item];
 }
 
