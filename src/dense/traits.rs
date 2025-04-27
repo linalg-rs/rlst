@@ -183,15 +183,15 @@ pub trait AijIterator {
     fn iter_aij(&self) -> Self::Iter<'_>;
 }
 
-// /// Helper trait that returns from an enumeration iterator a new iterator
-// /// that converts the 1d index into a multi-index.
-// pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
-//     /// Get multi-index
-//     fn multi_index(
-//         self,
-//         shape: [usize; NDIM],
-//     ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
-// }
+/// Helper trait that returns from an enumeration iterator a new iterator
+/// that converts the 1d index into a multi-index.
+pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
+    /// Get multi-index
+    fn multi_index(
+        self,
+        shape: [usize; NDIM],
+    ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
+}
 
 /// A helper trait to implement generic operators over matrices.
 pub trait AsOperatorApply {
@@ -237,7 +237,7 @@ pub trait ArrayIteratorMut {
         Self: 'a;
 
     /// Returns an iterator that produces mutable references to elements of type `Self::Item`.
-    fn iter_mut(&self) -> Self::IterMut<'_>;
+    fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
 // /// Basic trait for arrays that provide random access to values.
