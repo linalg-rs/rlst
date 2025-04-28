@@ -44,11 +44,14 @@ fn low_rank_matrix(n: usize, arr: &mut Array<f64, BaseArray<f64, VectorContainer
     }
 }
 
-fn test_fat_matrix(slice: usize, n: usize, tol: f64){
+fn test_fat_matrix(slice: usize, n: usize, tol: f64) {
     let mut arr: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, n]);
     low_rank_matrix(n, &mut arr);
 
-    let res: IdDecomposition<f64> = arr.r_mut().into_id_alloc(Accuracy::Tol(tol), TransMode::NoTrans).unwrap();
+    let res: IdDecomposition<f64> = arr
+        .r_mut()
+        .into_id_alloc(Accuracy::Tol(tol), TransMode::NoTrans)
+        .unwrap();
 
     println!("The skeleton of the matrix is given by");
     res.skel.pretty_print();
@@ -72,17 +75,19 @@ fn test_fat_matrix(slice: usize, n: usize, tol: f64){
 
     let error: f64 = a_rs.r().sub(a_rs_app.r()).view_flat().norm_2();
     println!("Interpolative Decomposition L2 absolute error: {}", error);
-
 }
 
-fn test_skinny_matrix(slice: usize, n: usize, tol: f64){
+fn test_skinny_matrix(slice: usize, n: usize, tol: f64) {
     let mut arr: DynamicArray<f64, 2> = rlst_dynamic_array2!(f64, [slice, n]);
     low_rank_matrix(n, &mut arr);
 
     let mut arr_trans = empty_array();
     arr_trans.fill_from_resize(arr.r().transpose());
 
-    let res: IdDecomposition<f64> = arr_trans.r_mut().into_id_alloc(Accuracy::Tol(tol), TransMode::Trans).unwrap();
+    let res: IdDecomposition<f64> = arr_trans
+        .r_mut()
+        .into_id_alloc(Accuracy::Tol(tol), TransMode::Trans)
+        .unwrap();
 
     println!("The skeleton of the matrix is given by");
     res.skel.pretty_print();
@@ -106,7 +111,6 @@ fn test_skinny_matrix(slice: usize, n: usize, tol: f64){
 
     let error: f64 = a_rs.r().sub(a_rs_app.r()).view_flat().norm_2();
     println!("Interpolative Decomposition L2 absolute error: {}", error);
-
 }
 
 pub fn main() {
@@ -118,5 +122,4 @@ pub fn main() {
     //Create a low rank matrix
     test_fat_matrix(slice, n, tol);
     test_skinny_matrix(slice, n, tol);
-    
 }
