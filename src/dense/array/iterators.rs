@@ -110,19 +110,16 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
         if self.pos >= self.nelements {
             None
         } else {
-            let value = unsafe {
-                Some(std::mem::transmute::<&mut Self::Item, &'a mut Self::Item>(
-                    self.arr.get_1d_unchecked_mut(self.pos),
-                ))
-            };
+            let value = unsafe { std::mem::transmute(self.arr.get_1d_unchecked_mut(self.pos)) };
             self.pos += 1;
-            value
+            Some(value)
         }
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> crate::dense::traits::ArrayIterator
-    for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIterator for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Item = ArrayImpl::Item;
     type Iter<'a>
@@ -135,8 +132,9 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> crate::dense::tr
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> crate::dense::traits::ArrayIteratorMut
-    for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIteratorMut for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
     type Item = ArrayImpl::Item;
     type IterMut<'a>
