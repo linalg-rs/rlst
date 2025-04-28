@@ -304,10 +304,10 @@ macro_rules! impl_id {
                 let mut u_tri = empty_array();
 
                 match trans_mode {
-                    TransMode::Trans => arr_work.fill_from_resize(arr.r().conj()),
-                    TransMode::NoTrans => arr_work.fill_from_resize(arr.r().conj().transpose()),
-                    TransMode::ConjNoTrans => arr_work.fill_from_resize(arr.r()),
-                    TransMode::ConjTrans => arr_work.fill_from_resize(arr.r().transpose()),
+                    TransMode::Trans => arr_work.fill_from_resize(arr.r()),
+                    TransMode::NoTrans => arr_work.fill_from_resize(arr.r().transpose()),
+                    TransMode::ConjNoTrans => arr_work.fill_from_resize(arr.r().conj()),
+                    TransMode::ConjTrans => arr_work.fill_from_resize(arr.r().transpose().conj()),
                 };
 
                 let shape = arr_work.shape();
