@@ -6,6 +6,7 @@ use crate::dense::traits::{
     MultIntoResize, RandomAccessByRef, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::dense::types::TransMode; // Import TransMode from the appropriate module
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
 use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
 use crate::{DynamicArray, RawAccess};
@@ -37,6 +38,7 @@ pub trait MatrixId: RlstScalar {
     >(
         arr: Array<Self, ArrayImpl, 2>,
         rank_param: Accuracy<<Self as RlstScalar>::Real>,
+        trans_mode: TransMode,
     ) -> RlstResult<IdDecomposition<Self>>;
 }
 
@@ -52,8 +54,9 @@ macro_rules! implement_into_id {
             >(
                 arr: Array<Self, ArrayImpl, 2>,
                 rank_param: Accuracy<<Self as RlstScalar>::Real>,
+                trans_mode: TransMode,
             ) -> RlstResult<IdDecomposition<Self>> {
-                IdDecomposition::<$scalar>::new(arr, rank_param)
+                IdDecomposition::<$scalar>::new(arr, rank_param, trans_mode)
             }
         }
     };
@@ -77,8 +80,9 @@ impl<
     pub fn into_id_alloc(
         self,
         rank_param: Accuracy<<Item as RlstScalar>::Real>,
+        trans_mode: TransMode,
     ) -> RlstResult<IdDecomposition<Item>> {
-        <Item as MatrixId>::into_id_alloc(self, rank_param)
+        <Item as MatrixId>::into_id_alloc(self, rank_param, trans_mode)
     }
 }
 
@@ -96,6 +100,7 @@ pub trait MatrixIdDecomposition: Sized {
     >(
         arr: Array<Self::Item, ArrayImpl, 2>,
         rank_param: Accuracy<<Self::Item as RlstScalar>::Real>,
+        trans_mode: TransMode,
     ) -> RlstResult<Self>;
 
     /// Compute the rank of the decomposition from a given tolerance
@@ -292,11 +297,19 @@ macro_rules! impl_id {
             >(
                 arr: Array<$scalar, ArrayImpl, 2>,
                 rank_param: Accuracy<<$scalar as RlstScalar>::Real>,
+                trans_mode: TransMode,
             ) -> RlstResult<Self> {
                 //We compute the QR decomposition using rlst QR decomposition
                 let mut arr_work = empty_array();
                 let mut u_tri = empty_array();
-                arr_work.fill_from_resize(arr.r().conj().transpose());
+
+                match trans_mode {
+                    TransMode::Trans => arr_work.fill_from_resize(arr.r().conj()),
+                    TransMode::NoTrans => arr_work.fill_from_resize(arr.r().conj().transpose()),
+                    TransMode::ConjNoTrans => arr_work.fill_from_resize(arr.r()),
+                    TransMode::ConjTrans => arr_work.fill_from_resize(arr.r().transpose()),
+                };
+
                 let shape = arr_work.shape();
                 u_tri.resize_in_place([shape[1], shape[1]]);
                 let dim = shape[1];
@@ -324,17 +337,21 @@ macro_rules! impl_id {
                 permutation.set_zero();
 
                 let mut view = permutation.r_mut();
-
                 for (index, &elem) in perm.iter().enumerate() {
                     view[[index, elem]] = <$scalar as num::One>::one();
                 }
+
                 let mut perm_arr = empty_array::<$scalar, 2>();
-                perm_arr
-                    .r_mut()
-                    .simple_mult_into_resize(permutation.r_mut(), arr.r());
+                perm_arr.r_mut().mult_into_resize(
+                    TransMode::NoTrans,
+                    trans_mode,
+                    num::One::one(),
+                    permutation.r_mut(),
+                    arr.r(),
+                    num::Zero::zero(),
+                );
 
                 //We permute arr to extract the columns belonging to the skeleton
-
                 let mut skel = empty_array();
                 skel.fill_from_resize(perm_arr.into_subview([0, 0], [rank, shape[0]]));
                 //In the case the matrix is full rank or we get a matrix of rank 0, then return the identity matrix.
