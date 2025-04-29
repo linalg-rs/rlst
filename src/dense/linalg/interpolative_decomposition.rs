@@ -455,12 +455,11 @@ macro_rules! impl_id {
                     rank = dim
                 }
 
-                for i in (0..rank - 1).rev() {
-                    let diff = (ut_mat.get([i, i]).unwrap().abs()
-                        - ut_mat.get([rank, rank]).unwrap().abs())
-                    .abs();
-                    if diff > 1e-1 {
-                        return i + 1;
+                for i in (0..rank + 1).rev() {
+                    if ut_mat.get([i, i]).unwrap().abs()
+                        > 1e-1 * ut_mat.get([i - 1, i - 1]).unwrap().abs()
+                    {
+                        return i - 1;
                     }
                 }
 
