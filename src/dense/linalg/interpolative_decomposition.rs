@@ -149,6 +149,7 @@ pub struct IdDecomposition<Item: RlstScalar> {
     pub id_mat: Array<Item, BaseArray<Item, VectorContainer<Item>, 2>, 2>,
 }
 
+#[derive(Debug, Clone)]
 ///Options to decide the matrix rank
 pub enum Accuracy<T> {
     /// Indicates that the rank of the decomposition will be computed from a given tolerance
