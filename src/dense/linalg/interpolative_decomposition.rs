@@ -114,6 +114,17 @@ pub trait MatrixIdDecomposition: Sized {
         tol: <Self::Item as RlstScalar>::Real,
     ) -> usize;
 
+    /// Relax tolerance when we have a plateau of eigenvalues
+    fn rank_from_tolerance_relaxed<
+        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
+            + Shape<2>
+            + UnsafeRandomAccessMut<2, Item = Self::Item>
+            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
+    >(
+        ut_mat: Array<Self::Item, ArrayImplMut, 2>,
+        tol: <Self::Item as RlstScalar>::Real,
+    ) -> usize;
+
     ///Compute the permutation matrix associated to the Interpolative Decomposition
     fn get_p<
         ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
@@ -146,6 +157,8 @@ pub enum Accuracy<T> {
     FixedRank(usize),
     /// Computes the rank from the tolerance, and if this one is smaller than a user set range, then we stick to the user set range
     MaxRank(T, usize),
+    /// Uses the relaxed tolerance method
+    RelaxedTol(T),
 }
 
 ///Interface to obtain the upper-triangular part of the matrix
@@ -331,6 +344,9 @@ macro_rules! impl_id {
                     Accuracy::MaxRank(tol, k) => {
                         rank = std::cmp::max(k, Self::rank_from_tolerance(u_tri.r_mut(), tol));
                     }
+                    Accuracy::RelaxedTol(tol) => {
+                        rank = Self::rank_from_tolerance_relaxed(u_tri.r_mut(), tol);
+                    }
                 }
 
                 let mut permutation = rlst_dynamic_array2!($scalar, [shape[1], shape[1]]);
@@ -413,6 +429,42 @@ macro_rules! impl_id {
                 } else {
                     dim
                 }
+            }
+
+            fn rank_from_tolerance_relaxed<
+                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
+                    + Shape<2>
+                    + UnsafeRandomAccessMut<2, Item = $scalar>
+                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
+            >(
+                ut_mat: Array<$scalar, ArrayImplMut, 2>,
+                tol: <$scalar as RlstScalar>::Real,
+            ) -> usize {
+                let dim = ut_mat.shape()[0];
+                let max = ut_mat.get([0, 0]).unwrap().abs();
+
+                //We compute the rank of the matrix
+                let mut rank = 0;
+                if max.re() > 0.0 {
+                    for i in 0..dim {
+                        if ut_mat.get([i, i]).unwrap().abs() > tol * max {
+                            rank += 1;
+                        }
+                    }
+                } else {
+                    rank = dim
+                }
+
+                for i in (0..rank - 1).rev() {
+                    let diff = (ut_mat.get([i, i]).unwrap().abs()
+                        - ut_mat.get([rank, rank]).unwrap().abs())
+                    .abs();
+                    if diff > 1e-1 {
+                        return i + 1;
+                    }
+                }
+
+                rank
             }
 
             fn get_p<
