@@ -18,7 +18,7 @@ pub trait Triangular: RlstScalar {
             + RawAccessMut<Item = Self>
             + RandomAccessByRef<2, Item = Self>,
     >(
-        arr: Array<Self, ArrayImpl, 2>,
+        arr: &Array<Self, ArrayImpl, 2>,
         triangular_type: TriangularType,
     ) -> RlstResult<TriangularMatrix<Self>>;
 }
@@ -33,7 +33,7 @@ macro_rules! implement_into_triangular {
                     + RawAccessMut<Item = Self>
                     + RandomAccessByRef<2, Item = Self>,
             >(
-                arr: Array<Self, ArrayImpl, 2>,
+                arr: &Array<Self, ArrayImpl, 2>,
                 triangular_type: TriangularType,
             ) -> RlstResult<TriangularMatrix<Self>> {
                 TriangularMatrix::<$scalar>::new(arr, triangular_type)
@@ -64,10 +64,9 @@ pub trait TriangularOperations: Sized {
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
             + Stride<2>
             + Shape<2>
-            + RawAccessMut<Item = Self::Item>
             + RandomAccessByRef<2, Item = Self::Item>,
     >(
-        arr: Array<Self::Item, ArrayImpl, 2>,
+        arr: &Array<Self::Item, ArrayImpl, 2>,
         triangular_type: TriangularType,
     ) -> RlstResult<Self>;
     ///Solves the upper-triangular system
@@ -106,10 +105,9 @@ macro_rules! implement_solve_upper_triangular {
                 ArrayImpl: UnsafeRandomAccessByValue<2, Item = Self::Item>
                     + Stride<2>
                     + Shape<2>
-                    + RawAccessMut<Item = Self::Item>
                     + RandomAccessByRef<2, Item = Self::Item>,
             >(
-                arr: Array<Self::Item, ArrayImpl, 2>,
+                arr: &Array<Self::Item, ArrayImpl, 2>,
                 triangular_type: TriangularType,
             ) -> RlstResult<Self> {
                 let shape = arr.shape();
