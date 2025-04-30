@@ -51,7 +51,8 @@ pub use crate::dense::traits::{
 };
 
 pub use crate::dense::types::{
-    c32, c64, DataChunk, RlstBase, RlstError, RlstNum, RlstResult, RlstScalar, TransMode,
+    c32, c64, DataChunk, RlstBase, RlstError, RlstNum, RlstResult, RlstScalar, Side, TransMode,
+    TriangularType,
 };
 
 pub use crate::dense::base_array::BaseArray;
@@ -68,6 +69,9 @@ pub use crate::dense::linalg::null_space::{MatrixNull, NullSpace};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
 pub use crate::dense::linalg::qr::{MatrixQr, MatrixQrDecomposition, QrDecomposition};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
+pub use crate::dense::linalg::triangular_arrays::{
+    Triangular, TriangularMatrix, TriangularOperations,
+};
 
 pub use crate::dense::array::rank1_array::Rank1Array;
 

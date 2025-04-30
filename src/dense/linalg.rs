@@ -13,6 +13,7 @@ pub mod null_space;
 pub mod pseudo_inverse;
 pub mod qr;
 pub mod svd;
+pub mod triangular_arrays;
 
 /// Return true if stride is column major as required by Lapack.
 pub fn assert_lapack_stride(stride: [usize; 2]) {

@@ -6,11 +6,11 @@ use crate::dense::traits::{
     MultIntoResize, RandomAccessByRef, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::types::TransMode; // Import TransMode from the appropriate module
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
+use crate::dense::types::{Side, TransMode, TriangularType}; // Import TransMode from the appropriate module
+use crate::DynamicArray;
 use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
-use crate::{DynamicArray, RawAccess};
-use blas::{ctrsm, dtrsm, strsm, ztrsm};
+use crate::{TriangularMatrix, TriangularOperations}; // Import TriangularType from the appropriate module
 /// Compute the matrix interpolative decomposition, by providing a rank and an interpolation matrix.
 ///
 /// The matrix interpolative decomposition is defined for a two dimensional 'long' array `arr` of
@@ -161,7 +161,7 @@ pub enum Accuracy<T> {
     /// Uses the relaxed tolerance method
     RelaxedTol(T),
 }
-
+/*
 ///Interface to obtain the upper-triangular part of the matrix
 pub trait UpperTriangular: RlstScalar {
     ///Compute the upper triangular
@@ -295,7 +295,7 @@ macro_rules! implement_solve_upper_triangular {
 implement_solve_upper_triangular!(f32, strsm);
 implement_solve_upper_triangular!(f64, dtrsm);
 implement_solve_upper_triangular!(c32, ctrsm);
-implement_solve_upper_triangular!(c64, ztrsm);
+implement_solve_upper_triangular!(c64, ztrsm);*/
 
 macro_rules! impl_id {
     ($scalar:ty) => {
@@ -386,15 +386,16 @@ macro_rules! impl_id {
                     let shape: [usize; 2] = [shape[1], shape[1]];
                     let mut id_mat: DynamicArray<$scalar, 2> =
                         rlst_dynamic_array2!($scalar, [dim - rank, rank]);
-                    let r11 = UpperTriangularMatrix::<$scalar>::new(
+                    let r11 = TriangularMatrix::<$scalar>::new(
                         u_tri.r_mut().into_subview([0, 0], [rank, rank]),
+                        TriangularType::Upper,
                     )
                     .unwrap();
 
                     let mut r12 = u_tri
                         .r_mut()
                         .into_subview([0, rank], [rank, shape[1] - rank]);
-                    r11.solve_upper_triangular(&mut r12);
+                    r11.solve(&mut r12, Side::Left, TransMode::NoTrans);
 
                     id_mat.fill_from(r12.r().conj().transpose().r());
                     Ok(Self {
