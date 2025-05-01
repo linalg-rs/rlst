@@ -113,9 +113,21 @@ macro_rules! implement_solve_upper_triangular {
                 let shape = arr.shape();
                 let mut tri = rlst_dynamic_array2!(Self::Item, shape);
                 let mut view = tri.r_mut();
-                for i in 0..shape[0] {
-                    for j in i..shape[1] {
-                        view[[i, j]] = arr[[i, j]];
+
+                match triangular_type {
+                    TriangularType::Upper => {
+                        for i in 0..shape[0] {
+                            for j in i..shape[1] {
+                                view[[i, j]] = arr[[i, j]];
+                            }
+                        }
+                    }
+                    TriangularType::Lower => {
+                        for i in 0..shape[0] {
+                            for j in 0..=i {
+                                view[[i, j]] = arr[[i, j]];
+                            }
+                        }
                     }
                 }
                 Ok(Self {
