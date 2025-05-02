@@ -24,13 +24,7 @@ pub trait Shape<const NDIM: usize> {
 
     /// Return true if a dimension is 0.
     fn is_empty(&self) -> bool {
-        let shape = self.shape();
-        for elem in shape {
-            if elem == 0 {
-                return true;
-            }
-        }
-        false
+        *self.shape().iter().min().unwrap() == 0
     }
 }
 
@@ -190,7 +184,7 @@ pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
     fn multi_index(
         self,
         shape: [usize; NDIM],
-    ) -> crate::dense::array::iterators::MultiIndexIterator<T, I, NDIM>;
+    ) -> crate::dense::array::iterators::MultiIndexIterator<I, NDIM>;
 }
 
 /// A helper trait to implement generic operators over matrices.
@@ -240,47 +234,22 @@ pub trait ArrayIteratorMut {
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
-// /// Basic trait for arrays that provide random access to values.
-// pub trait ValueArrayImpl<const NDIM: usize, Item: RlstBase>:
-//     UnsafeRandomAccessByValue<NDIM, Item = Item>
-//     + Shape<NDIM>
-//     + UnsafeRandom1DAccessByValue<Item = Item>
-// {
-// }
+// Get an iterator to the diagonal of an array.
+pub trait GetDiag {
+    type Item;
+    type Iter<'a>: Iterator<Item = Self::Item>
+    where
+        Self: 'a;
 
-// /// Basic trait for arrays that provide mutable random access to values.
-// pub trait MutableArrayImpl<const NDIM: usize, Item: RlstBase>:
-//     ValueArrayImpl<NDIM, Item>
-//     + UnsafeRandomAccessMut<NDIM, Item = Item>
-//     + UnsafeRandom1DAccessMut<Item = Item>
-// {
-// }
+    fn diag_iter(&self) -> Self::Iter<'_>;
+}
 
-// /// Basic trait for arrays that provide access by reference
-// pub trait RefArrayImpl<const NDIM: usize, Item: RlstBase>:
-//     ValueArrayImpl<NDIM, Item>
-//     + UnsafeRandomAccessByRef<NDIM, Item = Item>
-//     + UnsafeRandom1DAccessByRef<Item = Item>
-// {
-// }
+// Get a mutable iterator to the diagonal of an array.
+pub trait GetDiagMut {
+    type Item;
+    type Iter<'a>: Iterator<Item = &'a mut Self::Item>
+    where
+        Self: 'a;
 
-// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> ValueArrayImpl<NDIM, Item> for ArrayImpl where
-//     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-//         + UnsafeRandom1DAccessByValue<Item = Item>
-//         + Shape<NDIM>
-// {
-// }
-
-// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> RefArrayImpl<NDIM, Item> for ArrayImpl where
-//     ArrayImpl: ValueArrayImpl<NDIM, Item>
-//         + UnsafeRandomAccessByRef<NDIM, Item = Item>
-//         + UnsafeRandom1DAccessByRef<Item = Item>
-// {
-// }
-
-// impl<const NDIM: usize, Item: RlstBase, ArrayImpl> MutableArrayImpl<NDIM, Item> for ArrayImpl where
-//     ArrayImpl: ValueArrayImpl<NDIM, Item>
-//         + UnsafeRandomAccessMut<NDIM, Item = Item>
-//         + UnsafeRandom1DAccessMut<Item = Item>
-// {
-// }
+    fn diag_iter_mut(&mut self) -> Self::Iter<'_>;
+}

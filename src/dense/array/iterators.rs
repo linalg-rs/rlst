@@ -2,7 +2,10 @@
 
 use crate::dense::array::{Array, Shape};
 use crate::dense::layout::convert_1d_nd_from_shape;
-use crate::dense::traits::{AsMultiIndex, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut};
+use crate::dense::traits::{
+    AsMultiIndex, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
+};
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -161,7 +164,10 @@ pub struct RowIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     current_row: usize,
 }
 
-impl<'a, ArrayImpl> std::iter::Iterator for RowIterator<'a, ArrayImpl, 2> {
+impl<'a, ArrayImpl> std::iter::Iterator for RowIterator<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     type Item = Array<ArraySlice<reference::ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row >= self.nrows {
@@ -173,7 +179,10 @@ impl<'a, ArrayImpl> std::iter::Iterator for RowIterator<'a, ArrayImpl, 2> {
     }
 }
 
-impl<'a, ArrayImpl> std::iter::Iterator for RowIteratorMut<'a, ArrayImpl, 2> {
+impl<'a, ArrayImpl> std::iter::Iterator for RowIteratorMut<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     type Item = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row >= self.nrows {
@@ -190,7 +199,10 @@ impl<'a, ArrayImpl> std::iter::Iterator for RowIteratorMut<'a, ArrayImpl, 2> {
     }
 }
 
-impl<ArrayImpl> Array<ArrayImpl, 2> {
+impl<ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     /// Return a row iterator for a two-dimensional array.
     pub fn row_iter(&self) -> RowIterator<'_, ArrayImpl, 2> {
         RowIterator {
@@ -201,7 +213,10 @@ impl<ArrayImpl> Array<ArrayImpl, 2> {
     }
 }
 
-impl<ArrayImpl> Array<ArrayImpl, 2> {
+impl<ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     /// Return a mutable row iterator for a two-dimensional array.
     pub fn row_iter_mut(&mut self) -> RowIteratorMut<'_, ArrayImpl, 2> {
         let nrows = self.shape()[0];
@@ -227,7 +242,7 @@ pub struct ColIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     current_col: usize,
 }
 
-impl<'a, ArrayImpl> std::iter::Iterator for ColIterator<'a, ArrayImpl, 2> {
+impl<'a, ArrayImpl: Shape<2>> std::iter::Iterator for ColIterator<'a, ArrayImpl, 2> {
     type Item = Array<ArraySlice<reference::ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_col >= self.ncols {
@@ -239,7 +254,10 @@ impl<'a, ArrayImpl> std::iter::Iterator for ColIterator<'a, ArrayImpl, 2> {
     }
 }
 
-impl<'a, ArrayImpl> std::iter::Iterator for ColIteratorMut<'a, ArrayImpl, 2> {
+impl<'a, ArrayImpl> std::iter::Iterator for ColIteratorMut<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     type Item = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_col >= self.ncols {
@@ -256,7 +274,10 @@ impl<'a, ArrayImpl> std::iter::Iterator for ColIteratorMut<'a, ArrayImpl, 2> {
     }
 }
 
-impl<ArrayImpl> Array<ArrayImpl, 2> {
+impl<ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     /// Return a column iterator for a two-dimensional array.
     pub fn col_iter(&self) -> ColIterator<'_, ArrayImpl, 2> {
         ColIterator {
@@ -267,7 +288,10 @@ impl<ArrayImpl> Array<ArrayImpl, 2> {
     }
 }
 
-impl<ArrayImpl> Array<ArrayImpl, 2> {
+impl<ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
     /// Return a mutable column iterator for a two-dimensional array.
     pub fn col_iter_mut(&mut self) -> ColIteratorMut<'_, ArrayImpl, 2> {
         let ncols = self.shape()[1];
@@ -275,6 +299,77 @@ impl<ArrayImpl> Array<ArrayImpl, 2> {
             arr: self,
             ncols,
             current_col: 0,
+        }
+    }
+}
+
+pub struct ArrayDiagIterator<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a Array<ArrayImpl, NDIM>,
+    pos: usize,
+    nelements: usize,
+}
+
+impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIterator<'a, ArrayImpl, NDIM> {
+    pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
+        let nelements = *arr.shape().iter().min().unwrap();
+        ArrayDiagIterator {
+            arr,
+            pos: 0,
+            nelements,
+        }
+    }
+}
+
+impl<'a, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> Iterator
+    for ArrayDiagIterator<'a, ArrayImpl, NDIM>
+{
+    type Item = ArrayImpl::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.nelements {
+            None
+        } else {
+            let value = unsafe { self.arr.get_value_unchecked([self.pos; NDIM]) };
+            self.pos += 1;
+            Some(value)
+        }
+    }
+}
+
+pub struct ArrayDiagIteratorMut<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a mut Array<ArrayImpl, NDIM>,
+    pos: usize,
+    nelements: usize,
+}
+
+impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIteratorMut<'a, ArrayImpl, NDIM> {
+    /// Create a new mutable diagonal iterator for the given array.
+    pub fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
+        let nelements = *arr.shape().iter().min().unwrap();
+        ArrayDiagIteratorMut {
+            arr,
+            pos: 0,
+            nelements,
+        }
+    }
+}
+
+impl<'a, ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> Iterator
+    for ArrayDiagIteratorMut<'a, ArrayImpl, NDIM>
+{
+    type Item = &'a mut ArrayImpl::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.nelements {
+            None
+        } else {
+            let value = unsafe {
+                std::mem::transmute::<&mut ArrayImpl::Item, Self::Item>(
+                    self.arr.get_unchecked_mut([self.pos; NDIM]),
+                )
+            };
+            self.pos += 1;
+            Some(value)
         }
     }
 }

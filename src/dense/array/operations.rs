@@ -1,570 +1,446 @@
 //! Operations on arrays.
-use crate::dense::linalg;
 use crate::dense::types::{RlstBase, RlstNum};
-use crate::MatrixSvd;
-use crate::{dense::types::RlstResult, TransMode};
-use num::Zero;
+//use crate::{dense::types::RlstResult, TransMode};
+use num::{One, Zero};
 
 use crate::dense::layout::convert_1d_nd_from_shape;
 
+use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
 use super::{
-    Array, ChunkedAccess, DefaultIterator, DefaultIteratorMut, RandomAccessByValue,
-    RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
+    Array, RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::dense::traits::{ResizeInPlace, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut};
+use crate::dense::traits::{
+    ArrayIteratorMut, GetDiag, GetDiagMut, ResizeInPlace, UnsafeRandom1DAccessByValue,
+    UnsafeRandom1DAccessMut,
+};
 
 use crate::dense::types::RlstScalar;
 
-impl<Item: RlstBase, ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>
-    Array<Item, ArrayImpl, 1>
-{
+impl<ArrayImpl: Shape<1>> Array<ArrayImpl, 1> {
     /// Length of 1-d vector
     pub fn len(&self) -> usize {
         self.shape()[0]
     }
 }
 
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
-{
-    /// Return true of array is empty (that is one dimension is zero), otherwise false.
-    pub fn is_empty(&self) -> bool {
-        self.shape().iter().copied().min().unwrap() == 0
-    }
-
-    /// Get the diagonal of an array.
-    ///
-    /// Argument must be a 1d array of length `self.shape().iter().min()`.
-    pub fn get_diag<
-        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1, Item = Item>,
-    >(
-        &self,
-        mut other: Array<Item, ArrayImplOther, 1>,
-    ) {
-        assert_eq!(
-            other.number_of_elements(),
-            *self.shape().iter().min().unwrap()
-        );
-        for index in 0..self.shape().iter().copied().min().unwrap() {
-            *other.get_mut([index]).unwrap() = self.get_value([index; NDIM]).unwrap();
-        }
-    }
-}
-
-impl<
-        Item: RlstBase,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + UnsafeRandom1DAccessMut<Item = Item>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
-{
-    /// Set the diagonal of an array.
-    ///
-    /// Argument must be a 1d array of length `self.shape().iter().min()`.
-    pub fn set_diag<
-        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + UnsafeRandom1DAccessMut<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, 1>,
-    ) {
-        assert_eq!(
-            other.number_of_elements(),
-            *self.shape().iter().min().unwrap()
-        );
-        for index in 0..self.shape().iter().copied().min().unwrap() {
-            *self.get_mut([index; NDIM]).unwrap() = other.get_value([index]).unwrap();
-        }
-    }
-
-    /// Fill an array with values from another array.
-    pub fn fill_from<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) {
-        assert_eq!(self.shape(), other.shape());
-
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
-            *item = other_item;
-        }
-    }
-
-    /// Fill an array from another array and resize if necessary.
-    pub fn fill_from_resize<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) where
-        Self: ResizeInPlace<NDIM>,
-    {
-        if self.shape() != other.shape() {
-            self.resize_in_place(other.shape());
-        }
-
-        self.fill_from(other)
-    }
-
-    /// Fill an array with values from an other arrays using chunks of size `N`.
-    pub fn fill_from_chunked<
-        Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
-        const N: usize,
-    >(
-        &mut self,
-        other: Other,
-    ) {
-        assert_eq!(self.shape(), other.shape());
-
-        let mut chunk_index = 0;
-
-        while let Some(chunk) = other.get_chunk(chunk_index) {
-            let data_start = chunk.start_index;
-
-            for data_index in 0..chunk.valid_entries {
-                unsafe {
-                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
-                        data_start + data_index,
-                        self.shape(),
-                    )) = chunk.data[data_index];
-                }
-            }
-            chunk_index += 1;
-        }
-    }
-
-    /// Fill an array with values from an other arrays using chunks of size `N`. Resize if necessary.
-    pub fn fill_from_chunked_resize<
-        Other: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
-        const N: usize,
-    >(
-        &mut self,
-        other: Other,
-    ) where
-        Self: ResizeInPlace<NDIM>,
-    {
-        if self.shape() != other.shape() {
-            self.resize_in_place(other.shape());
-        }
-
-        self.fill_from_chunked::<_, N>(other)
-    }
-}
-
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + UnsafeRandom1DAccessMut<Item = Item>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
-{
-    /// Set all elements of an array to zero.
-    pub fn set_zero(&mut self) {
-        for elem in self.iter_mut() {
-            *elem = <Item as num::Zero>::zero();
-        }
-    }
-
-    /// Set all elements of an array to one.
-    pub fn set_one(&mut self) {
-        for elem in self.iter_mut() {
-            *elem = <Item as num::One>::one();
-        }
-    }
-
-    /// Fill the diagonal of an array with the value 1 and all other elements zero.
-    pub fn set_identity(&mut self) {
-        self.set_zero();
-
-        for index in 0..self.shape().iter().copied().min().unwrap() {
-            *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
-        }
-    }
-
-    /// Multiply all array elements with the scalar `alpha`.
-    pub fn scale_inplace(&mut self, alpha: Item) {
-        for elem in self.iter_mut() {
-            *elem *= alpha;
-        }
-    }
-
-    /// Sum other array into array.
-    pub fn sum_into<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) {
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
-            *item += other_item;
-        }
-    }
-
-    /// Subtract other array into array.
-    pub fn sub_into<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) {
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
-            *item -= other_item;
-        }
-    }
-
-    /// Componentwise multiply other array into array.
-    pub fn cmp_mult_into<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) {
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
-            *item *= other_item;
-        }
-    }
-
-    /// Chunked summation into array.
-    pub fn sum_into_chunked<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
-        const N: usize,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) where
-        Self: ChunkedAccess<N, Item = Item>,
-    {
-        assert_eq!(self.shape(), other.shape());
-
-        let mut chunk_index = 0;
-
-        while let (Some(mut my_chunk), Some(chunk)) =
-            (self.get_chunk(chunk_index), other.get_chunk(chunk_index))
-        {
-            let data_start = chunk.start_index;
-
-            for data_index in 0..chunk.valid_entries {
-                my_chunk.data[data_index] += chunk.data[data_index];
-            }
-
-            for data_index in 0..chunk.valid_entries {
-                unsafe {
-                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
-                        data_index + data_start,
-                        self.shape(),
-                    )) = my_chunk.data[data_index];
-                }
-            }
-
-            chunk_index += 1;
-        }
-    }
-
-    /// Chunked componentwise multiplication into array.
-    pub fn cmp_mult_into_chunked<
-        ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM> + ChunkedAccess<N, Item = Item>,
-        const N: usize,
-    >(
-        &mut self,
-        other: Array<Item, ArrayImplOther, NDIM>,
-    ) where
-        Self: ChunkedAccess<N, Item = Item>,
-    {
-        assert_eq!(self.shape(), other.shape());
-
-        let mut chunk_index = 0;
-
-        while let (Some(mut my_chunk), Some(chunk)) =
-            (self.get_chunk(chunk_index), other.get_chunk(chunk_index))
-        {
-            let data_start = chunk.start_index;
-
-            for data_index in 0..chunk.valid_entries {
-                my_chunk.data[data_index] *= chunk.data[data_index];
-            }
-
-            for data_index in 0..chunk.valid_entries {
-                unsafe {
-                    *self.get_unchecked_mut(convert_1d_nd_from_shape(
-                        data_index + data_start,
-                        self.shape(),
-                    )) = my_chunk.data[data_index];
-                }
-            }
-
-            chunk_index += 1;
-        }
-    }
-}
-
-impl<
-        Item: RlstNum,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
-{
-    /// Return the trace of an array.
-    pub fn trace(self) -> Item {
-        let k = *self.shape().iter().min().unwrap();
-
-        (0..k).fold(<Item as Default>::default(), |acc, index| {
-            acc + self.get_value([index; NDIM]).unwrap()
-        })
-    }
-
-    /// Return the sum of the elements.
-    pub fn sum(self) -> Item {
-        self.iter().sum()
-    }
-}
-
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    > Array<Item, ArrayImpl, 1>
+impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
-    Item::Real: num::Float,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
 {
-    /// Compute the inner product between two vectors.
-    ///
-    /// The inner product takes the complex conjugate of the `other` argument.
-    pub fn inner<
-        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    >(
-        &self,
-        other: Array<Item, ArrayImplOther, 1>,
-    ) -> Item {
-        assert_eq!(
-            self.number_of_elements(),
-            other.number_of_elements(),
-            "Arrays must have the same length"
-        );
+    type Item = Item;
 
-        self.iter()
-            .zip(other.iter())
-            .fold(<Item as Zero>::zero(), |acc, (elem1, elem_other)| {
-                acc + elem1 * elem_other.conj()
-            })
-    }
+    type Iter<'a>
+        = ArrayDiagIterator<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
-    /// Compute the maximum (or inf) norm of a vector.
-    pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
-        self.iter()
-            .map(|elem| <Item as RlstScalar>::abs(elem))
-            .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
-            .unwrap()
-    }
-
-    /// Compute the 1-norm of a vector.
-    pub fn norm_1(self) -> <Item as RlstScalar>::Real {
-        self.iter()
-            .map(|elem| <Item as RlstScalar>::abs(elem))
-            .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
-                acc + elem
-            })
-    }
-
-    /// Compute the 2-norm of a vector.
-    pub fn norm_2(self) -> <Item as RlstScalar>::Real {
-        RlstScalar::sqrt(
-            self.iter()
-                .map(|elem| <Item as RlstScalar>::abs(elem))
-                .map(|elem| elem * elem)
-                .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
-                    acc + elem
-                }),
-        )
-    }
-
-    /// Compute the cross product with vector `other` and store into `res`.
-    pub fn cross<
-        ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-        ArrayImplRes: UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + UnsafeRandomAccessByRef<1, Item = Item>
-            + Shape<1>,
-    >(
-        &self,
-        other: Array<Item, ArrayImplOther, 1>,
-        mut res: Array<Item, ArrayImplRes, 1>,
-    ) {
-        assert_eq!(self.len(), 3);
-        assert_eq!(other.len(), 3);
-        assert_eq!(res.len(), 3);
-
-        let a0 = self.get_value([0]).unwrap();
-        let a1 = self.get_value([1]).unwrap();
-        let a2 = self.get_value([2]).unwrap();
-
-        let b0 = other.get_value([0]).unwrap();
-        let b1 = other.get_value([1]).unwrap();
-        let b2 = other.get_value([2]).unwrap();
-
-        res[[0]] = a1 * b2 - a2 * b1;
-        res[[1]] = a2 * b0 - a0 * b2;
-        res[[2]] = a0 * b1 - a1 * b0;
+    fn diag_iter(&self) -> Self::Iter<'_> {
+        ArrayDiagIterator::new(self)
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > Array<Item, ArrayImpl, 2>
+impl<Item, ArrayImpl, const NDIM: usize> GetDiagMut for Array<ArrayImpl, NDIM>
 where
-    Item: MatrixSvd,
+    ArrayImpl: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>,
 {
-    /// Compute the 2-norm of a matrix.
-    ///
-    /// This method allocates temporary memory during execution.
-    pub fn norm_2_alloc(self) -> RlstResult<<Item as RlstScalar>::Real> {
-        let k = *self.shape().iter().min().unwrap();
+    type Item = Item;
 
-        let mut singular_values = vec![<<Item as RlstScalar>::Real as Zero>::zero(); k];
+    type Iter<'a>
+        = ArrayDiagIteratorMut<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
 
-        self.into_singular_values_alloc(singular_values.as_mut_slice())?;
-
-        Ok(singular_values[0])
+    fn diag_iter_mut(&mut self) -> Self::Iter<'_> {
+        ArrayDiagIteratorMut::new(self)
     }
 }
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + UnsafeRandom1DAccessByValue<Item = Item>,
-    > Array<Item, ArrayImpl, 2>
-{
-    /// Compute the Frobenius-norm of a matrix.
-    pub fn norm_fro(self) -> Item::Real {
-        RlstScalar::sqrt(
-            self.iter()
-                .map(|elem| <Item as RlstScalar>::abs(elem))
-                .map(|elem| elem * elem)
-                .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
-                    acc + elem
-                }),
-        )
-    }
+// impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
+//     /// Get the diagonal of an array.
+//     ///
+//     /// Argument must be a 1d array of length `self.shape().iter().min()`.
+//     pub fn get_diag<Item, ArrayImplOther>(&self, mut other: Array<ArrayImplOther, 1>)
+//     where
+//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>,
+//         ArrayImplOther: Shape<1> + UnsafeRandomAccessMut<1, Item = Item>,
+//     {
+//         assert_eq!(
+//             other.number_of_elements(),
+//             *self.shape().iter().min().unwrap()
+//         );
+//         for index in 0..*self.shape().iter().min().unwrap() {
+//             *other.get_mut([index]).unwrap() = self.get_value([index; NDIM]).unwrap();
+//         }
+//     }
+// }
 
-    /// Compute the inf-norm of a matrix.
-    pub fn norm_inf(self) -> Item::Real {
-        self.row_iter()
-            .map(|row| row.norm_1())
-            .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
-            .unwrap()
-    }
+// impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
+//     /// Set the diagonal of an array.
+//     ///
+//     /// Argument must be a 1d array of length `self.shape().iter().min()`.
+//     pub fn set_diag<Item, ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>(
+//         &mut self,
+//         other: Array<ArrayImplOther, 1>,
+//     ) where
+//         ArrayImpl: UnsafeRandomAccessMut<NDIM, Item = Item>,
+//     {
+//         assert_eq!(
+//             other.number_of_elements(),
+//             *self.shape().iter().min().unwrap()
+//         );
+//         for index in 0..self.shape().iter().copied().min().unwrap() {
+//             *self.get_mut([index; NDIM]).unwrap() = other.get_value([index]).unwrap();
+//         }
+//     }
 
-    /// Compute the 1-norm of a matrix.
-    pub fn norm_1(self) -> Item::Real {
-        self.col_iter()
-            .map(|row| row.norm_1())
-            .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
-            .unwrap()
-    }
-}
+//     /// Fill an array with values from another array.
+//     pub fn fill_from<Item, ArrayImplOther>(&mut self, other: Array<ArrayImplOther, NDIM>)
+//     where
+//         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+//         ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+//     {
+//         assert_eq!(self.shape(), other.shape());
 
-impl<
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
-            + Shape<2>
-            + Stride<2>
-            + RawAccessMut<Item = Item>,
-    > Array<Item, ArrayImpl, 2>
-where
-    linalg::lu::LuDecomposition<Item, ArrayImpl>:
-        linalg::lu::MatrixLuDecomposition<Item = Item, ArrayImpl = ArrayImpl>,
-{
-    /// Solve a linear system with a single right-hand side.
-    ///
-    /// The array is overwritten with the LU Decomposition and the right-hand side
-    /// is overwritten with the solution. The solution is also returned.
-    pub fn into_solve_vec<
-        ArrayImplMut: RawAccessMut<Item = Item>
-            + UnsafeRandomAccessByValue<1, Item = Item>
-            + UnsafeRandomAccessMut<1, Item = Item>
-            + Shape<1>
-            + Stride<1>,
-    >(
-        self,
-        trans: TransMode,
-        mut rhs: Array<Item, ArrayImplMut, 1>,
-    ) -> RlstResult<Array<Item, ArrayImplMut, 1>> {
-        use linalg::lu::MatrixLuDecomposition;
+//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
+//             *item = other_item;
+//         }
+//     }
 
-        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_vec(trans, rhs.r_mut())?;
-        Ok(rhs)
-    }
+//     /// Fill an array from another array and resize if necessary.
+//     pub fn fill_from_resize<Item, ArrayImplOther>(&mut self, other: Array<ArrayImplOther, NDIM>)
+//     where
+//         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+//         ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM> + ResizeInPlace<NDIM>,
+//     {
+//         if self.shape() != other.shape() {
+//             self.resize_in_place(other.shape());
+//         }
 
-    /// Compute the determinant of a matrix.
-    ///
-    /// The array is overwritten by the determinant computation.
-    pub fn into_det<
-        ArrayImplMut: RawAccessMut<Item = Item>
-            + UnsafeRandomAccessByValue<2, Item = Item>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        self,
-    ) -> RlstResult<Item> {
-        use linalg::lu::MatrixLuDecomposition;
+//         self.fill_from(other)
+//     }
+//     /// Set all elements of an array to zero.
+//     pub fn set_zero(&mut self)
+//     where
+//         Self: ArrayIteratorMut,
+//         <Self as ArrayIteratorMut>::Item: Zero,
+//     {
+//         for elem in self.iter_mut() {
+//             *elem = Zero::zero();
+//         }
+//     }
 
-        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        Ok(ludecomp.det())
-    }
+//     /// Set all elements of an array to one.
+//     pub fn set_one(&mut self)
+//     where
+//         Self: ArrayIteratorMut,
+//         <Self as ArrayIteratorMut>::Item: One,
+//     {
+//         for elem in self.iter_mut() {
+//             *elem = One::one();
+//         }
+//     }
 
-    /// Solve a linear system with multiple right-hand sides.
-    ///
-    /// The array is overwritten with the LU Decomposition and the right-hand side
-    /// is overwritten with the solution. The solution is also returned.
-    pub fn into_solve_mat<
-        ArrayImplMut: RawAccessMut<Item = Item>
-            + UnsafeRandomAccessByValue<2, Item = Item>
-            + UnsafeRandomAccessMut<2, Item = Item>
-            + Shape<2>
-            + Stride<2>,
-    >(
-        self,
-        trans: TransMode,
-        mut rhs: Array<Item, ArrayImplMut, 2>,
-    ) -> RlstResult<Array<Item, ArrayImplMut, 2>> {
-        use linalg::lu::MatrixLuDecomposition;
+//     /// Fill the diagonal of an array with the value 1 and all other elements zero.
+//     pub fn set_identity(&mut self)
+//     where
+//         Self: ArrayIteratorMut,
+//         <Self as ArrayIteratorMut>::Item: one,
+//     {
+//         self.set_zero();
 
-        let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
-        ludecomp.solve_mat(trans, rhs.r_mut())?;
-        Ok(rhs)
-    }
-}
+//         for index in 0..self.shape().iter().copied().min().unwrap() {
+//             *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
+//         }
+//     }
+
+//     /// Multiply all array elements with the scalar `alpha`.
+//     pub fn scale_inplace(&mut self, alpha: Item) {
+//         for elem in self.iter_mut() {
+//             *elem *= alpha;
+//         }
+//     }
+
+//     /// Sum other array into array.
+//     pub fn sum_into<
+//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+//             + Shape<NDIM>
+//             + UnsafeRandom1DAccessByValue<Item = Item>,
+//     >(
+//         &mut self,
+//         other: Array<Item, ArrayImplOther, NDIM>,
+//     ) {
+//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
+//             *item += other_item;
+//         }
+//     }
+
+//     /// Subtract other array into array.
+//     pub fn sub_into<
+//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+//             + Shape<NDIM>
+//             + UnsafeRandom1DAccessByValue<Item = Item>,
+//     >(
+//         &mut self,
+//         other: Array<Item, ArrayImplOther, NDIM>,
+//     ) {
+//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
+//             *item -= other_item;
+//         }
+//     }
+
+//     /// Componentwise multiply other array into array.
+//     pub fn cmp_mult_into<
+//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
+//             + Shape<NDIM>
+//             + UnsafeRandom1DAccessByValue<Item = Item>,
+//     >(
+//         &mut self,
+//         other: Array<Item, ArrayImplOther, NDIM>,
+//     ) {
+//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
+//             *item *= other_item;
+//         }
+//     }
+
+//     /// Return the trace of an array.
+//     pub fn trace(self) -> Item {
+//         let k = *self.shape().iter().min().unwrap();
+
+//         (0..k).fold(<Item as Default>::default(), |acc, index| {
+//             acc + self.get_value([index; NDIM]).unwrap()
+//         })
+//     }
+
+//     /// Return the sum of the elements.
+//     pub fn sum(self) -> Item {
+//         self.iter().sum()
+//     }
+
+//     /// Compute the inner product between two vectors.
+//     ///
+//     /// The inner product takes the complex conjugate of the `other` argument.
+//     pub fn inner<
+//         ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
+//             + Shape<1>
+//             + UnsafeRandom1DAccessByValue<Item = Item>,
+//     >(
+//         &self,
+//         other: Array<Item, ArrayImplOther, 1>,
+//     ) -> Item {
+//         assert_eq!(
+//             self.number_of_elements(),
+//             other.number_of_elements(),
+//             "Arrays must have the same length"
+//         );
+
+//         self.iter()
+//             .zip(other.iter())
+//             .fold(<Item as Zero>::zero(), |acc, (elem1, elem_other)| {
+//                 acc + elem1 * elem_other.conj()
+//             })
+//     }
+
+//     /// Compute the maximum (or inf) norm of a vector.
+//     pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
+//         self.iter()
+//             .map(|elem| <Item as RlstScalar>::abs(elem))
+//             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
+//             .unwrap()
+//     }
+
+//     /// Compute the 1-norm of a vector.
+//     pub fn norm_1(self) -> <Item as RlstScalar>::Real {
+//         self.iter()
+//             .map(|elem| <Item as RlstScalar>::abs(elem))
+//             .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
+//                 acc + elem
+//             })
+//     }
+
+//     /// Compute the 2-norm of a vector.
+//     pub fn norm_2(self) -> <Item as RlstScalar>::Real {
+//         RlstScalar::sqrt(
+//             self.iter()
+//                 .map(|elem| <Item as RlstScalar>::abs(elem))
+//                 .map(|elem| elem * elem)
+//                 .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
+//                     acc + elem
+//                 }),
+//         )
+//     }
+
+//     /// Compute the cross product with vector `other` and store into `res`.
+//     pub fn cross<
+//         ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+//         ArrayImplRes: UnsafeRandomAccessByValue<1, Item = Item>
+//             + UnsafeRandomAccessMut<1, Item = Item>
+//             + UnsafeRandomAccessByRef<1, Item = Item>
+//             + Shape<1>,
+//     >(
+//         &self,
+//         other: Array<Item, ArrayImplOther, 1>,
+//         mut res: Array<Item, ArrayImplRes, 1>,
+//     ) {
+//         assert_eq!(self.len(), 3);
+//         assert_eq!(other.len(), 3);
+//         assert_eq!(res.len(), 3);
+
+//         let a0 = self.get_value([0]).unwrap();
+//         let a1 = self.get_value([1]).unwrap();
+//         let a2 = self.get_value([2]).unwrap();
+
+//         let b0 = other.get_value([0]).unwrap();
+//         let b1 = other.get_value([1]).unwrap();
+//         let b2 = other.get_value([2]).unwrap();
+
+//         res[[0]] = a1 * b2 - a2 * b1;
+//         res[[1]] = a2 * b0 - a0 * b2;
+//         res[[2]] = a0 * b1 - a1 * b0;
+//     }
+// }
+
+// impl<
+//         Item: RlstScalar,
+//         ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
+//             + Shape<1>
+//             + UnsafeRandom1DAccessByValue<Item = Item>,
+//     > Array<Item, ArrayImpl, 1>
+// where
+//     Item::Real: num::Float,
+// {
+// }
+
+// // impl<
+// //         Item: RlstScalar,
+// //         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+// //             + Shape<2>
+// //             + Stride<2>
+// //             + RawAccessMut<Item = Item>,
+// //     > Array<Item, ArrayImpl, 2>
+// // where
+// //     Item: MatrixSvd,
+// // {
+// //     /// Compute the 2-norm of a matrix.
+// //     ///
+// //     /// This method allocates temporary memory during execution.
+// //     pub fn norm_2_alloc(self) -> RlstResult<<Item as RlstScalar>::Real> {
+// //         let k = *self.shape().iter().min().unwrap();
+
+// //         let mut singular_values = vec![<<Item as RlstScalar>::Real as Zero>::zero(); k];
+
+// //         self.into_singular_values_alloc(singular_values.as_mut_slice())?;
+
+// //         Ok(singular_values[0])
+// //     }
+// // }
+
+// // impl<
+// //         Item: RlstScalar,
+// //         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+// //             + Shape<2>
+// //             + UnsafeRandom1DAccessByValue<Item = Item>,
+// //     > Array<Item, ArrayImpl, 2>
+// // {
+// //     /// Compute the Frobenius-norm of a matrix.
+// //     pub fn norm_fro(self) -> Item::Real {
+// //         RlstScalar::sqrt(
+// //             self.iter()
+// //                 .map(|elem| <Item as RlstScalar>::abs(elem))
+// //                 .map(|elem| elem * elem)
+// //                 .fold(<<Item as RlstScalar>::Real as Zero>::zero(), |acc, elem| {
+// //                     acc + elem
+// //                 }),
+// //         )
+// //     }
+
+// //     /// Compute the inf-norm of a matrix.
+// //     pub fn norm_inf(self) -> Item::Real {
+// //         self.row_iter()
+// //             .map(|row| row.norm_1())
+// //             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
+// //             .unwrap()
+// //     }
+
+// //     /// Compute the 1-norm of a matrix.
+// //     pub fn norm_1(self) -> Item::Real {
+// //         self.col_iter()
+// //             .map(|row| row.norm_1())
+// //             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
+// //             .unwrap()
+// //     }
+// // }
+
+// // impl<
+// //         Item: RlstScalar,
+// //         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item>
+// //             + Shape<2>
+// //             + Stride<2>
+// //             + RawAccessMut<Item = Item>,
+// //     > Array<Item, ArrayImpl, 2>
+// // where
+// //     linalg::lu::LuDecomposition<Item, ArrayImpl>:
+// //         linalg::lu::MatrixLuDecomposition<Item = Item, ArrayImpl = ArrayImpl>,
+// // {
+// //     /// Solve a linear system with a single right-hand side.
+// //     ///
+// //     /// The array is overwritten with the LU Decomposition and the right-hand side
+// //     /// is overwritten with the solution. The solution is also returned.
+// //     pub fn into_solve_vec<
+// //         ArrayImplMut: RawAccessMut<Item = Item>
+// //             + UnsafeRandomAccessByValue<1, Item = Item>
+// //             + UnsafeRandomAccessMut<1, Item = Item>
+// //             + Shape<1>
+// //             + Stride<1>,
+// //     >(
+// //         self,
+// //         trans: TransMode,
+// //         mut rhs: Array<Item, ArrayImplMut, 1>,
+// //     ) -> RlstResult<Array<Item, ArrayImplMut, 1>> {
+// //         use linalg::lu::MatrixLuDecomposition;
+
+// //         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+// //         ludecomp.solve_vec(trans, rhs.r_mut())?;
+// //         Ok(rhs)
+// //     }
+
+// //     /// Compute the determinant of a matrix.
+// //     ///
+// //     /// The array is overwritten by the determinant computation.
+// //     pub fn into_det<
+// //         ArrayImplMut: RawAccessMut<Item = Item>
+// //             + UnsafeRandomAccessByValue<2, Item = Item>
+// //             + UnsafeRandomAccessMut<2, Item = Item>
+// //             + Shape<2>
+// //             + Stride<2>,
+// //     >(
+// //         self,
+// //     ) -> RlstResult<Item> {
+// //         use linalg::lu::MatrixLuDecomposition;
+
+// //         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+// //         Ok(ludecomp.det())
+// //     }
+
+// //     /// Solve a linear system with multiple right-hand sides.
+// //     ///
+// //     /// The array is overwritten with the LU Decomposition and the right-hand side
+// //     /// is overwritten with the solution. The solution is also returned.
+// //     pub fn into_solve_mat<
+// //         ArrayImplMut: RawAccessMut<Item = Item>
+// //             + UnsafeRandomAccessByValue<2, Item = Item>
+// //             + UnsafeRandomAccessMut<2, Item = Item>
+// //             + Shape<2>
+// //             + Stride<2>,
+// //     >(
+// //         self,
+// //         trans: TransMode,
+// //         mut rhs: Array<Item, ArrayImplMut, 2>,
+// //     ) -> RlstResult<Array<Item, ArrayImplMut, 2>> {
+// //         use linalg::lu::MatrixLuDecomposition;
+
+// //         let ludecomp = linalg::lu::LuDecomposition::<Item, ArrayImpl>::new(self)?;
+// //         ludecomp.solve_mat(trans, rhs.r_mut())?;
+// //         Ok(rhs)
+// //     }
+// // }
