@@ -2,7 +2,10 @@
 
 pub mod accessors;
 
+use std::ops::MulAssign;
+
 pub use accessors::*;
+use num::{One, Zero};
 
 use crate::dense::types::TransMode;
 
@@ -241,6 +244,7 @@ pub trait GetDiag {
     where
         Self: 'a;
 
+    /// Return an iterator for the diagonal of an array.
     fn diag_iter(&self) -> Self::Iter<'_>;
 }
 
@@ -251,5 +255,114 @@ pub trait GetDiagMut {
     where
         Self: 'a;
 
+    /// Return a mutable iterator for the diagonal of an array.
     fn diag_iter_mut(&mut self) -> Self::Iter<'_>;
+}
+
+/// Fill an array with values from another array.
+pub trait FillFrom<Other> {
+    /// Fill an array with values from another array.
+    fn fill_from(&mut self, other: &Other);
+}
+
+/// Fill an array with values from another array and allow resizing.
+pub trait FillFromResize<Other> {
+    /// Fill an array with values from another array and allow resizing.
+    fn fill_from_resize(&mut self, other: &Other);
+}
+
+/// Sum into an array with values from another array.
+pub trait SumFrom<Other> {
+    /// Sum into array with values from `other`.
+    fn sum_from(&mut self, other: &Other);
+}
+
+/// Componentwise Multiply other array into this array.
+pub trait CmpMulFrom<Other> {
+    /// Multiply other array into this array.
+    fn cmp_mult_from(&mut self, other: &Other);
+}
+
+/// Componentwise form `Self = Self * Other1 + Other2`
+pub trait CmpMulAddFrom<Other1, Other2> {
+    /// Multiply other array into this array.
+    fn cmp_mul_add_from(&mut self, other1: &Other1, other2: &Other2);
+}
+
+/// Fill an array with a specific value.
+pub trait FillWithValue {
+    /// Item type.
+    type Item;
+    /// Fill an array with a specific value.
+    fn fill_with_value(&mut self, value: Self::Item);
+}
+
+/// Fill an array with zero values.
+pub trait SetZero {
+    /// Fill an array with zero values.
+    fn set_zero(&mut self);
+}
+
+/// Fill an array with one values.
+pub trait SetOne {
+    /// Fill an array with one values.
+    fn set_one(&mut self);
+}
+
+impl<T> SetZero for T
+where
+    T: FillWithValue,
+    T::Item: Zero,
+{
+    fn set_zero(&mut self) {
+        self.fill_with_value(Zero::zero());
+    }
+}
+
+impl<T> SetOne for T
+where
+    T: FillWithValue,
+    T::Item: One,
+{
+    fn set_one(&mut self) {
+        self.fill_with_value(One::one());
+    }
+}
+
+/// Set the diagonal of an array to one and the off-diagonals to zero.
+pub trait SetIdentity {
+    /// Fill the diagonal of an array with the value 1 and all other elements zero.
+    fn set_identity(&mut self);
+}
+
+impl<Item, T> SetIdentity for T
+where
+    T: FillWithValue<Item = Item> + GetDiagMut<Item = Item>,
+    Item: Zero + One,
+{
+    fn set_identity(&mut self) {
+        self.set_zero();
+        self.diag_iter_mut().for_each(|elem| *elem = One::one());
+    }
+}
+
+/// Scale all elements by a value `alpha`.
+pub trait ScaleInPlace {
+    /// Item type.
+    type Item;
+
+    /// Scale all elements by a value `alpha`.
+    fn scale_in_place(&mut self, alpha: Self::Item);
+}
+
+impl<T> ScaleInPlace for T
+where
+    T: ArrayIteratorMut,
+    T::Item: MulAssign<T::Item> + Copy,
+{
+    type Item = T::Item;
+
+    fn scale_in_place(&mut self, alpha: Self::Item) {
+        self.iter_mut().for_each(|elem| *elem *= alpha);
+    }
 }

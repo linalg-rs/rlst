@@ -1,5 +1,9 @@
 //! Operations on arrays.
+use std::ops::{AddAssign, MulAssign};
+
 use crate::dense::types::{RlstBase, RlstNum};
+use itertools::izip;
+use num::traits::MulAddAssign;
 //use crate::{dense::types::RlstResult, TransMode};
 use num::{One, Zero};
 
@@ -11,7 +15,8 @@ use super::{
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::traits::{
-    ArrayIteratorMut, GetDiag, GetDiagMut, ResizeInPlace, UnsafeRandom1DAccessByValue,
+    ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, FillFrom, FillFromResize,
+    FillWithValue, GetDiag, GetDiagMut, ResizeInPlace, SumFrom, UnsafeRandom1DAccessByValue,
     UnsafeRandom1DAccessMut,
 };
 
@@ -56,138 +61,107 @@ where
     }
 }
 
-// impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
-//     /// Get the diagonal of an array.
-//     ///
-//     /// Argument must be a 1d array of length `self.shape().iter().min()`.
-//     pub fn get_diag<Item, ArrayImplOther>(&self, mut other: Array<ArrayImplOther, 1>)
-//     where
-//         ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>,
-//         ArrayImplOther: Shape<1> + UnsafeRandomAccessMut<1, Item = Item>,
-//     {
-//         assert_eq!(
-//             other.number_of_elements(),
-//             *self.shape().iter().min().unwrap()
-//         );
-//         for index in 0..*self.shape().iter().min().unwrap() {
-//             *other.get_mut([index]).unwrap() = self.get_value([index; NDIM]).unwrap();
-//         }
-//     }
-// }
+impl<Item, ArrayImpl, ArrayImplOther, const NDIM: usize> FillFrom<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+    Self: ArrayIteratorMut<Item = Item>,
+    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+{
+    fn fill_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
+        assert_eq!(self.shape(), other.shape());
 
-// impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-//     /// Set the diagonal of an array.
-//     ///
-//     /// Argument must be a 1d array of length `self.shape().iter().min()`.
-//     pub fn set_diag<Item, ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>>(
-//         &mut self,
-//         other: Array<ArrayImplOther, 1>,
-//     ) where
-//         ArrayImpl: UnsafeRandomAccessMut<NDIM, Item = Item>,
-//     {
-//         assert_eq!(
-//             other.number_of_elements(),
-//             *self.shape().iter().min().unwrap()
-//         );
-//         for index in 0..self.shape().iter().copied().min().unwrap() {
-//             *self.get_mut([index; NDIM]).unwrap() = other.get_value([index]).unwrap();
-//         }
-//     }
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item = other_item;
+        }
+    }
+}
 
-//     /// Fill an array with values from another array.
-//     pub fn fill_from<Item, ArrayImplOther>(&mut self, other: Array<ArrayImplOther, NDIM>)
-//     where
-//         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
-//         ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
-//     {
-//         assert_eq!(self.shape(), other.shape());
+impl<Item, ArrayImpl, ArrayImplOther, const NDIM: usize> SumFrom<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    Item: AddAssign<Item>,
+    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+    Self: ArrayIteratorMut<Item = Item>,
+    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+{
+    fn sum_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
+        assert_eq!(self.shape(), other.shape());
 
-//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
-//             *item = other_item;
-//         }
-//     }
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item += other_item;
+        }
+    }
+}
 
-//     /// Fill an array from another array and resize if necessary.
-//     pub fn fill_from_resize<Item, ArrayImplOther>(&mut self, other: Array<ArrayImplOther, NDIM>)
-//     where
-//         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
-//         ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM> + ResizeInPlace<NDIM>,
-//     {
-//         if self.shape() != other.shape() {
-//             self.resize_in_place(other.shape());
-//         }
+impl<Item, ArrayImpl, ArrayImplOther, const NDIM: usize> CmpMulFrom<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    Item: MulAssign<Item>,
+    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+    Self: ArrayIteratorMut<Item = Item>,
+    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+{
+    fn cmp_mult_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
+        assert_eq!(self.shape(), other.shape());
 
-//         self.fill_from(other)
-//     }
-//     /// Set all elements of an array to zero.
-//     pub fn set_zero(&mut self)
-//     where
-//         Self: ArrayIteratorMut,
-//         <Self as ArrayIteratorMut>::Item: Zero,
-//     {
-//         for elem in self.iter_mut() {
-//             *elem = Zero::zero();
-//         }
-//     }
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item *= other_item;
+        }
+    }
+}
 
-//     /// Set all elements of an array to one.
-//     pub fn set_one(&mut self)
-//     where
-//         Self: ArrayIteratorMut,
-//         <Self as ArrayIteratorMut>::Item: One,
-//     {
-//         for elem in self.iter_mut() {
-//             *elem = One::one();
-//         }
-//     }
+impl<Item, ArrayImpl, ArrayImplOther1, ArrayImplOther2, const NDIM: usize>
+    CmpMulAddFrom<Array<ArrayImplOther1, NDIM>, Array<ArrayImplOther2, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    Item: MulAddAssign<Item>,
+    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+    Self: ArrayIteratorMut<Item = Item>,
+    Array<ArrayImplOther1, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther2, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+{
+    fn cmp_mul_add_from(
+        &mut self,
+        other1: &Array<ArrayImplOther1, NDIM>,
+        other2: &Array<ArrayImplOther2, NDIM>,
+    ) {
+        assert_eq!(self.shape(), other1.shape());
+        assert_eq!(self.shape(), other2.shape());
 
-//     /// Fill the diagonal of an array with the value 1 and all other elements zero.
-//     pub fn set_identity(&mut self)
-//     where
-//         Self: ArrayIteratorMut,
-//         <Self as ArrayIteratorMut>::Item: one,
-//     {
-//         self.set_zero();
+        for (item, other_item1, other_item2) in izip!(self.iter_mut(), other1.iter(), other2.iter())
+        {
+            MulAddAssign::mul_add_assign(item, other_item1, other_item2);
+        }
+    }
+}
 
-//         for index in 0..self.shape().iter().copied().min().unwrap() {
-//             *self.get_mut([index; NDIM]).unwrap() = <Item as num::One>::one();
-//         }
-//     }
+impl<ArrayImpl, ArrayImplOther, const NDIM: usize> FillFromResize<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ResizeInPlace<NDIM> + Shape<NDIM>,
+    Self: FillFrom<Array<ArrayImplOther, NDIM>>,
+    ArrayImplOther: Shape<NDIM>,
+{
+    fn fill_from_resize(&mut self, other: &Array<ArrayImplOther, NDIM>) {
+        self.resize_in_place(other.shape());
+        self.fill_from(other);
+    }
+}
 
-//     /// Multiply all array elements with the scalar `alpha`.
-//     pub fn scale_inplace(&mut self, alpha: Item) {
-//         for elem in self.iter_mut() {
-//             *elem *= alpha;
-//         }
-//     }
+impl<Item, ArrayImpl, const NDIM: usize> FillWithValue for Array<ArrayImpl, NDIM>
+where
+    Array<ArrayImpl, NDIM>: ArrayIteratorMut<Item = Item>,
+    Item: Copy,
+{
+    type Item = Item;
 
-//     /// Sum other array into array.
-//     pub fn sum_into<
-//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-//             + Shape<NDIM>
-//             + UnsafeRandom1DAccessByValue<Item = Item>,
-//     >(
-//         &mut self,
-//         other: Array<Item, ArrayImplOther, NDIM>,
-//     ) {
-//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
-//             *item += other_item;
-//         }
-//     }
-
-//     /// Subtract other array into array.
-//     pub fn sub_into<
-//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-//             + Shape<NDIM>
-//             + UnsafeRandom1DAccessByValue<Item = Item>,
-//     >(
-//         &mut self,
-//         other: Array<Item, ArrayImplOther, NDIM>,
-//     ) {
-//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
-//             *item -= other_item;
-//         }
-//     }
+    fn fill_with_value(&mut self, value: Item) {
+        for item in self.iter_mut() {
+            *item = value;
+        }
+    }
+}
 
 //     /// Componentwise multiply other array into array.
 //     pub fn cmp_mult_into<
