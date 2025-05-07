@@ -76,6 +76,8 @@ use std::ops::Neg;
 pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
 
+use super::traits::Conj;
+
 /// Base trait for Rlst admissible objects
 pub trait RlstBase:
     Default + Sized + Copy + Clone + 'static + Display + Send + Sync + Debug
@@ -428,4 +430,14 @@ pub enum TransMode {
     Trans,
     /// Conjugate transpose of matrix.
     ConjTrans,
+}
+
+impl<T> Conj for T
+where
+    T: RlstScalar,
+{
+    type Output = Self;
+    fn conj(&self) -> Self {
+        RlstScalar::conj(self)
+    }
 }

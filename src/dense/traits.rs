@@ -9,6 +9,8 @@ use num::{One, Zero};
 
 use crate::dense::types::TransMode;
 
+use super::types::RlstScalar;
+
 /// Memory layout of an object
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryLayout {
@@ -24,11 +26,6 @@ pub enum MemoryLayout {
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.
     fn shape(&self) -> [usize; NDIM];
-
-    /// Return true if a dimension is 0.
-    fn is_empty(&self) -> bool {
-        *self.shape().iter().min().unwrap() == 0
-    }
 }
 
 /// Stride of an object
@@ -283,9 +280,9 @@ pub trait CmpMulFrom<Other> {
     fn cmp_mult_from(&mut self, other: &Other);
 }
 
-/// Componentwise form `Self = Self * Other1 + Other2`
+/// Componentwise form `Self = Self * Other1 + Other2`.
 pub trait CmpMulAddFrom<Other1, Other2> {
-    /// Multiply other array into this array.
+    /// Componentwise form `Self = Self * Other1 + Other2`.
     fn cmp_mul_add_from(&mut self, other1: &Other1, other2: &Other2);
 }
 
@@ -365,4 +362,91 @@ where
     fn scale_in_place(&mut self, alpha: Self::Item) {
         self.iter_mut().for_each(|elem| *elem *= alpha);
     }
+}
+
+/// Compute the trace of an operator.
+pub trait Trace {
+    /// The result type of the trace.
+    type Item;
+
+    /// Compute the trace.
+    fn trace(&self) -> Self::Item;
+}
+
+/// Sum all elements of an array.
+pub trait Sum {
+    /// The result type of the sum.
+    type Item;
+
+    /// Compute the sum of all elemenets.
+    fn sum(&self) -> Self::Item;
+}
+
+impl<T> Sum for T
+where
+    T: ArrayIterator,
+    T::Item: std::iter::Sum,
+{
+    type Item = T::Item;
+
+    fn sum(&self) -> Self::Item {
+        self.iter().sum()
+    }
+}
+
+/// Compute the length of an array.
+///
+/// For multi-dimensional array the length is the product of the dimensions.
+pub trait Len {
+    /// Return the length of the array.
+    fn len(&self) -> usize;
+
+    /// Return true if the array has no elements.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// Compute the inner product with another vector.
+pub trait Inner<Other = Self> {
+    /// The result type of the inner product.
+    type Item;
+
+    /// Return the inner product of `Self` with `Other`.
+    fn inner(&self, other: &Other) -> Self::Item;
+}
+
+/// Return the conjugate of an object.
+pub trait Conj {
+    /// Output type.
+    type Output;
+    /// Return the conjugate of an object.
+    fn conj(&self) -> Self::Output;
+}
+
+/// Return the supremum norm of an array.
+pub trait NormSup {
+    /// The Item type of the norm.
+    type Item;
+
+    /// Return the supremum norm.
+    fn norm_sup(&self) -> Self::Item;
+}
+
+/// Return the 1-norm of an array.
+pub trait NormOne {
+    /// The Item type of the norm.
+    type Item;
+
+    /// Return the 1-norm.
+    fn norm_1(&self) -> Self::Item;
+}
+
+/// Return the 2-norm of an array.
+pub trait NormTwo {
+    /// The Item type of the norm.
+    type Item;
+
+    /// Return the 2-norm.
+    fn norm_2(&self) -> Self::Item;
 }

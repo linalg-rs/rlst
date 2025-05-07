@@ -1,33 +1,29 @@
 //! Operations on arrays.
+use std::iter::Sum;
 use std::ops::{AddAssign, MulAssign};
 
 use crate::dense::types::{RlstBase, RlstNum};
 use itertools::izip;
-use num::traits::MulAddAssign;
+use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 use num::{One, Zero};
 
 use crate::dense::layout::convert_1d_nd_from_shape;
 
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
+use super::operators::unary_op::ArrayUnaryOperator;
+use super::reference::ArrayRef;
 use super::{
     Array, RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::traits::{
-    ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, FillFrom, FillFromResize,
-    FillWithValue, GetDiag, GetDiagMut, ResizeInPlace, SumFrom, UnsafeRandom1DAccessByValue,
-    UnsafeRandom1DAccessMut,
+    ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom, FillFromResize,
+    FillWithValue, GetDiag, GetDiagMut, Inner, Len, NormSup, ResizeInPlace, SumFrom, Trace,
+    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
 };
 
 use crate::dense::types::RlstScalar;
-
-impl<ArrayImpl: Shape<1>> Array<ArrayImpl, 1> {
-    /// Length of 1-d vector
-    pub fn len(&self) -> usize {
-        self.shape()[0]
-    }
-}
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
@@ -163,57 +159,59 @@ where
     }
 }
 
-//     /// Componentwise multiply other array into array.
-//     pub fn cmp_mult_into<
-//         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item>
-//             + Shape<NDIM>
-//             + UnsafeRandom1DAccessByValue<Item = Item>,
-//     >(
-//         &mut self,
-//         other: Array<Item, ArrayImplOther, NDIM>,
-//     ) {
-//         for (item, other_item) in self.iter_mut().zip(other.iter()) {
-//             *item *= other_item;
-//         }
-//     }
+impl<'a, F: Fn(Item) -> Item, Item: Conj<Output = Item>, ArrayImpl, const NDIM: usize> Conj
+    for Array<ArrayImpl, NDIM>
+{
+    type Output =
+        Array<ArrayUnaryOperator<Item, Item, ArrayRef<'a, ArrayImpl, NDIM>, F, NDIM>, NDIM>;
+    fn conj(
+        &self,
+    ) -> Array<ArrayUnaryOperator<Item, Item, ArrayRef<'a, ArrayImpl, NDIM>, F, NDIM>, NDIM> {
+        let op = |item: Item| -> Item { item };
+        self.r().apply_unary_op(op)
+    }
+}
 
-//     /// Return the trace of an array.
-//     pub fn trace(self) -> Item {
-//         let k = *self.shape().iter().min().unwrap();
+impl<Item, ArrayImpl, const NDIM: usize> Trace for Array<ArrayImpl, NDIM>
+where
+    Array<ArrayImpl, NDIM>: GetDiag<Item = Item>,
+    Item: std::iter::Sum,
+{
+    type Item = Item;
 
-//         (0..k).fold(<Item as Default>::default(), |acc, index| {
-//             acc + self.get_value([index; NDIM]).unwrap()
-//         })
-//     }
+    fn trace(&self) -> Self::Item {
+        self.diag_iter().sum::<Self::Item>()
+    }
+}
 
-//     /// Return the sum of the elements.
-//     pub fn sum(self) -> Item {
-//         self.iter().sum()
-//     }
+impl<ArrayImpl, const NDIM: usize> Len for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
+{
+    fn len(&self) -> usize {
+        self.shape().iter().product()
+    }
+}
 
-//     /// Compute the inner product between two vectors.
-//     ///
-//     /// The inner product takes the complex conjugate of the `other` argument.
-//     pub fn inner<
-//         ArrayImplOther: UnsafeRandomAccessByValue<1, Item = Item>
-//             + Shape<1>
-//             + UnsafeRandom1DAccessByValue<Item = Item>,
-//     >(
-//         &self,
-//         other: Array<Item, ArrayImplOther, 1>,
-//     ) -> Item {
-//         assert_eq!(
-//             self.number_of_elements(),
-//             other.number_of_elements(),
-//             "Arrays must have the same length"
-//         );
+impl<Item, ArrayImpl, ArrayImplOther> Inner<Array<ArrayImplOther, 1>> for Array<ArrayImpl, 1>
+where
+    Item: Default + MulAdd<Output = Item> + Conj<Item>,
+    Self: ArrayIterator<Item = Item> + Len,
+    Array<ArrayImplOther, 1>: ArrayIterator<Item = Item> + Len,
+{
+    type Item = Item;
 
-//         self.iter()
-//             .zip(other.iter())
-//             .fold(<Item as Zero>::zero(), |acc, (elem1, elem_other)| {
-//                 acc + elem1 * elem_other.conj()
-//             })
-//     }
+    fn inner(&self, other: &Array<ArrayImplOther, 1>) -> Self::Item {
+        assert_eq!(self.len(), other.len());
+        izip!(self.iter(), other.iter()).fold(Default::default(), |acc, (elem1, elem2)| {
+            elem1.mul_add(elem2.conj(), acc)
+        })
+    }
+}
+
+// impl<Item, ArrayImpl> NormSup for Array<ArrayImpl, 1>
+// where
+//     Self: Array
 
 //     /// Compute the maximum (or inf) norm of a vector.
 //     pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
@@ -418,3 +416,16 @@ where
 // //         Ok(rhs)
 // //     }
 // // }
+
+#[cfg(test)]
+mod test {
+    use crate::dense::array::empty_array;
+
+    fn op_test() {
+        let mut a = empty_array::<f64, _>();
+
+        let fun = |a: f64| -> f64 { a };
+
+        a.apply_unary_op(fun);
+    }
+}

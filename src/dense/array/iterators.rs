@@ -3,8 +3,8 @@
 use crate::dense::array::{Array, Shape};
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::dense::traits::{
-    AsMultiIndex, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+    AsMultiIndex, Len, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
 use super::reference::{self, ArrayRefMut};
@@ -63,7 +63,7 @@ where
             arr,
             shape: arr.shape(),
             pos: 0,
-            nelements: arr.shape().iter().product(),
+            nelements: Len::len(arr),
         }
     }
 }
@@ -74,11 +74,12 @@ where
 {
     fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
         let shape = arr.shape();
+        let nelements = Len::len(arr);
         Self {
             arr,
             shape,
             pos: 0,
-            nelements: shape.iter().product(),
+            nelements,
         }
     }
 }
