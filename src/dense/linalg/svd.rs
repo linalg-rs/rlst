@@ -34,11 +34,11 @@ pub trait MatrixSvd: RlstScalar {
     /// # Parameters
     ///
     /// - `u` - Stores the matrix `U`. For the full SVD the shape
-    ///         needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
+    ///   needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
     /// - `vt` - Stores the matrix `Vt`. For the full SVD the shape needs to be `(n, n)`.
-    ///          For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
-    ///          the complex conjugate transpose of the matrix of right singular vectors.
-    ///          Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
+    ///   For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
+    ///   the complex conjugate transpose of the matrix of right singular vectors.
+    ///   Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
     /// - `singular_values` - Stores the `k` singular values of `A`.
     /// - `mode` - Choose between full SVD [SvdMode::Full] or reduced SVD [SvdMode::Reduced].
     ///
@@ -504,11 +504,11 @@ impl<
     /// # Parameters
     ///
     /// - `u` - Stores the matrix `U`. For the full SVD the shape
-    ///         needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
+    ///   needs to be `(m, m)`. For the reduced SVD it needs to be `(m, k)`.
     /// - `vt` - Stores the matrix `Vt`. For the full SVD the shape needs to be `(n, n)`.
-    ///          For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
-    ///          the complex conjugate transpose of the matrix of right singular vectors.
-    ///          Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
+    ///   For the reduced SVD it needs to be `(k, n)`. Note that `vt` stores
+    ///   the complex conjugate transpose of the matrix of right singular vectors.
+    ///   Hence, the columns of `vt.transpose().conj()` will be the right singular vectors.
     /// - `singular_values` - Stores the `k` singular values of `A`.
     /// - `mode` - Choose between full SVD [SvdMode::Full] or reduced SVD [SvdMode::Reduced].
     ///
