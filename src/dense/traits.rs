@@ -1,6 +1,7 @@
 //! Dense matrix traits
 
 pub mod accessors;
+pub mod number_traits;
 
 use std::ops::MulAssign;
 
@@ -10,6 +11,7 @@ use num::{One, Zero};
 use crate::dense::types::TransMode;
 
 use super::types::RlstScalar;
+use number_traits::*;
 
 /// Memory layout of an object
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -414,14 +416,6 @@ pub trait Inner<Other = Self> {
 
     /// Return the inner product of `Self` with `Other`.
     fn inner(&self, other: &Other) -> Self::Item;
-}
-
-/// Return the conjugate of an object.
-pub trait Conj {
-    /// Output type.
-    type Output;
-    /// Return the conjugate of an object.
-    fn conj(&self) -> Self::Output;
 }
 
 /// Return the supremum norm of an array.

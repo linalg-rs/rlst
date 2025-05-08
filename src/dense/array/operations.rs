@@ -159,19 +159,6 @@ where
     }
 }
 
-impl<'a, F: Fn(Item) -> Item, Item: Conj<Output = Item>, ArrayImpl, const NDIM: usize> Conj
-    for Array<ArrayImpl, NDIM>
-{
-    type Output =
-        Array<ArrayUnaryOperator<Item, Item, ArrayRef<'a, ArrayImpl, NDIM>, F, NDIM>, NDIM>;
-    fn conj(
-        &self,
-    ) -> Array<ArrayUnaryOperator<Item, Item, ArrayRef<'a, ArrayImpl, NDIM>, F, NDIM>, NDIM> {
-        let op = |item: Item| -> Item { item };
-        self.r().apply_unary_op(op)
-    }
-}
-
 impl<Item, ArrayImpl, const NDIM: usize> Trace for Array<ArrayImpl, NDIM>
 where
     Array<ArrayImpl, NDIM>: GetDiag<Item = Item>,
@@ -195,7 +182,7 @@ where
 
 impl<Item, ArrayImpl, ArrayImplOther> Inner<Array<ArrayImplOther, 1>> for Array<ArrayImpl, 1>
 where
-    Item: Default + MulAdd<Output = Item> + Conj<Item>,
+    Item: Default + MulAdd<Output = Item> + Conj<Output = Item>,
     Self: ArrayIterator<Item = Item> + Len,
     Array<ArrayImplOther, 1>: ArrayIterator<Item = Item> + Len,
 {
@@ -209,17 +196,24 @@ where
     }
 }
 
-// impl<Item, ArrayImpl> NormSup for Array<ArrayImpl, 1>
-// where
-//     Self: Array
+impl<ArrayImpl> NormSup for Array<ArrayImpl, 1>
+where
+    Self: ArrayIterator,
+{
+    type Item = <Self as ArrayIterator>::Item;
 
-//     /// Compute the maximum (or inf) norm of a vector.
-//     pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
-//         self.iter()
-//             .map(|elem| <Item as RlstScalar>::abs(elem))
-//             .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
-//             .unwrap()
-//     }
+    fn norm_sup(&self) -> Self::Item {
+        self.iter().map(|elem| elem.abs()).max()
+    }
+}
+
+/// Compute the maximum (or inf) norm of a vector.
+pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
+    self.iter()
+        .map(|elem| <Item as RlstScalar>::abs(elem))
+        .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
+        .unwrap()
+}
 
 //     /// Compute the 1-norm of a vector.
 //     pub fn norm_1(self) -> <Item as RlstScalar>::Real {
@@ -419,13 +413,13 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::dense::array::empty_array;
+    use crate::dense::{array::empty_array, traits::Conj};
 
     fn op_test() {
         let mut a = empty_array::<f64, _>();
 
         let fun = |a: f64| -> f64 { a };
 
-        a.apply_unary_op(fun);
+        a.apply_unary_op(Conj::conj);
     }
 }
