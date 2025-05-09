@@ -532,7 +532,6 @@
 //! ```
 //! # use rlst::prelude::*;
 //! # use rlst::dense::linalg::interpolative_decomposition::Accuracy;
-//! 
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [5, 8]);
 //! let k = 2;
