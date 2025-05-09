@@ -21,10 +21,12 @@ use crate::{TriangularMatrix, TriangularOperations}; // Import TriangularType fr
 /// The following command computes the interpolative decomposition of an array `a` for a given tolerance, tol.
 /// ```
 /// # use rlst::rlst_dynamic_array2;
+/// # use rlst::dense::types::TransMode;
+/// # use rlst::dense::linalg::interpolative_decomposition::Accuracy;
 /// # let tol: f64 = 1e-5;
 /// # let mut a = rlst_dynamic_array2!(f64, [50, 100]);
 /// # a.fill_from_seed_equally_distributed(0);
-/// # let res = a.r_mut().into_id_alloc(tol, None).unwrap();
+/// # let res = a.r_mut().into_id_alloc(Accuracy::Tol(tol), TransMode::NoTrans).unwrap();
 /// ```
 /// This method allocates memory for the interpolative decomposition.
 pub trait MatrixId: RlstScalar {

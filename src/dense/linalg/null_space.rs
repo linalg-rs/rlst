@@ -21,11 +21,12 @@ use num::Zero;
 /// The following command computes the nullspace of an array `a`.
 /// The nullspace is found in
 /// ```
-/// # use rlst::rlst_dynamic_array2;
-/// # use rlst::dense::linalg::null_space::{NullSpaceType, MatrixNull};
-/// # let mut a = rlst_dynamic_array2!(f64, [3, 4]);
+/// # use rlst::prelude::*;
+/// # use rlst::dense::linalg::null_space::{Method};
+/// # let mut a = rlst_dynamic_array2!(f64, [4, 3]);
+/// # let tol = 1e-10;
 /// # a.fill_from_seed_equally_distributed(0);
-/// # let null_res = a.r_mut().into_null_alloc(NullSpaceType::Row).unwrap();
+/// # let null_res = a.r_mut().into_null_alloc(tol, Method::Qr).unwrap();
 /// ```
 /// This method allocates memory for the nullspace computation.
 pub trait MatrixNull: RlstScalar {

@@ -487,7 +487,7 @@
 //! qr.get_q_alloc(q_mat.r_mut());
 //! qr.get_p(p_mat.r_mut());
 //! ````
-//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::QrDecomposition::get_q_alloc)
+//! The content of `arr` is overwritten with the QR decomposition. The method [get_q_alloc](crate::dense::linalg::qr::MatrixQrDecomposition::get_q_alloc)
 //! needs to allocate additional temporary memory on the heap. This is why it is annoted with `_alloc`.
 //!
 //! # Singular value decomposition
@@ -520,33 +520,23 @@
 //!
 //! ```
 //! # use rlst::prelude::*;
+//! # use rlst::dense::linalg::interpolative_decomposition::Accuracy;
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [5, 8]);
 //! let tol: f64 = 1e-5;
-//! let mut res = arr.view_mut().into_id_alloc(tol, None).unwrap();
-//! ```
-//!
-//! You can take a look at the interpolation matrix using
-//!
-//! ```
-//! res.id_mat.pretty_print();
-//! ```
-//!
-//! With this, the approximation of the low-rank elements of `arr` is given by
-//!
-//! ```
-//! let arr_app = empty_array().simple_mult_into_resize(res.id_mat.view(), res.arr.view_mut().into_subview([0, 0], [res.rank, n]));
+//! let res = arr.r_mut().into_id_alloc(Accuracy::Tol(tol), TransMode::NoTrans).unwrap();
 //! ```
 //!
 //! You can also obtain the Interpolative Decomposition by giving the algorithm a fixed rank, and the tolerance parameter is ignored, like so
 //!
 //! ```
 //! # use rlst::prelude::*;
+//! # use rlst::dense::linalg::interpolative_decomposition::Accuracy;
+//! 
 //! let mut rand = rand::thread_rng();
 //! let mut arr = rlst_dynamic_array2!(f64, [5, 8]);
-//! let tol: f64 = 1e-5;
-//! k = 2;
-//! let mut res = arr.view_mut().into_id_alloc(tol, k).unwrap();
+//! let k = 2;
+//! let res = arr.r_mut().into_id_alloc(Accuracy::FixedRank(k), TransMode::NoTrans).unwrap();
 //! ```
 //!
 //! # Other vector functions
