@@ -168,7 +168,7 @@ fn svd_nullification<
 
     //For a full rank rectangular matrix, then rank = dim.
     //find_matrix_rank checks if the matrix is full rank and recomputes the rank.
-    let rank: usize = find_matrix_rank_svd::<Item>(&mut singular_values, dim, tol);
+    let rank: usize = find_svd_rank::<Item>(&mut singular_values, dim, tol);
 
     //The null space is given by the last shape[1]-rank columns of V
     let mut null_space_arr: DynamicArray<Item, 2> = empty_array();
@@ -201,13 +201,13 @@ where
     qr.get_r(r_mat.r_mut());
     //For a full rank rectangular matrix, then rank = dim.
     //find_matrix_rank checks if the matrix is full rank and recomputes the rank.
-    let rank: usize = find_matrix_rank_qr::<Item>(&r_mat, dim, tol);
+    let rank: usize = find_qr_rank::<Item>(&r_mat, dim, tol);
     let mut null_space_arr = empty_array();
     null_space_arr.fill_from_resize(q.into_subview([0, shape[1]], [shape[0], shape[0] - rank]));
     null_space_arr
 }
 
-fn find_matrix_rank_svd<Item: RlstScalar>(
+fn find_svd_rank<Item: RlstScalar>(
     singular_values: &mut DynamicArray<RealScalar<Item>, 1>,
     dim: usize,
     tol: <Item as RlstScalar>::Real,
@@ -233,7 +233,7 @@ fn find_matrix_rank_svd<Item: RlstScalar>(
     rank
 }
 
-fn find_matrix_rank_qr<Item: RlstScalar>(
+fn find_qr_rank<Item: RlstScalar>(
     r_mat: &DynamicArray<Item, 2>,
     dim: usize,
     tol: <Item as RlstScalar>::Real,

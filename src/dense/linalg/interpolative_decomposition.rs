@@ -103,28 +103,6 @@ pub trait MatrixIdDecomposition: Sized {
         trans_mode: TransMode,
     ) -> RlstResult<Self>;
 
-    /// Compute the rank of the decomposition from a given tolerance
-    fn rank_from_tolerance<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
-    >(
-        ut_mat: Array<Self::Item, ArrayImplMut, 2>,
-        tol: <Self::Item as RlstScalar>::Real,
-    ) -> usize;
-
-    /// Relax tolerance when we have a plateau of eigenvalues
-    fn rank_from_tolerance_relaxed<
-        ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
-            + Shape<2>
-            + UnsafeRandomAccessMut<2, Item = Self::Item>
-            + UnsafeRandomAccessByRef<2, Item = Self::Item>,
-    >(
-        ut_mat: Array<Self::Item, ArrayImplMut, 2>,
-        tol: <Self::Item as RlstScalar>::Real,
-    ) -> usize;
-
     ///Compute the permutation matrix associated to the Interpolative Decomposition
     fn get_p<
         ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Self::Item>
@@ -158,8 +136,6 @@ pub enum Accuracy<T> {
     FixedRank(usize),
     /// Computes the rank from the tolerance, and if this one is smaller than a user set range, then we stick to the user set range
     MaxRank(T, usize),
-    /// Uses the relaxed tolerance method
-    RelaxedTol(T),
 }
 
 macro_rules! impl_id {
@@ -204,14 +180,11 @@ macro_rules! impl_id {
                 //The rank can be given a priori, in which case, we do not need to compute the rank using the tolerance parameter.
                 match rank_param {
                     Accuracy::Tol(tol) => {
-                        rank = Self::rank_from_tolerance(u_tri.r_mut(), tol);
+                        rank = rank_from_tolerance(u_tri.r_mut(), tol);
                     }
                     Accuracy::FixedRank(k) => rank = k,
                     Accuracy::MaxRank(tol, k) => {
-                        rank = std::cmp::max(k, Self::rank_from_tolerance(u_tri.r_mut(), tol));
-                    }
-                    Accuracy::RelaxedTol(tol) => {
-                        rank = Self::rank_from_tolerance_relaxed(u_tri.r_mut(), tol);
+                        rank = std::cmp::max(k, rank_from_tolerance(u_tri.r_mut(), tol));
                     }
                 }
 
@@ -272,67 +245,6 @@ macro_rules! impl_id {
                 }
             }
 
-            fn rank_from_tolerance<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
-            >(
-                ut_mat: Array<$scalar, ArrayImplMut, 2>,
-                tol: <$scalar as RlstScalar>::Real,
-            ) -> usize {
-                let dim = ut_mat.shape()[0];
-                let max = ut_mat.get([0, 0]).unwrap().abs();
-
-                //We compute the rank of the matrix
-                if max.re() > 0.0 {
-                    let mut rank = 0;
-                    for i in 0..dim {
-                        if ut_mat.get([i, i]).unwrap().abs() > tol * max {
-                            rank += 1;
-                        }
-                    }
-                    rank
-                } else {
-                    dim
-                }
-            }
-
-            fn rank_from_tolerance_relaxed<
-                ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
-                    + Shape<2>
-                    + UnsafeRandomAccessMut<2, Item = $scalar>
-                    + UnsafeRandomAccessByRef<2, Item = $scalar>,
-            >(
-                ut_mat: Array<$scalar, ArrayImplMut, 2>,
-                tol: <$scalar as RlstScalar>::Real,
-            ) -> usize {
-                let dim = ut_mat.shape()[0];
-                let max = ut_mat.get([0, 0]).unwrap().abs();
-
-                //We compute the rank of the matrix
-                let mut rank = 0;
-                if max.re() > 0.0 {
-                    for i in 0..dim {
-                        if ut_mat.get([i, i]).unwrap().abs() > tol * max {
-                            rank += 1;
-                        }
-                    }
-                } else {
-                    rank = dim
-                }
-
-                for i in (0..rank + 1).rev() {
-                    if ut_mat.get([i, i]).unwrap().abs()
-                        > 1e-1 * ut_mat.get([i - 1, i - 1]).unwrap().abs()
-                    {
-                        return i - 1;
-                    }
-                }
-
-                rank
-            }
-
             fn get_p<
                 ArrayImplMut: UnsafeRandomAccessByValue<2, Item = $scalar>
                     + Shape<2>
@@ -357,3 +269,31 @@ impl_id!(f64);
 impl_id!(f32);
 impl_id!(c32);
 impl_id!(c64);
+
+/// Compute the rank of the decomposition from a given tolerance
+fn rank_from_tolerance<
+    Item: RlstScalar,
+    ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
+        + Shape<2>
+        + UnsafeRandomAccessMut<2, Item = Item>
+        + UnsafeRandomAccessByRef<2, Item = Item>,
+>(
+    ut_mat: Array<Item, ArrayImplMut, 2>,
+    tol: <Item as RlstScalar>::Real,
+) -> usize {
+    let dim = ut_mat.shape()[0];
+    let max = ut_mat.get([0, 0]).unwrap().abs();
+
+    //We compute the rank of the matrix
+    if max.re() > num::Zero::zero() {
+        let mut rank = 0;
+        for i in 0..dim {
+            if ut_mat.get([i, i]).unwrap().abs() > tol * max {
+                rank += 1;
+            }
+        }
+        rank
+    } else {
+        dim
+    }
+}
