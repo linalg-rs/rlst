@@ -77,6 +77,22 @@ impl<Item: RlstScalar> CscMatrix<Item> {
         }
     }
 
+    /// Transpose Matrix multiplication
+    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) { //TODO: Check
+        y.iter_mut().for_each(|elem| *elem = beta * *elem);
+
+        // y += α * Aᵗ * x
+        for (col, (&col_start, &col_end)) in self.indptr().iter().tuple_windows().enumerate() {
+            for (&row, &val) in self.indices[col_start..col_end]
+                .iter()
+                .zip(self.data[col_start..col_end].iter())
+            {
+                // Transpose: Aᵗ[col][row] = A[row][col]
+                y[col] += alpha * val * x[row];
+            }
+        }
+    }
+
     /// Converts the matrix into a tuple (shape, indices, indptr, data)
     pub fn into_tuple(self) -> ([usize; 2], Vec<usize>, Vec<usize>, Vec<Item>) {
         (self.shape, self.indices, self.indptr, self.data)

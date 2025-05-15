@@ -80,6 +80,22 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
         }
     }
 
+    /// Transpose Matrix multiplication
+    pub fn matmul_tranpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {//TODO: Check
+        y.iter_mut().for_each(|yi| *yi *= beta);
+
+        for (row, &x_i) in x.iter().enumerate() {
+            let start = self.indptr()[row];
+            let end = self.indptr()[row + 1];
+
+            for idx in start..end {
+                let col = self.indices()[idx];     // A_{row, col}
+                let val = self.data()[idx];        // Value at A_{row, col}
+                y[col] = y[col] + alpha * val * x_i;
+            }
+        }
+    }
+
     /// Convert to CSC matrix
     pub fn into_csc(self) -> CscMatrix<Item> {
         let mut rows = Vec::<usize>::with_capacity(self.nelems());

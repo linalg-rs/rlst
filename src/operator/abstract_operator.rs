@@ -93,19 +93,43 @@ pub trait AsApply: OperatorBase {
         y: Element<ContainerOut>,
     );
 
+    /// Apply an operator as y -> alpha * Ax + beta y
+    fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: Element<ContainerOut>,
+    );
+
     /// Apply an operator to a vector
     fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
         &self,
         x: Element<ContainerIn>,
+        trans_mode: crate::TransMode
     ) -> ElementType<<Self::Range as LinearSpace>::E> {
         let mut y = zero_element(self.range());
 
-        self.apply_extended(
+        match trans_mode{
+            crate::TransMode::NoTrans => self.apply_extended(
             <<Self::Range as LinearSpace>::F as One>::one(),
             x,
             <<Self::Range as LinearSpace>::F as Zero>::zero(),
             y.r_mut(),
-        );
+        ),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported for apply Operator implementation."),
+            crate::TransMode::Trans => self.apply_extended_transpose(
+            <<Self::Range as LinearSpace>::F as One>::one(),
+            x,
+            <<Self::Range as LinearSpace>::F as Zero>::zero(),
+            y.r_mut(),
+        ),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported for apply Operator implementation."),
+        };
+        
 
         y
     }
@@ -147,6 +171,19 @@ impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
     ) {
         self.0.apply_extended(alpha, x, beta, y);
     }
+
+    fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended_transpose(alpha, x, beta, y);
+    }
 }
 
 /// A concrete operator.
@@ -184,6 +221,19 @@ impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
         y: Element<ContainerOut>,
     ) {
         self.0.apply_extended(alpha, x, beta, y);
+    }
+
+    fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended_transpose(alpha, x, beta, y);
     }
 }
 
@@ -356,6 +406,21 @@ impl<
         self.1
             .apply_extended(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y);
     }
+
+     fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        mut y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended_transpose(alpha, x.r(), beta, y.r_mut());
+        self.1
+            .apply_extended_transpose(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y);
+    }
 }
 
 /// Operator muiltiplied by a scalar
@@ -396,6 +461,19 @@ impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
         y: Element<ContainerOut>,
     ) {
         self.0.apply_extended(self.1 * alpha, x, beta, y);
+    }
+
+    fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        beta: <Self::Range as LinearSpace>::F,
+        y: Element<ContainerOut>,
+    ) {
+        self.0.apply_extended_transpose(self.1 * alpha, x, beta, y);
     }
 }
 
@@ -449,7 +527,22 @@ impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Spac
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
     ) {
-        self.op2.apply_extended(alpha, self.op1.apply(x), beta, y);
+        self.op2.apply_extended(alpha, self.op1.apply(x, crate::TransMode::NoTrans), beta, y);
+    }
+
+    fn apply_extended_transpose<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        _alpha: <Self::Range as LinearSpace>::F,
+        _x: Element<ContainerIn>,
+        _beta: <Self::Range as LinearSpace>::F,
+        _y: Element<ContainerOut>,
+    ) {
+
+        panic!("Transpose not implemented for the product of 2 operators");
+
     }
 }
 
