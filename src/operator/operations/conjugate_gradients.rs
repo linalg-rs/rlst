@@ -101,7 +101,7 @@ where
         }
 
         let mut res = self.rhs.duplicate();
-        res -= self.operator.apply(self.x.r());
+        res -= self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
 
         let mut p = res.duplicate();
 
@@ -121,7 +121,7 @@ where
         }
 
         for it_count in 0..self.max_iter {
-            let p_conj_inner = self.operator.apply(p.r()).inner_product(p.r());
+            let p_conj_inner = self.operator.apply(p.r(), crate::TransMode::NoTrans).inner_product(p.r());
 
             let alpha = res_inner / p_conj_inner;
             self.x.axpy_inplace(alpha, p.r());
