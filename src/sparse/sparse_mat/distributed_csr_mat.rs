@@ -434,6 +434,16 @@ impl<'a, T: RlstScalar + Equivalence, C: Communicator> DistributedCsrMatrix<'a, 
         self.local_matrix
             .matmul(alpha, local_vec.as_slice(), beta, y.local_mut().data_mut());
     }
+
+    pub fn matmul_transpose(
+        &self,
+        alpha: T,
+        x: &DistributedVector<'_, C, T>,
+        beta: T,
+        y: &mut DistributedVector<'_, C, T>,
+    ) {
+        panic!("Transpose of distributed sparse matrices not implemented")
+    }
 }
 
 impl<T: RlstScalar + Equivalence, C: Communicator> Shape<2> for DistributedCsrMatrix<'_, T, C> {

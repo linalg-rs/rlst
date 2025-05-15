@@ -81,7 +81,8 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
     }
 
     /// Transpose Matrix multiplication
-    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {//TODO: Check
+    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
+        //TODO: Check
         y.iter_mut().for_each(|yi| *yi *= beta);
 
         for (row, &x_i) in x.iter().enumerate() {
@@ -89,8 +90,8 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
             let end = self.indptr()[row + 1];
 
             for idx in start..end {
-                let col = self.indices()[idx];     // A_{row, col}
-                let val = self.data()[idx];        // Value at A_{row, col}
+                let col = self.indices()[idx]; // A_{row, col}
+                let val = self.data()[idx]; // Value at A_{row, col}
                 y[col] = y[col] + alpha * val * x_i;
             }
         }

@@ -78,7 +78,8 @@ impl<Item: RlstScalar> CscMatrix<Item> {
     }
 
     /// Transpose Matrix multiplication
-    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) { //TODO: Check
+    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
+        //TODO: Check
         y.iter_mut().for_each(|elem| *elem = beta * *elem);
 
         // y += α * Aᵗ * x
