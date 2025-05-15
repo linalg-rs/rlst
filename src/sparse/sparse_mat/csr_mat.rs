@@ -81,7 +81,7 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
     }
 
     /// Transpose Matrix multiplication
-    pub fn matmul_tranpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {//TODO: Check
+    pub fn matmul_transpose(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {//TODO: Check
         y.iter_mut().for_each(|yi| *yi *= beta);
 
         for (row, &x_i) in x.iter().enumerate() {

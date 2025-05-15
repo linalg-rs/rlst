@@ -268,7 +268,7 @@ impl<Item: RlstScalar> AsOperatorApply for CsrMatrix<Item> {
         beta: Self::Item,
         y: &mut [Self::Item],
     ) {
-        self.matmul_tranpose(alpha, x, beta, y);
+        self.matmul_transpose(alpha, x, beta, y);
     }
 }
 
