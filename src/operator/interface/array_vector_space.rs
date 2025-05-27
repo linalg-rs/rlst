@@ -13,6 +13,7 @@ use crate::dense::{
 use crate::operator::space::{ElementImpl, IndexableSpace, InnerProductSpace, LinearSpace};
 use crate::operator::{ConcreteElementContainer, Element};
 use crate::rlst_dynamic_array1;
+//use crate::{rlst_dynamic_array1, RawAccess, RawAccessMut};
 
 /// Array vector space
 pub struct ArrayVectorSpace<Item: RlstScalar> {
@@ -124,4 +125,12 @@ impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
     fn sub_inplace(&mut self, other: &Self) {
         self.elem.sub_into(other.view());
     }
+
+    /*fn set(&mut self, index: usize, alpha: Self::F) {
+        self.view_mut().data_mut()[index] = alpha;
+    }
+
+    fn get(&self, index: usize) -> Self::F {
+        self.view().data()[index]
+    }*/
 }

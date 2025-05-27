@@ -1,5 +1,6 @@
 //! Elements of linear spaces
 use std::rc::Rc;
+//use std::usize;
 
 use crate::dense::types::{c32, c64};
 
@@ -48,6 +49,12 @@ pub trait ElementImpl {
 
     /// self *= alpha.
     fn scale_inplace(&mut self, alpha: Self::F);
+
+    /*/// self[index] = alpha.
+    fn set(&mut self, index: usize, alpha: Self::F);
+
+    /// self[index]
+    fn get(&self, index: usize) -> Self::F;*/
 }
 
 /// The view type associated with elements of linear spaces.
@@ -222,6 +229,16 @@ impl<Container: ElementContainerMut> Element<Container> {
     pub fn scale_inplace(&mut self, alpha: <Container::E as ElementImpl>::F) {
         self.imp_mut().scale_inplace(alpha);
     }
+
+    /*/// Set an element to be alpha.
+    pub fn set(&mut self, index: usize, alpha: <Container::E as ElementImpl>::F) {
+        self.imp_mut().set(index, alpha);
+    }
+
+    //Get an element
+    pub fn get(&self, index: usize) -> <Container::E as ElementImpl>::F {
+        self.imp().get(index)
+    }*/
 }
 
 impl<ElemImpl: ElementImpl> Element<ConcreteElementContainer<ElemImpl>> {
