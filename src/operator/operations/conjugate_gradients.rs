@@ -141,7 +141,7 @@ where
             res_inner = res.inner_product(res.r());
             res_norm = res_inner.abs().sqrt();
             rel_res = res_norm / rhs_norm;
-            if res_norm < self.tol {
+            if rel_res < self.tol {
                 if self.print_debug {
                     print_success(it_count, rel_res);
                 }

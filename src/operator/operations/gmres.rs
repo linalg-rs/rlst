@@ -43,7 +43,7 @@ pub struct GmresIteration<
     dim: usize,
     tol: <Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
-    callable: Option<Box<dyn FnMut(&ElementType<Space::E>, &ElementType<Space::E>) + 'a>>,
+    callable: Option<Box<dyn FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real) + 'a>>,
     print_debug: bool,
 }
 
@@ -107,7 +107,7 @@ where
     /// Set the cammable
     pub fn set_callable(
         mut self,
-        callable: impl FnMut(&ElementType<Space::E>, &ElementType<Space::E>) + 'a,
+        callable: impl FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real) + 'a,
     ) -> Self {
         self.callable = Some(Box::new(callable));
         self
@@ -157,6 +157,10 @@ where
             rhs_norm = num::One::one();
         }
 
+        if let Some(callable) = self.callable.as_mut() {
+            callable(&self.x, rel_res);
+        }
+
         if rel_res < self.tol {
             if self.print_debug {
                 print_success(0, rel_res);
@@ -182,11 +186,11 @@ where
             aux_rhs.scale_inplace(alpha);
             v.push(aux_rhs);
 
-            for it_count in 0..max_inner{
+            for it_count in 0..max_inner {
                 let mut w = self
                     .operator
                     .apply(v.get(it_count).unwrap().r(), crate::TransMode::NoTrans);
-                
+
                 for k in 0..it_count + 1 {
                     let vk = v.get(k).unwrap();
                     let alpha = w.inner_product(vk.r());
@@ -196,7 +200,7 @@ where
 
                 let w_norm = w.norm();
                 h.r_mut()[[it_count + 1, it_count]] = num::cast(w_norm).unwrap();
-                
+
                 if w_norm != num::Zero::zero() {
                     let alpha = <Space::F as num::One>::one() / Space::F::from_real(w_norm);
                     w.scale_inplace(alpha);
@@ -228,16 +232,19 @@ where
 
                 g[it_count + 1] = -sn * g[it_count] + cs * g[it_count + 1];
                 g[it_count] = temp;
-
+                let residual = g[it_count + 1].abs();
+                let rel_res = residual / res_0;
                 h_dim = it_count + 1;
+
+                if let Some(callable) = self.callable.as_mut() {
+                    callable(&self.x, rel_res);
+                }
+
                 if it_count < max_inner - 1 {
-                    let residual = g[it_count + 1].abs();
-                    let rel_res = residual / res_0;
                     if rel_res < self.tol {
                         break;
                     }
                 }
-                
             }
 
             let h_t = TriangularMatrix::new(
@@ -247,7 +254,6 @@ where
             .unwrap();
             let mut g_solve = rlst_dynamic_array2!(Field<Space::F>, [h_dim, 1]);
 
-
             for (item, other_item) in g_solve.iter_mut().zip(g[0..h_dim].iter()) {
                 *item = *other_item;
             }
@@ -255,7 +261,7 @@ where
             for index in 0..h_dim {
                 let elem = v.get(index).unwrap();
                 let coeff = g_solve.r().data()[index];
-                self.x.axpy_inplace(coeff, elem.r());  
+                self.x.axpy_inplace(coeff, elem.r());
             }
 
             let mut res = self.rhs.duplicate();
@@ -264,6 +270,10 @@ where
             let res_norm = res_inner.abs().sqrt();
 
             rel_res = res_norm / res_0;
+
+            if let Some(callable) = self.callable.as_mut() {
+                callable(&self.x, rel_res);
+            }
 
             if rel_res < self.tol {
                 print_success(outer * max_inner + h_dim, rel_res);
