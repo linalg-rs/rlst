@@ -23,7 +23,7 @@ pub trait Frame {
     /// Get a mutable element
     fn get_mut(&mut self, index: usize) -> Option<&mut ElementType<Self::E>>;
     /// Modify an element
-    //fn set(&mut self, axis_0: usize, axis_1: usize, val: <Self::E as ElementImpl>::F);
+    // fn set(&mut self, axis_0: usize, axis_1: usize, val: <Self::E as ElementImpl>::F);
     /// Number of elements
     fn len(&self) -> usize;
     /// Is empty

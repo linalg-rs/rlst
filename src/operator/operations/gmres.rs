@@ -1,4 +1,6 @@
 //! Arnoldi Iteration
+use core::f64;
+use std::cmp::min;
 use crate::dense::types::RlstScalar;
 use crate::operator::space::frame::Frame;
 use crate::operator::{
@@ -9,20 +11,15 @@ use crate::{
     RawAccess, TriangularMatrix, TriangularOperations, TriangularType, VectorFrame,
 };
 
-fn apply_givens<Item: RlstScalar>(h: &mut [Item; 2], cs: Item, sn: Item) {
-    let temp = cs * h[0] + sn * h[1];
-    h[1] = -sn * h[0] + cs * h[1];
-    h[0] = temp;
-}
 
-fn generate_givens<Item: RlstScalar>(a: Item, b: Item) -> (Item, Item) {
+fn generate_givens<Item: RlstScalar>(a: Item, b: Item) -> (Item, Item, Item) {
     if b == num::Zero::zero() {
-        (num::One::one(), num::Zero::zero())
+        (num::One::one(), num::Zero::zero(), num::One::one())
     } else {
         let r = (a * a + b * b).sqrt();
         let c = a / r;
         let s = b / r;
-        (c, s)
+        (c, s, r)
     }
 }
 
@@ -36,6 +33,7 @@ pub struct GmresIteration<
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     operator: Operator<OpImpl>,
+    prec: Option<Operator<OpImpl>>,
     rhs: Element<Container>,
     x: ElementType<Space::E>,
     max_iter: usize,
@@ -43,7 +41,11 @@ pub struct GmresIteration<
     dim: usize,
     tol: <Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
-    callable: Option<Box<dyn FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real) + 'a>>,
+    callable: Option<
+        Box<
+            dyn FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real) + 'a,
+        >,
+    >,
     print_debug: bool,
 }
 
@@ -66,10 +68,11 @@ where
         let domain = op.domain();
         Self {
             operator: op,
+            prec: None,
             rhs,
             x: zero_element(domain),
-            max_iter: 1000,
-            restart: 30,
+            max_iter: 10 * dim,
+            restart: min(dim, 20),
             dim,
             tol: num::cast::<f64, <Space::F as RlstScalar>::Real>(1E-6).unwrap(),
             callable: None,
@@ -107,7 +110,8 @@ where
     /// Set the cammable
     pub fn set_callable(
         mut self,
-        callable: impl FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real) + 'a,
+        callable: impl FnMut(&ElementType<Space::E>, <<Space as LinearSpace>::F as RlstScalar>::Real)
+            + 'a,
     ) -> Self {
         self.callable = Some(Box::new(callable));
         self
@@ -119,8 +123,14 @@ where
         self
     }
 
+    /// Set preconditioner
+    pub fn set_preconditioner(mut self, prec: Operator<OpImpl>) -> Self {
+        self.prec = Some(prec);
+        self
+    }
+
     /// Run GMRES
-    pub fn run(mut self) -> (ElementType<Space::E>, <Space::F as RlstScalar>::Real) {
+    pub fn run(mut self) -> (ElementType<Space::E>, usize) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
                 "GMRES converged in {} iterations with relative residual {:+E}.",
@@ -142,148 +152,207 @@ where
         }
 
         let max_inner = self.restart;
-        let max_outer = self.max_iter / max_inner;
 
+        let rhs_norm = self.rhs.norm();
+        let atol = self.tol * rhs_norm;
+
+        let eps = num::cast::<f64, <Space::F as RlstScalar>::Real>(2.220446049250313e-16).unwrap(); //TODO: find a way to extract machine precision
+
+        let p_norm = match self.prec.as_ref() {
+            Some(prec) => prec.apply(self.rhs.r(), crate::TransMode::NoTrans).norm(),
+            None => self.rhs.r().norm(),
+        };
+
+        let mut ptol_max_factor: <Space::F as RlstScalar>::Real = num::One::one();
+
+        let mut ptol = p_norm * num::Float::min(ptol_max_factor, atol / rhs_norm);
+
+        let mut presid = num::Zero::zero();
+
+        let mut v = VectorFrame::default();
+        let mut h = rlst_dynamic_array2!(Field<Space::F>, [self.restart, self.restart + 1]);
+        let mut givens = rlst_dynamic_array2!(Field<Space::F>, [self.restart, 2]);
+
+        let mut g = vec![<Field<Space::F> as num::Zero>::zero(); self.restart + 1];
         let mut res = self.rhs.duplicate();
-        res -= self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
 
-        let res_inner = res.inner_product(res.r());
-        let res_norm = res_inner.abs().sqrt();
+        let mut res_norm = num::Zero::zero();
+        let mut rel_res = num::Zero::zero();
+        let mut breakdown = false;
+        let mut inner_iter = 0;
 
-        let mut rhs_norm = self.rhs.norm();
-        let mut rel_res = res_norm / rhs_norm;
-
-        if rhs_norm == num::Zero::zero() {
-            rhs_norm = num::One::one();
-        }
-
-        if let Some(callable) = self.callable.as_mut() {
-            callable(&self.x, rel_res);
-        }
-
-        if rel_res < self.tol {
-            if self.print_debug {
-                print_success(0, rel_res);
+        for iteration in 0..self.max_iter {
+            if iteration == 0 {
+                res = res.r() - self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
+                let res_inner = res.inner_product(res.r());
+                res_norm = res_inner.abs().sqrt();
+                rel_res = res_norm / rhs_norm;
+                if res_norm < atol {
+                    if self.print_debug {
+                        print_success(0, rel_res);
+                    }
+                    return (self.x, 0);
+                }
             }
-            return (self.x, rel_res);
-        }
 
-        let res_0 = rhs_norm;
+            res = match self.prec.as_ref() {
+                Some(prec) => prec.apply(res, crate::TransMode::NoTrans),
+                None => res,
+            };
 
-        let mut h_dim = 0;
+            let tmp = res.norm();
+            let alpha = <Space::F as num::One>::one() / Space::F::from_real(tmp);
+            res.scale_inplace(alpha);
+            v.push(res.duplicate());
 
-        for outer in 0..max_outer {
-            let mut v = VectorFrame::default();
-            let mut h = rlst_dynamic_array2!(Field<Space::F>, [max_inner + 1, max_inner]);
-            let mut g = vec![<Field<Space::F> as num::Zero>::zero(); max_inner + 1];
-            g[0] = num::cast(res_norm).unwrap();
+            g[0] = Space::F::from_real(tmp);
 
-            let mut givens_cs = Vec::new();
-            let mut givens_sn = Vec::new();
-
-            let mut aux_rhs = self.rhs.duplicate();
-            let alpha = <Space::F as num::One>::one() / Space::F::from_real(rhs_norm);
-            aux_rhs.scale_inplace(alpha);
-            v.push(aux_rhs);
+            let mut inner = 0;
 
             for it_count in 0..max_inner {
                 let mut w = self
                     .operator
                     .apply(v.get(it_count).unwrap().r(), crate::TransMode::NoTrans);
 
+                w = match self.prec.as_ref() {
+                    Some(prec) => prec.apply(w.r(), crate::TransMode::NoTrans),
+                    None => w,
+                };
+
+                let h0 = w.norm();
+
+                breakdown = false;
                 for k in 0..it_count + 1 {
                     let vk = v.get(k).unwrap();
                     let alpha = w.inner_product(vk.r());
-                    h.r_mut()[[k, it_count]] = alpha;
+                    h.r_mut()[[it_count, k]] = alpha;
                     w.axpy_inplace(-alpha, vk.r());
                 }
 
-                let w_norm = w.norm();
-                h.r_mut()[[it_count + 1, it_count]] = num::cast(w_norm).unwrap();
+                let h1 = w.norm();
 
-                if w_norm != num::Zero::zero() {
-                    let alpha = <Space::F as num::One>::one() / Space::F::from_real(w_norm);
+                if h1 <= h0 * eps {
+                    h.r_mut()[[it_count, it_count + 1]] = num::Zero::zero();
+                    breakdown = true;
+                } else {
+                    h.r_mut()[[it_count, it_count + 1]] = num::cast(h1).unwrap();
+                    let alpha = <Space::F as num::One>::one() / Space::F::from_real(h1);
                     w.scale_inplace(alpha);
                     v.push(w);
                 }
 
-                if it_count > 0 {
-                    for i in 0..it_count {
-                        let h_col = &mut [h.r()[[i, it_count]], h.r()[[i + 1, it_count]]];
-                        apply_givens(h_col, givens_cs[i], givens_sn[i]);
-                        h.r_mut()[[i, it_count]] = h_col[0];
-                        h.r_mut()[[i + 1, it_count]] = h_col[1];
-                    }
+                for i in 0..it_count {
+                    let h_col = &mut [h.r()[[it_count, i]], h.r()[[it_count, i + 1]]];
+                    let c = givens.r()[[i, 0]];
+                    let s = givens.r()[[i, 1]];
+                    let n0 = h_col[0];
+                    let n1 = h_col[1];
+                    h.r_mut()[[it_count, i]] = c * n0 + s * n1;
+                    h.r_mut()[[it_count, i + 1]] = -s.conj() * n0 + c * n1;
                 }
 
-                // Generate new Givens rotation to zero out H[j+1][j]
-                let (cs, sn) =
-                    generate_givens(h.r()[[it_count, it_count]], h.r()[[it_count + 1, it_count]]);
-                givens_cs.push(cs);
-                givens_sn.push(sn);
-                // Apply to H
-                let h_col = &mut [h.r()[[it_count, it_count]], h.r()[[it_count + 1, it_count]]];
-                apply_givens(h_col, cs, sn);
-                h.r_mut()[[it_count, it_count]] = h_col[0];
-                h.r_mut()[[it_count + 1, it_count]] = h_col[1];
+                let (c, s, mag) =
+                    generate_givens(h.r()[[it_count, it_count]], h.r()[[it_count, it_count + 1]]);
 
-                // Apply to residual vector g
-                let temp = cs * g[it_count] + sn * g[it_count + 1];
+                givens.r_mut()[[it_count, 0]] = c;
+                givens.r_mut()[[it_count, 1]] = s;
+                h.r_mut()[[it_count, it_count]] = mag;
+                h.r_mut()[[it_count, it_count + 1]] = num::Zero::zero();
 
-                g[it_count + 1] = -sn * g[it_count] + cs * g[it_count + 1];
-                g[it_count] = temp;
-                let residual = g[it_count + 1].abs();
-                let rel_res = residual / res_0;
-                h_dim = it_count + 1;
+                let tmp = -s.conj() * g[it_count];
+                g[it_count] = c * g[it_count];
+                g[it_count + 1] = tmp;
+                presid = tmp.abs();
+                inner_iter += 1;
+
+                inner = it_count;
 
                 if let Some(callable) = self.callable.as_mut() {
+                    rel_res = presid / rhs_norm;
                     callable(&self.x, rel_res);
                 }
 
-                if it_count < max_inner - 1 {
-                    if rel_res < self.tol {
-                        break;
-                    }
+                if inner_iter == self.max_iter {
+                    break;
+                }
+
+                if presid < ptol || breakdown {
+                    break;
                 }
             }
 
+            let mut g_aux = vec![<Field<Space::F> as num::Zero>::zero(); inner + 1];
+            if h.r()[[inner, inner]] == num::Zero::zero() {
+                g[inner] = num::Zero::zero();
+            }
+
+            for k in 0..inner + 1 {
+                g_aux[k] = g[k];
+            }
+
             let h_t = TriangularMatrix::new(
-                &h.into_subview([0, 0], [h_dim, h_dim]),
-                TriangularType::Upper,
+                &h.r().into_subview([0, 0], [inner + 1, inner + 1]),
+                TriangularType::Lower,
             )
             .unwrap();
-            let mut g_solve = rlst_dynamic_array2!(Field<Space::F>, [h_dim, 1]);
 
-            for (item, other_item) in g_solve.iter_mut().zip(g[0..h_dim].iter()) {
+            let mut g_solve = rlst_dynamic_array2!(Field<Space::F>, [inner + 1, 1]);
+
+            for (item, other_item) in g_solve.iter_mut().zip(g_aux[0..inner + 1].iter()) {
                 *item = *other_item;
             }
-            h_t.solve(&mut g_solve, crate::Side::Left, crate::TransMode::NoTrans);
-            for index in 0..h_dim {
+            h_t.solve(&mut g_solve, crate::Side::Left, crate::TransMode::Trans);
+
+            for index in 0..inner + 1 {
                 let elem = v.get(index).unwrap();
-                let coeff = g_solve.r().data()[index];
-                self.x.axpy_inplace(coeff, elem.r());
+                self.x.axpy_inplace(g_solve.r().data()[index], elem.r());
             }
 
-            let mut res = self.rhs.duplicate();
+            res = self.rhs.duplicate();
             res -= self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
+
             let res_inner = res.inner_product(res.r());
-            let res_norm = res_inner.abs().sqrt();
+            res_norm = res_inner.abs().sqrt();
 
-            rel_res = res_norm / res_0;
-
-            if let Some(callable) = self.callable.as_mut() {
-                callable(&self.x, rel_res);
+            if inner_iter == self.max_iter {
+                if res_norm <= atol {
+                    return (self.x, 0);
+                } else {
+                    return (self.x, self.max_iter);
+                }
             }
 
-            if rel_res < self.tol {
-                print_success(outer * max_inner + h_dim, rel_res);
-                return (self.x, rel_res);
+            if res_norm <= atol {
+                print_success(inner_iter, rel_res);
+                break;
+            } else if breakdown {
+                break;
+            } else if presid <= ptol {
+                ptol_max_factor = num::Float::max(
+                    eps,
+                    num::cast::<f64, <Space::F as RlstScalar>::Real>(0.25).unwrap()
+                        * ptol_max_factor,
+                );
+            } else {
+                ptol_max_factor = num::Float::min(
+                    num::One::one(),
+                    num::cast::<f64, <Space::F as RlstScalar>::Real>(1.5).unwrap()
+                        * ptol_max_factor,
+                );
             }
+
+            ptol = presid * num::Float::min(ptol_max_factor, atol / res_norm);
         }
 
-        if self.print_debug {
-            print_fail(self.max_iter, rel_res);
-        }
-        (self.x, rel_res)
+        let info = if res_norm <= atol {
+            0
+        } else {
+            if self.print_debug {
+                print_fail(self.max_iter, rel_res);
+            }
+            self.max_iter
+        };
+
+        (self.x, info)
     }
 }
