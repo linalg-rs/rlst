@@ -44,7 +44,8 @@ pub fn main() {
         .set_callable(|_, res| {
             residuals.push(res);
         })
-        .set_tol(tol);
+        .set_tol(tol)
+        .set_restart(2);
     let (_sol, _res) = gmres.run();
 
     println!("Residuals: {:?}", residuals)

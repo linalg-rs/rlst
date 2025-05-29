@@ -1,6 +1,4 @@
 //! Arnoldi Iteration
-use core::f64;
-use std::cmp::min;
 use crate::dense::types::RlstScalar;
 use crate::operator::space::frame::Frame;
 use crate::operator::{
@@ -10,7 +8,8 @@ use crate::{
     rlst_dynamic_array2, DefaultIteratorMut, Element, ElementContainer, LinearSpace, OperatorBase,
     RawAccess, TriangularMatrix, TriangularOperations, TriangularType, VectorFrame,
 };
-
+use core::f64;
+use std::cmp::min;
 
 fn generate_givens<Item: RlstScalar>(a: Item, b: Item) -> (Item, Item, Item) {
     if b == num::Zero::zero() {
@@ -169,7 +168,6 @@ where
 
         let mut presid = num::Zero::zero();
 
-        let mut v = VectorFrame::default();
         let mut h = rlst_dynamic_array2!(Field<Space::F>, [self.restart, self.restart + 1]);
         let mut givens = rlst_dynamic_array2!(Field<Space::F>, [self.restart, 2]);
 
@@ -182,6 +180,7 @@ where
         let mut inner_iter = 0;
 
         for iteration in 0..self.max_iter {
+            let mut v = VectorFrame::default();
             if iteration == 0 {
                 res = res.r() - self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
                 let res_inner = res.inner_product(res.r());
