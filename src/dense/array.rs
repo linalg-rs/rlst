@@ -13,7 +13,7 @@ use crate::dense::traits::{
     ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,
 };
-use crate::ArrayIterator;
+use crate::BaseItem;
 
 use super::strided_base_array::StridedBaseArray;
 use super::traits::Len;
@@ -87,6 +87,13 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
     }
 }
 
+impl<ArrayImpl, const NDIM: usize> BaseItem for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem,
+{
+    type Item = ArrayImpl::Item;
+}
+
 impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for Array<ArrayImpl, NDIM> {
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
@@ -104,7 +111,6 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Len for Array<ArrayImpl, NDIM> {
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.0.get_value_unchecked(multi_index)
@@ -114,7 +120,6 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         self.0.get_unchecked(multi_index)
@@ -124,7 +129,6 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAc
 impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         self.0.get_unchecked_mut(multi_index)
@@ -153,8 +157,6 @@ where
 }
 
 impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for Array<ArrayImpl, NDIM> {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.0.data()
@@ -162,8 +164,6 @@ impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for Array<ArrayImpl, NDI
 }
 
 impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for Array<ArrayImpl, NDIM> {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.0.data_mut()
@@ -281,8 +281,6 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> std::fmt::Debug for Array<ArrayI
 impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.0.get_value_1d_unchecked(index)
@@ -292,8 +290,6 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAc
 impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAccessByRef
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         self.0.get_1d_unchecked(index)
@@ -303,8 +299,6 @@ impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAcce
 impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccessMut
     for Array<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get_1d_unchecked_mut(index)

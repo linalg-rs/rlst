@@ -16,8 +16,6 @@ impl<
         ArrayImplSecond: RawAccess<Item = Item> + Stride<2> + Shape<2>,
     > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
-    type Item = Item;
-
     fn mult_into(
         mut self,
         transa: TransMode,
@@ -41,8 +39,6 @@ impl<
         ArrayImplSecond: RawAccess<Item = Item> + Stride<1> + Shape<1>,
     > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
-    type Item = Item;
-
     fn mult_into(
         mut self,
         transa: TransMode,
@@ -75,8 +71,6 @@ impl<
         ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > MultInto<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
-    type Item = Item;
-
     fn mult_into(
         mut self,
         transa: TransMode,
@@ -111,8 +105,6 @@ impl<
         ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
-    type Item = Item;
-
     fn mult_into_resize(
         mut self,
         transa: TransMode,
@@ -145,8 +137,6 @@ impl<
         ArrayImplSecond: Shape<1> + Stride<1> + RawAccess<Item = Item>,
     > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
-    type Item = Item;
-
     fn mult_into_resize(
         mut self,
         transa: TransMode,
@@ -187,8 +177,6 @@ impl<
         ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
     > MultIntoResize<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
-    type Item = Item;
-
     fn mult_into_resize(
         mut self,
         transa: TransMode,

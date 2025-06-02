@@ -8,6 +8,7 @@ use crate::dense::traits::{
     RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::BaseItem;
 
 use super::data_container::{
     DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
@@ -46,11 +47,13 @@ impl<Data, const NDIM: usize> Shape<NDIM> for BaseArray<Data, NDIM> {
     }
 }
 
+impl<Data: DataContainer, const NDIM: usize> BaseItem for BaseArray<Data, NDIM> {
+    type Item = Data::Item;
+}
+
 impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -62,8 +65,6 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
 impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.data.get_unchecked_value(index)
@@ -73,8 +74,6 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
 impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         self.data.get_unchecked(index)
@@ -84,8 +83,6 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
 impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.data.get_unchecked_mut(index)
@@ -95,8 +92,6 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
 impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -108,8 +103,6 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM
 impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -119,8 +112,6 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
 }
 
 impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for BaseArray<Data, NDIM> {
-    type Item = Data::Item;
-
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.data.data()
@@ -130,8 +121,6 @@ impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for BaseArray<Da
 impl<Data: MutableRawAccessDataContainer, const NDIM: usize> RawAccessMut
     for BaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data.data_mut()

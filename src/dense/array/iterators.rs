@@ -6,6 +6,7 @@ use crate::dense::traits::{
     AsMultiIndex, Len, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::BaseItem;
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -111,8 +112,8 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
         } else {
             let value = unsafe {
                 std::mem::transmute::<
-                    &mut <ArrayImpl as UnsafeRandom1DAccessMut>::Item,
-                    &'a mut <ArrayImpl as UnsafeRandom1DAccessMut>::Item,
+                    &mut <ArrayImpl as BaseItem>::Item,
+                    &'a mut <ArrayImpl as BaseItem>::Item,
                 >(self.arr.get_1d_unchecked_mut(self.pos))
             };
             self.pos += 1;
@@ -125,7 +126,6 @@ impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIterator for Array
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
-    type Item = ArrayImpl::Item;
     type Iter<'a>
         = ArrayDefaultIterator<'a, ArrayImpl, NDIM>
     where
@@ -140,7 +140,6 @@ impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIteratorMut for Ar
 where
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
-    type Item = ArrayImpl::Item;
     type IterMut<'a>
         = ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
     where

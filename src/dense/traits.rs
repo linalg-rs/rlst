@@ -60,9 +60,7 @@ pub trait ResizeInPlace<const NDIM: usize> {
 }
 
 /// Multiply into
-pub trait MultInto<First, Second> {
-    /// Item type
-    type Item;
+pub trait MultInto<First, Second>: BaseItem {
     /// Multiply First * Second and sum into Self
     fn simple_mult_into(self, arr_a: First, arr_b: Second) -> Self
     where
@@ -116,9 +114,7 @@ pub trait Gemm: Sized {
 }
 
 /// Multiply into with resize
-pub trait MultIntoResize<First, Second> {
-    /// Item type
-    type Item;
+pub trait MultIntoResize<First, Second>: BaseItem {
     /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
     where
@@ -174,9 +170,7 @@ pub trait MultIntoResize<First, Second> {
 /// Iterate through the elements in `(i, j, data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
-pub trait AijIterator {
-    /// Item type
-    type Item;
+pub trait AijIterator: BaseItem {
     /// Iterator
     type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
     where
@@ -196,10 +190,7 @@ pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
 }
 
 /// A helper trait to implement generic operators over matrices.
-pub trait AsOperatorApply {
-    /// Item type
-    type Item;
-
+pub trait AsOperatorApply: BaseItem {
     /// Apply the operator to a vector.
     fn apply_extended(
         &self,
@@ -214,9 +205,7 @@ pub trait AsOperatorApply {
 ///
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
-pub trait ArrayIterator {
-    /// Item type of the iterator.
-    type Item;
+pub trait ArrayIterator: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
@@ -230,9 +219,7 @@ pub trait ArrayIterator {
 ///
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
-pub trait ArrayIteratorMut {
-    /// Item type of the iterator.
-    type Item;
+pub trait ArrayIteratorMut: BaseItem {
     /// Type of the iterator.
     type IterMut<'a>: Iterator<Item = &'a mut Self::Item>
     where
@@ -243,9 +230,7 @@ pub trait ArrayIteratorMut {
 }
 
 /// Get an iterator to the diagonal of an array.
-pub trait GetDiag {
-    /// Item type of the iterator.
-    type Item;
+pub trait GetDiag: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
@@ -256,9 +241,7 @@ pub trait GetDiag {
 }
 
 /// Get a mutable iterator to the diagonal of an array.
-pub trait GetDiagMut {
-    /// Item type of the iterator.
-    type Item;
+pub trait GetDiagMut: BaseItem {
     /// Tyepof the iterator.
     type Iter<'a>: Iterator<Item = &'a mut Self::Item>
     where
@@ -299,9 +282,7 @@ pub trait CmpMulAddFrom<Other1, Other2> {
 }
 
 /// Fill an array with a specific value.
-pub trait FillWithValue {
-    /// Item type.
-    type Item;
+pub trait FillWithValue: BaseItem {
     /// Fill an array with a specific value.
     fn fill_with_value(&mut self, value: Self::Item);
 }
@@ -356,10 +337,7 @@ where
 }
 
 /// Scale all elements by a value `alpha`.
-pub trait ScaleInPlace {
-    /// Item type.
-    type Item;
-
+pub trait ScaleInPlace: BaseItem {
     /// Scale all elements by a value `alpha`.
     fn scale_in_place(&mut self, alpha: Self::Item);
 }
@@ -369,27 +347,19 @@ where
     T: ArrayIteratorMut,
     T::Item: MulAssign<T::Item> + Copy,
 {
-    type Item = T::Item;
-
     fn scale_in_place(&mut self, alpha: Self::Item) {
         self.iter_mut().for_each(|elem| *elem *= alpha);
     }
 }
 
 /// Compute the trace of an operator.
-pub trait Trace {
-    /// The result type of the trace.
-    type Item;
-
+pub trait Trace: BaseItem {
     /// Compute the trace.
     fn trace(&self) -> Self::Item;
 }
 
 /// Sum all elements of an array.
-pub trait Sum {
-    /// The result type of the sum.
-    type Item;
-
+pub trait Sum: BaseItem {
     /// Compute the sum of all elemenets.
     fn sum(&self) -> Self::Item;
 }
@@ -399,8 +369,6 @@ where
     T: ArrayIterator,
     T::Item: std::iter::Sum,
 {
-    type Item = T::Item;
-
     fn sum(&self) -> Self::Item {
         self.iter().sum()
     }
@@ -421,36 +389,35 @@ pub trait Len {
 
 /// Compute the inner product with another vector.
 pub trait Inner<Other = Self> {
-    /// The result type of the inner product.
-    type Item;
-
+    /// The Item type of the inner product.
+    type Output;
     /// Return the inner product of `Self` with `Other`.
-    fn inner(&self, other: &Other) -> Self::Item;
+    fn inner(&self, other: &Other) -> Self::Output;
 }
 
 /// Return the supremum norm of an array.
 pub trait NormSup {
     /// The Item type of the norm.
-    type Item;
+    type Output;
 
     /// Return the supremum norm.
-    fn norm_sup(&self) -> Self::Item;
+    fn norm_sup(&self) -> Self::Output;
 }
 
 /// Return the 1-norm of an array.
 pub trait NormOne {
     /// The Item type of the norm.
-    type Item;
+    type Output;
 
     /// Return the 1-norm.
-    fn norm_1(&self) -> Self::Item;
+    fn norm_1(&self) -> Self::Output;
 }
 
 /// Return the 2-norm of an array.
 pub trait NormTwo {
     /// The Item type of the norm.
-    type Item;
+    type Output;
 
     /// Return the 2-norm.
-    fn norm_2(&self) -> Self::Item;
+    fn norm_2(&self) -> Self::Output;
 }

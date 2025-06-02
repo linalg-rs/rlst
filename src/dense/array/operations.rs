@@ -7,7 +7,7 @@ use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
-use super::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use super::{Array, BaseItem, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::traits::{
     Abs, AbsSquare, ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom,
     FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
@@ -18,8 +18,6 @@ impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
 {
-    type Item = Item;
-
     type Iter<'a>
         = ArrayDiagIterator<'a, ArrayImpl, NDIM>
     where
@@ -34,8 +32,6 @@ impl<Item, ArrayImpl, const NDIM: usize> GetDiagMut for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandomAccessMut<NDIM, Item = Item> + Shape<NDIM>,
 {
-    type Item = Item;
-
     type Iter<'a>
         = ArrayDiagIteratorMut<'a, ArrayImpl, NDIM>
     where
@@ -139,8 +135,6 @@ where
     Array<ArrayImpl, NDIM>: ArrayIteratorMut<Item = Item>,
     Item: Copy,
 {
-    type Item = Item;
-
     fn fill_with_value(&mut self, value: Item) {
         for item in self.iter_mut() {
             *item = value;
@@ -153,8 +147,6 @@ where
     Array<ArrayImpl, NDIM>: GetDiag<Item = Item>,
     Item: std::iter::Sum,
 {
-    type Item = Item;
-
     fn trace(&self) -> Self::Item {
         self.diag_iter().sum::<Self::Item>()
     }
@@ -166,9 +158,9 @@ where
     Self: ArrayIterator<Item = Item> + Len,
     Array<ArrayImplOther, 1>: ArrayIterator<Item = Item> + Len,
 {
-    type Item = Item;
+    type Output = Item;
 
-    fn inner(&self, other: &Array<ArrayImplOther, 1>) -> Self::Item {
+    fn inner(&self, other: &Array<ArrayImplOther, 1>) -> Self::Output {
         assert_eq!(self.len(), other.len());
         izip!(self.iter(), other.iter()).fold(Default::default(), |acc, (elem1, elem2)| {
             elem1.mul_add(elem2.conj(), acc)
@@ -179,27 +171,27 @@ where
 impl<ArrayImpl> NormSup for Array<ArrayImpl, 1>
 where
     Self: ArrayIterator,
-    <Self as ArrayIterator>::Item: Abs,
-    <<Self as ArrayIterator>::Item as Abs>::Output:
-        Max<Output = <<Self as ArrayIterator>::Item as Abs>::Output> + Default,
+    <Self as BaseItem>::Item: Abs,
+    <<Self as BaseItem>::Item as Abs>::Output:
+        Max<Output = <<Self as BaseItem>::Item as Abs>::Output> + Default,
 {
-    type Item = <<Self as ArrayIterator>::Item as Abs>::Output;
+    type Output = <<Self as BaseItem>::Item as Abs>::Output;
 
-    fn norm_sup(&self) -> Self::Item {
-        self.iter().fold(
-            <<<Self as ArrayIterator>::Item as Abs>::Output as Default>::default(),
-            |acc, elem| Max::max(&acc, &elem.abs()),
-        )
+    fn norm_sup(&self) -> Self::Output {
+        self.iter()
+            .fold(<Self::Output as Default>::default(), |acc, elem| {
+                Max::max(&acc, &elem.abs())
+            })
     }
 }
 
 impl<ArrayImpl> AbsSquare for Array<ArrayImpl, 1>
 where
     Self: ArrayIterator,
-    <Self as ArrayIterator>::Item: AbsSquare,
-    <<Self as ArrayIterator>::Item as AbsSquare>::Output: Sum,
+    <Self as BaseItem>::Item: AbsSquare,
+    <<Self as BaseItem>::Item as AbsSquare>::Output: Sum,
 {
-    type Output = <<Self as ArrayIterator>::Item as AbsSquare>::Output;
+    type Output = <<Self as BaseItem>::Item as AbsSquare>::Output;
 
     fn abs_square(&self) -> Self::Output {
         self.iter().map(|elem| elem.abs_square()).sum()
@@ -211,9 +203,9 @@ where
     Array<ArrayImpl, 1>: AbsSquare,
     <Array<ArrayImpl, 1> as AbsSquare>::Output: Sqrt,
 {
-    type Item = <<Self as AbsSquare>::Output as Sqrt>::Output;
+    type Output = <<Self as AbsSquare>::Output as Sqrt>::Output;
 
-    fn norm_2(&self) -> Self::Item {
+    fn norm_2(&self) -> Self::Output {
         self.abs_square().sqrt()
     }
 }

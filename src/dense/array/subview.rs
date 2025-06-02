@@ -7,6 +7,7 @@ use crate::dense::traits::{
     Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::BaseItem;
 
 /// Subview of an array
 pub struct ArraySubView<ArrayImpl, const NDIM: usize> {
@@ -34,6 +35,13 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> ArraySubView<ArrayImpl, NDIM> {
 
 // Basic traits for ArraySubView
 
+impl<ArrayImpl, const NDIM: usize> BaseItem for ArraySubView<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem,
+{
+    type Item = ArrayImpl::Item;
+}
+
 impl<ArrayImpl, const NDIM: usize> Shape<NDIM> for ArraySubView<ArrayImpl, NDIM> {
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
@@ -51,7 +59,6 @@ impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArraySubView<A
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -63,7 +70,6 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -75,8 +81,6 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAc
 impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom1DAccessByValue
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape))
@@ -86,8 +90,6 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandom1DAccessByRef
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         self.get_unchecked(convert_1d_nd_from_shape(index, self.shape))
@@ -97,8 +99,6 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandom1D
 impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAccessMut
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape))
@@ -108,8 +108,6 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAc
 impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for ArraySubView<ArrayImpl, NDIM>
 {
-    type Item = ArrayImpl::Item;
-
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(crate::dense::layout::check_multi_index_in_bounds(
