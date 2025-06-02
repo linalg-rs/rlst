@@ -24,6 +24,12 @@ pub enum MemoryLayout {
     Unknown,
 }
 
+///Base item type of an array.
+pub trait BaseItem {
+    /// Item type
+    type Item;
+}
+
 /// Shape of an object
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.

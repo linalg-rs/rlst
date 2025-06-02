@@ -3,114 +3,56 @@
 pub mod inverse;
 pub mod lu;
 
+use inverse::LapackInverse;
+
 use crate::dense::{
     array::Array,
     traits::{RawAccess, RawAccessMut, Shape, Stride},
 };
 
-/// Return true if stride is column major as required by Lapack.
-pub fn assert_lapack_stride(stride: [usize; 2]) {
+/// Return a triple (m, n, lda) for the Lapack interface.
+pub fn lapack_dims<ArrayImpl>(arr: &Array<ArrayImpl, 2>) -> (i32, i32, i32)
+where
+    ArrayImpl: Shape<2> + Stride<2>,
+{
+    let shape = arr.shape();
+    let stride = arr.stride();
+
+    let m = shape[0] as i32;
+    let n = shape[1] as i32;
     assert_eq!(
         stride[0], 1,
         "Incorrect stride for Lapack. Stride[0] is {} but expected 1.",
         stride[0]
     );
+
+    let lda = arr.stride()[1] as i32;
+
+    (m, n, lda)
 }
 
-/// A structure that represents a 2D array in a format suitable for Lapack operations.
-pub struct LapackArray<'a, Item> {
-    /// The underlying data.
-    pub data: &'a [Item],
-    /// The number of rows.
-    pub m: i32,
-    /// The number of columns.
-    pub n: i32,
-    /// The leading dimension (stride in the second dimension).
-    pub lda: i32,
+/// A wrapper for LAPACK operations on a 2D array.
+pub struct LapackWrapper<Item, ArrayImpl> {
+    arr: Array<ArrayImpl, 2>,
+    m: i32,
+    n: i32,
+    lda: i32,
+    _marker: std::marker::PhantomData<Item>,
 }
 
-/// A structure that represents a 2D array in a format suitable for Lapack operations.
-pub struct LapackArrayMut<'a, Item> {
-    /// The underlying data.
-    pub data: &'a mut [Item],
-    /// The number of rows.
-    pub m: i32,
-    /// The number of columns.
-    pub n: i32,
-    /// The leading dimension (stride in the second dimension).
-    pub lda: i32,
-}
-
-impl<'a, Item> LapackArray<'a, Item> {
-    /// Create a new LapackArray from the given array.
-    pub fn new<ArrayImpl: Stride<2> + Shape<2> + RawAccess<Item = Item>>(
-        arr: &'a Array<ArrayImpl, 2>,
-    ) -> Self {
-        assert_lapack_stride(arr.stride());
+impl<Item, ArrayImpl> LapackWrapper<Item, ArrayImpl>
+where
+    ArrayImpl: Shape<2> + Stride<2>,
+{
+    /// Create a new `LapackWrapper` from an array.
+    pub fn new(arr: Array<ArrayImpl, 2>) -> Self {
+        let (m, n, lda) = lapack_dims(&arr);
         Self {
-            data: arr.data(),
-            m: arr.shape()[0] as i32,
-            n: arr.shape()[1] as i32,
-            lda: arr.stride()[1] as i32,
-        }
-    }
-}
-
-impl<'a, Item> LapackArrayMut<'a, Item> {
-    /// Create a new LapackArray from the given array.
-    pub fn new<ArrayImpl: Stride<2> + Shape<2> + RawAccessMut<Item = Item>>(
-        arr: &'a mut Array<ArrayImpl, 2>,
-    ) -> Self {
-        assert_lapack_stride(arr.stride());
-        let m = arr.shape()[0] as i32;
-        let n = arr.shape()[1] as i32;
-        let lda = arr.stride()[1] as i32;
-
-        Self {
-            data: arr.data_mut(),
+            arr,
             m,
             n,
             lda,
+            _marker: std::marker::PhantomData,
         }
-    }
-}
-
-/// A trait for types are compatible with mutable Lapack operations.
-pub trait LapackMut {
-    /// The array implementation type.
-    type Item;
-
-    /// Convert the array into a LapackArray.
-    fn lapack_mut(&mut self) -> LapackArrayMut<'_, Self::Item>;
-}
-
-///  A trait for types that are compatible with Lapack operations.
-pub trait Lapack {
-    /// The array implementation type.
-    type Item;
-
-    /// Convert the array into a LapackArray.
-    fn lapack(&self) -> LapackArray<'_, Self::Item>;
-}
-
-impl<ArrayImpl> Lapack for Array<ArrayImpl, 2>
-where
-    ArrayImpl: Stride<2> + Shape<2> + RawAccess,
-{
-    type Item = ArrayImpl::Item;
-
-    fn lapack(&self) -> LapackArray<'_, Self::Item> {
-        LapackArray::new(self)
-    }
-}
-
-impl<Item, ArrayImpl> LapackMut for Array<ArrayImpl, 2>
-where
-    ArrayImpl: Stride<2> + Shape<2> + RawAccessMut<Item = Item>,
-{
-    type Item = ArrayImpl::Item;
-
-    fn lapack_mut(&mut self) -> LapackArrayMut<'_, Self::Item> {
-        LapackArrayMut::new(self)
     }
 }

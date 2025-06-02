@@ -2,7 +2,6 @@
 
 use paste::paste;
 use rlst::dense::array::DynArray;
-use rlst::dense::linalg::lapack::LapackMut;
 use rlst::dense::traits::SetIdentity;
 use rlst::dense::types::{c32, c64};
 use rlst::{assert_array_abs_diff_eq, prelude::*};
@@ -22,7 +21,7 @@ macro_rules! impl_inverse_tests {
             let mut ident = rlst_dynamic_array!($scalar, [n, n]);
             ident.set_identity();
 
-            a.lapack_mut().inverse().unwrap();
+            a.lapack().inverse().unwrap();
 
             let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(a.r(), b.r());
 
