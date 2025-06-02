@@ -2,28 +2,17 @@
 use std::iter::Sum;
 use std::ops::{AddAssign, MulAssign};
 
-use crate::dense::types::{RlstBase, RlstNum};
 use itertools::izip;
 use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
-use num::{One, Zero};
-
-use crate::dense::layout::convert_1d_nd_from_shape;
 
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
-use super::operators::unary_op::ArrayUnaryOperator;
-use super::reference::ArrayRef;
-use super::{
-    Array, RandomAccessMut, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
-};
+use super::{Array, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::traits::{
-    ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom, FillFromResize,
-    FillWithValue, GetDiag, GetDiagMut, Inner, Len, NormSup, ResizeInPlace, SumFrom, Trace,
-    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    Abs, AbsSquare, ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom,
+    FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
+    ResizeInPlace, Sqrt, SumFrom, Trace, UnsafeRandom1DAccessMut,
 };
-
-use crate::dense::types::RlstScalar;
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
@@ -171,15 +160,6 @@ where
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> Len for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: Shape<NDIM>,
-{
-    fn len(&self) -> usize {
-        self.shape().iter().product()
-    }
-}
-
 impl<Item, ArrayImpl, ArrayImplOther> Inner<Array<ArrayImplOther, 1>> for Array<ArrayImpl, 1>
 where
     Item: Default + MulAdd<Output = Item> + Conj<Output = Item>,
@@ -199,22 +179,53 @@ where
 impl<ArrayImpl> NormSup for Array<ArrayImpl, 1>
 where
     Self: ArrayIterator,
+    <Self as ArrayIterator>::Item: Abs,
+    <<Self as ArrayIterator>::Item as Abs>::Output:
+        Max<Output = <<Self as ArrayIterator>::Item as Abs>::Output> + Default,
 {
-    type Item = <Self as ArrayIterator>::Item;
+    type Item = <<Self as ArrayIterator>::Item as Abs>::Output;
 
     fn norm_sup(&self) -> Self::Item {
-        self.iter().map(|elem| elem.abs()).max()
+        self.iter().fold(
+            <<<Self as ArrayIterator>::Item as Abs>::Output as Default>::default(),
+            |acc, elem| Max::max(&acc, &elem.abs()),
+        )
     }
 }
 
-/// Compute the maximum (or inf) norm of a vector.
-pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
-    self.iter()
-        .map(|elem| <Item as RlstScalar>::abs(elem))
-        .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
-        .unwrap()
+impl<ArrayImpl> AbsSquare for Array<ArrayImpl, 1>
+where
+    Self: ArrayIterator,
+    <Self as ArrayIterator>::Item: AbsSquare,
+    <<Self as ArrayIterator>::Item as AbsSquare>::Output: Sum,
+{
+    type Output = <<Self as ArrayIterator>::Item as AbsSquare>::Output;
+
+    fn abs_square(&self) -> Self::Output {
+        self.iter().map(|elem| elem.abs_square()).sum()
+    }
 }
 
+impl<ArrayImpl> NormTwo for Array<ArrayImpl, 1>
+where
+    Array<ArrayImpl, 1>: AbsSquare,
+    <Array<ArrayImpl, 1> as AbsSquare>::Output: Sqrt,
+{
+    type Item = <<Self as AbsSquare>::Output as Sqrt>::Output;
+
+    fn norm_2(&self) -> Self::Item {
+        self.abs_square().sqrt()
+    }
+}
+
+// /// Compute the maximum (or inf) norm of a vector.
+// pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
+//     self.iter()
+//         .map(|elem| <Item as RlstScalar>::abs(elem))
+//         .reduce(<<Item as RlstScalar>::Real as num::Float>::max)
+//         .unwrap()
+// }
+//
 //     /// Compute the 1-norm of a vector.
 //     pub fn norm_1(self) -> <Item as RlstScalar>::Real {
 //         self.iter()
@@ -411,15 +422,15 @@ pub fn norm_inf(self) -> <Item as RlstScalar>::Real {
 // //     }
 // // }
 
-#[cfg(test)]
-mod test {
-    use crate::dense::{array::empty_array, traits::Conj};
+// #[cfg(test)]
+// mod test {
+//     use crate::dense::{array::empty_array, traits::Conj};
 
-    fn op_test() {
-        let mut a = empty_array::<f64, _>();
-
-        let fun = |a: f64| -> f64 { a };
-
-        a.apply_unary_op(Conj::conj);
-    }
-}
+// fn op_test() {
+//     let mut a = empty_array::<f64, _>();
+//
+//     let fun = |a: f64| -> f64 { a };
+//
+//     a.apply_unary_op(Conj::conj);
+//     // }
+// }

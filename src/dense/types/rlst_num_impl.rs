@@ -1,18 +1,13 @@
 //! Implementation of number traits.
 
 use num::complex::Complex;
-use num::traits::{Float, FromPrimitive, NumAssign, NumCast, NumOps, ToPrimitive, Zero};
+use num::traits::{Float, NumCast, ToPrimitive, Zero};
 use rand::{distributions::Standard, prelude::*};
-use serde::{Deserialize, Serialize};
-use std::fmt::{Debug, Display, LowerExp, UpperExp};
-use std::iter::{Product, Sum};
-use std::ops::Neg;
-use typenum::Abs;
 
 pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
 
-use super::rlst_num::{RlstBase, RlstNum, RlstScalar};
+use super::rlst_num::RlstScalar;
 
 macro_rules! impl_float {
     ($name:ident) => {

@@ -48,5 +48,14 @@ pub trait AbsSquare {
     type Output;
 
     /// Return the square of the absolute value.
-    fn square(&self) -> Self::Output;
+    fn abs_square(&self) -> Self::Output;
+}
+
+/// Return the square root of the number
+pub trait Sqrt {
+    /// Output type
+    type Output;
+
+    /// Return the square root of the number.
+    fn sqrt(&self) -> Self::Output;
 }

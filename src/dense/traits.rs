@@ -10,8 +10,8 @@ use num::{One, Zero};
 
 use crate::dense::types::TransMode;
 
-use super::types::RlstScalar;
-use number_traits::*;
+pub use super::types::RlstScalar;
+pub use number_traits::*;
 
 /// Memory layout of an object
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -236,9 +236,11 @@ pub trait ArrayIteratorMut {
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
-// Get an iterator to the diagonal of an array.
+/// Get an iterator to the diagonal of an array.
 pub trait GetDiag {
+    /// Item type of the iterator.
     type Item;
+    /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
         Self: 'a;
@@ -247,9 +249,11 @@ pub trait GetDiag {
     fn diag_iter(&self) -> Self::Iter<'_>;
 }
 
-// Get a mutable iterator to the diagonal of an array.
+/// Get a mutable iterator to the diagonal of an array.
 pub trait GetDiagMut {
+    /// Item type of the iterator.
     type Item;
+    /// Tyepof the iterator.
     type Iter<'a>: Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;

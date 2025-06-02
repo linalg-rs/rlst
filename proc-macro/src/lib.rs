@@ -7,6 +7,12 @@ use proc_macro::TokenStream;
 mod dense;
 mod tracing;
 
+/// Create a dynamic array
+#[proc_macro]
+pub fn rlst_dynamic_array(items: TokenStream) -> TokenStream {
+    dense::rlst_dynamic_array_impl(items)
+}
+
 /// Create a static array
 #[proc_macro]
 pub fn rlst_static_array(items: TokenStream) -> TokenStream {

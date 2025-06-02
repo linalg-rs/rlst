@@ -6,7 +6,6 @@ mod rlst_num_impl;
 
 pub use rlst_num::*;
 
-use bytemuck::Pod;
 use thiserror::Error;
 
 /// The Rlst error type.

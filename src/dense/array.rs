@@ -9,11 +9,14 @@ use crate::dense::data_container::SliceContainer;
 use crate::dense::data_container::SliceContainerMut;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::traits::{
-    NumberOfElements, RandomAccessByRef, RandomAccessMut, RawAccess, RawAccessMut, ResizeInPlace,
-    Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    FillFromResize, NumberOfElements, RandomAccessByRef, RandomAccessMut, RawAccess, RawAccessMut,
+    ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
+use crate::ArrayIterator;
 
 use super::strided_base_array::StridedBaseArray;
+use super::traits::Len;
 use super::traits::UnsafeRandom1DAccessByRef;
 use super::traits::UnsafeRandom1DAccessByValue;
 use super::traits::UnsafeRandom1DAccessMut;
@@ -23,7 +26,7 @@ pub mod iterators;
 pub mod mult_into;
 pub mod operations;
 pub mod operators;
-// pub mod random;
+pub mod random;
 // pub mod rank1_array;
 pub mod flattened;
 pub mod reference;
@@ -31,8 +34,7 @@ pub mod slice;
 pub mod subview;
 
 /// A basic dynamically allocated array.
-pub type DynamicArray<Item, const NDIM: usize> =
-    Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>;
+pub type DynArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>;
 
 /// A dynamically allocated array from a data slice.
 pub type SliceArray<'a, Item, const NDIM: usize> =
@@ -89,6 +91,13 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for Array<ArrayImpl,
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.0.shape()
+    }
+}
+
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Len for Array<ArrayImpl, NDIM> {
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.shape().iter().product()
     }
 }
 
@@ -299,5 +308,20 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccess
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.0.get_1d_unchecked_mut(index)
+    }
+}
+
+impl<Item, const NDIM: usize> DynArray<Item, NDIM>
+where
+    Item: Clone + Default,
+{
+    /// Create a new array and fill with values from `arr`.
+    pub fn new_from<ArrayImpl>(arr: &Array<ArrayImpl, NDIM>) -> Self
+    where
+        DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
+    {
+        let mut output = empty_array::<Item, NDIM>();
+        output.fill_from_resize(&arr);
+        output
     }
 }

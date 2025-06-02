@@ -1,10 +1,7 @@
 //! Methods for the creation of random matrices.
 
 use crate::dense::tools::RandScalar;
-use crate::dense::traits::{
-    DefaultIteratorMut, Shape, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
-};
+use crate::dense::traits::ArrayIteratorMut;
 use crate::dense::types::RlstScalar;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -13,16 +10,11 @@ use rand_distr::StandardNormal;
 
 use super::Array;
 
-impl<
-        Item: RlstScalar + RandScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>
-            + UnsafeRandomAccessMut<NDIM, Item = Item>
-            + Shape<NDIM>
-            + UnsafeRandom1DAccessMut<Item = Item>,
-        const NDIM: usize,
-    > Array<Item, ArrayImpl, NDIM>
+impl<Item, ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    StandardNormal: Distribution<<Item as RlstScalar>::Real>,
+    Item: RlstScalar + RandScalar,
+    Self: ArrayIteratorMut<Item = Item>,
+    StandardNormal: Distribution<Item::Real>,
     Standard: Distribution<<Item as RlstScalar>::Real>,
 {
     /// Fill an array with normally distributed random numbers.

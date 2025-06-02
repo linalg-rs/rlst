@@ -15,7 +15,6 @@ use super::slice::ArraySlice;
 /// This iterator returns elements of an array in standard column major order.
 pub struct ArrayDefaultIterator<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
-    shape: [usize; NDIM],
     pos: usize,
     nelements: usize,
 }
@@ -23,7 +22,6 @@ pub struct ArrayDefaultIterator<'a, ArrayImpl, const NDIM: usize> {
 /// Mutable default iterator. Like [ArrayDefaultIterator] but with mutable access.
 pub struct ArrayDefaultIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a mut Array<ArrayImpl, NDIM>,
-    shape: [usize; NDIM],
     pos: usize,
     nelements: usize,
 }
@@ -61,7 +59,6 @@ where
     fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         Self {
             arr,
-            shape: arr.shape(),
             pos: 0,
             nelements: Len::len(arr),
         }
@@ -73,11 +70,9 @@ where
     ArrayImpl: Shape<NDIM>,
 {
     fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
-        let shape = arr.shape();
         let nelements = Len::len(arr);
         Self {
             arr,
-            shape,
             pos: 0,
             nelements,
         }
@@ -114,7 +109,12 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
         if self.pos >= self.nelements {
             None
         } else {
-            let value = unsafe { std::mem::transmute(self.arr.get_1d_unchecked_mut(self.pos)) };
+            let value = unsafe {
+                std::mem::transmute::<
+                    &mut <ArrayImpl as UnsafeRandom1DAccessMut>::Item,
+                    &'a mut <ArrayImpl as UnsafeRandom1DAccessMut>::Item,
+                >(self.arr.get_1d_unchecked_mut(self.pos))
+            };
             self.pos += 1;
             Some(value)
         }
@@ -304,6 +304,7 @@ where
     }
 }
 
+/// Diagonal iterator.
 pub struct ArrayDiagIterator<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
     pos: usize,
@@ -311,6 +312,7 @@ pub struct ArrayDiagIterator<'a, ArrayImpl, const NDIM: usize> {
 }
 
 impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIterator<'a, ArrayImpl, NDIM> {
+    /// Create a new diagonal iterator.
     pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         let nelements = *arr.shape().iter().min().unwrap();
         ArrayDiagIterator {
@@ -337,6 +339,7 @@ impl<'a, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> Iterator
     }
 }
 
+/// Mutable diagonal iterator.
 pub struct ArrayDiagIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a mut Array<ArrayImpl, NDIM>,
     pos: usize,

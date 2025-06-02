@@ -159,7 +159,7 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
 }
 
 // Matrix operator trait for dense matrices
-impl<
+
         Item: RlstScalar,
         ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + RawAccess<Item = Item> + Stride<2>,
     > AsOperatorApply for Array<Item, ArrayImpl, 2>

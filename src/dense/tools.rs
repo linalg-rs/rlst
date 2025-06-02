@@ -83,7 +83,7 @@ macro_rules! assert_matrix_relative_eq {
                 assert_relative_eq!(
                     $actual_matrix[[row, col]],
                     $expected_matrix[[row, col]],
-                    epsilon = $epsilon
+                    max_relative = $epsilon
                 );
             }
         }

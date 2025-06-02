@@ -30,12 +30,12 @@ pub mod dense;
 // pub mod sparse;
 // pub mod tracing;
 
-// pub mod prelude;
+pub mod prelude;
 // pub mod threading;
 
 // pub mod operator;
 
-// pub use prelude::*;
+pub use prelude::*;
 
 #[cfg(test)]
 mod test {

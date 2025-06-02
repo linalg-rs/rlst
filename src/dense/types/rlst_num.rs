@@ -1,13 +1,11 @@
 use bytemuck::Pod;
 
-use num::complex::Complex;
-use num::traits::{Float, FromPrimitive, NumAssign, NumCast, NumOps, ToPrimitive, Zero};
-use rand::{distributions::Standard, prelude::*};
+use num::traits::{Float, FromPrimitive, NumAssign, NumCast, NumOps, ToPrimitive};
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, LowerExp, UpperExp};
 use std::iter::{Product, Sum};
 use std::ops::Neg;
-use typenum::Abs;
 
 pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
