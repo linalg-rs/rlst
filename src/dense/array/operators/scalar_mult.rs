@@ -5,6 +5,7 @@ use std::ops::Mul;
 use crate::dense::array::{Array, Shape, UnsafeRandomAccessByValue};
 use crate::dense::traits::UnsafeRandom1DAccessByValue;
 use crate::dense::types::{c32, c64};
+use crate::BaseItem;
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<Scalar, ArrayImpl, const NDIM: usize> {
@@ -19,14 +20,19 @@ impl<Scalar, ArrayImpl, const NDIM: usize> ArrayScalarMult<Scalar, ArrayImpl, ND
     }
 }
 
+impl<Scalar, ArrayImpl, const NDIM: usize> BaseItem for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Scalar>,
+{
+    type Item = Scalar;
+}
+
 impl<Scalar: Copy, ArrayImpl, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
-    ArrayImpl: UnsafeRandomAccessByValue<NDIM>,
-    Scalar: Mul<ArrayImpl::Item>,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Scalar>,
+    Scalar: Mul<ArrayImpl::Item, Output = Scalar>,
 {
-    type Item = Scalar::Output;
-
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.scalar * self.arr.get_value_unchecked(multi_index)
@@ -36,11 +42,9 @@ where
 impl<Scalar: Copy, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByValue
     for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue,
-    Scalar: Mul<ArrayImpl::Item>,
+    ArrayImpl: UnsafeRandom1DAccessByValue + BaseItem<Item = Scalar>,
+    Scalar: Mul<ArrayImpl::Item, Output = Scalar>,
 {
-    type Item = Scalar::Output;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.scalar * self.arr.get_value_1d_unchecked(index)

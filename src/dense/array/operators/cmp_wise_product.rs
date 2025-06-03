@@ -2,9 +2,12 @@
 
 use std::ops::Mul;
 
-use crate::dense::{
-    array::{Array, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+use crate::{
+    dense::{
+        array::{Array, Shape, UnsafeRandomAccessByValue},
+        traits::UnsafeRandom1DAccessByValue,
+    },
+    BaseItem,
 };
 
 /// Component-wise product
@@ -34,15 +37,22 @@ where
     }
 }
 
-impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> BaseItem
     for CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>
 where
-    ArrayImpl1: UnsafeRandomAccessByValue<NDIM>,
-    ArrayImpl2: UnsafeRandomAccessByValue<NDIM>,
-    ArrayImpl1::Item: Mul<ArrayImpl2::Item>,
+    ArrayImpl1: BaseItem<Item = Item>,
+    ArrayImpl2: BaseItem<Item = Item>,
 {
-    type Item = <ArrayImpl1::Item as Mul<ArrayImpl2::Item>>::Output;
+    type Item = Item;
+}
 
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    ArrayImpl1: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Item>,
+    ArrayImpl2: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Item>,
+    ArrayImpl1::Item: Mul<ArrayImpl2::Item, Output = Item>,
+{
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         self.operator1.get_value_unchecked(multi_index)
@@ -50,15 +60,13 @@ where
     }
 }
 
-impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> UnsafeRandom1DAccessByValue
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> UnsafeRandom1DAccessByValue
     for CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>
 where
-    ArrayImpl1: UnsafeRandom1DAccessByValue,
-    ArrayImpl2: UnsafeRandom1DAccessByValue,
-    ArrayImpl1::Item: Mul<ArrayImpl2::Item>,
+    ArrayImpl1: UnsafeRandom1DAccessByValue + BaseItem<Item = Item>,
+    ArrayImpl2: UnsafeRandom1DAccessByValue + BaseItem<Item = Item>,
+    ArrayImpl1::Item: Mul<ArrayImpl2::Item, Output = Item>,
 {
-    type Item = <ArrayImpl1::Item as Mul<ArrayImpl2::Item>>::Output;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.operator1.get_value_1d_unchecked(index) * self.operator2.get_value_1d_unchecked(index)

@@ -1,8 +1,11 @@
 //! Container representing application of a unary operator
 
-use crate::dense::{
-    array::{Array, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+use crate::{
+    dense::{
+        array::{Array, Shape, UnsafeRandomAccessByValue},
+        traits::UnsafeRandom1DAccessByValue,
+    },
+    BaseItem,
 };
 
 /// Application of a unitary Operator
@@ -28,13 +31,19 @@ impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize>
     }
 }
 
+impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> BaseItem
+    for ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>
+where
+    ArrayImpl: BaseItem<Item = OpItem>,
+{
+    type Item = OpTarget;
+}
+
 impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize>
     UnsafeRandomAccessByValue<NDIM> for ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>
 where
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = OpItem>,
 {
-    type Item = OpTarget;
-
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         (self.op)(self.arr.get_value_unchecked(multi_index))
@@ -46,8 +55,6 @@ impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = OpItem>,
 {
-    type Item = OpTarget;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         (self.op)(self.arr.get_value_1d_unchecked(index))

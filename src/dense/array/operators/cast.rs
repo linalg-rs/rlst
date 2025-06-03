@@ -2,9 +2,12 @@
 
 use std::marker::PhantomData;
 
-use crate::dense::{
-    array::{Array, Shape, UnsafeRandomAccessByValue},
-    traits::UnsafeRandom1DAccessByValue,
+use crate::{
+    dense::{
+        array::{Array, Shape, UnsafeRandomAccessByValue},
+        traits::UnsafeRandom1DAccessByValue,
+    },
+    BaseItem,
 };
 
 /// Array to complex
@@ -23,13 +26,16 @@ impl<Target, ArrayImpl, const NDIM: usize> ArrayCast<Target, ArrayImpl, NDIM> {
     }
 }
 
+impl<Target, ArrayImpl, const NDIM: usize> BaseItem for ArrayCast<Target, ArrayImpl, NDIM> {
+    type Item = Target;
+}
+
 impl<Target, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize>
     UnsafeRandomAccessByValue<NDIM> for ArrayCast<Target, ArrayImpl, NDIM>
 where
     ArrayImpl::Item: num::NumCast,
     Target: num::NumCast,
 {
-    type Item = Target;
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_unchecked(multi_index)).unwrap()
@@ -57,8 +63,6 @@ where
     ArrayImpl::Item: num::NumCast,
     Target: num::NumCast,
 {
-    type Item = Target;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_1d_unchecked(index)).unwrap()

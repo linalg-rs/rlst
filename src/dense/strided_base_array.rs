@@ -9,6 +9,7 @@ use crate::dense::traits::{
     RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,
 };
+use crate::BaseItem;
 
 use super::data_container::{
     MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer, RefDataContainerMut,
@@ -45,6 +46,10 @@ impl<Data: DataContainer, const NDIM: usize> StridedBaseArray<Data, NDIM> {
     }
 }
 
+impl<Data: DataContainer, const NDIM: usize> BaseItem for StridedBaseArray<Data, NDIM> {
+    type Item = Data::Item;
+}
+
 impl<Data: DataContainer, const NDIM: usize> Shape<NDIM> for StridedBaseArray<Data, NDIM> {
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
@@ -55,8 +60,6 @@ impl<Data: DataContainer, const NDIM: usize> Shape<NDIM> for StridedBaseArray<Da
 impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -68,8 +71,6 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
 impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -81,8 +82,6 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM
 impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape))
@@ -92,8 +91,6 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
 impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         self.get_unchecked(convert_1d_nd_from_shape(index, self.shape))
@@ -103,8 +100,6 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
 impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape))
@@ -114,8 +109,6 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
 impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
@@ -125,8 +118,6 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
 }
 
 impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for StridedBaseArray<Data, NDIM> {
-    type Item = Data::Item;
-
     fn data(&self) -> &[Self::Item] {
         self.data.data()
     }
@@ -135,8 +126,6 @@ impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for StridedBaseA
 impl<Data: MutableRawAccessDataContainer, const NDIM: usize> RawAccessMut
     for StridedBaseArray<Data, NDIM>
 {
-    type Item = Data::Item;
-
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data.data_mut()
     }
