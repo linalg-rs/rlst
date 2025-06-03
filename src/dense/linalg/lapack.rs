@@ -5,9 +5,12 @@ pub mod lu;
 
 use inverse::LapackInverse;
 
-use crate::dense::{
-    array::Array,
-    traits::{RawAccess, RawAccessMut, Shape, Stride},
+use crate::{
+    dense::{
+        array::Array,
+        traits::{RawAccess, RawAccessMut, Shape, Stride},
+    },
+    BaseItem,
 };
 
 /// Return a triple (m, n, lda) for the Lapack interface.
@@ -31,28 +34,47 @@ where
     (m, n, lda)
 }
 
-/// A wrapper for LAPACK operations on a 2D array.
-pub struct LapackWrapper<Item, ArrayImpl> {
-    arr: Array<ArrayImpl, 2>,
+/// A wrapper for LAPACK operations on a non-mutable 2D array
+pub struct LapackWrapper<'a, Item> {
+    data: &'a [Item],
     m: i32,
     n: i32,
     lda: i32,
-    _marker: std::marker::PhantomData<Item>,
 }
 
-impl<Item, ArrayImpl> LapackWrapper<Item, ArrayImpl>
+/// A wrapper for LAPACK operations on a mutable 2D array.
+pub struct LapackWrapperMut<'a, Item> {
+    data: &'a mut [Item],
+    m: i32,
+    n: i32,
+    lda: i32,
+}
+
+pub trait LapackOperationsMut
 where
-    ArrayImpl: Shape<2> + Stride<2>,
+    for<'a> LapackWrapperMut<'a, Self::Item>: LapackInverse,
 {
-    /// Create a new `LapackWrapper` from an array.
-    pub fn new(arr: Array<ArrayImpl, 2>) -> Self {
-        let (m, n, lda) = lapack_dims(&arr);
-        Self {
-            arr,
+    /// The item type contained in the array.
+    type Item;
+
+    /// Interface to LAPACK operations.
+    fn lapack_mut(&mut self) -> LapackWrapperMut<'_, Self::Item>;
+}
+
+impl<Item, ArrayImpl> LapackOperationsMut for Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Item>,
+    for<'a> LapackWrapperMut<'a, Item>: LapackInverse,
+{
+    type Item = Item;
+
+    fn lapack_mut(&mut self) -> LapackWrapperMut<'_, Self::Item> {
+        let (m, n, lda) = lapack_dims(self);
+        LapackWrapperMut {
+            data: self.data_mut(),
             m,
             n,
             lda,
-            _marker: std::marker::PhantomData,
         }
     }
 }
