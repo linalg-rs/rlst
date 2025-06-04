@@ -112,7 +112,7 @@ pub trait RawAccess: BaseItem {
 }
 
 /// Get mutable raw access to the underlying data.
-pub trait RawAccessMut: BaseItem {
+pub trait RawAccessMut: RawAccess {
     /// Get a mutable slice of the whole data.
     fn data_mut(&mut self) -> &mut [Self::Item];
 }

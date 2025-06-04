@@ -70,7 +70,7 @@ pub trait RawAccessDataContainer: DataContainer {
 }
 
 /// Definition of a data container that allows raw access.
-pub trait MutableRawAccessDataContainer: DataContainer {
+pub trait MutableRawAccessDataContainer: RawAccessDataContainer {
     /// Return a raw pointer to the data.
     fn data_mut(&mut self) -> &mut [Self::Item];
 }

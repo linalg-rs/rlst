@@ -1,7 +1,7 @@
 //! Matrix inverse.
 //!
 //!
-use super::LapackWrapperMut;
+use super::LapackWrapper;
 use crate::dense::traits::{RawAccessMut, Shape, Stride};
 use crate::{
     dense::types::{c32, c64, RlstError, RlstResult, RlstScalar},
@@ -18,12 +18,13 @@ pub trait LapackInverse {
 
 macro_rules! impl_inverse {
     ($scalar:ty, $getrf: expr, $getri:expr) => {
-        impl LapackInverse for LapackWrapperMut<'_, $scalar> {
+        impl<ArrayImpl> LapackInverse for LapackWrapper<$scalar, ArrayImpl>
+        where
+            ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = $scalar>,
+        {
             /// Compute the matrix inverse in place.
             fn inverse(&mut self) -> RlstResult<()> {
-                let (m, n, lda) = (self.m, self.n, self.lda);
-
-                assert!(self.m * self.n != 0, "Matrix is empty.");
+                let (m, n, lda) = self.lapack_dims();
 
                 assert_eq!(m, n);
 
@@ -34,13 +35,13 @@ macro_rules! impl_inverse {
 
                 let mut info = 0;
 
-                unsafe { $getrf(m, m, self.data, lda, &mut ipiv, &mut info) }
+                unsafe { $getrf(m, m, self.data_mut(), lda, &mut ipiv, &mut info) }
 
                 if info != 0 {
                     return Err(RlstError::LapackError(info));
                 }
 
-                unsafe { $getri(n, self.data, lda, &ipiv, &mut work, lwork, &mut info) };
+                unsafe { $getri(n, self.data_mut(), lda, &ipiv, &mut work, lwork, &mut info) };
 
                 if info != 0 {
                     return Err(RlstError::LapackError(info));
@@ -50,7 +51,7 @@ macro_rules! impl_inverse {
 
                 let mut work = vec![<$scalar as Zero>::zero(); lwork as usize];
 
-                unsafe { $getri(n, self.data, lda, &ipiv, &mut work, lwork, &mut info) };
+                unsafe { $getri(n, self.data_mut(), lda, &ipiv, &mut work, lwork, &mut info) };
 
                 if info != 0 {
                     Err(RlstError::LapackError(info))

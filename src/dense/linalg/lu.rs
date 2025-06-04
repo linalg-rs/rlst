@@ -374,6 +374,6 @@ macro_rules! impl_lu {
 }
 
 impl_lu!(f64, dgetrf, dgetrs);
-// impl_lu!(f32, sgetrf, sgetrs);
-// impl_lu!(c64, zgetrf, zgetrs);
-// impl_lu!(c32, cgetrf, cgetrs);
+impl_lu!(f32, sgetrf, sgetrs);
+impl_lu!(c64, zgetrf, zgetrs);
+impl_lu!(c32, cgetrf, cgetrs);
