@@ -72,3 +72,24 @@ pub enum TransMode {
     /// Conjugate transpose of matrix.
     ConjTrans,
 }
+
+// The following is a workaround to allow for implied trait bounds on associated types.
+// A full descripton can be found at: https://docs.rs/imply-hack/latest/imply_hack/index.html
+
+/// Trait to specify associated bounds as super trait bounds.
+/// This allows the bounds to be implied and not explicitly stated in the type signature.
+/// See the [imply-hack](https://docs.rs/imply-hack/latest/imply_hack/index.html) crate for more
+/// details.
+pub trait Imply<T>: sealed::ImplyInner<T, Is = T> {}
+
+impl<T, U> Imply<T> for U {}
+
+mod sealed {
+    pub trait ImplyInner<T> {
+        type Is;
+    }
+
+    impl<T, U> ImplyInner<T> for U {
+        type Is = T;
+    }
+}

@@ -8,8 +8,9 @@ use lu::{ComputedLu, LapackLu, LuDecomposition};
 
 use crate::{
     dense::{
-        array::Array,
+        array::{Array, DynArray},
         traits::{RawAccess, RawAccessMut, Shape, Stride},
+        types::Imply,
     },
     BaseItem,
 };
@@ -36,10 +37,7 @@ where
 }
 
 /// A wrapper for LAPACK operations.
-pub struct LapackWrapper<Item, ArrayImpl>
-where
-    ArrayImpl: BaseItem<Item = Item> + Shape<2> + Stride<2>,
-{
+pub struct LapackWrapper<Item, ArrayImpl> {
     arr: Array<ArrayImpl, 2>,
     _marker: std::marker::PhantomData<Item>,
 }
@@ -103,30 +101,39 @@ where
     }
 }
 
-/// Interface to Lapack.
-pub trait LapackOperations
-where
-    LapackWrapper<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl>: LapackInverse
-        + LapackLu<Item = <Self::ArrayImpl as BaseItem>::Item, ArrayImpl = Self::ArrayImpl>,
-    LuDecomposition<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl>:
-        ComputedLu<Item = <Self::ArrayImpl as BaseItem>::Item, ArrayImpl = Self::ArrayImpl>,
-{
+/// Conversion trait of an array into a LAPACK wrapper that supports implemented LAPACK operations.
+pub trait LapackOperations {
     /// The array implementation type.
-    type ArrayImpl: Shape<2> + Stride<2> + RawAccessMut;
+    type ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Self::Item>;
+
+    /// The item type of the array.
+    type Item;
+
+    /// The output type that implements LAPACK operations.
+    type Output: LapackLu<Output = LuDecomposition<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl>>
+        + LapackInverse;
 
     /// Interface to LAPACK operations.
-    fn lapack(self) -> LapackWrapper<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl>;
+    fn lapack(self) -> Self::Output;
 }
 
 impl<Item, ArrayImpl> LapackOperations for Array<ArrayImpl, 2>
 where
     ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Item>,
-    LapackWrapper<Item, ArrayImpl>: LapackInverse + LapackLu<Item = Item, ArrayImpl = ArrayImpl>,
-    LuDecomposition<Item, ArrayImpl>: ComputedLu<Item = Item, ArrayImpl = ArrayImpl>,
+    LapackWrapper<Item, ArrayImpl>:
+        LapackInverse + LapackLu<Output = LuDecomposition<Item, ArrayImpl>> + LapackInverse,
 {
+    type Item = Item;
+
+    type ArrayImpl = ArrayImpl;
+
+    type Output = LapackWrapper<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl>;
+
     fn lapack(self) -> LapackWrapper<<Self::ArrayImpl as BaseItem>::Item, Self::ArrayImpl> {
         LapackWrapper::new(self)
     }
+}
 
-    type ArrayImpl = ArrayImpl;
+pub fn get_lapack_wrapper<Arr: LapackOperations>(arr: Arr) -> <Arr as LapackOperations>::Output {
+    arr.lapack()
 }

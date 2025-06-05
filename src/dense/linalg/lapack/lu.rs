@@ -5,7 +5,7 @@ use lapack::{cgetrf, cgetrs, dgetrf, dgetrs, sgetrf, sgetrs, zgetrf, zgetrs};
 use super::{lapack_dims, LapackWrapper};
 
 use crate::dense::array::DynArray;
-use crate::dense::types::{c32, c64, TransMode};
+use crate::dense::types::{c32, c64, Imply, TransMode};
 
 use crate::dense::types::{RlstError, RlstResult};
 use crate::{Array, RawAccess, RawAccessMut, Shape, Stride};
@@ -15,19 +15,12 @@ use crate::dense::traits::UnsafeRandomAccessMut;
 use num::One;
 
 /// A trait for computing the LU decomposition of a matrix in place.
-pub trait LapackLu
-where
-    LuDecomposition<Self::Item, Self::ArrayImpl>:
-        ComputedLu<Item = Self::Item, ArrayImpl = Self::ArrayImpl>,
-{
-    /// The item type.
-    type Item;
-
-    /// The item type contained in the matrix.
-    type ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Self::Item>;
+pub trait LapackLu {
+    /// Output type of the LU decomposition.
+    type Output: ComputedLu;
 
     /// Compute the LU Decomposition of the matrix.
-    fn lu(self) -> RlstResult<LuDecomposition<Self::Item, Self::ArrayImpl>>;
+    fn lu(self) -> RlstResult<Self::Output>;
 }
 
 /// Trait for functions on a computed LU decomposition.
@@ -95,9 +88,7 @@ macro_rules! implement_lu {
         where
             ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = $scalar>,
         {
-            type Item = $scalar;
-
-            type ArrayImpl = ArrayImpl;
+            type Output = LuDecomposition<$scalar, ArrayImpl>;
 
             fn lu(mut self) -> RlstResult<LuDecomposition<$scalar, ArrayImpl>> {
                 let (m, n, lda) = self.lapack_dims();
