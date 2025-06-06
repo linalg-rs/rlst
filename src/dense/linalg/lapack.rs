@@ -2,6 +2,9 @@
 
 pub mod inverse;
 pub mod lu;
+pub mod qr;
+
+pub mod interface;
 
 use inverse::LapackInverse;
 use lu::{ComputedLu, LapackLu, LuDecomposition};
