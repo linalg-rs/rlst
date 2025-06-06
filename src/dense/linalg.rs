@@ -6,6 +6,7 @@ use crate::{
 
 use self::lu::MatrixLu;
 
+pub mod givens_rotation;
 pub mod interpolative_decomposition;
 pub mod inverse;
 pub mod lu;

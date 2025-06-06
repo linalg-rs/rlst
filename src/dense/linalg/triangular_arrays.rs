@@ -1,4 +1,4 @@
-//! Interpolative decomposition of a matrix.
+//! Triangular matrix object.
 use crate::dense::array::Array;
 use crate::dense::traits::{
     RandomAccessByRef, RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue,

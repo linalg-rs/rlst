@@ -62,6 +62,7 @@ pub use crate::dense::data_container::{
 
 pub use crate::dense::array::empty_axis::AxisPosition;
 
+pub use crate::dense::linalg::givens_rotation::{GivensRotations, GivensRotationsData};
 pub use crate::dense::linalg::interpolative_decomposition::{IdDecomposition, MatrixId};
 pub use crate::dense::linalg::inverse::MatrixInverse;
 pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};

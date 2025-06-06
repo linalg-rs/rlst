@@ -5,22 +5,12 @@ use crate::operator::{
     zero_element, AsApply, ElementImpl, ElementType, InnerProductSpace, Operator,
 };
 use crate::{
-    rlst_dynamic_array2, DefaultIteratorMut, Element, ElementContainer, LinearSpace, OperatorBase,
-    RawAccess, TriangularMatrix, TriangularOperations, TriangularType, VectorFrame,
+    rlst_dynamic_array2, DefaultIteratorMut, Element, ElementContainer, GivensRotations,
+    GivensRotationsData, LinearSpace, OperatorBase, RawAccess, TriangularMatrix,
+    TriangularOperations, TriangularType, VectorFrame,
 };
 use core::f64;
 use std::cmp::min;
-
-fn generate_givens<Item: RlstScalar>(a: Item, b: Item) -> (Item, Item, Item) {
-    if b == num::Zero::zero() {
-        (num::One::one(), num::Zero::zero(), num::One::one())
-    } else {
-        let r = (a * a + b * b).sqrt();
-        let c = a / r;
-        let s = b / r;
-        (c, s, r)
-    }
-}
 
 /// Iteration for GMRES
 pub struct GmresIteration<
@@ -61,6 +51,7 @@ where
     Space: LinearSpace,
     TriangularMatrix<<Space as LinearSpace>::F>:
         TriangularOperations<Item = <Space as LinearSpace>::F>,
+    GivensRotationsData<<Space as LinearSpace>::F>: GivensRotations<<Space as LinearSpace>::F>,
 {
     /// Create a new GMRES iteration
     pub fn new(op: Operator<OpImpl>, rhs: Element<Container>, dim: usize) -> Self {
@@ -169,9 +160,8 @@ where
         let mut presid = num::Zero::zero();
 
         let mut h = rlst_dynamic_array2!(Field<Space::F>, [self.restart, self.restart + 1]);
-        let mut givens = rlst_dynamic_array2!(Field<Space::F>, [self.restart, 2]);
 
-        let mut g = vec![<Field<Space::F> as num::Zero>::zero(); self.restart + 1];
+        let mut y = vec![<Field<Space::F> as num::Zero>::zero(); self.restart + 1];
         let mut res = self.rhs.duplicate();
 
         let mut res_norm = num::Zero::zero();
@@ -180,6 +170,8 @@ where
         let mut inner_iter = 0;
 
         for iteration in 0..self.max_iter {
+            let mut givens_rotations =
+                <GivensRotationsData<Space::F> as GivensRotations<Space::F>>::new();
             let mut v = VectorFrame::default();
             if iteration == 0 {
                 res = res.r() - self.operator.apply(self.x.r(), crate::TransMode::NoTrans);
@@ -204,7 +196,7 @@ where
             res.scale_inplace(alpha);
             v.push(res.duplicate());
 
-            g[0] = Space::F::from_real(tmp);
+            y[0] = Space::F::from_real(tmp);
 
             let mut inner = 0;
 
@@ -242,25 +234,22 @@ where
 
                 for i in 0..it_count {
                     let h_col = &mut [h.r()[[it_count, i]], h.r()[[it_count, i + 1]]];
-                    let c = givens.r()[[i, 0]];
-                    let s = givens.r()[[i, 1]];
-                    let n0 = h_col[0];
-                    let n1 = h_col[1];
-                    h.r_mut()[[it_count, i]] = c * n0 + s * n1;
-                    h.r_mut()[[it_count, i + 1]] = -s.conj() * n0 + c * n1;
+                    givens_rotations.apply_rotation(h_col, i);
+                    h.r_mut()[[it_count, i]] = h_col[0];
+                    h.r_mut()[[it_count, i + 1]] = h_col[1];
                 }
 
-                let (c, s, mag) =
-                    generate_givens(h.r()[[it_count, it_count]], h.r()[[it_count, it_count + 1]]);
+                givens_rotations.add(h.r()[[it_count, it_count]], h.r()[[it_count, it_count + 1]]);
 
-                givens.r_mut()[[it_count, 0]] = c;
-                givens.r_mut()[[it_count, 1]] = s;
-                h.r_mut()[[it_count, it_count]] = mag;
+                let (c, s, r) = givens_rotations.get_last();
+
+                h.r_mut()[[it_count, it_count]] = r;
                 h.r_mut()[[it_count, it_count + 1]] = num::Zero::zero();
 
-                let tmp = -s.conj() * g[it_count];
-                g[it_count] = c * g[it_count];
-                g[it_count + 1] = tmp;
+                let c = <Space::F as RlstScalar>::from_real(c);
+                let tmp = -s.conj() * y[it_count];
+                y[it_count] = c * y[it_count];
+                y[it_count + 1] = tmp;
                 presid = tmp.abs();
                 inner_iter += 1;
 
@@ -280,13 +269,13 @@ where
                 }
             }
 
-            let mut g_aux = vec![<Field<Space::F> as num::Zero>::zero(); inner + 1];
+            let mut y_aux = vec![<Field<Space::F> as num::Zero>::zero(); inner + 1];
             if h.r()[[inner, inner]] == num::Zero::zero() {
-                g[inner] = num::Zero::zero();
+                y[inner] = num::Zero::zero();
             }
 
             for k in 0..inner + 1 {
-                g_aux[k] = g[k];
+                y_aux[k] = y[k];
             }
 
             let h_t = TriangularMatrix::new(
@@ -297,7 +286,7 @@ where
 
             let mut g_solve = rlst_dynamic_array2!(Field<Space::F>, [inner + 1, 1]);
 
-            for (item, other_item) in g_solve.iter_mut().zip(g_aux[0..inner + 1].iter()) {
+            for (item, other_item) in g_solve.iter_mut().zip(y_aux[0..inner + 1].iter()) {
                 *item = *other_item;
             }
             h_t.solve(&mut g_solve, crate::Side::Left, crate::TransMode::Trans);
