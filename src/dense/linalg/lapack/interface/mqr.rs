@@ -154,11 +154,7 @@ macro_rules! implement_mqr {
                     ldc * n
                 );
 
-                let trans = match trans {
-                    MqrTransMode::NoTranspose => b'N',
-                    MqrTransMode::ConjugateTranspose => b'T',
-                };
-
+                let trans = <$scalar as TransposeToChar>::to_char(trans);
                 let mut work = [<$scalar>::zero(); 1];
 
                 unsafe {
