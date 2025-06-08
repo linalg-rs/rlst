@@ -8,6 +8,8 @@ pub use rlst_num::*;
 
 use thiserror::Error;
 
+use super::linalg::lapack::interface::LapackError;
+
 /// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
@@ -39,7 +41,7 @@ pub enum RlstError {
     IncompatibleStride,
     /// Lapack error
     #[error("Lapack error: {0}")]
-    LapackError(i32),
+    LapackError(#[from] LapackError),
     /// General error
     #[error("{0}")]
     GeneralError(String),

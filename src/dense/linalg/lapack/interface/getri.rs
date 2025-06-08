@@ -61,7 +61,7 @@ macro_rules! implement_getri {
                 let lwork = work[0].re() as i32;
 
                 if info != 0 {
-                    return lapack_return(info, ());
+                    return Err(LapackError::LapackInfoCode(info));
                 }
 
                 let mut work = vec![<$scalar>::zero(); lwork as usize];

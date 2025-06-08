@@ -2,6 +2,9 @@ pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
 use thiserror::Error;
 
+pub mod geqp3;
+pub mod geqrf;
+pub mod gesvd;
 pub mod getrf;
 pub mod getri;
 pub mod getrs;
@@ -50,7 +53,8 @@ pub enum LapackError {
 /// Alias for a Lapack Result type.
 pub type LapackResult<T> = std::result::Result<T, LapackError>;
 
-pub fn lapack_return<T>(info: i32, result: T) -> LapackResult<T> {
+/// Helper function to convert LAPACK info codes to a `LapackResult`.
+pub(crate) fn lapack_return<T>(info: i32, result: T) -> LapackResult<T> {
     if info == 0 {
         Ok(result)
     } else {

@@ -24,34 +24,24 @@ pub trait Getrf: Sized {
 macro_rules! impl_getrf {
     ($scalar:ty, $getrf:expr) => {
         impl Getrf for $scalar {
-
-            fn getrf(
-                m: usize,
-                n: usize,
-                a: &mut [$scalar],
-                lda: usize,
-            ) -> LapackResult<Vec<i32>> {
+            fn getrf(m: usize, n: usize, a: &mut [$scalar], lda: usize) -> LapackResult<Vec<i32>> {
                 let k = std::cmp::min(m, n);
                 let mut ipiv = vec![0 as i32; k];
                 let mut info = 0;
 
-                assert!(lda >= std::cmp::max(1, m), "Require `lda` {} >= `max(1, M)` {} .", lda, std::cmp::max(1, m));
-                assert_eq!(
-                    a.len(),
-                    lda * m,
-                    "Require `a.len()` {} == `lda * m` {}.",
-                    a.len(),
-                    lda * m,
+                assert!(
+                    lda >= std::cmp::max(1, m),
+                    "Require `lda` {} >= `max(1, M)` {} .",
+                    lda,
+                    std::cmp::max(1, m)
                 );
-
                 assert_eq!(
                     a.len(),
                     lda * n,
-                    "The length of the matrix `a` must be equal to `lda * n`.: a.len {} != {} lda * n",
+                    "Require `a.len()` {} == `lda * n` {}.",
                     a.len(),
                     lda * n,
                 );
-
 
                 unsafe {
                     $getrf(m as i32, n as i32, a, lda as i32, &mut ipiv, &mut info);
