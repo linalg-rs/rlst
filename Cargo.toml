@@ -24,6 +24,7 @@ rand_distr = "0.4"
 itertools = "0.14"
 blas = "0.22"
 lapack = "0.19"
+lapack-sys = { git = "https://github.com/ignacia-fp/lapack-sys", rev = "35ac4ab6811252772d28185b5c3dbfef82188c6b" }
 thiserror = "2"
 serde = "1"
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }

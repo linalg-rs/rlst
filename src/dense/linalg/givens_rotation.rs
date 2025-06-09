@@ -1,29 +1,68 @@
 //! Givens rotations
 use crate::RlstScalar;
 use num::Complex;
+use lapack::{slartgp, dlartgp};
 
-// We expose the relevant LAPACK givens rotations
-extern "C" {
-    /// LAPACK Givens rotation for single precision
-    pub fn slartg(f: *const f32, g: *const f32, c: *mut f32, s: *mut f32, r: *mut f32);
-    /// LAPACK Givens rotation for double precision
-    pub fn dlartg(f: *const f64, g: *const f64, c: *mut f64, s: *mut f64, r: *mut f64);
-    /// LAPACK Givens rotation for complex single precision
-    pub fn clartg(
-        f: *const Complex<f32>,
-        g: *const Complex<f32>,
-        c: *mut f32,
-        s: *mut Complex<f32>,
-        r: *mut Complex<f32>,
-    );
-    /// LAPACK Givens rotation for complex double precision
-    pub fn zlartg(
-        f: *const Complex<f64>,
-        g: *const Complex<f64>,
-        c: *mut f64,
-        s: *mut Complex<f64>,
-        r: *mut Complex<f64>,
-    );
+#[inline]
+unsafe fn zlartg(
+    f: &[Complex<f64>],
+    g: &[Complex<f64>],
+    cs: &mut [f64],
+    sn: &mut [Complex<f64>],
+    r: &mut [Complex<f64>],
+) {
+    use lapack_sys::__BindgenComplex;
+
+    assert_eq!(f.len(), 1);
+    assert_eq!(g.len(), 1);
+    assert_eq!(cs.len(), 1);
+    assert_eq!(sn.len(), 1);
+    assert_eq!(r.len(), 1);
+
+    let f_ptr = f.as_ptr() as *const __BindgenComplex<f64>;
+    let g_ptr = g.as_ptr() as *const __BindgenComplex<f64>;
+    let cs_ptr = cs.as_mut_ptr();
+    let sn_ptr = sn.as_mut_ptr() as *mut __BindgenComplex<f64>;
+    let r_ptr = r.as_mut_ptr() as *mut __BindgenComplex<f64>;
+
+    lapack_sys::zlartg_(
+        f_ptr,
+        g_ptr,
+        cs_ptr,
+        sn_ptr,
+        r_ptr,
+    )
+}
+
+#[inline]
+unsafe fn clartg(
+    f: &[Complex<f32>],
+    g: &[Complex<f32>],
+    cs: &mut [f32],
+    sn: &mut [Complex<f32>],
+    r: &mut [Complex<f32>],
+) {
+    use lapack_sys::__BindgenComplex;
+
+    assert_eq!(f.len(), 1);
+    assert_eq!(g.len(), 1);
+    assert_eq!(cs.len(), 1);
+    assert_eq!(sn.len(), 1);
+    assert_eq!(r.len(), 1);
+
+    let f_ptr = f.as_ptr() as *const __BindgenComplex<f32>;
+    let g_ptr = g.as_ptr() as *const __BindgenComplex<f32>;
+    let cs_ptr = cs.as_mut_ptr();
+    let sn_ptr = sn.as_mut_ptr() as *mut __BindgenComplex<f32>;
+    let r_ptr = r.as_mut_ptr() as *mut __BindgenComplex<f32>;
+
+    lapack_sys::clartg_(
+        f_ptr,
+        g_ptr,
+        cs_ptr,
+        sn_ptr,
+        r_ptr,
+    )
 }
 
 /// This structure stores a set of Givens rotations extracted from matrix
@@ -67,15 +106,24 @@ macro_rules! impl_givens_rot {
             fn add(&mut self, f: $scalar, g: $scalar) {
                 match f.is_finite() && g.is_finite() {
                     true => {
-                        let (mut c, mut s, mut r) =
-                            (num::Zero::zero(), num::Zero::zero(), num::Zero::zero());
+                        let mut c = [num::Zero::zero()];
+                        let mut s = [num::Zero::zero()];
+                        let mut r = [num::Zero::zero()];
+                        let f_arr = [f];
+                        let g_arr = [g];
                         unsafe {
-                            $lartg(&f, &g, &mut c, &mut s, &mut r);
+                            $lartg(
+                                &f_arr,
+                                &g_arr,
+                                &mut c,
+                                &mut s,
+                                &mut r,
+                            );
                         }
 
-                        self.c.push(c);
-                        self.s.push(s);
-                        self.r.push(r);
+                        self.c.push(c[0]);
+                        self.s.push(s[0]);
+                        self.r.push(r[0]);
                     }
                     _ => panic!("At least one value in the Givens rotation is not finite."),
                 }
@@ -105,7 +153,7 @@ macro_rules! impl_givens_rot {
 }
 
 // Implementations of the trait for different types
-impl_givens_rot!(f32, slartg);
-impl_givens_rot!(f64, dlartg);
+impl_givens_rot!(f32, slartgp);
+impl_givens_rot!(f64, dlartgp);
 impl_givens_rot!(Complex<f32>, clartg);
 impl_givens_rot!(Complex<f64>, zlartg);
