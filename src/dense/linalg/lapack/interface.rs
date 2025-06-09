@@ -12,6 +12,7 @@ pub mod getri;
 pub mod getrs;
 pub mod mqr;
 pub mod orgqr;
+pub mod potrf;
 
 /// Basic dimension type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -156,7 +156,7 @@ macro_rules! implement_gels {
                     );
                 }
 
-                Ok(())
+                lapack_return(info, ())
             }
         }
     };
