@@ -5,7 +5,7 @@ use super::interface::getrf::Getrf;
 use super::interface::getri::Getri;
 use crate::dense::array::DynArray;
 use crate::dense::linalg::traits::Inverse;
-use crate::dense::traits::{RawAccessMut, Shape, Stride};
+use crate::dense::traits::{RawAccessMut, Shape};
 use crate::dense::types::RlstResult;
 use crate::{Array, BaseItem, FillFromResize};
 

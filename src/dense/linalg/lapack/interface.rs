@@ -2,6 +2,7 @@ pub use num::complex::Complex32 as c32;
 pub use num::complex::Complex64 as c64;
 use thiserror::Error;
 
+pub mod gels;
 pub mod geqp3;
 pub mod geqrf;
 pub mod gesdd;
@@ -10,6 +11,7 @@ pub mod getrf;
 pub mod getri;
 pub mod getrs;
 pub mod mqr;
+pub mod orgqr;
 
 /// Basic dimension type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

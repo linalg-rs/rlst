@@ -4,9 +4,7 @@ use lapack::{cgetrs, dgetrs, sgetrs, zgetrs};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use super::{c32, c64, LapackError, LapackResult};
-
-use num::{complex::ComplexFloat, Zero};
+use super::{c32, c64, LapackResult};
 
 /// Transpose modes for the `?getrs` function.
 #[derive(Clone, Copy)]

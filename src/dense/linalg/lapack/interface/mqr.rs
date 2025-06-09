@@ -4,7 +4,7 @@
 //! Note: This trait implements the functionality of ?ormqr for real matrices and ?unmqr for
 //! complex matrices.
 
-use lapack::{cgetrs, cunmqr, dgetrs, dormqr, sgetrs, sormqr, zgetrs, zunmqr};
+use lapack::{cunmqr, dormqr, sormqr, zunmqr};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
@@ -23,6 +23,7 @@ pub enum MqrTransMode {
     ConjugateTranspose,
 }
 
+/// Apply Q or Q^H from the left or right.
 #[derive(Clone, Copy)]
 #[repr(u8)]
 pub enum MqrSide {
