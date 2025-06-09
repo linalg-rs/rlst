@@ -13,7 +13,7 @@ use crate::dense::types::TransMode;
 
 use crate::dense::types::RlstResult;
 use crate::{
-    Array, BaseItem, FillFromResize, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
+    Array, BaseItem, FillFromResize, RawAccess, RawAccessMut, RlstScalar, Shape,
     UnsafeRandomAccessMut,
 };
 
@@ -28,8 +28,9 @@ where
     fn lu(&self) -> RlstResult<Self::Output> {
         let mut lu_mat = DynArray::new_from(self);
         let (m, n, lda) = (lu_mat.shape()[0], lu_mat.shape()[1], lu_mat.shape()[0]);
+        let mut ipiv = vec![0 as i32; std::cmp::min(m, n)];
 
-        let ipiv = Item::getrf(m, n, lu_mat.data_mut(), lda)?;
+        Item::getrf(m, n, lu_mat.data_mut(), lda, &mut ipiv)?;
 
         Ok(LuDecomposition { lu: lu_mat, ipiv })
     }

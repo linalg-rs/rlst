@@ -12,14 +12,19 @@ use num::{complex::ComplexFloat, Zero};
 pub trait Geqrf: Sized {
     /// Perform QR factorization of a matrix `a` with dimensions `m` x `n`.
     ///
-    /// Returns a vector of elementary reflectors `tau`.:
-    fn geqp3(m: usize, n: usize, a: &mut [Self], lda: usize) -> LapackResult<Vec<Self>>;
+    fn geqp3(m: usize, n: usize, a: &mut [Self], lda: usize, tau: &mut [Self]) -> LapackResult<()>;
 }
 
 macro_rules! implement_geqrf {
     ($scalar:ty, $geqrf:expr) => {
         impl Geqrf for $scalar {
-            fn geqp3(m: usize, n: usize, a: &mut [Self], lda: usize) -> LapackResult<Vec<Self>> {
+            fn geqp3(
+                m: usize,
+                n: usize,
+                a: &mut [Self],
+                lda: usize,
+                tau: &mut [Self],
+            ) -> LapackResult<()> {
                 assert_eq!(
                     lda * n,
                     a.len(),
@@ -36,7 +41,13 @@ macro_rules! implement_geqrf {
                 );
                 let k = std::cmp::min(m, n);
 
-                let mut tau = vec![<$scalar>::zero(); k];
+                assert_eq!(
+                    tau.len(),
+                    k,
+                    "Require `tau.len()` {} == `min(m, n)` {}.",
+                    tau.len(),
+                    k
+                );
 
                 let mut info = 0;
 
@@ -44,7 +55,7 @@ macro_rules! implement_geqrf {
 
                 unsafe {
                     $geqrf(
-                        m as i32, n as i32, a, lda as i32, &mut tau, &mut work, -1, &mut info,
+                        m as i32, n as i32, a, lda as i32, tau, &mut work, -1, &mut info,
                     );
                 }
 
@@ -60,13 +71,13 @@ macro_rules! implement_geqrf {
                             n as i32,
                             a,
                             lda as i32,
-                            &mut tau,
+                            tau,
                             &mut work,
                             lwork as i32,
                             &mut info,
                         );
                     }
-                    lapack_return(info, tau)
+                    lapack_return(info, ())
                 }
             }
         }

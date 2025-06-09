@@ -11,22 +11,26 @@ use super::{c32, c64, LapackError, LapackResult};
 /// - `m`: Number of rows in the matrix `a`.
 /// - `n`: Number of columns in the matrix `a`.
 /// - `a`: The matrix to be factored, stored in column-major order.
+/// - `ipiv`: Output vector of pivot indices, which indicates the row swaps performed during.
+///           `ipiv` must have length `min(m, n)`.
 /// - `lda`: Leading dimension of the matrix `a`.
 ///
-/// **Returns:**
-/// - A result containing a vector `ipiv` of pivot indices if successful, or an error if the factorization
-/// fails.
 pub trait Getrf: Sized {
     /// Perform LU factorization of a matrix `a` with dimensions `m` x `n`.
-    fn getrf(m: usize, n: usize, a: &mut [Self], lda: usize) -> LapackResult<Vec<i32>>;
+    fn getrf(m: usize, n: usize, a: &mut [Self], lda: usize, ipiv: &mut [i32]) -> LapackResult<()>;
 }
 
 macro_rules! impl_getrf {
     ($scalar:ty, $getrf:expr) => {
         impl Getrf for $scalar {
-            fn getrf(m: usize, n: usize, a: &mut [$scalar], lda: usize) -> LapackResult<Vec<i32>> {
+            fn getrf(
+                m: usize,
+                n: usize,
+                a: &mut [$scalar],
+                lda: usize,
+                ipiv: &mut [i32],
+            ) -> LapackResult<()> {
                 let k = std::cmp::min(m, n);
-                let mut ipiv = vec![0 as i32; k];
                 let mut info = 0;
 
                 assert!(
@@ -43,14 +47,22 @@ macro_rules! impl_getrf {
                     lda * n,
                 );
 
+                assert_eq!(
+                    ipiv.len(),
+                    k,
+                    "Require `ipiv.len()` {} == `min(m, n)` {}.",
+                    ipiv.len(),
+                    k,
+                );
+
                 unsafe {
-                    $getrf(m as i32, n as i32, a, lda as i32, &mut ipiv, &mut info);
+                    $getrf(m as i32, n as i32, a, lda as i32, ipiv, &mut info);
                 }
 
                 if info != 0 {
                     Err(LapackError::LapackInfoCode(info))
                 } else {
-                    Ok(ipiv)
+                    Ok(())
                 }
             }
         }

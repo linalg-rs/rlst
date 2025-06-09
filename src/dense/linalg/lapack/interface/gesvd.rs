@@ -35,6 +35,9 @@ pub enum JobVt {
 /// ?gesvd - SVD factorization
 pub trait Gesvd: RlstScalar {
     /// Perform a singular value decomposition (SVD) of a matrix `a` with dimensions `m` x `n`.
+    /// If either `jobu` or `jobvt` is `JobU::N` or `JobVt::N`, the corresponding singular vectors
+    /// are not computed, and the array u or correspondingly vt is not referenced and can be
+    /// `None`.
     fn gesvd(
         jobu: JobU,
         jobvt: JobVt,
@@ -42,7 +45,12 @@ pub trait Gesvd: RlstScalar {
         n: usize,
         a: &mut [Self],
         lda: usize,
-    ) -> LapackResult<(Vec<Self::Real>, Option<Vec<Self>>, Option<Vec<Self>>)>;
+        s: &mut [Self::Real],
+        u: Option<&mut [Self]>,
+        ldu: usize,
+        vt: Option<&mut [Self]>,
+        ldvt: usize,
+    ) -> LapackResult<()>;
 }
 
 macro_rules! implement_gesvd {
@@ -55,7 +63,12 @@ macro_rules! implement_gesvd {
                 n: usize,
                 a: &mut [Self],
                 lda: usize,
-            ) -> LapackResult<(Vec<Self::Real>, Option<Vec<Self>>, Option<Vec<Self>>)> {
+                s: &mut [Self::Real],
+                u: Option<&mut [Self]>,
+                ldu: usize,
+                vt: Option<&mut [Self]>,
+                ldvt: usize,
+            ) -> LapackResult<()> {
                 assert_eq!(
                     a.len(),
                     lda * n,
@@ -71,25 +84,98 @@ macro_rules! implement_gesvd {
                     std::cmp::max(1, m)
                 );
 
-                let mut info = 0;
-
                 let k = std::cmp::min(m, n);
 
-                let (mut u, ldu) = match jobu {
-                    JobU::A => (vec![<$scalar>::zero(); m * m], m),
-                    JobU::S => (vec![<$scalar>::zero(); m * k], m),
-                    // Just a dummy array for when u is not referenced.
-                    JobU::N => (vec![<$scalar>::zero(); 1], 1),
+                assert_eq!(
+                    s.len(),
+                    k,
+                    "Require `s.len()` {} == `min(m, n)` {}.",
+                    s.len(),
+                    k,
+                );
+
+                let mut info = 0;
+
+                let mut u_temp = Vec::<$scalar>::new();
+                let mut vt_temp = Vec::<$scalar>::new();
+
+                let u = match jobu {
+                    JobU::A => {
+                        let u = u.expect("JobU::A requires u to be Some");
+                        assert_eq!(
+                            u.len(),
+                            ldu * m,
+                            "Require `u.len()` {} == `ldu * m` {}.",
+                            u.len(),
+                            ldu * m
+                        );
+
+                        assert!(
+                            ldu >= std::cmp::max(1, m),
+                            "Require `ldu` {} >= `max(1, m)` {}.",
+                            ldu,
+                            std::cmp::max(1, m)
+                        );
+                        u
+                    }
+                    JobU::S => {
+                        let u = u.expect("JobU::S requires u to be Some");
+                        assert_eq!(
+                            u.len(),
+                            ldu * k,
+                            "Require `u.len()` {} == `ldu * min(m, n)` {}.",
+                            u.len(),
+                            ldu * k
+                        );
+                        assert!(
+                            ldu >= std::cmp::max(1, m),
+                            "Require `ldu` {} >= `max(1, m)` {}.",
+                            ldu,
+                            std::cmp::max(1, m)
+                        );
+                        u
+                    }
+                    JobU::N => u_temp.as_mut_slice(),
                 };
 
-                let (mut vt, ldvt) = match jobvt {
-                    JobVt::A => (vec![<$scalar>::zero(); n * n], n),
-                    JobVt::S => (vec![<$scalar>::zero(); k * n], k),
-                    // Just a dummy array for when vt is not referenced.
-                    JobVt::N => (vec![<$scalar>::zero(); 1], 1),
-                };
+                let vt = match jobvt {
+                    JobVt::A => {
+                        let vt = vt.expect("JobVt::A requires vt to be Some");
+                        assert_eq!(
+                            vt.len(),
+                            ldvt * n,
+                            "Require `u.len()` {} == `ldvt * n` {}.",
+                            vt.len(),
+                            ldvt * n
+                        );
 
-                let mut s = vec![<$scalar>::zero(); k];
+                        assert!(
+                            ldvt >= std::cmp::max(1, n),
+                            "Require `ldvt` {} >= `max(1, n)` {}.",
+                            ldvt,
+                            std::cmp::max(1, k)
+                        );
+                        vt
+                    }
+                    JobVt::S => {
+                        let vt = vt.expect("JobVt::S requires u to be Some");
+                        assert_eq!(
+                            vt.len(),
+                            ldvt * n,
+                            "Require `vt.len()` {} == `ldvt * n` {}.",
+                            vt.len(),
+                            ldvt * n
+                        );
+                        assert!(
+                            ldvt >= std::cmp::max(1, k),
+                            "Require `ldvt` {} >= `max(1, min(m, n))` {}.",
+                            ldvt,
+                            std::cmp::max(1, k)
+                        );
+                        vt
+                    }
+                    JobVt::N => vt_temp.as_mut_slice(),
+                };
 
                 let mut work = vec![<$scalar>::zero(); 1];
 
@@ -101,10 +187,10 @@ macro_rules! implement_gesvd {
                         n as i32,
                         a,
                         lda as i32,
-                        &mut s,
-                        &mut u,
+                        s,
+                        u,
                         ldu as i32,
-                        &mut vt,
+                        vt,
                         ldvt as i32,
                         &mut work,
                         -1,
@@ -128,10 +214,10 @@ macro_rules! implement_gesvd {
                         n as i32,
                         a,
                         lda as i32,
-                        &mut s,
-                        &mut u,
+                        s,
+                        u,
                         ldu as i32,
-                        &mut vt,
+                        vt,
                         ldvt as i32,
                         &mut work,
                         lwork,
@@ -139,16 +225,7 @@ macro_rules! implement_gesvd {
                     );
                 }
 
-                let u = match jobu {
-                    JobU::N => None,
-                    _ => Some(u),
-                };
-                let vt = match jobvt {
-                    JobVt::N => None,
-                    _ => Some(vt),
-                };
-
-                lapack_return(info, (s, u, vt))
+                lapack_return(info, ())
             }
         }
     };
@@ -164,7 +241,12 @@ macro_rules! implement_gesvd_complex {
                 n: usize,
                 a: &mut [Self],
                 lda: usize,
-            ) -> LapackResult<(Vec<Self::Real>, Option<Vec<Self>>, Option<Vec<Self>>)> {
+                s: &mut [Self::Real],
+                u: Option<&mut [Self]>,
+                ldu: usize,
+                vt: Option<&mut [Self]>,
+                ldvt: usize,
+            ) -> LapackResult<()> {
                 assert_eq!(
                     a.len(),
                     lda * n,
@@ -180,30 +262,102 @@ macro_rules! implement_gesvd_complex {
                     std::cmp::max(1, m)
                 );
 
-                let mut info = 0;
-
                 let k = std::cmp::min(m, n);
 
-                let (mut u, ldu) = match jobu {
-                    JobU::A => (vec![<$scalar>::zero(); m * m], m),
-                    JobU::S => (vec![<$scalar>::zero(); m * k], m),
-                    // Just a dummy array for when u is not referenced.
-                    JobU::N => (vec![<$scalar>::zero(); 1], 1),
+                assert_eq!(
+                    s.len(),
+                    k,
+                    "Require `s.len()` {} == `min(m, n)` {}.",
+                    s.len(),
+                    k,
+                );
+
+                let mut info = 0;
+
+                let mut rwork = vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 5 * k];
+
+                let mut u_temp = Vec::<$scalar>::new();
+                let mut vt_temp = Vec::<$scalar>::new();
+
+                let u = match jobu {
+                    JobU::A => {
+                        let u = u.expect("JobU::A requires u to be Some");
+                        assert_eq!(
+                            u.len(),
+                            ldu * m,
+                            "Require `u.len()` {} == `ldu * m` {}.",
+                            u.len(),
+                            ldu * m
+                        );
+
+                        assert!(
+                            ldu >= std::cmp::max(1, m),
+                            "Require `ldu` {} >= `max(1, m)` {}.",
+                            ldu,
+                            std::cmp::max(1, m)
+                        );
+                        u
+                    }
+                    JobU::S => {
+                        let u = u.expect("JobU::S requires u to be Some");
+                        assert_eq!(
+                            u.len(),
+                            ldu * k,
+                            "Require `u.len()` {} == `ldu * min(m, n)` {}.",
+                            u.len(),
+                            ldu * k
+                        );
+                        assert!(
+                            ldu >= std::cmp::max(1, m),
+                            "Require `ldu` {} >= `max(1, m)` {}.",
+                            ldu,
+                            std::cmp::max(1, m)
+                        );
+                        u
+                    }
+                    JobU::N => u_temp.as_mut_slice(),
                 };
 
-                let (mut vt, ldvt) = match jobvt {
-                    JobVt::A => (vec![<$scalar>::zero(); n * n], n),
-                    JobVt::S => (vec![<$scalar>::zero(); k * n], k),
-                    // Just a dummy array for when vt is not referenced.
-                    JobVt::N => (vec![<$scalar>::zero(); 1], 1),
-                };
+                let vt = match jobvt {
+                    JobVt::A => {
+                        let vt = vt.expect("JobVt::A requires vt to be Some");
+                        assert_eq!(
+                            vt.len(),
+                            ldvt * n,
+                            "Require `u.len()` {} == `ldvt * n` {}.",
+                            vt.len(),
+                            ldvt * n
+                        );
 
-                let mut s = vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); k];
+                        assert!(
+                            ldvt >= std::cmp::max(1, n),
+                            "Require `ldvt` {} >= `max(1, n)` {}.",
+                            ldvt,
+                            std::cmp::max(1, k)
+                        );
+                        vt
+                    }
+                    JobVt::S => {
+                        let vt = vt.expect("JobVt::S requires u to be Some");
+                        assert_eq!(
+                            vt.len(),
+                            ldvt * n,
+                            "Require `vt.len()` {} == `ldvt * n` {}.",
+                            vt.len(),
+                            ldvt * n
+                        );
+                        assert!(
+                            ldvt >= std::cmp::max(1, k),
+                            "Require `ldvt` {} >= `max(1, min(m, n))` {}.",
+                            ldvt,
+                            std::cmp::max(1, k)
+                        );
+                        vt
+                    }
+                    JobVt::N => vt_temp.as_mut_slice(),
+                };
 
                 let mut work = vec![<$scalar>::zero(); 1];
-
-                let mut rwork =
-                    vec![<<$scalar as RlstScalar>::Real as Zero>::zero(); 5 * std::cmp::max(m, n)];
 
                 unsafe {
                     $gesvd(
@@ -213,10 +367,10 @@ macro_rules! implement_gesvd_complex {
                         n as i32,
                         a,
                         lda as i32,
-                        &mut s,
-                        &mut u,
+                        s,
+                        u,
                         ldu as i32,
-                        &mut vt,
+                        vt,
                         ldvt as i32,
                         &mut work,
                         -1,
@@ -241,10 +395,10 @@ macro_rules! implement_gesvd_complex {
                         n as i32,
                         a,
                         lda as i32,
-                        &mut s,
-                        &mut u,
+                        s,
+                        u,
                         ldu as i32,
-                        &mut vt,
+                        vt,
                         ldvt as i32,
                         &mut work,
                         lwork,
@@ -253,16 +407,7 @@ macro_rules! implement_gesvd_complex {
                     );
                 }
 
-                let u = match jobu {
-                    JobU::N => None,
-                    _ => Some(u),
-                };
-                let vt = match jobvt {
-                    JobVt::N => None,
-                    _ => Some(vt),
-                };
-
-                lapack_return(info, (s, u, vt))
+                lapack_return(info, ())
             }
         }
     };

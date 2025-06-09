@@ -4,6 +4,7 @@ use thiserror::Error;
 
 pub mod geqp3;
 pub mod geqrf;
+pub mod gesdd;
 pub mod gesvd;
 pub mod getrf;
 pub mod getri;
