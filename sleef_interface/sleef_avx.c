@@ -71,4 +71,29 @@ rlst_float32x8 rlst_avx_exp_f32(float* value) {
   return output;
 }
 
+rlst_float64x4 rlst_avx_log_f64(double* value) {
+
+  __m256d simd_value = _mm256_loadu_pd(value);
+  __m256d simd_output = Sleef_logd4_u10avx2(simd_value);
+  rlst_float64x4 output;
+
+  _mm256_storeu_pd (output.x, simd_output);
+  
+
+  return output;
+}
+
+rlst_float32x8 rlst_avx_log_f32(float* value) {
+
+  __m256 simd_value = _mm256_loadu_ps(value);
+  __m256 simd_output = Sleef_logf8_u10avx2(simd_value);
+  rlst_float32x8 output;
+
+  _mm256_storeu_ps (output.x, simd_output);
+  
+
+  return output;
+}
+
+
 
