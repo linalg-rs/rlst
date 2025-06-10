@@ -70,3 +70,28 @@ rlst_float32x4 rlst_neon_exp_f32(float* value) {
   return output;
 
 }
+
+rlst_float64x2 rlst_neon_log_f64(double* value) {
+
+  float64x2_t simd_value = vld1q_f64(value);
+  float64x2_t simd_output = Sleef_logd2_u10advsimd(simd_value);
+  rlst_float64x2 output;
+
+
+  vst1q_f64(output.x, simd_output);
+
+  return output;  
+}
+
+rlst_float32x4 rlst_neon_log_f32(float* value) {
+
+  float32x4_t simd_value = vld1q_f32(value);
+  float32x4_t simd_output = Sleef_logf4_u10advsimd(simd_value);
+  rlst_float32x4 output;
+
+
+  vst1q_f32(output.x, simd_output);
+
+  return output;
+
+}
