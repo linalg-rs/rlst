@@ -1,7 +1,28 @@
 //! Givens rotations
 use crate::RlstScalar;
 use num::Complex;
-use lapack::{slartgp, dlartgp};
+
+#[inline]
+unsafe fn dlartgp(f: &[f64], g: &[f64], cs: &mut [f64], sn: &mut [f64], r: &mut [f64]) {
+    lapack_sys::dlartgp_(
+        f.as_ptr(),
+        g.as_ptr(),
+        cs.as_mut_ptr(),
+        sn.as_mut_ptr(),
+        r.as_mut_ptr(),
+    )
+}
+
+#[inline]
+unsafe fn slartgp(f: &[f32], g: &[f32], cs: &mut [f32], sn: &mut [f32], r: &mut [f32]) {
+    lapack_sys::slartgp_(
+        f.as_ptr(),
+        g.as_ptr(),
+        cs.as_mut_ptr(),
+        sn.as_mut_ptr(),
+        r.as_mut_ptr(),
+    )
+}
 
 #[inline]
 unsafe fn zlartg(
