@@ -4,25 +4,44 @@ use num::Complex;
 
 #[inline]
 unsafe fn dlartgp(f: &[f64], g: &[f64], cs: &mut [f64], sn: &mut [f64], r: &mut [f64]) {
-    lapack_sys::dlartgp_(
-        f.as_ptr(),
-        g.as_ptr(),
-        cs.as_mut_ptr(),
-        sn.as_mut_ptr(),
-        r.as_mut_ptr(),
-    )
+    assert!(f.len() >= 1 && g.len() >= 1);
+    assert!(cs.len() >= 1 && sn.len() >= 1 && r.len() >= 1);
+
+    let a = f[0];
+    let b = g[0];
+
+    if b == 0.0 {
+        cs[0] = 1.0;
+        sn[0] = 0.0;
+        r[0] = a;
+    } else {
+        let rho = (a * a + b * b).sqrt();
+        cs[0] = a / rho;
+        sn[0] = b / rho;
+        r[0] = rho;
+    }
 }
 
 #[inline]
 unsafe fn slartgp(f: &[f32], g: &[f32], cs: &mut [f32], sn: &mut [f32], r: &mut [f32]) {
-    lapack_sys::slartgp_(
-        f.as_ptr(),
-        g.as_ptr(),
-        cs.as_mut_ptr(),
-        sn.as_mut_ptr(),
-        r.as_mut_ptr(),
-    )
+    assert!(f.len() >= 1 && g.len() >= 1);
+    assert!(cs.len() >= 1 && sn.len() >= 1 && r.len() >= 1);
+
+    let a = f[0];
+    let b = g[0];
+
+    if b == 0.0 {
+        cs[0] = 1.0;
+        sn[0] = 0.0;
+        r[0] = a;
+    } else {
+        let rho = (a * a + b * b).sqrt();
+        cs[0] = a / rho;
+        sn[0] = b / rho;
+        r[0] = rho;
+    }
 }
+
 
 #[inline]
 unsafe fn zlartg(

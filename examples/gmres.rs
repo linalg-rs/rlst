@@ -4,6 +4,51 @@ use rlst::operator::Operator;
 use rlst::{c64, rlst_dynamic_array2, zero_element, GmresIteration, OperatorBase, RawAccessMut};
 
 pub fn main() {
+
+    let mut mat = rlst_dynamic_array2!(f64, [5, 5]);
+    mat.r_mut()[[0, 0]] = 4.0;
+    mat.r_mut()[[0, 1]] = 1.0;
+
+    mat.r_mut()[[1, 0]] = 1.0;
+    mat.r_mut()[[1, 1]] = 4.0;
+    mat.r_mut()[[1, 2]] = 1.0;
+
+    mat.r_mut()[[2, 1]] = 1.0;
+    mat.r_mut()[[2, 2]] = 4.0;
+    mat.r_mut()[[2, 3]] = 1.0;
+
+    mat.r_mut()[[3, 2]] = 1.0;
+    mat.r_mut()[[3, 3]] = 4.0;
+    mat.r_mut()[[3, 4]] = 1.0;
+
+    mat.r_mut()[[4, 3]] = 1.0;
+    mat.r_mut()[[4, 4]] = 4.0;
+
+    // Wrap matrix into operator
+    let op = Operator::from(mat);
+
+    // Right-hand side
+    let mut rhs = zero_element(op.range());
+    rhs.view_mut().data_mut()[0] = 1.0;
+    rhs.view_mut().data_mut()[1] = 2.0;
+    rhs.view_mut().data_mut()[2] = 3.0;
+    rhs.view_mut().data_mut()[3] = 4.0;
+    rhs.view_mut().data_mut()[4] = 5.0;
+
+    let mut residuals = Vec::<f64>::new();
+    let tol = 1e-3;
+
+    // GMRES solve
+    let gmres = (GmresIteration::new(op.r(), rhs.r(), 5))
+        .set_callable(|_, res| {
+            residuals.push(res);
+        })
+        .set_tol(tol)
+        .set_restart(5);
+
+    let (_sol, _res) = gmres.run();
+
+    println!("Residuals: {:?}", residuals);
     // As an example, we set up a complex matrix and
     // hen wrap it in an operator to run GMRES.
     let mut mat = rlst_dynamic_array2!(c64, [5, 5]);
