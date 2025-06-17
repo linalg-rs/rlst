@@ -208,9 +208,9 @@ impl<Item: RlstScalar> AsOperatorApply for CsrMatrix<Item> {
     ) {
         match trans_mode {
             crate::TransMode::NoTrans => self.matmul(alpha, x, beta, y),
-            crate::TransMode::ConjNoTrans => todo!(),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
             crate::TransMode::Trans => self.matmul_transpose(alpha, x, beta, y),
-            crate::TransMode::ConjTrans => todo!(),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
         }
     }
 }
@@ -229,9 +229,9 @@ impl<Item: RlstScalar> AsOperatorApply for CscMatrix<Item> {
     ) {
         match trans_mode {
             crate::TransMode::NoTrans => self.matmul(alpha, x, beta, y),
-            crate::TransMode::ConjNoTrans => todo!(),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
             crate::TransMode::Trans => self.matmul_transpose(alpha, x, beta, y),
-            crate::TransMode::ConjTrans => todo!(),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
         }
     }
 }

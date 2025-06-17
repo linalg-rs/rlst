@@ -101,8 +101,8 @@ impl<Item: RlstScalar + Equivalence, C: Communicator> AsApply
                 self.csr_mat
                     .matmul_transpose(alpha, x.imp().view(), beta, y.imp_mut().view_mut())
             }
-            crate::TransMode::ConjNoTrans => todo!(),
-            crate::TransMode::ConjTrans => todo!(),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
         }
     }
 }
