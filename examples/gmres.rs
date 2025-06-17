@@ -4,7 +4,6 @@ use rlst::operator::Operator;
 use rlst::{c64, rlst_dynamic_array2, zero_element, GmresIteration, OperatorBase, RawAccessMut};
 
 pub fn main() {
-
     let mut mat = rlst_dynamic_array2!(f64, [5, 5]);
     mat.r_mut()[[0, 0]] = 4.0;
     mat.r_mut()[[0, 1]] = 1.0;

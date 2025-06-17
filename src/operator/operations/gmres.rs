@@ -274,9 +274,7 @@ where
                 y[inner] = num::Zero::zero();
             }
 
-            for k in 0..inner + 1 {
-                y_aux[k] = y[k];
-            }
+            y_aux[..(inner + 1)].copy_from_slice(&y[..(inner + 1)]);
 
             let h_t = TriangularMatrix::new(
                 &h.r().into_subview([0, 0], [inner + 1, inner + 1]),

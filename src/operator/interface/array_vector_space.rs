@@ -125,12 +125,4 @@ impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
     fn sub_inplace(&mut self, other: &Self) {
         self.elem.sub_into(other.view());
     }
-
-    /*fn set(&mut self, index: usize, alpha: Self::F) {
-        self.view_mut().data_mut()[index] = alpha;
-    }
-
-    fn get(&self, index: usize) -> Self::F {
-        self.view().data()[index]
-    }*/
 }

@@ -89,10 +89,6 @@ impl<Elem: ElementImpl> Frame for VectorFrame<Elem> {
         self.data.get_mut(index)
     }
 
-    /*fn set(&mut self, axis_0: usize, axis_1: usize, val: <Self::E as ElementImpl>::F) {
-        self.data.get_mut(axis_1).unwrap().set(axis_0, val);
-    }*/
-
     fn len(&self) -> usize {
         self.data.len()
     }

@@ -133,6 +133,7 @@ where
                 p.r(),
                 <<Space as LinearSpace>::F as One>::one(),
                 res.r_mut(),
+                crate::TransMode::NoTrans,
             );
             if let Some(callable) = self.callable.as_mut() {
                 callable(&self.x, &res);

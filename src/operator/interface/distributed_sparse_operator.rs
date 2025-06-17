@@ -90,23 +90,20 @@ impl<Item: RlstScalar + Equivalence, C: Communicator> AsApply
         x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         mut y: crate::Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.csr_mat
-            .matmul(alpha, x.imp().view(), beta, y.imp_mut().view_mut());
-    }
-
-    fn apply_extended_transpose<
-        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
-        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
-    >(
-        &self,
-        alpha: <Self::Range as LinearSpace>::F,
-        x: crate::Element<ContainerIn>,
-        beta: <Self::Range as LinearSpace>::F,
-        mut y: crate::Element<ContainerOut>,
-    ) {
-        self.csr_mat
-            .matmul_transpose(alpha, x.imp().view(), beta, y.imp_mut().view_mut());
+        match trans_mode {
+            crate::TransMode::NoTrans => {
+                self.csr_mat
+                    .matmul(alpha, x.imp().view(), beta, y.imp_mut().view_mut())
+            }
+            crate::TransMode::Trans => {
+                self.csr_mat
+                    .matmul_transpose(alpha, x.imp().view(), beta, y.imp_mut().view_mut())
+            }
+            crate::TransMode::ConjNoTrans => todo!(),
+            crate::TransMode::ConjTrans => todo!(),
+        }
     }
 }
 

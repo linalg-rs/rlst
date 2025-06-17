@@ -165,14 +165,6 @@ pub trait AsOperatorApply {
         x: &[Self::Item],
         beta: Self::Item,
         y: &mut [Self::Item],
-    );
-
-    /// Apply the transposed operator to a vector.
-    fn apply_extended_transpose(
-        &self,
-        alpha: Self::Item,
-        x: &[Self::Item],
-        beta: Self::Item,
-        y: &mut [Self::Item],
+        trans_mode: crate::TransMode,
     );
 }

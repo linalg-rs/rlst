@@ -4,8 +4,8 @@ use num::Complex;
 
 #[inline]
 unsafe fn dlartgp(f: &[f64], g: &[f64], cs: &mut [f64], sn: &mut [f64], r: &mut [f64]) {
-    assert!(f.len() >= 1 && g.len() >= 1);
-    assert!(cs.len() >= 1 && sn.len() >= 1 && r.len() >= 1);
+    assert!(!f.is_empty() && !g.is_empty());
+    assert!(!cs.is_empty() && !sn.is_empty() && !r.is_empty());
 
     let a = f[0];
     let b = g[0];
@@ -24,8 +24,8 @@ unsafe fn dlartgp(f: &[f64], g: &[f64], cs: &mut [f64], sn: &mut [f64], r: &mut 
 
 #[inline]
 unsafe fn slartgp(f: &[f32], g: &[f32], cs: &mut [f32], sn: &mut [f32], r: &mut [f32]) {
-    assert!(f.len() >= 1 && g.len() >= 1);
-    assert!(cs.len() >= 1 && sn.len() >= 1 && r.len() >= 1);
+    assert!(!f.is_empty() && !g.is_empty());
+    assert!(!cs.is_empty() && !sn.is_empty() && !r.is_empty());
 
     let a = f[0];
     let b = g[0];
@@ -42,7 +42,6 @@ unsafe fn slartgp(f: &[f32], g: &[f32], cs: &mut [f32], sn: &mut [f32], r: &mut 
     }
 }
 
-
 #[inline]
 unsafe fn zlartg(
     f: &[Complex<f64>],
@@ -53,11 +52,8 @@ unsafe fn zlartg(
 ) {
     use lapack_sys::__BindgenComplex;
 
-    assert_eq!(f.len(), 1);
-    assert_eq!(g.len(), 1);
-    assert_eq!(cs.len(), 1);
-    assert_eq!(sn.len(), 1);
-    assert_eq!(r.len(), 1);
+    assert!(!f.is_empty() && !g.is_empty());
+    assert!(!cs.is_empty() && !sn.is_empty() && !r.is_empty());
 
     let f_ptr = f.as_ptr() as *const __BindgenComplex<f64>;
     let g_ptr = g.as_ptr() as *const __BindgenComplex<f64>;
@@ -65,13 +61,7 @@ unsafe fn zlartg(
     let sn_ptr = sn.as_mut_ptr() as *mut __BindgenComplex<f64>;
     let r_ptr = r.as_mut_ptr() as *mut __BindgenComplex<f64>;
 
-    lapack_sys::zlartg_(
-        f_ptr,
-        g_ptr,
-        cs_ptr,
-        sn_ptr,
-        r_ptr,
-    )
+    lapack_sys::zlartg_(f_ptr, g_ptr, cs_ptr, sn_ptr, r_ptr)
 }
 
 #[inline]
@@ -84,11 +74,8 @@ unsafe fn clartg(
 ) {
     use lapack_sys::__BindgenComplex;
 
-    assert_eq!(f.len(), 1);
-    assert_eq!(g.len(), 1);
-    assert_eq!(cs.len(), 1);
-    assert_eq!(sn.len(), 1);
-    assert_eq!(r.len(), 1);
+    assert!(!f.is_empty() && !g.is_empty());
+    assert!(!cs.is_empty() && !sn.is_empty() && !r.is_empty());
 
     let f_ptr = f.as_ptr() as *const __BindgenComplex<f32>;
     let g_ptr = g.as_ptr() as *const __BindgenComplex<f32>;
@@ -96,13 +83,7 @@ unsafe fn clartg(
     let sn_ptr = sn.as_mut_ptr() as *mut __BindgenComplex<f32>;
     let r_ptr = r.as_mut_ptr() as *mut __BindgenComplex<f32>;
 
-    lapack_sys::clartg_(
-        f_ptr,
-        g_ptr,
-        cs_ptr,
-        sn_ptr,
-        r_ptr,
-    )
+    lapack_sys::clartg_(f_ptr, g_ptr, cs_ptr, sn_ptr, r_ptr)
 }
 
 /// This structure stores a set of Givens rotations extracted from matrix
@@ -152,13 +133,7 @@ macro_rules! impl_givens_rot {
                         let f_arr = [f];
                         let g_arr = [g];
                         unsafe {
-                            $lartg(
-                                &f_arr,
-                                &g_arr,
-                                &mut c,
-                                &mut s,
-                                &mut r,
-                            );
+                            $lartg(&f_arr, &g_arr, &mut c, &mut s, &mut r);
                         }
 
                         self.c.push(c[0]);

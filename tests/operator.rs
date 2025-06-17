@@ -18,7 +18,7 @@ fn test_dense_matrix_operator() {
 
     x.view_mut().fill_from_seed_equally_distributed(0);
 
-    op.apply_extended(1.0, x.r(), 0.0, y.r_mut());
+    op.apply_extended(1.0, x.r(), 0.0, y.r_mut(), crate::TransMode::NoTrans);
 }
 
 #[test]
@@ -128,12 +128,24 @@ fn test_operator_algebra() {
     y.view_mut().fill_from_seed_equally_distributed(3);
     y_expected.view_mut().fill_from(y.view());
 
-    op2.apply_extended(2.0, x.r(), 3.5, y_expected.r_mut());
-    op1.apply_extended(10.0, x.r(), 1.0, y_expected.r_mut());
+    op2.apply_extended(
+        2.0,
+        x.r(),
+        3.5,
+        y_expected.r_mut(),
+        crate::TransMode::NoTrans,
+    );
+    op1.apply_extended(
+        10.0,
+        x.r(),
+        1.0,
+        y_expected.r_mut(),
+        crate::TransMode::NoTrans,
+    );
 
     let sum = op1.scale(5.0).sum(op2.r());
 
-    sum.apply_extended(2.0, x.r(), 3.5, y.r_mut());
+    sum.apply_extended(2.0, x.r(), 3.5, y.r_mut(), crate::TransMode::NoTrans);
 
     rlst::assert_array_relative_eq!(y.view(), y_expected.view(), 1E-12);
 }

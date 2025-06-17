@@ -92,7 +92,7 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
             for idx in start..end {
                 let col = self.indices()[idx]; // A_{row, col}
                 let val = self.data()[idx]; // Value at A_{row, col}
-                y[col] = y[col] + alpha * val * x_i;
+                y[col] += alpha * val * x_i;
             }
         }
     }
