@@ -1,155 +1,143 @@
 //! Implementation of the QR decomposition.
 
 use crate::dense::array::{Array, DynArray};
-use crate::dense::traits::{RawAccessMut, UnsafeRandomAccessMut};
+use crate::dense::linalg::traits::Qr;
+use crate::dense::traits::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
 use crate::{dense::types::RlstResult, RawAccess, Shape, Stride};
+use crate::{BaseItem, FillFromResize};
 
 use crate::dense::types::RlstError;
 use crate::dense::types::RlstScalar;
 
-use super::LapackWrapper;
+use super::interface::geqp3::Geqp3;
+use super::interface::geqrf::Geqrf;
+use super::interface::orgqr::Orgqr;
+use super::interface::{geqrf, Lapack};
 
-use lapack::dgeqp3;
 use num::One;
 use num::Zero;
 
-/// Apply Q side
-#[derive(Clone, Copy)]
-#[repr(u8)]
-pub enum ApplyQSide {
-    /// Left
-    Left = b'L',
-    /// Right
-    Right = b'R',
-}
-
-/// Transpose
-#[derive(Clone, Copy)]
-pub enum ApplyQTrans {
-    /// No transpose
-    NoTrans,
-    /// Conjugate transpose
-    ConjTrans,
-}
-
-/// A trait for computing the QR decomposition of a matrix.
-pub trait LapackQr {
-    /// Output type of the QR decomposition.
-    type Output: ComputedQr;
-
-    /// Compute the QR Decomposition of the matrix.
-    fn qr(self) -> RlstResult<Self::Output>;
-}
-
-/// Operations on a computed QR decomposition.
-pub trait ComputedQr {
-    /// The item type of the QR decomposition.
-    type Item;
-
-    /// Array Implementation type.
-    type ArrayImpl: Shape<2> + Stride<2> + RawAccess<Item = Self::Item>;
-
-    /// Return the QR decomposition data.
-    fn qr_data(&self) -> &LapackWrapper<Self::Item, Self::ArrayImpl>;
-}
-
-/// A struct representing the QR decomposition of a matrix.
-pub struct QrDecomposition<Item, ArrayImpl> {
-    /// The QR decomposition data.
-    qr: LapackWrapper<Item, ArrayImpl>,
-    /// The tau vector.
-    tau: Vec<Item>,
-    /// The pivot indices.
+/// Stores the result of a QR decomposition of a matrix.
+pub struct QrDecomposition<Item> {
+    a: DynArray<Item, 2>,
     jpvt: Vec<i32>,
+    tau: Vec<Item>,
 }
 
-macro_rules! implement_lapack_qr_real {
-    ($scalar:ty, $geqp3:expr) => {
-        impl<ArrayImpl> LapackQr for LapackWrapper<$scalar, ArrayImpl>
-        where
-            ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = $scalar>,
-        {
-            type Output = QrDecomposition<$scalar, ArrayImpl>;
+/// The pivoting strategy for the QR decomposition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnablePivoting {
+    /// No pivoting,
+    Yes,
+    /// Column pivoting.
+    No,
+}
 
-            /// Compute the QR decomposition of the matrix.
-            fn qr(mut self) -> RlstResult<Self::Output> {
-                let (m, n, lda) = self.lapack_dims();
-                let k = std::cmp::min(m, n);
+impl<Item, ArrayImpl> Qr for Array<ArrayImpl, 2>
+where
+    Item: Lapack,
+    ArrayImpl: BaseItem<Item = Item>,
+    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
+{
+    type Item = Item;
 
-                let mut jpvt = vec![0 as i32; n as usize];
-                let mut tau = vec![<$scalar as Zero>::zero(); k as usize];
+    /// Compute the QR decomposition of a matrix.
+    fn qr(&self, pivoting: EnablePivoting) -> RlstResult<QrDecomposition<Item>> {
+        let mut a = DynArray::new_from(self);
+        let (m, n, lda) = (a.shape()[0], a.shape()[1], a.shape()[0]);
+        let k = std::cmp::min(m, n);
 
-                let mut work_query = [<$scalar as Zero>::zero()];
-                let lwork = -1;
+        let mut jpvt = vec![0 as i32; n];
+        let mut tau = vec![Item::zero(); k];
 
-                let mut info = 0;
+        match pivoting {
+            EnablePivoting::No => {
+                for i in 0..n {
+                    jpvt[i] = i as i32 + 1; // LAPACK uses 1-based indexing
+                }
+                <Item as Geqrf>::geqrf(m, n, a.data_mut(), lda, &mut tau)?;
+                Ok(QrDecomposition { a, jpvt, tau })
+            }
+            EnablePivoting::Yes => {
+                for i in 0..n {
+                    jpvt[i] = 0;
+                }
+                <Item as Geqp3>::geqp3(m, n, a.data_mut(), lda, &mut jpvt, &mut tau)?;
+                Ok(QrDecomposition { a, jpvt, tau })
+            }
+        }
+    }
+}
 
+/// The mode for computing the Q matrix in a QR decomposition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QMode {
+    /// Compute the full Q matrix.
+    Full,
+    /// Compute the compact Q matrix.
+    Compact,
+}
+
+impl<Item> QrDecomposition<Item>
+where
+    Item: Lapack,
+{
+    /// Compute the Q matrix from the QR decomposition.
+    /// /// The `mode` parameter determines whether to compute the full or compact Q matrix.
+    /// - `QMode::Full`: Computes the full Q matrix with shape (m, m).
+    /// - `QMode::Compact`: Computes the compact Q matrix with shape (m, min(m, n)).
+    pub fn q(&self, mode: QMode) -> RlstResult<DynArray<Item, 2>> {
+        let [m, n] = self.a.shape();
+        let k = std::cmp::min(m, n);
+        let (m, n) = match mode {
+            QMode::Full => (m, m), // Full Q matrix has m rows and m columns
+            QMode::Compact => (m, k),
+        };
+
+        let mut q = DynArray::<Item, 2>::from_shape([m, n]);
+
+        // Copy the elementary reflectors from `self.a` to `q`
+        for col in 0..k {
+            for row in 1 + col..m {
                 unsafe {
-                    $geqp3(
-                        m,
-                        n,
-                        self.data_mut(),
-                        lda,
-                        &mut jpvt,
-                        &mut tau,
-                        &mut work_query,
-                        lwork,
-                        &mut info,
-                    );
-                }
-
-                match info {
-                    0 => (),
-                    _ => return Err(RlstError::LapackError(info)),
-                }
-
-                let lwork = work_query[0].re() as i32;
-                let mut work = vec![<$scalar as Zero>::zero(); lwork as usize];
-
-                unsafe {
-                    $geqp3(
-                        m,
-                        n,
-                        self.data_mut(),
-                        lda,
-                        &mut jpvt,
-                        &mut tau,
-                        &mut work,
-                        lwork,
-                        &mut info,
-                    );
-                }
-
-                match info {
-                    0 => Ok(QrDecomposition {
-                        qr: self,
-                        tau,
-                        jpvt,
-                    }),
-                    _ => Err(RlstError::LapackError(info)),
+                    *q.get_unchecked_mut([row, col]) = *self.a.get_unchecked([row, col]);
                 }
             }
         }
-    };
-}
 
-implement_lapack_qr_real!(f64, dgeqp3);
+        let lda = q.shape()[0];
+        let _ = <Item as Orgqr>::orgqr(m, n, k, q.data_mut(), m, &self.tau)?;
 
-macro_rules! implement_qr_ops {
-    ($scalar:ty, $ormqr:expr) => {
-        impl<ArrayImpl> ComputedQr for QrDecomposition<$scalar, ArrayImpl>
-        where
-            ArrayImpl: Shape<2> + Stride<2> + RawAccess<Item = $scalar>,
-        {
-            type Item = $scalar;
-            type ArrayImpl = ArrayImpl;
+        Ok(q)
+    }
 
-            /// Return the QR decomposition data.
-            fn qr_data(&self) -> &LapackWrapper<Self::Item, Self::ArrayImpl> {
-                &self.qr
+    /// Return the R matrix of the QR decomposition.
+    /// The R matrix is of dimension (min(m, n), n).
+    pub fn r(&self) -> RlstResult<DynArray<Item, 2>> {
+        let [m, n] = self.a.shape();
+        let k = std::cmp::min(m, n);
+
+        let mut r = DynArray::<Item, 2>::from_shape([k, n]);
+
+        for col in 0..n {
+            for row in 0..std::cmp::min(1 + col, m) {
+                unsafe {
+                    *r.get_unchecked_mut([row, col]) = *self.a.get_unchecked([row, col]);
+                }
             }
         }
-    };
-}
 
-implement_qr_ops!(f64, dormqr);
+        Ok(r)
+    }
+
+    /// Return the pivot indices of the QR decomposition.
+    /// If `jpvt[i] = j`, then the `i`-th column of the QR decomposition corresponds to the `j`-th
+    /// column of the original matrix.
+    /// The indices are returned in zero-based indexing.
+    pub fn perm(&self) -> Vec<usize> {
+        self.jpvt
+            .iter()
+            .map(|&i| i as usize - 1) // Convert to zero-based indexing
+            .collect()
+    }
+}

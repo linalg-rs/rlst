@@ -2,5 +2,6 @@
 
 pub mod inverse;
 pub mod lu;
+pub mod qr;
 
 pub mod interface;

@@ -11,7 +11,6 @@ use num::{complex::ComplexFloat, Zero};
 /// ?geqp3 - Column pivoted QR factorization.
 pub trait Geqp3: Sized {
     /// Perform column pivoted QR factorization of a matrix `a` with dimensions `m` x `n`.
-    /// Returns a tuple of two vectors:
     fn geqp3(
         m: usize,
         n: usize,

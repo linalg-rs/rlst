@@ -20,7 +20,7 @@ use num::{complex::ComplexFloat, Zero};
 ///
 /// **Returns:**
 /// A `LapackResult<()>` indicating success or failure.
-pub trait Ormqr {
+pub trait Orgqr {
     /// Compute the matrix Q from the QR factorization of a matrix A.
     fn orgqr(
         m: usize,
@@ -36,7 +36,7 @@ pub trait Ormqr {
 
 macro_rules! implement_orgqr {
     ($scalar:ty, $orgqr:expr) => {
-        impl Ormqr for $scalar {
+        impl Orgqr for $scalar {
             fn orgqr(
                 m: usize,
                 n: usize,

@@ -135,7 +135,10 @@ macro_rules! implement_gesvd {
                         );
                         u
                     }
-                    JobU::N => u_temp.as_mut_slice(),
+                    JobU::N => {
+                        assert!(ldu >= 1, "Require `ldu` {} >= 1.", ldu);
+                        u_temp.as_mut_slice()
+                    }
                 };
 
                 let vt = match jobvt {
@@ -174,7 +177,10 @@ macro_rules! implement_gesvd {
                         );
                         vt
                     }
-                    JobVt::N => vt_temp.as_mut_slice(),
+                    JobVt::N => {
+                        assert!(ldvt >= 1, "Require `ldvt` {} >= 1.", ldvt);
+                        vt_temp.as_mut_slice()
+                    }
                 };
 
                 let mut work = vec![<$scalar>::zero(); 1];
@@ -315,7 +321,10 @@ macro_rules! implement_gesvd_complex {
                         );
                         u
                     }
-                    JobU::N => u_temp.as_mut_slice(),
+                    JobU::N => {
+                        assert!(ldu >= 1, "Require `ldu` {} >= 1.", ldu);
+                        u_temp.as_mut_slice()
+                    }
                 };
 
                 let vt = match jobvt {
@@ -354,7 +363,10 @@ macro_rules! implement_gesvd_complex {
                         );
                         vt
                     }
-                    JobVt::N => vt_temp.as_mut_slice(),
+                    JobVt::N => {
+                        assert!(ldvt >= 1, "Require `ldvt` {} >= 1.", ldvt);
+                        vt_temp.as_mut_slice()
+                    }
                 };
 
                 let mut work = vec![<$scalar>::zero(); 1];

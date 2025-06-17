@@ -3,7 +3,7 @@
 use paste::paste;
 use rlst::dense::array::DynArray;
 use rlst::dense::linalg::traits::Inverse;
-use rlst::dense::linalg::traits::{GetDeterminant, GetL, GetP, GetU, Lu, Solve};
+use rlst::dense::linalg::traits::Lu;
 use rlst::dense::traits::SetIdentity;
 use rlst::dense::types::TransMode;
 use rlst::dense::types::{c32, c64};

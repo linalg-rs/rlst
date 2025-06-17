@@ -12,13 +12,13 @@ use num::{complex::ComplexFloat, Zero};
 pub trait Geqrf: Sized {
     /// Perform QR factorization of a matrix `a` with dimensions `m` x `n`.
     ///
-    fn geqp3(m: usize, n: usize, a: &mut [Self], lda: usize, tau: &mut [Self]) -> LapackResult<()>;
+    fn geqrf(m: usize, n: usize, a: &mut [Self], lda: usize, tau: &mut [Self]) -> LapackResult<()>;
 }
 
 macro_rules! implement_geqrf {
     ($scalar:ty, $geqrf:expr) => {
         impl Geqrf for $scalar {
-            fn geqp3(
+            fn geqrf(
                 m: usize,
                 n: usize,
                 a: &mut [Self],

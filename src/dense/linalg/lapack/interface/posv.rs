@@ -1,15 +1,11 @@
 //! Implementation of ?posv - Solve a positve definite system of linear equations with Cholesky
 //! factorization.
 
-use std::ffi::c_char;
-
-use lapack::{cpotrf, dpotrf, spotrf, zpotrf};
+use lapack::{cposv, dposv, sposv, zposv};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use super::{c32, c64, LapackError, LapackResult};
-
-use num::{complex::ComplexFloat, Zero};
+use super::{c32, c64, LapackResult};
 
 /// `Uplo` parameter for `?potrf` to specify which triangular part of the matrix is stored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -96,21 +92,21 @@ macro_rules! implement_posv {
                         uplo as u8,
                         n as i32,
                         nrhs as i32,
-                        a.as_mut_ptr(),
+                        a,
                         lda as i32,
-                        b.as_mut_ptr(),
+                        b,
                         ldb as i32,
-                        &mut info as *mut i32,
+                        &mut info,
                     );
                 }
 
-                lapack_return(info)
+                lapack_return(info, ())
             }
         }
     };
 }
 
-implement_posv!(f32, spotrf);
-implement_posv!(f64, dpotrf);
-implement_posv!(c32, cpotrf);
-implement_posv!(c64, zpotrf);
+implement_posv!(f32, sposv);
+implement_posv!(f64, dposv);
+implement_posv!(c32, cposv);
+implement_posv!(c64, zposv);
