@@ -1,17 +1,28 @@
 //! Traits for linear algebra operations on matrices.
 
+use std::collections::btree_set::SymmetricDifference;
+
 use crate::{
     dense::{
         array::{Array, DynArray},
         types::{RlstResult, TransMode},
     },
-    BaseItem,
+    BaseItem, RlstScalar,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpLo {
+    /// Upper triangular matrix.
+    Upper,
+    /// Lower triangular matrix.
+    Lower,
+}
 
 use super::lapack::{
     interface::Lapack,
     lu::LuDecomposition,
     qr::{EnablePivoting, QrDecomposition},
+    symmeig::SymmEigMode,
 };
 
 /// Compute the matrix inverse.
@@ -44,4 +55,20 @@ pub trait Qr {
 
     /// Compute the QR decomposition of a matrix.
     fn qr(&self, pivoting: EnablePivoting) -> RlstResult<QrDecomposition<Self::Item>>;
+}
+
+/// Compute the symmetric eigenvalue decomposition of a matrix.
+pub trait SymmEig {
+    /// Item type of the symmetric eigenvalue decomposition.
+    type Item: Lapack;
+
+    /// Compute the symmetric eigenvalue decomposition of a matrix.
+    fn symm_eig(
+        &self,
+        uplo: UpLo,
+        mode: SymmEigMode,
+    ) -> RlstResult<(
+        DynArray<<Self::Item as RlstScalar>::Real, 1>,
+        Option<DynArray<Self::Item, 2>>,
+    )>;
 }

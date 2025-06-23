@@ -86,7 +86,7 @@ where
     /// /// The `mode` parameter determines whether to compute the full or compact Q matrix.
     /// - `QMode::Full`: Computes the full Q matrix with shape (m, m).
     /// - `QMode::Compact`: Computes the compact Q matrix with shape (m, min(m, n)).
-    pub fn q(&self, mode: QMode) -> RlstResult<DynArray<Item, 2>> {
+    pub fn q_mat(&self, mode: QMode) -> RlstResult<DynArray<Item, 2>> {
         let [m, n] = self.a.shape();
         let k = std::cmp::min(m, n);
         let (m, n) = match mode {
@@ -106,14 +106,14 @@ where
         }
 
         let lda = q.shape()[0];
-        let _ = <Item as Orgqr>::orgqr(m, n, k, q.data_mut(), m, &self.tau)?;
+        <Item as Orgqr>::orgqr(m, n, k, q.data_mut(), m, &self.tau)?;
 
         Ok(q)
     }
 
     /// Return the R matrix of the QR decomposition.
     /// The R matrix is of dimension (min(m, n), n).
-    pub fn r(&self) -> RlstResult<DynArray<Item, 2>> {
+    pub fn r_mat(&self) -> RlstResult<DynArray<Item, 2>> {
         let [m, n] = self.a.shape();
         let k = std::cmp::min(m, n);
 
@@ -128,6 +128,20 @@ where
         }
 
         Ok(r)
+    }
+
+    /// Return the permutation matrix P such at `A * P = Q * R`.
+    pub fn p_mat(&self) -> RlstResult<DynArray<Item, 2>> {
+        let [_, n] = self.a.shape();
+        let mut p_mat = DynArray::<Item, 2>::from_shape([n, n]);
+
+        for (i, &j) in self.jpvt.iter().enumerate() {
+            unsafe {
+                *p_mat.get_unchecked_mut([j as usize - 1, i]) = Item::one();
+            }
+        }
+
+        Ok(p_mat)
     }
 
     /// Return the pivot indices of the QR decomposition.
