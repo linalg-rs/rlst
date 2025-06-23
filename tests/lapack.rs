@@ -11,6 +11,7 @@ use rlst::dense::linalg::traits::{Lu, SymmEig};
 use rlst::dense::traits::SetIdentity;
 use rlst::dense::types::TransMode;
 use rlst::dense::types::{c32, c64};
+use rlst::dot;
 use rlst::{assert_array_abs_diff_eq, prelude::*};
 
 macro_rules! impl_inverse_tests {
@@ -305,7 +306,7 @@ macro_rules! implement_symm_eig_test {
             let mut a = rlst_dynamic_array!($scalar, [n, n]);
             a.fill_from_seed_equally_distributed(0);
 
-            let a = DynArray::new_from(&(a.r() + a.r().apply_unary_op(|elem: $scalar| <$scalar as Conj>::conj(&elem)).transpose()));
+            let a = DynArray::new_from(&(a.r() + a.r().conj().transpose()));
 
             let (w1, _) = a
                 .symm_eig(UpLo::Upper, SymmEigMode::EigenvaluesOnly)
@@ -326,20 +327,13 @@ macro_rules! implement_symm_eig_test {
             });
 
             let vt = DynArray::new_from(
-                &v.r()
-                    .apply_unary_op(|elem: $scalar| <$scalar as Conj>::conj(&elem))
-                    .transpose(),
+                &v.r().conj().transpose(),
             );
 
-            let actual = empty_array().simple_mult_into_resize(
-                empty_array().simple_mult_into_resize(v.r(), lambda.r()),
-                vt.r(),
-            );
+            let actual = dot!(v.r(), dot!(lambda.r(), vt.r()));
 
             rlst::assert_array_relative_eq!(actual, a, $tol);
         }
-
-
 
                 }
     };

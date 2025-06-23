@@ -421,3 +421,12 @@ pub trait NormTwo {
     /// Return the 2-norm.
     fn norm_2(&self) -> Self::Output;
 }
+
+/// Return the array of conjugate numbers.
+pub trait ConjArray {
+    /// The output type of the conjugate array.
+    type Output;
+
+    /// Return the conjugate array.
+    fn conj(self) -> Self::Output;
+}

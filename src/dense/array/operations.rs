@@ -7,12 +7,14 @@ use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
+use super::operators::unary_op::ArrayUnaryOperator;
 use super::{Array, BaseItem, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::traits::{
     Abs, AbsSquare, ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom,
     FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
     ResizeInPlace, Sqrt, SumFrom, Trace, UnsafeRandom1DAccessMut,
 };
+use crate::ConjArray;
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
@@ -207,6 +209,30 @@ where
 
     fn norm_2(&self) -> Self::Output {
         self.abs_square().sqrt()
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> ConjArray for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+    Item: Conj,
+{
+    type Output = Array<
+        ArrayUnaryOperator<
+            Item,
+            <Item as Conj>::Output,
+            ArrayImpl,
+            fn(Item) -> <Item as Conj>::Output,
+            NDIM,
+        >,
+        NDIM,
+    >;
+
+    fn conj(self) -> Self::Output {
+        fn conj<Item: Conj>(item: Item) -> <Item as Conj>::Output {
+            item.conj()
+        }
+        Array::new(ArrayUnaryOperator::new(self, conj))
     }
 }
 

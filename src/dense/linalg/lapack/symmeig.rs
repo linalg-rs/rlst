@@ -1,4 +1,4 @@
-//! Implementation of the QR decomposition.
+//! Implementation of the symmetric eigenvalue decomposition using LAPACK.
 
 use rlst_proc_macro::rlst_dynamic_array;
 

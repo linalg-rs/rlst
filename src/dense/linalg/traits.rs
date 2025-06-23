@@ -19,6 +19,7 @@ pub enum UpLo {
 }
 
 use super::lapack::{
+    eigenvalues::EigMode,
     interface::Lapack,
     lu::LuDecomposition,
     qr::{EnablePivoting, QrDecomposition},
@@ -70,5 +71,37 @@ pub trait SymmEig {
     ) -> RlstResult<(
         DynArray<<Self::Item as RlstScalar>::Real, 1>,
         Option<DynArray<Self::Item, 2>>,
+    )>;
+}
+
+/// Compute the eigenvalue decomposition of a matrix.
+pub trait Eigenvalues {
+    /// The item type of the matrix.
+    type Item: Lapack;
+
+    /// Return the eigenvalues of the matrix.
+    fn eigenvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Complex, 1>>;
+
+    /// Compute the Schur decomposition of the matrix.
+    fn schur(
+        &self,
+    ) -> RlstResult<(
+        DynArray<<Self::Item as RlstScalar>::Complex, 1>,
+        DynArray<Self::Item, 2>,
+    )>;
+
+    /// Compute the eigenvalues and eigenvectors of the matrix.
+    ///
+    /// The function returns a tuple `(lam, v, w)` containing:
+    /// - A vector `lam` of eigenvalues.
+    /// - An optional matrix `v` of right eigenvectors.
+    /// - An optional matrix `w` of left eigenvectors.
+    fn eig(
+        &self,
+        mode: EigMode,
+    ) -> RlstResult<(
+        DynArray<<Self::Item as RlstScalar>::Complex, 1>,
+        Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
+        Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
     )>;
 }

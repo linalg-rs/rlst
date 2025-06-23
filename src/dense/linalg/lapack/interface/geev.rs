@@ -41,9 +41,9 @@ pub trait Geev: RlstScalar {
         a: &mut [Self],
         lda: usize,
         w: &mut [Self::Complex],
-        vl: Option<&mut [Self]>,
+        vl: Option<&mut [Self::Complex]>,
         ldvl: usize,
-        vr: Option<&mut [Self]>,
+        vr: Option<&mut [Self::Complex]>,
         ldvr: usize,
     ) -> LapackResult<()>;
 }
@@ -58,9 +58,9 @@ macro_rules! implement_geev {
                 a: &mut [Self],
                 lda: usize,
                 w: &mut [Self::Complex],
-                vl: Option<&mut [Self]>,
+                mut vl: Option<&mut [Self::Complex]>,
                 ldvl: usize,
-                vr: Option<&mut [Self]>,
+                mut vr: Option<&mut [Self::Complex]>,
                 ldvr: usize,
             ) -> LapackResult<()> {
                 let mut info = 0;
@@ -85,12 +85,9 @@ macro_rules! implement_geev {
                 let mut wr = vec![<$scalar>::zero(); n];
                 let mut wi = vec![<$scalar>::zero(); n];
 
-                let mut vl_temp = Vec::<$scalar>::new();
-                let mut vr_temp = Vec::<$scalar>::new();
-
-                let vl = match jobvl {
+                let (mut vlr, ldvlr) = match jobvl {
                     JobVl::Compute => {
-                        let vl = vl.expect("vl must be Some when jobvl is V");
+                        let vl = vl.as_ref().expect("vl must be Some when jobvl is V");
                         assert_eq!(
                             vl.len(),
                             ldvl * n,
@@ -98,16 +95,22 @@ macro_rules! implement_geev {
                             vl.len(),
                             ldvl * n
                         );
-                        vl
+                        assert!(
+                            ldvl >= std::cmp::max(1, n),
+                            "Require `ldvl` {} >= `max(1, n)` {}.",
+                            ldvl,
+                            std::cmp::max(1, n)
+                        );
+                        (vec![<$scalar>::zero(); n * n], n)
                     }
                     JobVl::None => {
                         assert_eq!(ldvl, 1, "Require `ldvl` {} == 1.", ldvl);
-                        vl_temp.as_mut_slice()
+                        (Vec::<$scalar>::new(), 1)
                     }
                 };
-                let vr = match jobvr {
+                let (mut vrr, ldvrr) = match jobvr {
                     JobVr::Compute => {
-                        let vr = vr.expect("vr must be Some when jobvr is V");
+                        let vr = vr.as_ref().expect("vr must be Some when jobvr is V");
                         assert_eq!(
                             vr.len(),
                             ldvr * n,
@@ -115,11 +118,17 @@ macro_rules! implement_geev {
                             vr.len(),
                             ldvr * n
                         );
-                        vr
+                        assert!(
+                            ldvr >= std::cmp::max(1, n),
+                            "Require `ldvr` {} >= `max(1, n)` {}.",
+                            ldvr,
+                            std::cmp::max(1, n)
+                        );
+                        (vec![<$scalar>::zero(); n * n], n)
                     }
                     JobVr::None => {
                         assert_eq!(ldvr, 1, "Require `ldvr` {} == 1.", ldvr);
-                        vr_temp.as_mut_slice()
+                        (Vec::<$scalar>::new(), 1)
                     }
                 };
 
@@ -133,10 +142,10 @@ macro_rules! implement_geev {
                         lda as i32,
                         &mut wr,
                         &mut wi,
-                        vl,
-                        ldvl as i32,
-                        vr,
-                        ldvr as i32,
+                        &mut vlr,
+                        ldvlr as i32,
+                        &mut vrr,
+                        ldvrr as i32,
                         &mut work,
                         -1,
                         &mut info,
@@ -160,10 +169,10 @@ macro_rules! implement_geev {
                         lda as i32,
                         &mut wr,
                         &mut wi,
-                        vl,
-                        ldvl as i32,
-                        vr,
-                        ldvr as i32,
+                        &mut vlr,
+                        ldvlr as i32,
+                        &mut vrr,
+                        ldvrr as i32,
                         &mut work,
                         lwork as i32,
                         &mut info,
@@ -172,6 +181,80 @@ macro_rules! implement_geev {
 
                 for (w_elem, wr_elem, wi_elem) in izip!(w.iter_mut(), wr.iter(), wi.iter()) {
                     *w_elem = <<$scalar as RlstScalar>::Complex>::new(*wr_elem, *wi_elem);
+                }
+
+                if jobvl == JobVl::Compute {
+                    let mut count = 0;
+                    while count < n - 1 {
+                        if w[count] == w[1 + count].conj() {
+                            for row in 0..n {
+                                unsafe {
+                                    *vl.as_mut().unwrap().get_unchecked_mut(row + count * ldvl) =
+                                        <<$scalar as RlstScalar>::Complex>::new(
+                                            *vlr.get_unchecked(row + count * n),
+                                            *vlr.get_unchecked(row + (1 + count) * n),
+                                        )
+                                };
+                                unsafe {
+                                    *vl.as_mut()
+                                        .unwrap()
+                                        .get_unchecked_mut(row + (1 + count) * ldvl) =
+                                        <<$scalar as RlstScalar>::Complex>::new(
+                                            *vlr.get_unchecked(row + count * n),
+                                            -*vlr.get_unchecked(row + (1 + count) * n),
+                                        )
+                                };
+                            }
+                            count += 2;
+                        } else {
+                            for row in 0..n {
+                                unsafe {
+                                    *vl.as_mut().unwrap().get_unchecked_mut(row + count * ldvl) =
+                                        <<$scalar as RlstScalar>::Complex>::from_real(
+                                            *vlr.get_unchecked(row + count * n),
+                                        )
+                                };
+                            }
+                            count += 1;
+                        }
+                    }
+                }
+
+                if jobvr == JobVr::Compute {
+                    let mut count = 0;
+                    while count < n - 1 {
+                        if w[count] == w[1 + count].conj() {
+                            for row in 0..n {
+                                unsafe {
+                                    *vr.as_mut().unwrap().get_unchecked_mut(row + count * ldvr) =
+                                        <<$scalar as RlstScalar>::Complex>::new(
+                                            *vrr.get_unchecked(row + count * n),
+                                            *vrr.get_unchecked(row + (1 + count) * n),
+                                        )
+                                };
+                                unsafe {
+                                    *vr.as_mut()
+                                        .unwrap()
+                                        .get_unchecked_mut(row + (1 + count) * ldvr) =
+                                        <<$scalar as RlstScalar>::Complex>::new(
+                                            *vrr.get_unchecked(row + count * n),
+                                            -*vrr.get_unchecked(row + (1 + count) * n),
+                                        )
+                                };
+                            }
+                            count += 2;
+                        } else {
+                            for row in 0..n {
+                                unsafe {
+                                    *vr.as_mut().unwrap().get_unchecked_mut(row + count * ldvr) =
+                                        <<$scalar as RlstScalar>::Complex>::from_real(
+                                            *vrr.get_unchecked(row + count * n),
+                                        )
+                                };
+                            }
+                            count += 1;
+                        }
+                    }
                 }
 
                 lapack_return(info, ())
@@ -190,9 +273,9 @@ macro_rules! implement_geev_complex {
                 a: &mut [Self],
                 lda: usize,
                 w: &mut [Self::Complex],
-                vl: Option<&mut [Self]>,
+                vl: Option<&mut [Self::Complex]>,
                 ldvl: usize,
-                vr: Option<&mut [Self]>,
+                vr: Option<&mut [Self::Complex]>,
                 ldvr: usize,
             ) -> LapackResult<()> {
                 let mut info = 0;
