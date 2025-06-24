@@ -430,3 +430,25 @@ pub trait ConjArray {
     /// Return the conjugate array.
     fn conj(self) -> Self::Output;
 }
+
+/// Evaluate array into a new array.
+pub trait EvaluateArray {
+    /// The output type of the evaluated array.
+    type Output;
+
+    /// Evaluate the array into a new array.
+    fn eval(&self) -> Self::Output;
+}
+
+/// Extend Rust into to all elements of an array.
+pub trait IntoArray {
+    /// The element type of the array.
+    type Item;
+    /// The output type of the array.
+    type Output<T>;
+
+    /// Convert the array into a new array.
+    fn into_array<T>(self) -> Self::Output<T>
+    where
+        Self::Item: Into<T>;
+}

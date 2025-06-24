@@ -8,13 +8,13 @@ use num::traits::{MulAdd, MulAddAssign};
 
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
 use super::operators::unary_op::ArrayUnaryOperator;
-use super::{Array, BaseItem, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use super::{Array, BaseItem, DynArray, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use crate::dense::traits::{
     Abs, AbsSquare, ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom,
     FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
     ResizeInPlace, Sqrt, SumFrom, Trace, UnsafeRandom1DAccessMut,
 };
-use crate::ConjArray;
+use crate::{ConjArray, EvaluateArray, IntoArray};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
@@ -233,6 +233,37 @@ where
             item.conj()
         }
         Array::new(ArrayUnaryOperator::new(self, conj))
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> EvaluateArray for Array<ArrayImpl, NDIM>
+where
+    DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
+    Item: Clone + Default,
+    ArrayImpl: BaseItem<Item = Item>,
+{
+    type Output = DynArray<Item, NDIM>;
+
+    fn eval(&self) -> Self::Output {
+        DynArray::new_from(self)
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> IntoArray for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+{
+    type Item = Item;
+
+    type Output<T> = Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>;
+
+    fn into_array<T>(
+        self,
+    ) -> Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>
+    where
+        Item: Into<T>,
+    {
+        Array::new(ArrayUnaryOperator::new(self, |item| item.into()))
     }
 }
 

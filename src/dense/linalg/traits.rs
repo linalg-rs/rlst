@@ -19,7 +19,7 @@ pub enum UpLo {
 }
 
 use super::lapack::{
-    eigenvalues::EigMode,
+    eigendecomposition::EigMode,
     interface::Lapack,
     lu::LuDecomposition,
     qr::{EnablePivoting, QrDecomposition},
@@ -75,7 +75,7 @@ pub trait SymmEig {
 }
 
 /// Compute the eigenvalue decomposition of a matrix.
-pub trait Eigenvalues {
+pub trait Eigendecomposition {
     /// The item type of the matrix.
     type Item: Lapack;
 
@@ -83,12 +83,11 @@ pub trait Eigenvalues {
     fn eigenvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Complex, 1>>;
 
     /// Compute the Schur decomposition of the matrix.
-    fn schur(
-        &self,
-    ) -> RlstResult<(
-        DynArray<<Self::Item as RlstScalar>::Complex, 1>,
-        DynArray<Self::Item, 2>,
-    )>;
+    /// Returns a tuple containing:
+    /// - A block-upper triangular matrix `T`. The diagonal blocks are 1x1 or 2x2.
+    /// and encode the eigenvalues of the matrix.
+    /// - A unitary matrix `Z` such that `A = Z * T * Z^H`, where `Z^H` is the conjugate transpose
+    fn schur(&self) -> RlstResult<(DynArray<Self::Item, 2>, DynArray<Self::Item, 2>)>;
 
     /// Compute the eigenvalues and eigenvectors of the matrix.
     ///

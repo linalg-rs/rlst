@@ -2,7 +2,7 @@
 
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::geev::{JobVl, JobVr};
-use crate::dense::linalg::traits::Eigenvalues;
+use crate::dense::linalg::traits::Eigendecomposition;
 use crate::{dense::types::RlstResult, Shape};
 use crate::{BaseItem, FillFromResize, RawAccessMut, RlstScalar};
 
@@ -22,7 +22,7 @@ pub enum EigMode {
     BothEigenvectors,
 }
 
-impl<Item, ArrayImpl> Eigenvalues for Array<ArrayImpl, 2>
+impl<Item, ArrayImpl> Eigendecomposition for Array<ArrayImpl, 2>
 where
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
     Item: Lapack,
@@ -47,12 +47,7 @@ where
         Ok(w)
     }
 
-    fn schur(
-        &self,
-    ) -> RlstResult<(
-        DynArray<<Self::Item as RlstScalar>::Complex, 1>,
-        DynArray<Self::Item, 2>,
-    )> {
+    fn schur(&self) -> RlstResult<(DynArray<Self::Item, 2>, DynArray<Self::Item, 2>)> {
         let mut a = DynArray::new_from(self);
 
         let [m, n] = a.shape();
@@ -76,7 +71,7 @@ where
             n,
         )?;
 
-        Ok((w, vs))
+        Ok((a, vs))
     }
 
     fn eig(

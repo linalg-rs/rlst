@@ -185,8 +185,8 @@ macro_rules! implement_geev {
 
                 if jobvl == JobVl::Compute {
                     let mut count = 0;
-                    while count < n - 1 {
-                        if w[count] == w[1 + count].conj() {
+                    while count < n {
+                        if count < n - 1 && w[count] == w[1 + count].conj() {
                             for row in 0..n {
                                 unsafe {
                                     *vl.as_mut().unwrap().get_unchecked_mut(row + count * ldvl) =
@@ -222,8 +222,8 @@ macro_rules! implement_geev {
 
                 if jobvr == JobVr::Compute {
                     let mut count = 0;
-                    while count < n - 1 {
-                        if w[count] == w[1 + count].conj() {
+                    while count < n {
+                        if count < n - 1 && w[count] == w[1 + count].conj() {
                             for row in 0..n {
                                 unsafe {
                                     *vr.as_mut().unwrap().get_unchecked_mut(row + count * ldvr) =

@@ -3,9 +3,10 @@
 use itertools::izip;
 use paste::paste;
 use rlst::dense::array::DynArray;
+use rlst::dense::linalg::lapack::eigendecomposition::EigMode;
 use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
-use rlst::dense::linalg::traits::Qr;
+use rlst::dense::linalg::traits::{Eigendecomposition, Qr};
 use rlst::dense::linalg::traits::{Inverse, UpLo};
 use rlst::dense::linalg::traits::{Lu, SymmEig};
 use rlst::dense::traits::SetIdentity;
@@ -343,3 +344,68 @@ implement_symm_eig_test!(f32, 1E-4);
 implement_symm_eig_test!(f64, 1E-10);
 implement_symm_eig_test!(c32, 1E-4);
 implement_symm_eig_test!(c64, 1E-10);
+
+macro_rules! implement_eigendecomposition_tests {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+        #[test]
+        fn [<test_eigendecomposition_$scalar>]() {
+            let n = 11;
+            let mut a = rlst_dynamic_array!($scalar, [n, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let lam = a.eigenvalues().unwrap();
+
+            let (t, z) = a.schur().unwrap();
+
+            // Test the Schur decomposition
+
+            let actual = dot!(z.r(), t.r(), z.r().conj().transpose().eval());
+
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+
+            let (lam2, vr, vl) = a.eig(EigMode::BothEigenvectors).unwrap();
+
+            rlst::assert_array_relative_eq!(lam, lam2, $tol);
+
+            // Test the left eigenvectors
+
+            // First convert a to a complex matrix
+
+            let a_complex = a.into_array::<<$scalar as RlstScalar>::Complex>().eval();
+
+            // Now create a diagonal matrix from the eigenvalues
+
+            let mut diag = DynArray::from_shape([n, n]);
+
+            izip!(diag.diag_iter_mut(), lam2.iter()).for_each(|(v_elem, w_elem)| {
+                *v_elem = w_elem;
+            });
+
+            // Now check the left eigenvectors
+
+            let vlh = vl.unwrap().conj().transpose().eval();
+
+            let actual = dot!(vlh.inverse().unwrap(), dot!(diag.r(), vlh));
+
+            // We test the absolute distance since some imaginary parts are zero
+            // making relative tests fail.
+
+            rlst::assert_array_abs_diff_eq!(actual, a_complex, $tol);
+
+            // Now check the right eigenvectors
+
+            let vr = vr.unwrap();
+
+            let actual = dot!(vr.r(), dot!(diag, vr.r().inverse().unwrap()));
+            rlst::assert_array_abs_diff_eq!(actual, a_complex, $tol);
+
+        }
+        }
+    };
+}
+
+implement_eigendecomposition_tests!(f32, 1E-4);
+implement_eigendecomposition_tests!(f64, 1E-10);
+implement_eigendecomposition_tests!(c32, 5E-3);
+implement_eigendecomposition_tests!(c64, 1E-10);

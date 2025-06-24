@@ -1,6 +1,6 @@
 //! Lapack interface for linear algebra operations.
 
-pub mod eigenvalues;
+pub mod eigendecomposition;
 pub mod inverse;
 pub mod lu;
 pub mod qr;

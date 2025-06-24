@@ -231,4 +231,9 @@ macro_rules! dot {
             $b,
         )
     }};
+
+    ($a:expr, $b:expr, $($c:expr),+) => {{
+        dot!($a, dot!($b, $($c),+))
+    }};
+
 }
