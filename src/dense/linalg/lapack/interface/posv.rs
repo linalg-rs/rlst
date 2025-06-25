@@ -7,10 +7,10 @@ use crate::dense::linalg::lapack::interface::lapack_return;
 
 use super::{c32, c64, LapackResult};
 
-/// `Uplo` parameter for `?potrf` to specify which triangular part of the matrix is stored.
+/// `Uplo` parameter for `?posv` to specify which triangular part of the matrix is stored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
-pub enum PosvfUplo {
+pub enum PosvUplo {
     /// Upper triangular part of the matrix is stored.
     Upper = b'U',
     /// Lower triangular part of the matrix is stored.
@@ -33,7 +33,7 @@ pub trait Posv: Sized {
     /// **Returns:**
     /// A `LapackResult<()>` indicating success or failure.
     fn posv(
-        uplo: PosvfUplo,
+        uplo: PosvUplo,
         n: usize,
         nrhs: usize,
         a: &mut [Self],
@@ -47,7 +47,7 @@ macro_rules! implement_posv {
     ($scalar:ty, $posv:expr) => {
         impl Posv for $scalar {
             fn posv(
-                uplo: PosvfUplo,
+                uplo: PosvUplo,
                 n: usize,
                 nrhs: usize,
                 a: &mut [Self],

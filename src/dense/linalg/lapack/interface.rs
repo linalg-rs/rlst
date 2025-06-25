@@ -18,6 +18,7 @@ use orgqr::Orgqr;
 use posv::Posv;
 use potrf::Potrf;
 use thiserror::Error;
+use trsm::Trsm;
 
 use crate::RlstScalar;
 
@@ -36,6 +37,7 @@ pub mod mqr;
 pub mod orgqr;
 pub mod posv;
 pub mod potrf;
+pub mod trsm;
 
 /// Basic dimension type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,6 +108,7 @@ pub trait Lapack:
     + Orgqr
     + Potrf
     + Posv
+    + Trsm
     + RlstScalar
 {
 }
@@ -126,6 +129,7 @@ impl<T> Lapack for T where
         + Orgqr
         + Potrf
         + Posv
+        + Trsm
         + RlstScalar
 {
 }

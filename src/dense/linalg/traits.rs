@@ -140,3 +140,39 @@ pub trait Solve<Rhs> {
     // If `A` is not square, the system is solved in the least-squares sense.
     fn solve(&self, rhs: &Rhs) -> RlstResult<Self::Output>;
 }
+
+/// Cholesky decomposition for positive definite matrices.
+pub trait Cholesky {
+    /// Item type of the array.
+    type Item;
+
+    /// Compute the Cholesky decomposition of a positive definite matrix.
+    ///
+    /// **Arguments:**
+    /// - `uplo`: Specifies whether the upper or lower triangular part of the matrix is stored.
+    fn cholesky(&self, uplo: UpLo) -> RlstResult<DynArray<Self::Item, 2>>;
+}
+
+/// Cholesky solver for positive definite systems.
+pub trait CholeskySolve<Rhs> {
+    /// The output type of the Cholesky solver.
+    type Output;
+
+    /// Solve a positive definite system of linear equations using Cholesky factorization.
+    ///
+    /// **Arguments:**
+    /// - `uplo`: Specifies whether the upper or lower triangular part of the matrix is stored.
+    fn cholesky_solve(&self, uplo: UpLo, rhs: &Rhs) -> RlstResult<Self::Output>;
+}
+
+/// Solve a triangular system of linear equations.
+pub trait SolveTriangular<Rhs> {
+    /// The output type of the triangular solver.
+    type Output;
+
+    /// Solve a triangular system of linear equations.
+    ///
+    /// **Arguments:**
+    /// - `uplo`: Specifies whether the upper or lower triangular part of the matrix is stored.
+    fn solve_triangular(&self, uplo: UpLo, rhs: &Rhs) -> RlstResult<Self::Output>;
+}

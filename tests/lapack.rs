@@ -7,7 +7,9 @@ use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
 use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
 use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
-use rlst::dense::linalg::traits::{EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve};
+use rlst::dense::linalg::traits::{
+    EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve, SolveTriangular,
+};
 use rlst::dense::linalg::traits::{Inverse, UpLo};
 use rlst::dense::linalg::traits::{Lu, SymmEig};
 use rlst::dense::traits::SetIdentity;
@@ -593,3 +595,25 @@ implement_test_solve!(f32, 1E-4);
 implement_test_solve!(f64, 1E-10);
 implement_test_solve!(c32, 1E-4);
 implement_test_solve!(c64, 1E-10);
+
+#[test]
+fn test_solve_triangular() {
+    let n = 10;
+    let mut a = rlst_dynamic_array!(f64, [n, n]);
+    a.fill_from_seed_equally_distributed(0);
+
+    for row in 0..n {
+        for col in 1 + row..n {
+            a[[row, col]] = 0.0; // Make it lower triangular
+        }
+    }
+
+    let mut x_actual = rlst_dynamic_array!(f64, [n, 1]);
+    x_actual.fill_from_seed_equally_distributed(1);
+
+    let b = dot!(a.r(), x_actual.r());
+
+    let x = a.solve_triangular(UpLo::Lower, &b).unwrap();
+
+    rlst::assert_array_relative_eq!(x_actual, x, 1E-10);
+}
