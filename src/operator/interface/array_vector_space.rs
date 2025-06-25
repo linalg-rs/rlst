@@ -35,6 +35,11 @@ impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
             space,
         }
     }
+
+    /// Create a new element from an existing array
+    pub fn new_from_array(space: Rc<ArrayVectorSpace<Item>>, elem: DynamicArray<Item, 1>) -> Self {
+        Self { elem, space }
+    }
 }
 
 impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<Item> {
