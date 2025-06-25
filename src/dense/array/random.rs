@@ -22,6 +22,7 @@ impl<
 where
     StandardNormal: Distribution<<Item as RlstScalar>::Real>,
     Standard: Distribution<<Item as RlstScalar>::Real>,
+    <Item as RlstScalar>::Real: RandScalar
 {
     /// Fill an array with normally distributed random numbers.
     pub fn fill_from_standard_normal<R: Rng>(&mut self, rng: &mut R) {
@@ -35,6 +36,15 @@ where
         let dist = Standard;
         self.iter_mut()
             .for_each(|val| *val = <Item>::random_scalar(rng, &dist));
+    }
+
+    /// Fill an array with real equally distributed random numbers.
+    pub fn fill_from_equally_distributed_real<R: Rng>(&mut self, rng: &mut R) {
+        let dist = Standard;
+        self.iter_mut()
+            .for_each(|val| *val = Item::from_real(<<Item as RlstScalar>::Real>::random_scalar(
+                rng, &dist,
+            )));
     }
 
     /// Fill with equally distributed numbers using a given `seed`.
