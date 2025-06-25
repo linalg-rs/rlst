@@ -3,10 +3,11 @@
 use itertools::izip;
 use paste::paste;
 use rlst::dense::array::DynArray;
-use rlst::dense::linalg::lapack::eigendecomposition::EigMode;
+use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
 use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
+use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
-use rlst::dense::linalg::traits::{Eigendecomposition, Qr};
+use rlst::dense::linalg::traits::{EigenvalueDecomposition, Qr, SingularvalueDecomposition};
 use rlst::dense::linalg::traits::{Inverse, UpLo};
 use rlst::dense::linalg::traits::{Lu, SymmEig};
 use rlst::dense::traits::SetIdentity;
@@ -148,9 +149,7 @@ macro_rules! implement_qr_tests {
 
         #[test]
         pub fn [<test_thin_qr_$scalar>]() {
-            let shape = [8, 5];
             let mut mat = rlst_dynamic_array!($scalar, [8, 5]);
-            let mat2 = DynArray::new_from(&mat);
 
             mat.fill_from_seed_equally_distributed(0);
 
@@ -183,9 +182,7 @@ macro_rules! implement_qr_tests {
 
         #[test]
         pub fn [<test_thick_qr_$scalar>]() {
-            let shape = [5, 8];
             let mut mat = rlst_dynamic_array!($scalar, [5, 8]);
-            let mat2 = DynArray::new_from(&mat);
 
             mat.fill_from_seed_equally_distributed(0);
 
@@ -218,9 +215,7 @@ macro_rules! implement_qr_tests {
 
         #[test]
         pub fn [<test_thin_qr_pivoted_$scalar>]() {
-            let shape = [8, 5];
             let mut mat = rlst_dynamic_array!($scalar, [8, 5]);
-            let mat2 = DynArray::new_from(&mat);
 
             mat.fill_from_seed_equally_distributed(0);
 
@@ -253,9 +248,7 @@ macro_rules! implement_qr_tests {
 
         #[test]
         pub fn [<test_thick_qr_pivoted_$scalar>]() {
-            let shape = [5, 8];
             let mut mat = rlst_dynamic_array!($scalar, [5, 8]);
-            let mat2 = DynArray::new_from(&mat);
 
             mat.fill_from_seed_equally_distributed(0);
 
@@ -310,11 +303,11 @@ macro_rules! implement_symm_eig_test {
             let a = DynArray::new_from(&(a.r() + a.r().conj().transpose()));
 
             let (w1, _) = a
-                .symm_eig(UpLo::Upper, SymmEigMode::EigenvaluesOnly)
+                .eigh(UpLo::Upper, SymmEigMode::EigenvaluesOnly)
                 .unwrap();
 
             let (w2, v) = a
-                .symm_eig(UpLo::Upper, SymmEigMode::EigenvaluesAndEigenvectors)
+                .eigh(UpLo::Upper, SymmEigMode::EigenvaluesAndEigenvectors)
                 .unwrap();
 
             let v = v.unwrap();
@@ -409,3 +402,124 @@ implement_eigendecomposition_tests!(f32, 1E-4);
 implement_eigendecomposition_tests!(f64, 1E-10);
 implement_eigendecomposition_tests!(c32, 5E-3);
 implement_eigendecomposition_tests!(c64, 1E-10);
+
+macro_rules! implement_svd_tests {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+
+
+        #[test]
+        fn [<test_singular_values_$scalar>]() {
+            let m = 10;
+            let n = 5;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let ata = dot!(a.r().conj().transpose().eval(), a.r());
+
+            let s = a.singularvalues().unwrap();
+
+            let actual = ata
+                .eigenvaluesh()
+                .unwrap()
+                .apply_unary_op(|v| <<$scalar as RlstScalar>::Real>::sqrt(v))
+                .reverse_axis(0);
+
+            rlst::assert_array_relative_eq!(s, actual, $tol);
+        }
+
+        #[test]
+        fn [<test_svd_thin_compact_$scalar>]() {
+            let m = 10;
+            let n = 5;
+            let k = std::cmp::min(m, n);
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let (s, u, vt) = a.svd(SvdMode::Compact).unwrap();
+
+            let s = {
+                let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
+                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                    *v_elem = RlstScalar::from_real(w_elem);
+                });
+                s_mat
+            };
+
+            let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+        }
+
+        #[test]
+        fn [<test_svd_thin_full_$scalar>]() {
+            let m = 10;
+            let n = 5;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let (s, u, vt) = a.svd(SvdMode::Full).unwrap();
+
+            let s = {
+                let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
+                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                    *v_elem = RlstScalar::from_real(w_elem);
+                });
+                s_mat
+            };
+
+            let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+        }
+
+        #[test]
+        fn [<test_svd_thick_compact_$scalar>]() {
+            let m = 5;
+            let n = 10;
+            let k = std::cmp::min(m, n);
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let (s, u, vt) = a.svd(SvdMode::Compact).unwrap();
+
+            let s = {
+                let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
+                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                    *v_elem = RlstScalar::from_real(w_elem);
+                });
+                s_mat
+            };
+
+            let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+        }
+
+        #[test]
+        fn [<test_svd_thick_full_$scalar>]() {
+            let m = 5;
+            let n = 10;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let (s, u, vt) = a.svd(SvdMode::Full).unwrap();
+
+            let s = {
+                let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
+                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                    *v_elem = RlstScalar::from_real(w_elem);
+                });
+                s_mat
+            };
+
+            let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+        }
+
+
+                }
+    };
+}
+
+implement_svd_tests!(f32, 1E-4);
+implement_svd_tests!(f64, 1E-10);
+implement_svd_tests!(c32, 1E-4);
+implement_svd_tests!(c64, 1E-10);

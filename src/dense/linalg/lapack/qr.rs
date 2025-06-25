@@ -3,19 +3,13 @@
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::traits::Qr;
 use crate::dense::traits::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
-use crate::{dense::types::RlstResult, RawAccess, Shape, Stride};
+use crate::{dense::types::RlstResult, Shape};
 use crate::{BaseItem, FillFromResize};
-
-use crate::dense::types::RlstError;
-use crate::dense::types::RlstScalar;
 
 use super::interface::geqp3::Geqp3;
 use super::interface::geqrf::Geqrf;
 use super::interface::orgqr::Orgqr;
-use super::interface::{geqrf, Lapack};
-
-use num::One;
-use num::Zero;
+use super::interface::Lapack;
 
 /// Stores the result of a QR decomposition of a matrix.
 pub struct QrDecomposition<Item> {
@@ -105,7 +99,6 @@ where
             }
         }
 
-        let lda = q.shape()[0];
         <Item as Orgqr>::orgqr(m, n, k, q.data_mut(), m, &self.tau)?;
 
         Ok(q)

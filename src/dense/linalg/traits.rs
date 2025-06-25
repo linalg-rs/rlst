@@ -1,15 +1,11 @@
 //! Traits for linear algebra operations on matrices.
 
-use std::collections::btree_set::SymmetricDifference;
-
 use crate::{
-    dense::{
-        array::{Array, DynArray},
-        types::{RlstResult, TransMode},
-    },
-    BaseItem, RlstScalar,
+    dense::{array::DynArray, types::RlstResult},
+    RlstScalar,
 };
 
+/// Determine whether a matrix is upper or lower triangular.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpLo {
     /// Upper triangular matrix.
@@ -19,10 +15,11 @@ pub enum UpLo {
 }
 
 use super::lapack::{
-    eigendecomposition::EigMode,
+    eigenvalue_decomposition::EigMode,
     interface::Lapack,
     lu::LuDecomposition,
     qr::{EnablePivoting, QrDecomposition},
+    singular_value_decomposition::SvdMode,
     symmeig::SymmEigMode,
 };
 
@@ -63,8 +60,13 @@ pub trait SymmEig {
     /// Item type of the symmetric eigenvalue decomposition.
     type Item: Lapack;
 
+    /// Compute the eigenvalues of a real symmetric or complex Hermitian matrix.
+    fn eigenvaluesh(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>> {
+        Ok(self.eigh(UpLo::Upper, SymmEigMode::EigenvaluesOnly)?.0)
+    }
+
     /// Compute the symmetric eigenvalue decomposition of a matrix.
-    fn symm_eig(
+    fn eigh(
         &self,
         uplo: UpLo,
         mode: SymmEigMode,
@@ -75,7 +77,7 @@ pub trait SymmEig {
 }
 
 /// Compute the eigenvalue decomposition of a matrix.
-pub trait Eigendecomposition {
+pub trait EigenvalueDecomposition {
     /// The item type of the matrix.
     type Item: Lapack;
 
@@ -102,5 +104,29 @@ pub trait Eigendecomposition {
         DynArray<<Self::Item as RlstScalar>::Complex, 1>,
         Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
         Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
+    )>;
+}
+
+/// Compute the singular value decomposition of a matrix.
+pub trait SingularvalueDecomposition {
+    /// The item type of the matrix.
+    type Item: Lapack;
+
+    /// Compute the singular values of a matrix.
+    fn singularvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>>;
+
+    /// Compute the singular value decomposition of a matrix.
+    ///
+    /// The function returns a tuple containing:
+    /// - A vector of singular values.
+    /// - A matrix `U` containing the left singular vectors.
+    /// - A matrix `Vh` containing the right singular vectors as rows.
+    fn svd(
+        &self,
+        mode: SvdMode,
+    ) -> RlstResult<(
+        DynArray<<Self::Item as RlstScalar>::Real, 1>,
+        DynArray<Self::Item, 2>,
+        DynArray<Self::Item, 2>,
     )>;
 }

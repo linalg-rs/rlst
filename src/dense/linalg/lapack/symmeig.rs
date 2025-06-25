@@ -1,12 +1,10 @@
 //! Implementation of the symmetric eigenvalue decomposition using LAPACK.
 
-use rlst_proc_macro::rlst_dynamic_array;
-
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::ev::{self, Ev, EvUplo};
-use crate::dense::linalg::traits::{Qr, SymmEig, UpLo};
-use crate::dense::traits::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
-use crate::{dense::types::RlstResult, RawAccess, Shape, Stride};
+use crate::dense::linalg::traits::{SymmEig, UpLo};
+use crate::dense::traits::RawAccessMut;
+use crate::{dense::types::RlstResult, Shape};
 use crate::{BaseItem, FillFromResize};
 
 use super::interface::Lapack;
@@ -28,7 +26,7 @@ where
 {
     type Item = Item;
 
-    fn symm_eig(
+    fn eigh(
         &self,
         uplo: UpLo,
         mode: SymmEigMode,

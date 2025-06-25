@@ -5,11 +5,8 @@ use num::One;
 use super::interface::Lapack;
 
 use crate::dense::array::DynArray;
-use crate::dense::linalg::lapack::interface::getrs::{Getrs, GetrsTransMode};
+use crate::dense::linalg::lapack::interface::getrs::GetrsTransMode;
 use crate::dense::linalg::traits::Lu;
-// use crate::dense::linalg::traits::{
-//     GetDeterminant, GetL, GetLU, GetLuPermVec, GetP, GetU, Lu, Solve,
-// };
 use crate::dense::types::{RlstError, TransMode};
 
 use crate::dense::types::RlstResult;

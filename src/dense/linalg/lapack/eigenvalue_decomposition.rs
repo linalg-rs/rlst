@@ -2,7 +2,7 @@
 
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::geev::{JobVl, JobVr};
-use crate::dense::linalg::traits::Eigendecomposition;
+use crate::dense::linalg::traits::EigenvalueDecomposition;
 use crate::{dense::types::RlstResult, Shape};
 use crate::{BaseItem, FillFromResize, RawAccessMut, RlstScalar};
 
@@ -22,7 +22,7 @@ pub enum EigMode {
     BothEigenvectors,
 }
 
-impl<Item, ArrayImpl> Eigendecomposition for Array<ArrayImpl, 2>
+impl<Item, ArrayImpl> EigenvalueDecomposition for Array<ArrayImpl, 2>
 where
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
     Item: Lapack,
