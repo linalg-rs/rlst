@@ -54,10 +54,6 @@ where
         b: &Array<ArrayImpl, NDIM>,
     ) -> RlstResult<DynArray<Item, NDIM>>
     where
-        ArrayImpl: BaseItem<Item = Item>
-            + Shape<NDIM>
-            + RawAccess<Item = Item>
-            + RawAccessMut<Item = Item>,
         DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
     {
         if NDIM > 2 {

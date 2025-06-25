@@ -130,3 +130,13 @@ pub trait SingularvalueDecomposition {
         DynArray<Self::Item, 2>,
     )>;
 }
+
+/// Generic trait for solving square or rectangular linear systems.
+pub trait Solve<Rhs> {
+    /// The output type of the solver.
+    type Output;
+
+    /// Solve the linear system `Ax = b` for `x`.
+    // If `A` is not square, the system is solved in the least-squares sense.
+    fn solve(&self, rhs: &Rhs) -> RlstResult<Self::Output>;
+}

@@ -7,7 +7,7 @@ use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
 use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
 use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
-use rlst::dense::linalg::traits::{EigenvalueDecomposition, Qr, SingularvalueDecomposition};
+use rlst::dense::linalg::traits::{EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve};
 use rlst::dense::linalg::traits::{Inverse, UpLo};
 use rlst::dense::linalg::traits::{Lu, SymmEig};
 use rlst::dense::traits::SetIdentity;
@@ -523,3 +523,73 @@ implement_svd_tests!(f32, 1E-4);
 implement_svd_tests!(f64, 1E-10);
 implement_svd_tests!(c32, 1E-4);
 implement_svd_tests!(c64, 1E-10);
+
+macro_rules! implement_test_solve {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+
+        #[test]
+        pub fn [<test_solve_square_$scalar>]() {
+            let m = 5;
+            let n = 5;
+            let nrhs = 4;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let mut x_expected = rlst_dynamic_array!($scalar, [n, nrhs]);
+            x_expected.fill_from_seed_equally_distributed(1);
+
+            let rhs = dot!(a.r(), x_expected.r());
+
+            let x_actual = a.solve(&rhs).unwrap();
+
+            rlst::assert_array_relative_eq!(x_actual, x_expected, $tol);
+        }
+
+        #[test]
+        pub fn [<test_solve_thin_$scalar>]() {
+            let m = 10;
+            let n = 5;
+            let nrhs = 4;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let mut x_expected = rlst_dynamic_array!($scalar, [n, nrhs]);
+            x_expected.fill_from_seed_equally_distributed(1);
+
+            let rhs = dot!(a.r(), x_expected.r());
+
+            let x_actual = a.solve(&rhs).unwrap();
+
+            rlst::assert_array_relative_eq!(x_actual, x_expected, $tol);
+        }
+
+        #[test]
+        pub fn [<test_solve_thick_$scalar>]() {
+            let m = 5;
+            let n = 10;
+            let nrhs = 4;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            let mut rhs = rlst_dynamic_array!($scalar, [m, nrhs]);
+            rhs.fill_from_seed_equally_distributed(1);
+
+            let x_actual = a.solve(&rhs).unwrap();
+
+            let max_res = (dot!(a.r(), x_actual.r()) - rhs.r())
+                .iter()
+                .map(|v| v.abs())
+                .fold(0.0, |acc, v| Max::max(&acc, &v));
+
+            assert!(max_res < $tol);
+        }
+
+                }
+    };
+}
+
+implement_test_solve!(f32, 1E-4);
+implement_test_solve!(f64, 1E-10);
+implement_test_solve!(c32, 1E-4);
+implement_test_solve!(c64, 1E-10);
