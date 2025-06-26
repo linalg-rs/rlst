@@ -218,22 +218,3 @@ fn new_shape(shape: [usize; 2], trans_mode: TransMode) -> [usize; 2] {
         TransMode::ConjTrans => [shape[1], shape[0]],
     }
 }
-
-/// Macro for dot product between compatible arrays.
-///
-/// It always allocates a new array for the result.
-#[macro_export]
-macro_rules! dot {
-    ($a:expr, $b:expr) => {{
-        $crate::dense::traits::MultIntoResize::simple_mult_into_resize(
-            $crate::dense::array::empty_array(),
-            $a,
-            $b,
-        )
-    }};
-
-    ($a:expr, $b:expr, $($c:expr),+) => {{
-        dot!($a, dot!($b, $($c),+))
-    }};
-
-}

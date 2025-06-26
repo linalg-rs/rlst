@@ -66,6 +66,11 @@ pub struct Array<ArrayImpl, const NDIM: usize>(ArrayImpl);
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Instantiate a new array from an `ArrayImpl` structure.
     pub fn new(arr: ArrayImpl) -> Self {
+        assert!(
+            NDIM > 0,
+            "Array dimension must be greater than 0, got {}",
+            NDIM
+        );
         Self(arr)
     }
 }
@@ -201,6 +206,36 @@ pub fn empty_array<Item: Clone + Default, const NDIM: usize>(
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
+}
+
+impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM> {
+    /// Create a new array from a slice with a given `shape`.
+    ///
+    pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
+        assert_eq!(
+            slice.len(),
+            shape.iter().product::<usize>(),
+            "Slice length does not match the shape: {} != {}",
+            slice.len(),
+            shape.iter().product::<usize>()
+        );
+        Array::new(BaseArray::new(SliceContainer::new(slice), shape))
+    }
+}
+
+impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
+    /// Create a new array from a mutable slice with a given `shape`.
+    ///
+    pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
+        assert_eq!(
+            slice.len(),
+            shape.iter().product::<usize>(),
+            "Slice length does not match the shape: {} != {}",
+            slice.len(),
+            shape.iter().product::<usize>()
+        );
+        Array::new(BaseArray::new(SliceContainerMut::new(slice), shape))
+    }
 }
 
 impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {

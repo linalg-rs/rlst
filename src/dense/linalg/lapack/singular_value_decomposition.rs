@@ -4,7 +4,7 @@ use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::gesdd::JobZ;
 use crate::dense::linalg::traits::SingularvalueDecomposition;
 use crate::{dense::types::RlstResult, Shape};
-use crate::{BaseItem, EvaluateArray, FillFromResize, RawAccessMut, RlstScalar};
+use crate::{BaseItem, EvaluateArray, FillFromResize, Gemm, RawAccessMut, RlstScalar};
 
 use super::interface::Lapack;
 
@@ -19,7 +19,7 @@ pub enum SvdMode {
 
 impl<Item, ArrayImpl> SingularvalueDecomposition for Array<ArrayImpl, 2>
 where
-    Item: Lapack,
+    Item: Lapack + Gemm,
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
     DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
 {

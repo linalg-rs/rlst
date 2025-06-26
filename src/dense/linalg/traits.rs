@@ -1,8 +1,12 @@
 //! Traits for linear algebra operations on matrices.
 
+use itertools::Itertools;
+use num::Zero;
+
+use crate::dense::traits::ConjArray;
 use crate::{
     dense::{array::DynArray, types::RlstResult},
-    RlstScalar,
+    ArrayIterator, EvaluateArray, Gemm, IntoArray, Len, RlstScalar, Shape,
 };
 
 /// Determine whether a matrix is upper or lower triangular.
@@ -18,6 +22,7 @@ use super::lapack::{
     eigenvalue_decomposition::EigMode,
     interface::Lapack,
     lu::LuDecomposition,
+    pseudo_inverse::PInv,
     qr::{EnablePivoting, QrDecomposition},
     singular_value_decomposition::SvdMode,
     symmeig::SymmEigMode,
@@ -110,7 +115,7 @@ pub trait EigenvalueDecomposition {
 /// Compute the singular value decomposition of a matrix.
 pub trait SingularvalueDecomposition {
     /// The item type of the matrix.
-    type Item: Lapack;
+    type Item: Lapack + Gemm;
 
     /// Compute the singular values of a matrix.
     fn singularvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>>;
@@ -129,6 +134,77 @@ pub trait SingularvalueDecomposition {
         DynArray<Self::Item, 2>,
         DynArray<Self::Item, 2>,
     )>;
+
+    /// Compute the truncated singular value decomposition of a matrix.
+    ///
+    /// **Arguments:**
+    /// - `max_singular_values`: Maximum number of singular values to compute. If `None`, all
+    /// singular values are computed.
+    /// - `tol`: Relative tolerance for truncation. Singular values smaller or equal to `tol *
+    /// s[0]`, where `s[0]` is the largest singular value, will be discarded. Zero singular values
+    /// are always discarded.
+    ///
+    /// Returns a tuple containing:
+    /// - A vector of singular values
+    /// - A matrix `U` containing the left singular vectors.
+    /// - A matrix `Vh` containing the right singular vectors as rows.
+    fn svd_truncated(
+        &self,
+        max_singular_values: Option<usize>,
+        tol: Option<<Self::Item as RlstScalar>::Real>,
+    ) -> RlstResult<(
+        DynArray<<Self::Item as RlstScalar>::Real, 1>,
+        DynArray<Self::Item, 2>,
+        DynArray<Self::Item, 2>,
+    )> {
+        let (s, u, vh) = self.svd(SvdMode::Compact)?;
+
+        let nvalues = std::cmp::min(
+            match max_singular_values {
+                Some(n) => n,
+                None => s.len(),
+            },
+            s.len(),
+        );
+
+        let tol = match tol {
+            Some(t) => t,
+            None => <<Self::Item as RlstScalar>::Real as Zero>::zero(),
+        };
+
+        let count = match s
+            .iter()
+            .take(nvalues)
+            .find_position(|&elem| elem <= tol * s[[0]])
+        {
+            Some((index, _)) => index,
+            None => nvalues,
+        };
+
+        let s = s.into_subview([0], [count]).eval();
+        let u = u.r().into_subview([0, 0], [u.shape()[0], count]).eval();
+        let vh = vh.r().into_subview([0, 0], [count, vh.shape()[1]]).eval();
+
+        Ok((s, u, vh))
+    }
+
+    /// Compute the pseudo-inverse of a matrix.
+    fn pseudo_inverse(
+        &self,
+        max_singular_values: Option<usize>,
+        tol: Option<<Self::Item as RlstScalar>::Real>,
+    ) -> RlstResult<PInv<Self::Item>>
+    where
+        <Self::Item as RlstScalar>::Real: Into<Self::Item>,
+    {
+        let (s, u, vh) = self.svd_truncated(max_singular_values, tol)?;
+
+        Ok(PInv::new(
+            s.into_array::<Self::Item>().eval(),
+            u.conj().transpose().eval(),
+            vh.conj().transpose().eval(),
+        ))
+    }
 }
 
 /// Generic trait for solving square or rectangular linear systems.

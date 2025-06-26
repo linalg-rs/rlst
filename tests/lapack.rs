@@ -1,6 +1,7 @@
 //! Tests for LAPACK bindings
 
 use itertools::izip;
+use num::Zero;
 use paste::paste;
 use rlst::dense::array::DynArray;
 use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
@@ -8,7 +9,8 @@ use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
 use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
 use rlst::dense::linalg::traits::{
-    EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve, SolveTriangular,
+    Cholesky, CholeskySolve, EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve,
+    SolveTriangular,
 };
 use rlst::dense::linalg::traits::{Inverse, UpLo};
 use rlst::dense::linalg::traits::{Lu, SymmEig};
@@ -596,24 +598,145 @@ implement_test_solve!(f64, 1E-10);
 implement_test_solve!(c32, 1E-4);
 implement_test_solve!(c64, 1E-10);
 
-#[test]
-fn test_solve_triangular() {
-    let n = 10;
-    let mut a = rlst_dynamic_array!(f64, [n, n]);
-    a.fill_from_seed_equally_distributed(0);
+macro_rules! implement_triangular_solve_test {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
 
-    for row in 0..n {
-        for col in 1 + row..n {
-            a[[row, col]] = 0.0; // Make it lower triangular
+        #[test]
+        fn [<test_solve_triangular_$scalar>]() {
+            let n = 10;
+            let mut a = rlst_dynamic_array!($scalar, [n, n]);
+            a.fill_from_seed_equally_distributed(0);
+
+            for row in 0..n {
+                for col in 1 + row..n {
+                    a[[row, col]] = <$scalar>::zero(); // Make it lower triangular
+                }
+            }
+
+            let mut x_actual = rlst_dynamic_array!($scalar, [n, 1]);
+            x_actual.fill_from_seed_equally_distributed(1);
+
+            let b = dot!(a.r(), x_actual.r());
+
+            let x = a.solve_triangular(UpLo::Lower, &b).unwrap();
+
+            rlst::assert_array_relative_eq!(x_actual, x, $tol);
         }
-    }
 
-    let mut x_actual = rlst_dynamic_array!(f64, [n, 1]);
-    x_actual.fill_from_seed_equally_distributed(1);
 
-    let b = dot!(a.r(), x_actual.r());
-
-    let x = a.solve_triangular(UpLo::Lower, &b).unwrap();
-
-    rlst::assert_array_relative_eq!(x_actual, x, 1E-10);
+                }
+    };
 }
+
+implement_triangular_solve_test!(f32, 5E-3);
+implement_triangular_solve_test!(f64, 1E-10);
+implement_triangular_solve_test!(c32, 5E-3);
+implement_triangular_solve_test!(c64, 1E-10);
+
+macro_rules! implement_cholesky_test {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+
+        #[test]
+        fn [<test_cholesky_$scalar>]() {
+            let n = 10;
+            let mut a = rlst_dynamic_array!($scalar, [n, n]);
+            a.fill_from_seed_normally_distributed(0);
+
+            // Make it symmetric positive definite
+            a = dot!(a.r().conj().transpose().eval(), a.r());
+
+            let z = a.cholesky(UpLo::Upper).unwrap();
+
+            let actual = dot!(z.r().conj().transpose().eval(), z.r());
+
+            rlst::assert_array_relative_eq!(actual, a, $tol);
+
+            // Now solve a linear system with Cholesky
+
+            let mut x_expected = rlst_dynamic_array!($scalar, [n, 2]);
+            x_expected.fill_from_seed_equally_distributed(1);
+
+            let b = dot!(a.r(), x_expected.r());
+
+            let x_actual = a.cholesky_solve(UpLo::Upper, &b).unwrap();
+
+            rlst::assert_array_relative_eq!(x_actual, x_expected, $tol);
+        }
+
+                }
+    };
+}
+
+implement_cholesky_test!(f32, 1E-3);
+implement_cholesky_test!(f64, 1E-10);
+implement_cholesky_test!(c32, 1E-3);
+implement_cholesky_test!(c64, 1E-10);
+
+macro_rules! implement_pinv_tests {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+
+        #[test]
+        fn [<test_pseudo_inverse_thin_$scalar>]() {
+            let m = 20;
+            let n = 10;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_normally_distributed(0);
+
+            let pinv = a.pseudo_inverse(None, None).unwrap();
+
+            let pinv_mat = pinv.as_matrix();
+
+            assert_eq!(pinv_mat.shape(), [n, m]);
+
+            let mut ident = rlst_dynamic_array!($scalar, [n, n]);
+            ident.set_identity();
+
+            let actual = dot!(pinv_mat.r(), a.r());
+
+            rlst::assert_array_abs_diff_eq!(actual, ident, $tol);
+
+            let mut x = rlst_dynamic_array!($scalar, [m, 2]);
+
+            x.fill_from_seed_equally_distributed(1);
+
+            rlst::assert_array_relative_eq!(dot!(pinv_mat.r(), x.r()), pinv.apply(&x), $tol);
+        }
+
+        #[test]
+        fn [<test_pseudo_inverse_thick_$scalar>]() {
+            let m = 10;
+            let n = 20;
+            let mut a = rlst_dynamic_array!($scalar, [m, n]);
+            a.fill_from_seed_normally_distributed(0);
+
+            let pinv = a.pseudo_inverse(None, None).unwrap();
+
+            let pinv_mat = pinv.as_matrix();
+
+            assert_eq!(pinv_mat.shape(), [n, m]);
+
+            let mut ident = rlst_dynamic_array!($scalar, [m, m]);
+            ident.set_identity();
+
+            let actual = dot!(a.r(), pinv_mat.r());
+
+            rlst::assert_array_abs_diff_eq!(actual, ident, $tol);
+
+            let mut x = rlst_dynamic_array!($scalar, [m, 2]);
+
+            x.fill_from_seed_equally_distributed(1);
+
+            rlst::assert_array_relative_eq!(dot!(pinv_mat.r(), x.r()), pinv.apply(&x), $tol);
+        }
+
+                }
+    };
+}
+
+implement_pinv_tests!(f32, 1E-4);
+implement_pinv_tests!(f64, 1E-10);
+implement_pinv_tests!(c32, 1E-4);
+implement_pinv_tests!(c64, 1E-10);

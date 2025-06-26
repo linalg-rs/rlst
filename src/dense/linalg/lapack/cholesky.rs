@@ -8,7 +8,7 @@ use crate::{
             traits::{Cholesky, CholeskySolve},
         },
     },
-    Array, BaseItem, FillFromResize, RawAccessMut, Shape,
+    Array, BaseItem, FillFromResize, RawAccessMut, Shape, UnsafeRandomAccessMut,
 };
 
 use super::interface::Lapack;
@@ -41,6 +41,22 @@ where
         };
 
         Item::potrf(uplo, m, a.data_mut(), m)?;
+
+        // We manually set the lower or upper part of the matrix to zero.
+
+        if uplo == PotrfUplo::Upper {
+            for col in 0..n {
+                for row in (col + 1)..m {
+                    unsafe { *a.get_unchecked_mut([row, col]) = Item::zero() };
+                }
+            }
+        } else {
+            for col in 0..n {
+                for row in 0..col {
+                    unsafe { *a.get_unchecked_mut([row, col]) = Item::zero() };
+                }
+            }
+        }
 
         Ok(a)
     }

@@ -97,6 +97,8 @@ pub trait RlstScalar:
     /// Sqaure of absolute value
     fn square(self) -> Self::Real;
 
+    /// Reciprocal
+    fn recip(self) -> Self;
     /// Square root
     fn sqrt(self) -> Self;
     /// Exponential

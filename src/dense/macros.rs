@@ -1,4 +1,47 @@
-//! The macros defined here make it easy to create new matrices and vectors.
+//! A collection of macros for Rlst.
+
+/// Dot product between compatible arrays.
+///
+/// It always allocates a new array for the result.
+#[macro_export]
+macro_rules! dot {
+    ($a:expr, $b:expr) => {{
+        $crate::dense::traits::MultIntoResize::simple_mult_into_resize(
+            $crate::dense::array::empty_array(),
+            $a,
+            $b,
+        )
+    }};
+
+    ($a:expr, $b:expr, $($c:expr),+) => {{
+        dot!($a, dot!($b, $($c),+))
+    }};
+
+}
+
+/// Create a new n-dimensional diagonal array from a list of diagonal entries.
+///
+/// Call with `diag!(d)` where `d` is a one-dimensional array to obtain a matrix with `d` on the
+/// diagonal. For n-dimensional diagonal arrays, call with `diag!(d, NDIM)` where `NDIM` is the
+/// number of dimensions and `d` is a list of diagonal entries.
+#[macro_export]
+macro_rules! diag {
+    ($d:expr) => {
+        diag!($d, 2)
+    };
+
+    ($d:expr, $ndim:literal) => {{
+        use itertools::izip;
+        use $crate::dense::traits::{ArrayIterator, GetDiagMut, Len};
+
+        let mut diag_array =
+            $crate::dense::array::DynArray::<_, $ndim>::from_shape([$d.len(); $ndim]);
+        izip!(diag_array.diag_iter_mut(), $d.iter()).for_each(|(diag_entry, entry)| {
+            *diag_entry = entry;
+        });
+        diag_array
+    }};
+}
 
 // /// Create a new rank1 array of the form `u x v^T`.
 // ///

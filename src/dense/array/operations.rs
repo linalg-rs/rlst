@@ -14,7 +14,9 @@ use crate::dense::traits::{
     FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
     ResizeInPlace, Sqrt, SumFrom, Trace, UnsafeRandom1DAccessMut,
 };
-use crate::{ConjArray, EvaluateArray, IntoArray};
+use crate::{
+    As2dArray, As2dArrayMut, ConjArray, EvaluateArray, IntoArray, RawAccess, RawAccessMut, Stride,
+};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where
@@ -264,6 +266,101 @@ where
         Item: Into<T>,
     {
         Array::new(ArrayUnaryOperator::new(self, |item| item.into()))
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> As2dArray<NDIM> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item> + Shape<NDIM> + Stride<NDIM> + RawAccess<Item = Item>,
+{
+    type ArrayImpl = ArrayImpl;
+
+    type Item = Item;
+
+    fn as_2d_col_major_array(
+        &self,
+    ) -> crate::dense::types::RlstResult<super::SliceArray<'_, Self::Item, 2>> {
+        let stride = self.stride();
+        let shape = self.shape();
+
+        if NDIM == 1 {
+            // The vector case.
+            if stride[0] != 1 {
+                return Err(crate::dense::types::RlstError::GeneralError(
+                    "Cannot convert to 2D array from non-contiguous data.".to_string(),
+                ));
+            } else {
+                // Convert 1D array to 2D column vector
+                return Ok(super::SliceArray::from_shape(self.data(), [self.len(), 1]));
+            }
+        } else if NDIM == 2 {
+            // NDIM is now 2
+
+            if stride[0] != 1 || stride[1] != shape[0] {
+                return Err(crate::dense::types::RlstError::GeneralError(
+                    "Cannot convert to 2D array from non-contiguous data.".to_string(),
+                ));
+            } else {
+                // Convert 2D array to 2D column-major array
+                return Ok(super::SliceArray::from_shape(
+                    self.data(),
+                    [shape[0], shape[1]],
+                ));
+            }
+        }
+        Err(crate::dense::types::RlstError::GeneralError(
+            "Cannot convert to 2D array from more than 2 dimensions.".to_string(),
+        ))
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> As2dArrayMut<NDIM> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item> + Shape<NDIM> + Stride<NDIM> + RawAccessMut<Item = Item>,
+{
+    type ArrayImpl = ArrayImpl;
+
+    type Item = Item;
+
+    fn as_2d_col_major_array_mut(
+        &mut self,
+    ) -> crate::dense::types::RlstResult<super::SliceArrayMut<'_, Self::Item, 2>> {
+        let stride = self.stride();
+        let shape = self.shape();
+
+        if NDIM == 1 {
+            // The vector case.
+            if stride[0] != 1 {
+                return Err(crate::dense::types::RlstError::GeneralError(
+                    "Cannot convert to 2D array from non-contiguous data.".to_string(),
+                ));
+            } else {
+                // Convert 1D array to 2D column vector
+                return Ok(super::SliceArrayMut::from_shape(
+                    self.data_mut(),
+                    [shape[0], 1],
+                ));
+            }
+
+            // Convert 1D array to 2D column vector
+        } else if NDIM == 2 {
+            // NDIM is now 2
+
+            if stride[0] != 1 || stride[1] != shape[0] {
+                return Err(crate::dense::types::RlstError::GeneralError(
+                    "Cannot convert to 2D array from non-contiguous data.".to_string(),
+                ));
+            } else {
+                // Convert 2D array to 2D column-major array
+                return Ok(super::SliceArrayMut::from_shape(
+                    self.data_mut(),
+                    [shape[0], shape[1]],
+                ));
+            }
+        }
+        Err(crate::dense::types::RlstError::GeneralError(
+            "Cannot convert to 2D array from more than 2 dimensions.".to_string(),
+        ))
     }
 }
 

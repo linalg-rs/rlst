@@ -115,6 +115,7 @@ macro_rules! impl_scalar {
             impl_with_complex!(mul_complex, *);
             impl_with_complex!(div_complex, /);
 
+            impl_float!(recip);
             impl_float!(sqrt);
             impl_float!(abs);
             impl_float!(exp);
@@ -194,6 +195,15 @@ macro_rules! impl_scalar {
 
             fn rand(rng: &mut impl Rng) -> Self {
                 rng.sample(Standard)
+            }
+
+            #[inline]
+            fn recip(self) -> Self {
+                let inv_square = (self.re * self.re + self.im * self.im).recip();
+                Complex::new(
+                    self.re * inv_square,
+                    -self.im * inv_square,
+                )
             }
 
             impl_with_real!(add_real, +);
