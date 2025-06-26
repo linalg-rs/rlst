@@ -6,7 +6,7 @@ use num::Zero;
 use crate::dense::traits::ConjArray;
 use crate::{
     dense::{array::DynArray, types::RlstResult},
-    ArrayIterator, EvaluateArray, Gemm, IntoArray, Len, RlstScalar, Shape,
+    ArrayIterator, EvaluateArray, Gemm, Len, RlstScalar, Shape, ToType,
 };
 
 /// Determine whether a matrix is upper or lower triangular.
@@ -200,7 +200,7 @@ pub trait SingularvalueDecomposition {
         let (s, u, vh) = self.svd_truncated(max_singular_values, tol)?;
 
         Ok(PInv::new(
-            s.into_array::<Self::Item>().eval(),
+            s.to_type::<Self::Item>().eval(),
             u.conj().transpose().eval(),
             vh.conj().transpose().eval(),
         ))

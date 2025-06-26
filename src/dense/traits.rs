@@ -11,10 +11,6 @@ use num::{One, Zero};
 use crate::dense::types::TransMode;
 
 pub use super::types::RlstScalar;
-use super::{
-    array::{SliceArray, SliceArrayMut},
-    types::RlstResult,
-};
 pub use number_traits::*;
 
 /// Memory layout of an object
@@ -444,47 +440,18 @@ pub trait EvaluateArray {
     fn eval(&self) -> Self::Output;
 }
 
-/// Extend Rust into to all elements of an array.
-pub trait IntoArray {
+/// Convert to a new type.
+///
+/// This trait is used to convert an array of one type into an array of another type.
+/// It depends on the `Into` trait to convert each element of the array.
+pub trait ToType {
     /// The element type of the array.
     type Item;
     /// The output type of the array.
     type Output<T>;
 
     /// Convert the array into a new array.
-    fn into_array<T>(self) -> Self::Output<T>
+    fn to_type<T>(self) -> Self::Output<T>
     where
         Self::Item: Into<T>;
-}
-
-/// Return a reference to the underlying data of an array as a 2-dimensional array.
-///
-///This is useful to get a guaranted 2d view onto a matrix or vector for functions that require
-///a 2d array.
-pub trait As2dArray<const NDIM: usize> {
-    type ArrayImpl: BaseItem<Item = Self::Item>
-        + Shape<NDIM>
-        + RawAccess<Item = Self::Item>
-        + Stride<NDIM>;
-
-    type Item;
-
-    /// Try to return a reference to the underlying data as a 2-dimensional column-major array.
-    fn as_2d_col_major_array(&self) -> RlstResult<SliceArray<'_, Self::Item, 2>>;
-}
-
-/// Return a reference to the underlying data of an array as a 2-dimensional mutable array.
-///
-///This is useful to get a guaranted 2d view onto a matrix or vector for functions that require
-///a 2d array.
-pub trait As2dArrayMut<const NDIM: usize> {
-    type ArrayImpl: BaseItem<Item = Self::Item>
-        + Shape<NDIM>
-        + RawAccessMut<Item = Self::Item>
-        + Stride<NDIM>;
-
-    type Item;
-
-    /// Try to return a reference to the underlying data as a 2-dimensional column-major array.
-    fn as_2d_col_major_array_mut(&mut self) -> RlstResult<SliceArrayMut<'_, Self::Item, 2>>;
 }

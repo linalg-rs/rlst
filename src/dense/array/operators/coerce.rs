@@ -1,8 +1,6 @@
 //! Coerce an array to a specific dimension if the compiler cannot figure it out
 //! directly
 
-use coe;
-
 use crate::{
     dense::types::{RlstError, RlstResult},
     Array, BaseItem, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef,
@@ -10,6 +8,7 @@ use crate::{
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 
+/// A wrapper around an array that coerces its dimension.
 pub struct CoerceArray<ArrayImpl, const NDIM: usize, const CDIM: usize> {
     /// The array to coerce.
     arr: Array<ArrayImpl, NDIM>,

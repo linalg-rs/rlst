@@ -3,8 +3,8 @@
 use itertools::izip;
 
 use crate::dense::traits::EvaluateArray;
-use crate::{dense::array::DynArray, diag, dot, Array, Gemm, RawAccess, RlstScalar, Shape};
-use crate::{ArrayIterator, ArrayIteratorMut, As2dArray, BaseItem};
+use crate::{dense::array::DynArray, diag, dot, Array, Gemm, RlstScalar};
+use crate::{ArrayIterator, ArrayIteratorMut, BaseItem};
 
 use super::interface::Lapack;
 
