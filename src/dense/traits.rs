@@ -2,6 +2,7 @@
 
 pub mod accessors;
 pub mod number_traits;
+use paste::paste;
 
 use std::ops::MulAssign;
 
@@ -113,7 +114,10 @@ pub trait Gemm: Sized {
     );
 }
 
-/// Multiply into with resize
+/// Multiply into with resize.
+/// This trait allows to resize the target array if necessary.
+/// It is used for matrix multiplication where the result array may need to be resized.
+/// It is not meant to be used outside the library. use the `dot` macro instead.
 pub trait MultIntoResize<First, Second>: BaseItem {
     /// Multiply First * Second and sum into Self. Allow to resize Self if necessary
     fn simple_mult_into_resize(self, arr_a: First, arr_b: Second) -> Self
@@ -455,3 +459,39 @@ pub trait ToType {
     where
         Self::Item: Into<T>;
 }
+
+macro_rules! unary_op_trait {
+    ($name:ident, $op:ident) => {
+        paste! {
+            #[doc = "Apply the unary operation `" [<$op>] "` to each element of the array."]
+            pub trait [<ArrayOp $name>] {
+                /// The output array type.
+                type Output;
+
+                /// Apply the unary operation `$op` to each element of the array.
+                fn $op(self) -> Self::Output;
+            }
+
+        }
+    };
+}
+
+unary_op_trait!(Abs, abs);
+unary_op_trait!(Square, square);
+unary_op_trait!(AbsSquare, abs_square);
+unary_op_trait!(Sqrt, sqrt);
+unary_op_trait!(Exp, exp);
+unary_op_trait!(Ln, ln);
+unary_op_trait!(Recip, recip);
+unary_op_trait!(Sin, sin);
+unary_op_trait!(Cos, cos);
+unary_op_trait!(Tan, tan);
+unary_op_trait!(Asin, asin);
+unary_op_trait!(Acos, acos);
+unary_op_trait!(Atan, atan);
+unary_op_trait!(Sinh, sinh);
+unary_op_trait!(Cosh, cosh);
+unary_op_trait!(Tanh, tanh);
+unary_op_trait!(Asinh, asinh);
+unary_op_trait!(Acosh, acosh);
+unary_op_trait!(Atanh, atanh);

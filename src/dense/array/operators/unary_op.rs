@@ -7,6 +7,7 @@ use crate::{
     },
     BaseItem,
 };
+use paste::paste;
 
 /// Application of a unitary Operator
 pub struct ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, const NDIM: usize>
@@ -81,3 +82,45 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
         Array::new(ArrayUnaryOperator::new(self, op))
     }
 }
+
+macro_rules! impl_unary_op_trait {
+    ($name:ident, $method_name:ident) => {
+        paste! {
+
+        use crate::dense::traits::[<ArrayOp $name>];
+        use crate::dense::traits::number_traits::$name;
+        impl<Item: $name, ArrayImpl, const NDIM: usize> [<ArrayOp $name>] for Array<ArrayImpl, NDIM>
+            where
+                ArrayImpl: BaseItem<Item = Item>,
+            {
+                type Output = Array<ArrayUnaryOperator<Item, <Item as $name>::Output, ArrayImpl, fn(Item) -> <Item as $name>::Output, NDIM>, NDIM>;
+
+                #[inline(always)]
+                fn $method_name(self) -> Self::Output {
+                    self.apply_unary_op(|x| x.$method_name())
+                }
+            }
+        }
+
+    };
+}
+
+impl_unary_op_trait!(Abs, abs);
+impl_unary_op_trait!(Square, square);
+impl_unary_op_trait!(AbsSquare, abs_square);
+impl_unary_op_trait!(Sqrt, sqrt);
+impl_unary_op_trait!(Exp, exp);
+impl_unary_op_trait!(Ln, ln);
+impl_unary_op_trait!(Recip, recip);
+impl_unary_op_trait!(Sin, sin);
+impl_unary_op_trait!(Cos, cos);
+impl_unary_op_trait!(Tan, tan);
+impl_unary_op_trait!(Asin, asin);
+impl_unary_op_trait!(Acos, acos);
+impl_unary_op_trait!(Atan, atan);
+impl_unary_op_trait!(Sinh, sinh);
+impl_unary_op_trait!(Cosh, cosh);
+impl_unary_op_trait!(Tanh, tanh);
+impl_unary_op_trait!(Asinh, asinh);
+impl_unary_op_trait!(Acosh, acosh);
+impl_unary_op_trait!(Atanh, atanh);

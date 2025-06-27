@@ -1,4 +1,9 @@
+use std::ops::Mul;
+
 use crate::dense::traits::{Abs, AbsSquare, Conj, Max, Min, Sqrt};
+use crate::{
+    Acos, Acosh, Asin, Asinh, Atan, Atanh, Cos, Cosh, Exp, Ln, Recip, Sin, Sinh, Square, Tan, Tanh,
+};
 
 use super::RlstScalar;
 use super::{c32, c64};
@@ -9,7 +14,7 @@ where
 {
     type Output = Self;
     fn conj(&self) -> Self {
-        RlstScalar::conj(self)
+        RlstScalar::conj(&self)
     }
 }
 
@@ -214,18 +219,39 @@ impl_abs_square!(u64);
 impl_abs_square!(u128);
 impl_abs_square!(usize);
 
-impl Sqrt for f32 {
-    type Output = f32;
+impl<T: Mul<Output = T> + Copy> Square for T {
+    type Output = T;
 
-    fn sqrt(&self) -> Self::Output {
-        f32::sqrt(*self)
+    fn square(&self) -> Self::Output {
+        *self * *self
     }
 }
 
-impl Sqrt for f64 {
-    type Output = f64;
+macro_rules! impl_unary_op {
+    ($trait_name:ident, $method_name:ident) => {
+        impl<T: RlstScalar> $trait_name for T {
+            type Output = T;
 
-    fn sqrt(&self) -> Self::Output {
-        f64::sqrt(*self)
-    }
+            fn $method_name(&self) -> Self::Output {
+                <T as RlstScalar>::$method_name(*self)
+            }
+        }
+    };
 }
+
+impl_unary_op!(Sqrt, sqrt);
+impl_unary_op!(Exp, exp);
+impl_unary_op!(Ln, ln);
+impl_unary_op!(Recip, recip);
+impl_unary_op!(Sin, sin);
+impl_unary_op!(Cos, cos);
+impl_unary_op!(Tan, tan);
+impl_unary_op!(Asin, asin);
+impl_unary_op!(Acos, acos);
+impl_unary_op!(Atan, atan);
+impl_unary_op!(Sinh, sinh);
+impl_unary_op!(Cosh, cosh);
+impl_unary_op!(Tanh, tanh);
+impl_unary_op!(Asinh, asinh);
+impl_unary_op!(Acosh, acosh);
+impl_unary_op!(Atanh, atanh);

@@ -1,5 +1,9 @@
 //! Operators on arrays
 
+use crate::{ArrayOpSqrt, EvaluateArray, RandomAccessByValue};
+
+use super::DynArray;
+
 pub mod addition;
 pub mod cast;
 pub mod cmp_wise_division;
@@ -12,3 +16,15 @@ pub mod subtraction;
 pub mod coerce;
 pub mod reverse_axis;
 pub mod transpose;
+
+pub fn simd_operator() {
+    let mut a = DynArray::<f32, 2>::from_shape([5, 100]);
+    let mut b = DynArray::<f32, 2>::from_shape([5, 100]);
+
+    a.fill_from_seed_normally_distributed(1);
+    b.fill_from_seed_normally_distributed(2);
+
+    let c = (5.0f32 * a + 2.0f32 * b.sqrt()).eval();
+
+    println!("c: {:?}", RandomAccessByValue::get_value(&c, [0, 0]));
+}
