@@ -1,5 +1,6 @@
 //! Elements of linear spaces
 use std::rc::Rc;
+//use std::usize;
 
 use crate::dense::types::{c32, c64};
 

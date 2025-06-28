@@ -13,6 +13,7 @@ use crate::dense::{
 use crate::operator::space::{ElementImpl, IndexableSpace, InnerProductSpace, LinearSpace};
 use crate::operator::{ConcreteElementContainer, Element};
 use crate::rlst_dynamic_array1;
+//use crate::{rlst_dynamic_array1, RawAccess, RawAccessMut};
 
 /// Array vector space
 pub struct ArrayVectorSpace<Item: RlstScalar> {
@@ -33,6 +34,11 @@ impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
             elem: rlst_dynamic_array1!(Item, [space.dimension()]),
             space,
         }
+    }
+
+    /// Create a new element from an existing array
+    pub fn new_from_array(space: Rc<ArrayVectorSpace<Item>>, elem: DynamicArray<Item, 1>) -> Self {
+        Self { elem, space }
     }
 }
 

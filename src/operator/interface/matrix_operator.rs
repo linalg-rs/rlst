@@ -111,12 +111,14 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
         x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         mut y: crate::Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
         self.op.apply_extended(
             alpha,
             x.imp().view().data(),
             beta,
             y.imp_mut().view_mut().data_mut(),
+            trans_mode,
         );
     }
 }
@@ -148,12 +150,14 @@ impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
         x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         mut y: crate::Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
         self.op.apply_extended(
             alpha,
             x.imp().view().data(),
             beta,
             y.imp_mut().view_mut().data_mut(),
+            trans_mode,
         );
     }
 }
@@ -172,6 +176,7 @@ impl<
         x: &[Self::Item],
         beta: Self::Item,
         y: &mut [Self::Item],
+        trans_mode: crate::TransMode,
     ) {
         assert_eq!(self.shape()[1], x.len());
         assert_eq!(self.shape()[0], y.len());
@@ -179,7 +184,7 @@ impl<
         let mut y_arr = rlst_array_from_slice_mut1!(y, [y.len()]);
 
         y_arr.r_mut().mult_into(
-            crate::TransMode::NoTrans,
+            trans_mode,
             crate::TransMode::NoTrans,
             alpha,
             self.r(),
@@ -199,8 +204,14 @@ impl<Item: RlstScalar> AsOperatorApply for CsrMatrix<Item> {
         x: &[Self::Item],
         beta: Self::Item,
         y: &mut [Self::Item],
+        trans_mode: crate::TransMode,
     ) {
-        self.matmul(alpha, x, beta, y);
+        match trans_mode {
+            crate::TransMode::NoTrans => self.matmul(alpha, x, beta, y),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
+            crate::TransMode::Trans => self.matmul_transpose(alpha, x, beta, y),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
+        }
     }
 }
 
@@ -214,7 +225,13 @@ impl<Item: RlstScalar> AsOperatorApply for CscMatrix<Item> {
         x: &[Self::Item],
         beta: Self::Item,
         y: &mut [Self::Item],
+        trans_mode: crate::TransMode,
     ) {
-        self.matmul(alpha, x, beta, y);
+        match trans_mode {
+            crate::TransMode::NoTrans => self.matmul(alpha, x, beta, y),
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
+            crate::TransMode::Trans => self.matmul_transpose(alpha, x, beta, y),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
+        }
     }
 }
