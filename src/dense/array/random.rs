@@ -47,6 +47,15 @@ where
             )));
     }
 
+     /// Fill an array with real normally distributed random numbers.
+    pub fn fill_from_normally_distributed_real<R: Rng>(&mut self, rng: &mut R) {
+        let dist = StandardNormal;
+        self.iter_mut()
+            .for_each(|val| *val = Item::from_real(<<Item as RlstScalar>::Real>::random_scalar(
+                rng, &dist,
+            )));
+    }
+
     /// Fill with equally distributed numbers using a given `seed`.
     pub fn fill_from_seed_equally_distributed(&mut self, seed: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(seed as u64);
