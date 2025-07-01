@@ -157,6 +157,8 @@ where
 impl<Item, ArrayImpl, ArrayImplOther> Inner<Array<ArrayImplOther, 1>> for Array<ArrayImpl, 1>
 where
     Item: Default + MulAdd<Output = Item> + Conj<Output = Item>,
+    ArrayImpl: BaseItem<Item = Item>,
+    ArrayImplOther: BaseItem<Item = Item>,
     Self: ArrayIterator<Item = Item> + Len,
     Array<ArrayImplOther, 1>: ArrayIterator<Item = Item> + Len,
 {
@@ -164,8 +166,8 @@ where
 
     fn inner(&self, other: &Array<ArrayImplOther, 1>) -> Self::Output {
         assert_eq!(self.len(), other.len());
-        izip!(self.iter(), other.iter()).fold(Default::default(), |acc, (elem1, elem2)| {
-            elem1.mul_add(elem2.conj(), acc)
+        izip!(self.iter(), other.iter()).fold(Default::default(), |acc, (elem, other_elem)| {
+            MulAdd::mul_add(elem, Conj::conj(&other_elem), acc)
         })
     }
 }

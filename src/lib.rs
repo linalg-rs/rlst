@@ -23,19 +23,22 @@
 #![cfg_attr(feature = "strict", deny(warnings), deny(unused_crate_dependencies))]
 #![warn(missing_docs)]
 
+pub mod base_types;
 pub mod dense;
+pub mod traits;
 // pub mod doc;
 // pub mod external;
 // pub mod io;
-// pub mod sparse;
+//pub mod sparse;
 // pub mod tracing;
+//pub mod distributed_tools;
 
-pub mod prelude;
+//pub mod prelude;
 // pub mod threading;
 
 // pub mod operator;
 
-pub use prelude::*;
+//pub use prelude::*;
 
 #[cfg(test)]
 mod test {

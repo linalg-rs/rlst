@@ -8,8 +8,6 @@ pub use rlst_num::*;
 
 use thiserror::Error;
 
-use super::linalg::lapack::interface::LapackError;
-
 /// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
@@ -95,3 +93,25 @@ mod sealed {
         type Is = T;
     }
 }
+
+/// Memory layout of an object
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemoryLayout {
+    /// Column major
+    ColumnMajor,
+    /// Row major
+    RowMajor,
+    /// Unknown
+    Unknown,
+}
+
+/// The Rlst error type.
+#[derive(Error, Debug)]
+pub enum LapackError {
+    /// Info code from LAPACK
+    #[error("LAPACK error code: {0}")]
+    LapackInfoCode(i32),
+}
+
+/// Alias for a Lapack Result type.
+pub type LapackResult<T> = std::result::Result<T, LapackError>;

@@ -1,8 +1,8 @@
 use std::ops::Mul;
 
-use crate::dense::traits::{Abs, AbsSquare, Conj, Max, Min, Sqrt};
-use crate::{
-    Acos, Acosh, Asin, Asinh, Atan, Atanh, Cos, Cosh, Exp, Ln, Recip, Sin, Sinh, Square, Tan, Tanh,
+use crate::traits::number_traits::{
+    Abs, AbsSquare, Acos, Acosh, Asin, Asinh, Atan, Atanh, Conj, Cos, Cosh, Exp, Ln, Max, Min,
+    Recip, Sin, Sinh, Sqrt, Square, Tan, Tanh,
 };
 
 use super::RlstScalar;

@@ -2,41 +2,41 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 
-use bempp_distributed_tools::IndexLayout;
+use crate::distributed_tools::IndexLayout;
 
-use crate::dense::array::DynamicArray;
+use crate::dense::array::DynArray;
 use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
 use crate::dense::types::RlstScalar;
-use crate::{rlst_dynamic_array1, Array, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
+use crate::{Array, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use mpi::datatype::{Partition, PartitionMut};
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 use mpi::Rank;
 use num::Zero;
 
 /// Distributed vector
-pub struct DistributedVector<'a, C: Communicator, Item: RlstScalar + Equivalence> {
+pub struct DistributedVector<'a, C: Communicator, Item> {
     index_layout: Rc<IndexLayout<'a, C>>,
-    local: RefCell<DynamicArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
-                                           // But this would be disallowed by Rust's static borrow checker.
+    local: RefCell<DynArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
+                                       // But this would be disallowed by Rust's static borrow checker.
 }
 
-impl<'a, C: Communicator, Item: RlstScalar + Equivalence> DistributedVector<'a, C, Item> {
+impl<'a, C: Communicator, Item> DistributedVector<'a, C, Item> {
     /// Crate new
     pub fn new(index_layout: Rc<IndexLayout<'a, C>>) -> Self {
         let number_of_local_indices = index_layout.number_of_local_indices();
         DistributedVector {
             index_layout,
-            local: RefCell::new(rlst_dynamic_array1!(Item, [number_of_local_indices])),
+            local: RefCell::new(DynArray::from_shape([number_of_local_indices])),
         }
     }
     /// Local part
-    pub fn local(&self) -> Ref<'_, DynamicArray<Item, 1>> {
+    pub fn local(&self) -> Ref<'_, DynArray<Item, 1>> {
         //Array<Item, ArrayView<'_, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> {
         self.local.borrow()
     }
 
     /// Mutable local part
-    pub fn local_mut(&self) -> RefMut<DynamicArray<Item, 1>> {
+    pub fn local_mut(&self) -> RefMut<DynArray<Item, 1>> {
         // The data is behind a RefCell, so do not require mutable reference to self.
         self.local.borrow_mut()
     }

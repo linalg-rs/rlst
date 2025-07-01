@@ -1,24 +1,6 @@
-//! Fundamental traits for dense arrays.
+//! Accessor traits for n-dimensional array-like structures.
 
-//! Traits for access to matrix data.
-//!
-//! Each random access trait has a two-dimensional and a one-dimensional access method,
-//! namely `get` and `get1d` (together with their mutable and unsafe variants).
-//! The two-dimensional access takes a row and a column and returns the corresponding
-//! matrix element. The one-dimensional access takes a single `index` parameter that
-//! iterates through the matrix elements.
-//!
-//! If the [`crate::dense::traits::Shape`]
-//! trait is implemented on top of [`UnsafeRandomAccessByValue`], [`UnsafeRandomAccessByRef`]
-//! and [`UnsafeRandomAccessMut`] then the
-//! corresponding bounds-checked traits [`RandomAccessByValue`], [`RandomAccessByRef`] and
-//! [`RandomAccessMut`] are auto-implemented.
-//!
-//! To get raw access to the underlying data use the [`RawAccess`] and [`RawAccessMut`] traits.
-
-use crate::dense::traits::Shape;
-
-use super::BaseItem;
+use super::array::{BaseItem, Shape};
 
 /// This trait provides unsafe access by value to the underlying data.
 pub trait UnsafeRandomAccessByValue<const NDIM: usize>: BaseItem {
