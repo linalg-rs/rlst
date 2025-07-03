@@ -10,12 +10,9 @@ use std::{
 #[macro_export]
 macro_rules! println_mpi {
     ($rank:expr, $($arg:tt)*) => {
-        #[cfg(feature="print_mpi_root_only")]
         if $rank == 0 {
             println!($($arg)*);
         }
-        #[cfg(not(feature="print_mpi_root_only"))]
-        println!($($arg)*);
     };
 }
 
