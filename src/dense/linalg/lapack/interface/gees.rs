@@ -3,13 +3,14 @@
 
 use lapack::{cgees, dgees, sgees, zgees};
 
-use crate::{dense::linalg::lapack::interface::lapack_return, RlstScalar};
-
 use itertools::izip;
 
-use super::{c32, c64, LapackError, LapackResult};
-
 use num::{complex::ComplexFloat, Zero};
+
+use crate::base_types::{c32, c64, LapackError};
+use crate::{base_types::LapackResult, traits::rlst_num::RlstScalar};
+
+use crate::dense::linalg::lapack::interface::lapack_return;
 
 /// The job options for the Schur vectors.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

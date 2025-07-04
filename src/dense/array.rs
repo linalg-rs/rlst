@@ -4,22 +4,21 @@
 //! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
-use crate::dense::base_array::BaseArray;
-use crate::dense::data_container::SliceContainer;
-use crate::dense::data_container::SliceContainerMut;
-use crate::dense::data_container::VectorContainer;
-use crate::dense::traits::{
-    FillFromResize, NumberOfElements, RandomAccessByRef, RandomAccessMut, RawAccess, RawAccessMut,
-    ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+use crate::{
+    dense::{
+        base_array::BaseArray,
+        data_container::{SliceContainer, SliceContainerMut, VectorContainer},
+        strided_base_array::StridedBaseArray,
+    },
+    traits::{
+        accessors::{
+            RandomAccessByRef, RandomAccessMut, RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef,
+            UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
+            UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
+    },
 };
-use crate::BaseItem;
-
-use super::strided_base_array::StridedBaseArray;
-use super::traits::Len;
-use super::traits::UnsafeRandom1DAccessByRef;
-use super::traits::UnsafeRandom1DAccessByValue;
-use super::traits::UnsafeRandom1DAccessMut;
 
 pub mod empty_axis;
 pub mod iterators;

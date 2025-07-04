@@ -4,7 +4,8 @@ use blas::{ctrsm, dtrsm, strsm, ztrsm};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use super::{c32, c64, LapackResult};
+use crate::base_types::LapackResult;
+use crate::base_types::{c32, c64};
 
 /// Left: Solve AX = B. Right: Solve XA = B.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

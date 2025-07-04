@@ -6,15 +6,20 @@ use itertools::izip;
 use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 
+use crate::traits::{
+    accessors::{UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut},
+    array::{
+        BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
+        FillWithValue, Len, ResizeInPlace, Shape, SumFrom, ToType, Trace,
+    },
+    iterators::{ArrayIterator, ArrayIteratorMut, GetDiag, GetDiagMut},
+    linalg::base::{Inner, NormSup, NormTwo},
+    number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
+};
+
 use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
 use super::operators::unary_op::ArrayUnaryOperator;
-use super::{Array, BaseItem, DynArray, Shape, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
-use crate::dense::traits::{
-    Abs, AbsSquare, ArrayIterator, ArrayIteratorMut, CmpMulAddFrom, CmpMulFrom, Conj, FillFrom,
-    FillFromResize, FillWithValue, GetDiag, GetDiagMut, Inner, Len, Max, NormSup, NormTwo,
-    ResizeInPlace, Sqrt, SumFrom, Trace, UnsafeRandom1DAccessMut,
-};
-use crate::{ConjArray, EvaluateArray, ToType};
+use super::{Array, DynArray};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
 where

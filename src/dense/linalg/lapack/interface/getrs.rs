@@ -2,9 +2,10 @@
 
 use lapack::{cgetrs, dgetrs, sgetrs, zgetrs};
 
-use crate::dense::linalg::lapack::interface::lapack_return;
+use crate::base_types::LapackResult;
+use crate::base_types::{c32, c64};
 
-use super::{c32, c64, LapackResult};
+use crate::dense::linalg::lapack::interface::lapack_return;
 
 /// Transpose modes for the `?getrs` function.
 #[derive(Clone, Copy)]

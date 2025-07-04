@@ -2,17 +2,13 @@
 
 use num::One;
 
-use super::interface::Lapack;
-
-use crate::dense::array::DynArray;
+use crate::base_types::{RlstError, RlstResult, TransMode};
+use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::getrs::GetrsTransMode;
-use crate::dense::linalg::traits::Lu;
-use crate::dense::types::{RlstError, TransMode};
-
-use crate::dense::types::RlstResult;
-use crate::{
-    Array, BaseItem, FillFromResize, RawAccess, RawAccessMut, Shape, UnsafeRandomAccessMut,
-};
+use crate::traits::accessors::{RawAccess, RawAccessMut, UnsafeRandomAccessMut};
+use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::linalg::decompositions::Lu;
+use crate::traits::linalg::lapack::Lapack;
 
 impl<Item, ArrayImpl> Lu for Array<ArrayImpl, 2>
 where

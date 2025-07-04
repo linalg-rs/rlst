@@ -2,11 +2,11 @@
 
 use crate::dense::array::Array;
 use crate::dense::layout::convert_1d_nd_from_shape;
-use crate::dense::traits::Shape;
-use crate::{
-    BaseItem, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+use crate::traits::accessors::{
+    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
+use crate::traits::array::{BaseItem, Shape};
 
 /// This struct represents an array implementation with a single axis reversed.
 pub struct ReverseAxis<ArrayImpl, const NDIM: usize> {

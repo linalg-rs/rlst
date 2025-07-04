@@ -1,12 +1,13 @@
 //! Methods for the creation of random matrices.
 
-use crate::dense::tools::RandScalar;
-use crate::dense::traits::ArrayIteratorMut;
-use crate::dense::types::RlstScalar;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::Standard;
 use rand_distr::StandardNormal;
+
+use crate::traits::iterators::ArrayIteratorMut;
+use crate::traits::rlst_num::RandScalar;
+use crate::traits::rlst_num::RlstScalar;
 
 use super::Array;
 

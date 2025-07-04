@@ -1,11 +1,8 @@
 //! Container representing application of a unary operator
 
 use crate::{
-    dense::{
-        array::{Array, Shape, UnsafeRandomAccessByValue},
-        traits::UnsafeRandom1DAccessByValue,
-    },
-    BaseItem,
+    dense::array::{Array, Shape, UnsafeRandomAccessByValue},
+    traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
 };
 use paste::paste;
 
@@ -87,8 +84,8 @@ macro_rules! impl_unary_op_trait {
     ($name:ident, $method_name:ident) => {
         paste! {
 
-        use crate::dense::traits::[<ArrayOp $name>];
-        use crate::dense::traits::number_traits::$name;
+        use crate::traits::array::[<ArrayOp $name>];
+        use crate::traits::number_traits::$name;
         impl<Item: $name, ArrayImpl, const NDIM: usize> [<ArrayOp $name>] for Array<ArrayImpl, NDIM>
             where
                 ArrayImpl: BaseItem<Item = Item>,

@@ -1,11 +1,14 @@
 //! Extend an array by an empty axis either at the front or back.
 
 use crate::{
-    dense::{
-        number_types::{IsSmallerByOne, NumberType},
-        traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+    base_types::NumberType,
+    traits::{
+        accessors::{
+            UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+        },
+        array::BaseItem,
+        number_relations::IsSmallerByOne,
     },
-    BaseItem,
 };
 
 use super::{

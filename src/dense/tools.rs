@@ -1,22 +1,12 @@
 //! Useful library tools.
 
-use crate::dense::traits::{RandomAccessByValue, Shape};
-use crate::dense::types::{c32, c64, RlstScalar};
 use rand::prelude::*;
 use rand_distr::Distribution;
 
-/// This trait implements a simple convenient function to return random scalars
-/// from a given random number generator and distribution. For complex types the
-/// generator and distribution are separately applied to obtain the real and imaginary
-/// part of the random number.
-pub trait RandScalar: RlstScalar {
-    /// Returns a random number from a given random number generator `rng` and associated
-    /// distribution `dist`.
-    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
-        rng: &mut R,
-        dist: &D,
-    ) -> Self;
-}
+use crate::base_types::{c32, c64};
+use crate::traits::accessors::RandomAccessByValue;
+use crate::traits::array::Shape;
+use crate::traits::rlst_num::{RandScalar, RlstScalar};
 
 impl RandScalar for f32 {
     fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(

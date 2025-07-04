@@ -1,14 +1,14 @@
 //! Container representing multiplication with a scalar
 
 use crate::{
-    dense::{
-        array::{
-            Array, Shape, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    dense::{array::Array, layout::convert_1d_nd_from_shape},
+    traits::{
+        accessors::{
+            UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+            UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
         },
-        layout::convert_1d_nd_from_shape,
-        traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+        array::{BaseItem, Shape},
     },
-    BaseItem,
 };
 
 /// Transpose array

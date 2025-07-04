@@ -5,7 +5,13 @@
 
 use num::traits::MulAdd;
 
-use crate::{Array, BaseItem, Shape, UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue};
+use crate::{
+    dense::array::Array,
+    traits::{
+        accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
+        array::{BaseItem, Shape},
+    },
+};
 
 /// Struct that represents the `mul_add` operation on two arrays.
 pub struct MulAddImpl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> {

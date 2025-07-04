@@ -1,13 +1,16 @@
 //! Flattened view onto an array
 
-use crate::dense::array::Array;
-
-use crate::dense::traits::{
-    RawAccess, RawAccessMut, Shape, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
-    UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
+use crate::{
+    dense::array::Array,
+    traits::{
+        accessors::{
+            RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+            UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+            UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, Shape},
+    },
 };
-use crate::BaseItem;
 
 /// A flattened view onto an array.
 ///

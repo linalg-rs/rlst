@@ -3,9 +3,10 @@
 
 use lapack::{cheev, dsyev, ssyev, zheev};
 
-use crate::{dense::linalg::lapack::interface::lapack_return, RlstScalar};
+use crate::dense::linalg::lapack::interface::lapack_return;
 
-use super::{c32, c64, LapackError, LapackResult};
+use crate::base_types::{c32, c64, LapackError, LapackResult};
+use crate::traits::rlst_num::RlstScalar;
 
 use num::{complex::ComplexFloat, Zero};
 

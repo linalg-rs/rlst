@@ -2,10 +2,16 @@
 //! directly
 
 use crate::{
-    dense::types::{RlstError, RlstResult},
-    Array, BaseItem, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef,
-    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    base_types::{RlstError, RlstResult},
+    dense::array::Array,
+    traits::{
+        accessors::{
+            RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+            UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+            UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, Shape, Stride},
+    },
 };
 
 /// A wrapper around an array that coerces its dimension.

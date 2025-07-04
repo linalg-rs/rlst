@@ -2,9 +2,10 @@
 
 use lapack::{cpotrf, dpotrf, spotrf, zpotrf};
 
-use crate::dense::linalg::lapack::interface::lapack_return;
+use crate::base_types::LapackResult;
+use crate::base_types::{c32, c64};
 
-use super::{c32, c64, LapackResult};
+use crate::dense::linalg::lapack::interface::lapack_return;
 
 /// `Uplo` parameter for `?potrf` to specify which triangular part of the matrix is stored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

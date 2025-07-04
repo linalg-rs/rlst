@@ -17,10 +17,10 @@ pub use num::complex::Complex64 as c64;
 use orgqr::Orgqr;
 use posv::Posv;
 use potrf::Potrf;
-use thiserror::Error;
 use trsm::Trsm;
 
-use crate::RlstScalar;
+use crate::base_types::LapackError;
+use crate::base_types::LapackResult;
 
 pub mod ev;
 pub mod gees;
@@ -46,47 +46,4 @@ pub(crate) fn lapack_return<T>(info: i32, result: T) -> LapackResult<T> {
     } else {
         Err(LapackError::LapackInfoCode(info))
     }
-}
-
-/// Trait for types that implement LAPACK functionality.
-pub trait Lapack:
-    Ev
-    + Gees
-    + Geev
-    + Gels
-    + Geqp3
-    + Geqrf
-    + Gesdd
-    + Gesvd
-    + Getrf
-    + Getri
-    + Getrs
-    + Mqr
-    + Orgqr
-    + Potrf
-    + Posv
-    + Trsm
-    + RlstScalar
-{
-}
-
-impl<T> Lapack for T where
-    T: Ev
-        + Gees
-        + Geev
-        + Gels
-        + Geqp3
-        + Geqrf
-        + Gesdd
-        + Gesvd
-        + Getrf
-        + Getri
-        + Getrs
-        + Mqr
-        + Orgqr
-        + Potrf
-        + Posv
-        + Trsm
-        + RlstScalar
-{
 }

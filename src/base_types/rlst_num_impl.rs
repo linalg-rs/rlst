@@ -4,10 +4,8 @@ use num::complex::Complex;
 use num::traits::{Float, NumCast, ToPrimitive, Zero};
 use rand::{distributions::Standard, prelude::*};
 
-pub use num::complex::Complex32 as c32;
-pub use num::complex::Complex64 as c64;
-
-use super::rlst_num::RlstScalar;
+use super::{c32, c64};
+use crate::traits::rlst_num::RlstScalar;
 
 macro_rules! impl_float {
     ($name:ident) => {

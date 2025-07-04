@@ -3,11 +3,11 @@
 //!
 use super::interface::getrf::Getrf;
 use super::interface::getri::Getri;
-use crate::dense::array::DynArray;
-use crate::dense::linalg::traits::Inverse;
-use crate::dense::traits::{RawAccessMut, Shape};
-use crate::dense::types::RlstResult;
-use crate::{Array, BaseItem, FillFromResize};
+use crate::base_types::RlstResult;
+use crate::dense::array::{Array, DynArray};
+use crate::traits::accessors::RawAccessMut;
+use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::linalg::decompositions::Inverse;
 
 impl<Item, ArrayImpl> Inverse for Array<ArrayImpl, 2>
 where

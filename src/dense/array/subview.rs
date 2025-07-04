@@ -2,12 +2,13 @@
 use crate::dense::array::Array;
 
 use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape};
-
-use crate::dense::traits::{
-    Shape, Stride, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
-    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+use crate::traits::{
+    accessors::{
+        UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+        UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    },
+    array::{BaseItem, Shape, Stride},
 };
-use crate::BaseItem;
 
 /// Subview of an array
 pub struct ArraySubView<ArrayImpl, const NDIM: usize> {

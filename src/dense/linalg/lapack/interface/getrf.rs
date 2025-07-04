@@ -2,7 +2,8 @@
 
 use lapack::{cgetrf, dgetrf, sgetrf, zgetrf};
 
-use super::{c32, c64, LapackError, LapackResult};
+use crate::base_types::LapackResult;
+use crate::base_types::{c32, c64, LapackError};
 
 /// ?getrf - LU factorization with partial pivoting.
 ///

@@ -4,9 +4,10 @@ use std::ffi::c_char;
 
 use lapack::{cgels, sgels, zgels};
 
-use crate::dense::linalg::lapack::interface::lapack_return;
+use crate::base_types::{c32, c64, LapackError};
+use crate::{base_types::LapackResult, traits::rlst_num::RlstScalar};
 
-use super::{c32, c64, LapackError, LapackResult};
+use crate::dense::linalg::lapack::interface::lapack_return;
 
 use num::{complex::ComplexFloat, Zero};
 

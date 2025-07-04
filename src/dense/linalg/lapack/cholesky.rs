@@ -1,17 +1,20 @@
 //! Implement Cholesky decomposition and solve for positive definite matrices.
 
 use crate::{
+    base_types::{RlstError, RlstResult, UpLo},
     dense::{
-        array::DynArray,
+        array::{Array, DynArray},
+        linalg::lapack::interface::{posv::PosvUplo, potrf::PotrfUplo},
+    },
+    traits::{
+        accessors::{RawAccessMut, UnsafeRandomAccessMut},
+        array::{BaseItem, FillFromResize, Shape},
         linalg::{
-            lapack::interface::{posv::PosvUplo, potrf::PotrfUplo},
-            traits::{Cholesky, CholeskySolve},
+            decompositions::{Cholesky, CholeskySolve},
+            lapack::Lapack,
         },
     },
-    Array, BaseItem, FillFromResize, RawAccessMut, Shape, UnsafeRandomAccessMut,
 };
-
-use super::interface::Lapack;
 
 impl<Item, ArrayImpl> Cholesky for Array<ArrayImpl, 2>
 where
@@ -21,10 +24,7 @@ where
 {
     type Item = Item;
 
-    fn cholesky(
-        &self,
-        uplo: crate::dense::linalg::traits::UpLo,
-    ) -> crate::dense::types::RlstResult<DynArray<Self::Item, 2>> {
+    fn cholesky(&self, uplo: UpLo) -> RlstResult<DynArray<Self::Item, 2>> {
         let [m, n] = self.shape();
 
         assert_eq!(
@@ -36,8 +36,8 @@ where
         let mut a = DynArray::new_from(self);
 
         let uplo = match uplo {
-            crate::dense::linalg::traits::UpLo::Upper => PotrfUplo::Upper,
-            crate::dense::linalg::traits::UpLo::Lower => PotrfUplo::Lower,
+            UpLo::Upper => PotrfUplo::Upper,
+            UpLo::Lower => PotrfUplo::Lower,
         };
 
         Item::potrf(uplo, m, a.data_mut(), m)?;
@@ -75,11 +75,11 @@ where
 
     fn cholesky_solve(
         &self,
-        uplo: crate::dense::linalg::traits::UpLo,
+        uplo: UpLo,
         rhs: &Array<RhsArrayImpl, NDIM>,
-    ) -> crate::dense::types::RlstResult<Self::Output> {
+    ) -> RlstResult<Self::Output> {
         if NDIM > 2 {
-            return Err(crate::dense::types::RlstError::GeneralError(
+            return Err(RlstError::GeneralError(
                 "The right-hand side cannot have more than two dimensions.".to_string(),
             ));
         }
@@ -109,8 +109,8 @@ where
         let ldb = b.shape()[0];
 
         let uplo = match uplo {
-            crate::dense::linalg::traits::UpLo::Upper => PosvUplo::Upper,
-            crate::dense::linalg::traits::UpLo::Lower => PosvUplo::Lower,
+            UpLo::Upper => PosvUplo::Upper,
+            UpLo::Lower => PosvUplo::Lower,
         };
 
         Item::posv(uplo, m, nrhs, a.data_mut(), m, b.data_mut(), ldb)?;

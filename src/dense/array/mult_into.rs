@@ -1,9 +1,9 @@
 //! Implementation of array multiplication.
 
-use crate::dense::traits::Gemm;
-use crate::dense::traits::MultInto;
-use crate::dense::traits::MultIntoResize;
-pub use crate::dense::types::TransMode;
+use crate::{
+    base_types::TransMode,
+    traits::linalg::base::{Gemm, MultInto, MultIntoResize},
+};
 
 use super::{
     empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,

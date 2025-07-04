@@ -1,12 +1,14 @@
 use std::ops::Mul;
 
-use crate::traits::number_traits::{
-    Abs, AbsSquare, Acos, Acosh, Asin, Asinh, Atan, Atanh, Conj, Cos, Cosh, Exp, Ln, Max, Min,
-    Recip, Sin, Sinh, Sqrt, Square, Tan, Tanh,
+use crate::traits::{
+    number_traits::{
+        Abs, AbsSquare, Acos, Acosh, Asin, Asinh, Atan, Atanh, Conj, Cos, Cosh, Exp, Ln, Max, Min,
+        Recip, Sin, Sinh, Sqrt, Square, Tan, Tanh,
+    },
+    rlst_num::RlstScalar,
 };
 
-use super::RlstScalar;
-use super::{c32, c64};
+use crate::base_types::{c32, c64};
 
 impl<T> Conj for T
 where

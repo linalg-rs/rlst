@@ -3,11 +3,11 @@
 use std::ops::Sub;
 
 use crate::{
-    dense::{
-        array::{Array, Shape, UnsafeRandomAccessByValue},
-        traits::UnsafeRandom1DAccessByValue,
+    dense::array::Array,
+    traits::{
+        accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
+        array::{BaseItem, Shape},
     },
-    BaseItem,
 };
 
 /// Subtraction

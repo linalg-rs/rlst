@@ -3,9 +3,10 @@
 
 use lapack::{cposv, dposv, sposv, zposv};
 
-use crate::dense::linalg::lapack::interface::lapack_return;
+use crate::base_types::LapackResult;
+use crate::base_types::{c32, c64};
 
-use super::{c32, c64, LapackResult};
+use crate::dense::linalg::lapack::interface::lapack_return;
 
 /// `Uplo` parameter for `?posv` to specify which triangular part of the matrix is stored.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

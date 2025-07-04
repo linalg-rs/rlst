@@ -3,11 +3,8 @@
 use std::ops::Add;
 
 use crate::{
-    dense::{
-        array::{Array, Shape, UnsafeRandomAccessByValue},
-        traits::UnsafeRandom1DAccessByValue,
-    },
-    BaseItem,
+    dense::array::{Array, Shape, UnsafeRandomAccessByValue},
+    traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
 };
 
 /// Addition

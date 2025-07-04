@@ -7,9 +7,6 @@ use std::fmt::{Debug, Display, LowerExp, UpperExp};
 use std::iter::{Product, Sum};
 use std::ops::Neg;
 
-pub use num::complex::Complex32 as c32;
-pub use num::complex::Complex64 as c64;
-
 /// Base trait for Rlst number types
 pub trait RlstBase:
     Default + Sized + Copy + Clone + 'static + Display + Send + Sync + Debug
@@ -133,4 +130,17 @@ pub trait RlstScalar:
     /// Generate an random number from
     /// [rand::distributions::Standard](https://docs.rs/rand/0.7.2/rand/distributions/struct.Standard.html)
     fn rand(rng: &mut impl Rng) -> Self;
+}
+
+/// This trait implements a simple convenient function to return random scalars
+/// from a given random number generator and distribution. For complex types the
+/// generator and distribution are separately applied to obtain the real and imaginary
+/// part of the random number.
+pub trait RandScalar: RlstScalar {
+    /// Returns a random number from a given random number generator `rng` and associated
+    /// distribution `dist`.
+    fn random_scalar<R: Rng, D: Distribution<<Self as RlstScalar>::Real>>(
+        rng: &mut R,
+        dist: &D,
+    ) -> Self;
 }

@@ -3,20 +3,20 @@
 //! A [StridedBaseArray] is a simple container for array data. It is mainly a convient interface
 //! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
 
-use crate::dense::data_container::DataContainer;
-use crate::dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw};
-use crate::dense::traits::{
-    RawAccess, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
-    UnsafeRandomAccessMut,
-};
-use crate::BaseItem;
-
-use super::data_container::{
-    MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer, RefDataContainerMut,
-    ValueDataContainer,
-};
-use super::traits::{
-    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+use crate::{
+    dense::layout::{check_multi_index_in_bounds, convert_1d_nd_from_shape, convert_nd_raw},
+    traits::{
+        accessors::{
+            RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+            UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+            UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, Shape, Stride},
+        data_container::{
+            DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
+            RefDataContainerMut, ValueDataContainer,
+        },
+    },
 };
 
 /// Definition of a [StridedBaseArray]. The `data` stores the actual array data, `shape` stores

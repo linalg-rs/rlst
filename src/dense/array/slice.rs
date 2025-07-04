@@ -1,12 +1,15 @@
 //! Array slicing.
 
 use crate::{
-    dense::{
-        layout::convert_1d_nd_from_shape,
-        number_types::{IsGreaterByOne, IsGreaterZero, NumberType},
-        traits::{UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut},
+    base_types::NumberType,
+    dense::layout::convert_1d_nd_from_shape,
+    traits::{
+        accessors::{
+            UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+        },
+        array::BaseItem,
+        number_relations::{IsGreaterByOne, IsGreaterZero},
     },
-    BaseItem,
 };
 
 use super::{

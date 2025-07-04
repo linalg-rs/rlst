@@ -2,11 +2,14 @@
 
 use crate::dense::array::{Array, Shape};
 use crate::dense::layout::convert_1d_nd_from_shape;
-use crate::dense::traits::{
-    AsMultiIndex, Len, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+use crate::traits::accessors::{
+    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
+    UnsafeRandomAccessMut,
 };
-use crate::BaseItem;
+use crate::traits::{
+    array::{BaseItem, Len},
+    iterators::{ArrayIterator, ArrayIteratorMut, AsMultiIndex},
+};
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -122,7 +125,7 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIterator for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
@@ -136,7 +139,7 @@ where
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> crate::dense::traits::ArrayIteratorMut for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {

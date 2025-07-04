@@ -3,14 +3,17 @@
 //! A reference is an owned struct that holds a reference to an array. It is used to
 //! pass arrays to functions without transferring ownership.
 
-use crate::dense::array::Array;
-
-use crate::dense::traits::{
-    RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandom1DAccessByRef,
-    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+use crate::{
+    dense::array::Array,
+    traits::{
+        accessors::{
+            RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+            UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+            UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, ResizeInPlace, Shape, Stride},
+    },
 };
-use crate::BaseItem;
 
 /// Basic structure for a `View`
 pub struct ArrayRef<'a, ArrayImpl, const NDIM: usize>(&'a Array<ArrayImpl, NDIM>);

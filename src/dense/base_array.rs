@@ -3,19 +3,20 @@
 //! A [BaseArray] is a simple container for array data. It is mainly a convient interface
 //! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
 
-use crate::dense::layout::{check_multi_index_in_bounds, stride_from_shape};
-use crate::dense::traits::{
-    RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
-};
-use crate::BaseItem;
-
-use super::data_container::{
-    DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
-    RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
-};
-use super::traits::{
-    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+use crate::{
+    dense::layout::{check_multi_index_in_bounds, stride_from_shape},
+    traits::{
+        accessors::{
+            RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
+            UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
+            UnsafeRandomAccessMut,
+        },
+        array::{BaseItem, ResizeInPlace, Shape, Stride},
+        data_container::{
+            DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
+            RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
+        },
+    },
 };
 
 /// Definition of a [BaseArray]. The `data` stores the actual array data, `shape` stores

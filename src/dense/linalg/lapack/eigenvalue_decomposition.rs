@@ -1,13 +1,15 @@
 //! Implementation of the Schur and eigenvalue decomposition for general matrices.
 
+use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::geev::{JobVl, JobVr};
-use crate::dense::linalg::traits::EigenvalueDecomposition;
-use crate::{dense::types::RlstResult, Shape};
-use crate::{BaseItem, FillFromResize, RawAccessMut, RlstScalar};
+use crate::traits::accessors::RawAccessMut;
+use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::linalg::decompositions::EigenvalueDecomposition;
+use crate::traits::linalg::lapack::Lapack;
+use crate::traits::rlst_num::RlstScalar;
 
 use super::interface::gees::JobVs;
-use super::interface::Lapack;
 
 /// Symmetric eigenvalue decomposition mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,7 +32,7 @@ where
 {
     type Item = Item;
 
-    fn eigenvalues(&self) -> RlstResult<DynArray<<Self::Item as crate::RlstScalar>::Complex, 1>> {
+    fn eigenvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Complex, 1>> {
         let mut a = DynArray::new_from(self);
 
         let [m, n] = a.shape();
@@ -78,7 +80,7 @@ where
         &self,
         mode: EigMode,
     ) -> RlstResult<(
-        DynArray<<Self::Item as crate::RlstScalar>::Complex, 1>,
+        DynArray<<Self::Item as RlstScalar>::Complex, 1>,
         Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
         Option<DynArray<<Self::Item as RlstScalar>::Complex, 2>>,
     )> {
