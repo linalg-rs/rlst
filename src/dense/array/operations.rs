@@ -97,6 +97,28 @@ impl<
         }
     }
 
+    /// Fill an array with values from a vector
+    pub fn fill_from_raw_data(&mut self, other: &[Item]) {
+        let shape = self.shape();
+        let dim: usize = shape.iter().product();
+        assert_eq!(dim, other.len());
+
+        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+            *item = *other_item;
+        }
+    }
+
+    /// Fill raw data from values in vector
+    pub fn fill_raw_data(&mut self, other: &mut [Item]) {
+        let shape = self.shape();
+        let dim: usize = shape.iter().product();
+        assert_eq!(dim, other.len());
+
+        for (item, other_item) in self.iter().zip(other.iter_mut()) {
+            *other_item = item;
+        }
+    }
+
     /// Fill an array from another array and resize if necessary.
     pub fn fill_from_resize<
         ArrayImplOther: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,

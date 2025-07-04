@@ -100,6 +100,7 @@ pub use crate::operator::element::{
     Element, ElementContainer, ElementContainerMut, ScalarTimesElement,
 };
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
+pub use crate::operator::operations::eigenvalues::eigs::Eigs;
 pub use crate::operator::operations::gmres::GmresIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
