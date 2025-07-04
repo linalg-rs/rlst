@@ -165,5 +165,6 @@ pub trait AsOperatorApply {
         x: &[Self::Item],
         beta: Self::Item,
         y: &mut [Self::Item],
+        trans_mode: crate::TransMode,
     );
 }
