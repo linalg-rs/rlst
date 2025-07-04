@@ -128,6 +128,10 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> ElementImpl
         self.elem.local_mut().fill_from(other.view().local().r());
     }
 
+    fn fill_inplace_raw(){
+        self.elem.local_mut().fill_from_raw_data(other);
+    }
+
     fn scale_inplace(&mut self, alpha: Self::F) {
         self.elem.local_mut().scale_inplace(alpha);
     }
