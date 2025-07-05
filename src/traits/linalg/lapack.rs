@@ -1,7 +1,6 @@
 //! LAPACK interface for RLST.
 
 use crate::{
-    base_types::{LapackError, LapackResult},
     dense::linalg::lapack::interface::{
         ev::Ev, gees::Gees, geev::Geev, gels::Gels, geqp3::Geqp3, geqrf::Geqrf, gesdd::Gesdd,
         gesvd::Gesvd, getrf::Getrf, getri::Getri, getrs::Getrs, mqr::Mqr, orgqr::Orgqr, posv::Posv,

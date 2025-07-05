@@ -1,7 +1,5 @@
 //! Lapack interface for linear algebra operations.
 
-use crate::base_types::{LapackError, LapackResult};
-
 pub mod cholesky;
 pub mod eigenvalue_decomposition;
 pub mod inverse;

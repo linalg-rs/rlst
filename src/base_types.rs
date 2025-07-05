@@ -118,7 +118,7 @@ pub enum LapackError {
 /// Alias for a Lapack Result type.
 pub type LapackResult<T> = std::result::Result<T, LapackError>;
 
-// Empty type for number relations
+/// Empty type for number relations
 pub struct NumberType<const N: usize>;
 
 impl IsGreaterByOne<0> for NumberType<1> {}

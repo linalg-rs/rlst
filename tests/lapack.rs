@@ -3,22 +3,15 @@
 use itertools::izip;
 use num::Zero;
 use paste::paste;
+use rlst::assert_array_abs_diff_eq;
 use rlst::dense::array::DynArray;
 use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
 use rlst::dense::linalg::lapack::qr::{EnablePivoting, QMode};
 use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
 use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
-use rlst::dense::linalg::traits::{
-    Cholesky, CholeskySolve, EigenvalueDecomposition, Qr, SingularvalueDecomposition, Solve,
-    SolveTriangular,
-};
-use rlst::dense::linalg::traits::{Inverse, UpLo};
-use rlst::dense::linalg::traits::{Lu, SymmEig};
-use rlst::dense::traits::SetIdentity;
-use rlst::dense::types::TransMode;
-use rlst::dense::types::{c32, c64};
 use rlst::dot;
-use rlst::{assert_array_abs_diff_eq, prelude::*};
+
+use rlst::*;
 
 macro_rules! impl_inverse_tests {
     ($scalar:ty, $tol:expr) => {

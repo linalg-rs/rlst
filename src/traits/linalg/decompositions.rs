@@ -1,3 +1,5 @@
+//! Traits for matrix decompositions and solving linear systems.
+
 use num::Zero;
 
 use itertools::Itertools;
@@ -16,7 +18,7 @@ use crate::{
         },
     },
     traits::{
-        array::{EvaluateArray, Len, Shape, ToType},
+        array::{ConjArray, EvaluateArray, Len, Shape, ToType},
         iterators::ArrayIterator,
         rlst_num::RlstScalar,
     },

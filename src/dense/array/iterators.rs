@@ -8,7 +8,7 @@ use crate::traits::accessors::{
 };
 use crate::traits::{
     array::{BaseItem, Len},
-    iterators::{ArrayIterator, ArrayIteratorMut, AsMultiIndex},
+    iterators::AsMultiIndex,
 };
 
 use super::reference::{self, ArrayRefMut};

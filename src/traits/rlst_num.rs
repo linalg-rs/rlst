@@ -1,3 +1,5 @@
+//! Basic number traits.
+
 use bytemuck::Pod;
 
 use num::traits::{Float, FromPrimitive, NumAssign, NumCast, NumOps, ToPrimitive};

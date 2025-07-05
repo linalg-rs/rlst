@@ -1,3 +1,5 @@
+//! Iterator traits.
+
 use super::{
     accessors::{RandomAccessByValue, RandomAccessMut},
     array::BaseItem,
@@ -88,6 +90,7 @@ pub trait ColumnIterator: BaseItem {
     where
         Self: 'a;
 
+    /// Returns a column iterator.
     fn col_iter(&self) -> Self::Iter<'_>;
 }
 
@@ -100,10 +103,11 @@ pub trait RowIterator: BaseItem {
 
     /// Type of the iterator.
 
-    type Iter<'a>: Iterator<Item = Self::Col<'a>>
+    type Iter<'a>: Iterator<Item = Self::Row<'a>>
     where
         Self: 'a;
 
+    /// Returns a row iterator.
     fn row_iter(&self) -> Self::Iter<'_>;
 }
 
@@ -120,6 +124,7 @@ pub trait ColumnIteratorMut: BaseItem {
     where
         Self: 'a;
 
+    /// Returns a mutable column iterator.
     fn col_iter_mut(&mut self) -> Self::Iter<'_>;
 }
 
@@ -136,5 +141,6 @@ pub trait RowIteratorMut: BaseItem {
     where
         Self: 'a;
 
+    /// Returns a mutable row iterator.
     fn row_iter_mut(&mut self) -> Self::Iter<'_>;
 }

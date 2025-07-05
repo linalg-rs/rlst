@@ -1,24 +1,5 @@
 //! LAPACK interface for RLST.
 
-use ev::Ev;
-use gees::Gees;
-use geev::Geev;
-use gels::Gels;
-use geqp3::Geqp3;
-use geqrf::Geqrf;
-use gesdd::Gesdd;
-use gesvd::Gesvd;
-use getrf::Getrf;
-use getri::Getri;
-use getrs::Getrs;
-use mqr::Mqr;
-pub use num::complex::Complex32 as c32;
-pub use num::complex::Complex64 as c64;
-use orgqr::Orgqr;
-use posv::Posv;
-use potrf::Potrf;
-use trsm::Trsm;
-
 use crate::base_types::LapackError;
 use crate::base_types::LapackResult;
 

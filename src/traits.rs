@@ -8,3 +8,12 @@ pub mod linalg;
 pub mod number_relations;
 pub mod number_traits;
 pub mod rlst_num;
+
+pub use accessors::*;
+pub use array::*;
+pub use data_container::*;
+pub use iterators::*;
+pub use linalg::*;
+pub use number_relations::*;
+pub use number_traits::*;
+pub use rlst_num::*;

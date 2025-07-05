@@ -2,8 +2,8 @@
 
 use lapack::{cgeqp3, dgeqp3, sgeqp3, zgeqp3};
 
+use crate::base_types::LapackResult;
 use crate::base_types::{c32, c64, LapackError};
-use crate::{base_types::LapackResult, traits::rlst_num::RlstScalar};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 

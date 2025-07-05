@@ -4,8 +4,8 @@ use lapack::{cungqr, dorgqr, sorgqr, zungqr};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
+use crate::base_types::LapackResult;
 use crate::base_types::{c32, c64, LapackError};
-use crate::{base_types::LapackResult, traits::rlst_num::RlstScalar};
 
 use num::{complex::ComplexFloat, Zero};
 
