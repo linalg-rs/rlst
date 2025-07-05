@@ -1,4 +1,7 @@
-use super::array::BaseItem;
+use super::{
+    accessors::{RandomAccessByValue, RandomAccessMut},
+    array::BaseItem,
+};
 
 /// Iterate through the elements in `(i, j, data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding
@@ -63,11 +66,75 @@ pub trait GetDiag: BaseItem {
 
 /// Get a mutable iterator to the diagonal of an array.
 pub trait GetDiagMut: BaseItem {
-    /// Tyepof the iterator.
+    /// Type of the iterator.
     type Iter<'a>: Iterator<Item = &'a mut Self::Item>
     where
         Self: 'a;
 
     /// Return a mutable iterator for the diagonal of an array.
     fn diag_iter_mut(&mut self) -> Self::Iter<'_>;
+}
+
+/// Column Iterator.
+pub trait ColumnIterator: BaseItem {
+    /// Column type.
+    type Col<'a>: RandomAccessByValue<1, Item = Self::Item>
+    where
+        Self: 'a;
+
+    /// Type of the iterator.
+
+    type Iter<'a>: Iterator<Item = Self::Col<'a>>
+    where
+        Self: 'a;
+
+    fn col_iter(&self) -> Self::Iter<'_>;
+}
+
+/// Row Iterator.
+pub trait RowIterator: BaseItem {
+    /// Column type.
+    type Row<'a>: RandomAccessByValue<1, Item = Self::Item>
+    where
+        Self: 'a;
+
+    /// Type of the iterator.
+
+    type Iter<'a>: Iterator<Item = Self::Col<'a>>
+    where
+        Self: 'a;
+
+    fn row_iter(&self) -> Self::Iter<'_>;
+}
+
+/// Mutable column Iterator.
+pub trait ColumnIteratorMut: BaseItem {
+    /// Column type.
+    type Col<'a>: RandomAccessMut<1, Item = Self::Item>
+    where
+        Self: 'a;
+
+    /// Type of the iterator.
+
+    type Iter<'a>: Iterator<Item = Self::Col<'a>>
+    where
+        Self: 'a;
+
+    fn col_iter_mut(&mut self) -> Self::Iter<'_>;
+}
+
+/// Row Iterator.
+pub trait RowIteratorMut: BaseItem {
+    /// Column type.
+    type Row<'a>: RandomAccessMut<1, Item = Self::Item>
+    where
+        Self: 'a;
+
+    /// Type of the iterator.
+
+    type Iter<'a>: Iterator<Item = Self::Row<'a>>
+    where
+        Self: 'a;
+
+    fn row_iter_mut(&mut self) -> Self::Iter<'_>;
 }

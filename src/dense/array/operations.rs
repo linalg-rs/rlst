@@ -6,6 +6,8 @@ use itertools::izip;
 use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 
+use crate::traits::accessors::UnsafeRandom1DAccessByValue;
+use crate::traits::iterators::{ColumnIterator, ColumnIteratorMut};
 use crate::traits::{
     accessors::{UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut},
     array::{
@@ -17,8 +19,13 @@ use crate::traits::{
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
 
-use super::iterators::{ArrayDiagIterator, ArrayDiagIteratorMut};
+use super::iterators::{
+    ArrayDefaultIterator, ArrayDefaultIteratorMut, ArrayDiagIterator, ArrayDiagIteratorMut,
+    ColIterator, ColIteratorMut,
+};
 use super::operators::unary_op::ArrayUnaryOperator;
+use super::reference::{ArrayRef, ArrayRefMut};
+use super::slice::ArraySlice;
 use super::{Array, DynArray};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
@@ -269,6 +276,110 @@ where
         Item: Into<T>,
     {
         Array::new(ArrayUnaryOperator::new(self, |item| item.into()))
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
+{
+    type Iter<'a>
+        = ArrayDefaultIterator<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
+
+    fn iter(&self) -> Self::Iter<'_> {
+        ArrayDefaultIterator::new(self)
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
+{
+    type IterMut<'a>
+        = ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
+
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        ArrayDefaultIteratorMut::new(self)
+    }
+}
+
+impl<ArrayImpl> ColumnIterator for Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
+{
+    type Col<'a>
+        = Array<ArraySlice<ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>
+    where
+        Self: 'a;
+
+    type Iter<'a>
+        = ColIterator<'a, ArrayImpl, 2>
+    where
+        Self: 'a;
+
+    fn col_iter(&self) -> Self::Iter<'_> {
+        ColIterator::new(self)
+    }
+}
+
+impl<ArrayImpl> ColumnIteratorMut for Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessMut<2>,
+{
+    type Col<'a>
+        = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>
+    where
+        Self: 'a;
+
+    type Iter<'a>
+        = ColIteratorMut<'a, ArrayImpl, 2>
+    where
+        Self: 'a;
+
+    fn col_iter_mut(&mut self) -> Self::Iter<'_> {
+        ColIteratorMut::new(self)
+    }
+}
+
+impl<ArrayImpl> crate::traits::iterators::RowIterator for Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
+{
+    type Row<'a>
+        = Array<ArraySlice<ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>
+    where
+        Self: 'a;
+
+    type Iter<'a>
+        = crate::dense::array::iterators::RowIterator<'a, ArrayImpl, 2>
+    where
+        Self: 'a;
+
+    fn row_iter(&self) -> Self::Iter<'_> {
+        crate::dense::array::iterators::RowIterator::new(self)
+    }
+}
+
+impl<ArrayImpl> crate::traits::iterators::RowIteratorMut for Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessMut<2>,
+{
+    type Row<'a>
+        = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>
+    where
+        Self: 'a;
+
+    type Iter<'a>
+        = crate::dense::array::iterators::RowIteratorMut<'a, ArrayImpl, 2>
+    where
+        Self: 'a;
+
+    fn row_iter_mut(&mut self) -> Self::Iter<'_> {
+        crate::dense::array::iterators::RowIteratorMut::new(self)
     }
 }
 

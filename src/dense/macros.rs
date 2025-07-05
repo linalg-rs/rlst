@@ -6,7 +6,7 @@
 #[macro_export]
 macro_rules! dot {
     ($a:expr, $b:expr) => {{
-        $crate::dense::traits::MultIntoResize::simple_mult_into_resize(
+        $crate::traits::linalg::base::MultIntoResize::simple_mult_into_resize(
             $crate::dense::array::empty_array(),
             $a,
             $b,
@@ -32,7 +32,7 @@ macro_rules! diag {
 
     ($d:expr, $ndim:literal) => {{
         use itertools::izip;
-        use $crate::dense::traits::{ArrayIterator, GetDiagMut, Len};
+        use $crate::traits::{array::Len, iterators::ArrayIterator, iterators::GetDiagMut};
 
         let mut diag_array =
             $crate::dense::array::DynArray::<_, $ndim>::from_shape([$d.len(); $ndim]);

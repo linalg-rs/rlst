@@ -2,11 +2,16 @@
 
 use itertools::izip;
 
-use crate::dense::traits::EvaluateArray;
-use crate::{dense::array::DynArray, diag, dot, Array, Gemm, RlstScalar};
-use crate::{ArrayIterator, ArrayIteratorMut, BaseItem};
-
-use super::interface::Lapack;
+use crate::{
+    dense::array::{Array, DynArray},
+    diag, dot,
+    traits::{
+        array::EvaluateArray,
+        iterators::{ArrayIterator, ArrayIteratorMut, ColumnIteratorMut},
+        linalg::{base::Gemm, lapack::Lapack},
+        rlst_num::RlstScalar,
+    },
+};
 
 /// A structure representing the pseudo-inverse of a matrix.
 pub struct PInv<Item> {
@@ -64,7 +69,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         if NDIM == 2 {
             let arr = arr.eval().coerce_dim::<2>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
-            for mut col in tmp.col_iter_mut() {
+            for mut col in ColumnIteratorMut::col_iter_mut(&mut tmp) {
                 for (elem, si) in izip!(col.iter_mut(), sinv.iter()) {
                     *elem *= si;
                 }
@@ -82,5 +87,3 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         }
     }
 }
-
-impl<Item: Lapack + Gemm, ArrayImpl> Array<ArrayImpl, 2> where ArrayImpl: BaseItem<Item = Item> {}

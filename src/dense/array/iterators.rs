@@ -60,7 +60,7 @@ impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIterator<'a, ArrayImpl, NDIM>
 where
     ArrayImpl: Shape<NDIM>,
 {
-    fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
+    pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         Self {
             arr,
             pos: 0,
@@ -73,7 +73,7 @@ impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorMut<'a, ArrayImpl, ND
 where
     ArrayImpl: Shape<NDIM>,
 {
-    fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
+    pub fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
         let nelements = Len::len(arr);
         Self {
             arr,
@@ -125,34 +125,6 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
-{
-    type Iter<'a>
-        = ArrayDefaultIterator<'a, ArrayImpl, NDIM>
-    where
-        Self: 'a;
-
-    fn iter(&self) -> Self::Iter<'_> {
-        ArrayDefaultIterator::new(self)
-    }
-}
-
-impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
-{
-    type IterMut<'a>
-        = ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
-    where
-        Self: 'a;
-
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        ArrayDefaultIteratorMut::new(self)
-    }
-}
-
 /// Row iterator
 pub struct RowIterator<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
@@ -160,11 +132,41 @@ pub struct RowIterator<'a, ArrayImpl, const NDIM: usize> {
     current_row: usize,
 }
 
+impl<'a, ArrayImpl> RowIterator<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'a Array<ArrayImpl, 2>) -> Self {
+        let nrows = arr.shape()[0];
+        RowIterator {
+            arr,
+            nrows,
+            current_row: 0,
+        }
+    }
+}
+
 /// Mutable row iterator
 pub struct RowIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a mut Array<ArrayImpl, NDIM>,
     nrows: usize,
     current_row: usize,
+}
+
+impl<'a, ArrayImpl> RowIteratorMut<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'a mut Array<ArrayImpl, 2>) -> Self {
+        let nrows = arr.shape()[0];
+        RowIteratorMut {
+            arr,
+            nrows,
+            current_row: 0,
+        }
+    }
 }
 
 impl<'a, ArrayImpl> std::iter::Iterator for RowIterator<'a, ArrayImpl, 2>
@@ -202,35 +204,6 @@ where
     }
 }
 
-impl<ArrayImpl> Array<ArrayImpl, 2>
-where
-    ArrayImpl: Shape<2>,
-{
-    /// Return a row iterator for a two-dimensional array.
-    pub fn row_iter(&self) -> RowIterator<'_, ArrayImpl, 2> {
-        RowIterator {
-            arr: self,
-            nrows: self.shape()[0],
-            current_row: 0,
-        }
-    }
-}
-
-impl<ArrayImpl> Array<ArrayImpl, 2>
-where
-    ArrayImpl: Shape<2>,
-{
-    /// Return a mutable row iterator for a two-dimensional array.
-    pub fn row_iter_mut(&mut self) -> RowIteratorMut<'_, ArrayImpl, 2> {
-        let nrows = self.shape()[0];
-        RowIteratorMut {
-            arr: self,
-            nrows,
-            current_row: 0,
-        }
-    }
-}
-
 /// Column iterator
 pub struct ColIterator<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
@@ -238,11 +211,41 @@ pub struct ColIterator<'a, ArrayImpl, const NDIM: usize> {
     current_col: usize,
 }
 
+impl<'a, ArrayImpl> ColIterator<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'a Array<ArrayImpl, 2>) -> Self {
+        let ncols = arr.shape()[1];
+        ColIterator {
+            arr,
+            ncols,
+            current_col: 0,
+        }
+    }
+}
+
 /// Mutable column iterator
 pub struct ColIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a mut Array<ArrayImpl, NDIM>,
     ncols: usize,
     current_col: usize,
+}
+
+impl<'a, ArrayImpl> ColIteratorMut<'a, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'a mut Array<ArrayImpl, 2>) -> Self {
+        let ncols = arr.shape()[1];
+        ColIteratorMut {
+            arr,
+            ncols,
+            current_col: 0,
+        }
+    }
 }
 
 impl<'a, ArrayImpl: Shape<2>> std::iter::Iterator for ColIterator<'a, ArrayImpl, 2> {
@@ -273,35 +276,6 @@ where
                 Array<ArraySlice<ArrayRefMut<'_, ArrayImpl, 2>, 2, 1>, 1>,
                 Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>,
             >(slice))
-        }
-    }
-}
-
-impl<ArrayImpl> Array<ArrayImpl, 2>
-where
-    ArrayImpl: Shape<2>,
-{
-    /// Return a column iterator for a two-dimensional array.
-    pub fn col_iter(&self) -> ColIterator<'_, ArrayImpl, 2> {
-        ColIterator {
-            arr: self,
-            ncols: self.shape()[1],
-            current_col: 0,
-        }
-    }
-}
-
-impl<ArrayImpl> Array<ArrayImpl, 2>
-where
-    ArrayImpl: Shape<2>,
-{
-    /// Return a mutable column iterator for a two-dimensional array.
-    pub fn col_iter_mut(&mut self) -> ColIteratorMut<'_, ArrayImpl, 2> {
-        let ncols = self.shape()[1];
-        ColIteratorMut {
-            arr: self,
-            ncols,
-            current_col: 0,
         }
     }
 }
