@@ -13,53 +13,6 @@ macro_rules! build_dep {
     }};
 }
 
-fn build_sleef() {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let sleef_dir = out_dir.join("sleef");
-
-    if !sleef_dir.exists() {
-        // From https://stackoverflow.com/questions/55141013/how-to-get-the-behaviour-of-git-checkout-in-rust-git2
-        let repo = Repository::clone("https://github.com/shibatch/sleef", sleef_dir.clone())
-            .expect("Could not clone Sleef repository.");
-        let refname = "3.6.1";
-        let (object, reference) = repo.revparse_ext(refname).expect("Object not found");
-        repo.checkout_tree(&object, None)
-            .expect("Failed to checkout");
-
-        match reference {
-            // gref is an actual reference like branches or tags
-            Some(gref) => repo.set_head(gref.name().unwrap()),
-            // this is a commit, not a reference
-            None => repo.set_head_detached(object.id()),
-        }
-        .expect("Failed to set HEAD");
-    }
-
-    Config::new(sleef_dir.clone())
-        .define("CMAKE_PREFIX_PATH", out_dir.clone())
-        .profile("Release")
-        .build();
-
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-
-    if target_arch == "aarch64" {
-        cc::Build::new()
-            .file("sleef_interface/sleef_neon.c")
-            .include(out_dir.join("include"))
-            .flag("-march=native")
-            .compile("sleef_interface");
-    } else if target_arch == "x86_64" {
-        cc::Build::new()
-            .file("sleef_interface/sleef_avx.c")
-            .include(out_dir.join("include"))
-            .flag("-march=native")
-            .compile("sleef_interface");
-    }
-
-    println!("cargo:rustc-link-lib=static=sleef");
-    println!("cargo:rustc-link-lib=static=sleef_interface");
-}
-
 fn build_umfpack(out_dir: String) {
     let out_path = PathBuf::from(out_dir.clone());
 
@@ -172,10 +125,6 @@ fn main() {
 
     if std::env::var("CARGO_FEATURE_SUITESPARSE").is_ok() {
         build_umfpack(out_dir.clone());
-    }
-
-    if std::env::var("CARGO_FEATURE_SLEEF").is_ok() {
-        build_sleef()
     }
 
     // println!("// cargo:rern-if-changed=sleef_interface/sleef_avx.c");

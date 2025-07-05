@@ -60,6 +60,7 @@ impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIterator<'a, ArrayImpl, NDIM>
 where
     ArrayImpl: Shape<NDIM>,
 {
+    /// Create a new default iterator for the given array.
     pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         Self {
             arr,
@@ -73,6 +74,7 @@ impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorMut<'a, ArrayImpl, ND
 where
     ArrayImpl: Shape<NDIM>,
 {
+    /// Create a new mutable default iterator for the given array.
     pub fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
         let nelements = Len::len(arr);
         Self {

@@ -1,18 +1,11 @@
 //! Basic traits for SIMD Operations
 
-#[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
-mod sleef_neon;
-
-#[cfg(all(target_arch = "x86_64", feature = "sleef"))]
-mod sleef_avx;
-
-use bytemuck::Pod;
+use crate::traits::rlst_num::RlstSimd;
 use coe;
 use num::Zero;
 use pulp::Simd;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::slice::{from_raw_parts, from_raw_parts_mut};
 /// A simplified wrapper to call into Simd operations in a type
 /// and architecture independent way.
 #[derive(Copy, Clone, Debug)]
@@ -180,224 +173,6 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
     }
 }
 
-/// [RlstScalar](crate::RlstScalar) extension trait for SIMD operations.
-#[allow(dead_code)]
-pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
-    /// Simd register that has the layout `[Self; N]` for some `N > 0`.
-    type Scalars<S: Simd>: Pod + Copy + Send + Sync + Debug + 'static;
-    /// Simd mask register that has the layout `[Self; N]` for some `N > 0`.
-    type Mask<S: Simd>: Copy + Send + Sync + Debug + 'static;
-
-    /// Splits the slice into a vector and scalar part.
-    fn as_simd_slice<S: Simd>(slice: &[Self]) -> (&[Self::Scalars<S>], &[Self]);
-
-    /// Splits an array of arrays into vector and scalar part.
-    ///
-    /// Consider an array of the form [[x1, y1, z1], [x2, y2, z2], ...] and
-    /// a Simd vector length of 4. This function returns a slice, where each
-    /// element is an array of length 12, containing 4 points and a tail containing
-    /// the remainder points. The elements of the head can then be processed with the
-    /// corresponding `deinterleave` function so as to obtain elements of the form
-    /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
-    #[allow(clippy::type_complexity)]
-    #[inline(always)]
-    fn as_simd_slice_from_vec<S: Simd, const N: usize>(
-        vec_slice: &[[Self; N]],
-    ) -> (&[[Self::Scalars<S>; N]], &[[Self; N]]) {
-        assert_eq!(
-            core::mem::align_of::<[Self; N]>(),
-            core::mem::align_of::<[Self::Scalars<S>; N]>()
-        );
-        let chunk_size = core::mem::size_of::<Self::Scalars<S>>() / core::mem::size_of::<Self>();
-        let len = vec_slice.len();
-        let data = vec_slice.as_ptr();
-        let div = len / chunk_size;
-        let rem = len % chunk_size;
-
-        unsafe {
-            (
-                from_raw_parts(data as *const [Self::Scalars<S>; N], div),
-                from_raw_parts(data.add(len - rem), rem),
-            )
-        }
-    }
-
-    /// Splits a mutable array of arrays into vector and scalar part.
-    ///
-    /// Consider an array of the form [[x1, y1, z1], [x2, y2, z2], ...] and
-    /// a Simd vector length of 4. This function returns a slice, where each
-    /// element is an array of length 12, containing 4 points and a tail containing
-    /// the remainder points. The elements of the head can then be processed with the
-    /// [deinterleave](SimdFor::deinterleave) function so as to obtain elements of the form
-    /// [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4]].
-    #[allow(clippy::type_complexity)]
-    #[inline(always)]
-    fn as_simd_slice_from_vec_mut<S: Simd, const N: usize>(
-        vec_slice: &mut [[Self; N]],
-    ) -> (&mut [[Self::Scalars<S>; N]], &mut [[Self; N]]) {
-        assert_eq!(
-            core::mem::align_of::<[Self; N]>(),
-            core::mem::align_of::<[Self::Scalars<S>; N]>()
-        );
-        let chunk_size = core::mem::size_of::<Self::Scalars<S>>() / core::mem::size_of::<Self>();
-        let len = vec_slice.len();
-        let data = vec_slice.as_mut_ptr();
-        let div = len / chunk_size;
-        let rem = len % chunk_size;
-
-        unsafe {
-            (
-                from_raw_parts_mut(data as *mut [Self::Scalars<S>; N], div),
-                from_raw_parts_mut(data.add(len - rem), rem),
-            )
-        }
-    }
-
-    /// Splits the mutable slice into a vector and scalar part.
-    fn as_simd_slice_mut<S: Simd>(slice: &mut [Self]) -> (&mut [Self::Scalars<S>], &mut [Self]);
-
-    /// Compare two SIMD registers for equality.
-    fn simd_cmp_eq<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Mask<S>;
-    /// Compare two SIMD registers for less-than.
-    fn simd_cmp_lt<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Mask<S>;
-    /// Compare two SIMD registers for less-than-or-equal.
-    fn simd_cmp_le<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Mask<S>;
-    /// Select from two simd registers depending on whether the mask is set.
-    fn simd_select<S: Simd>(
-        simd: S,
-        mask: Self::Mask<S>,
-        if_true: Self::Scalars<S>,
-        if_false: Self::Scalars<S>,
-    ) -> Self::Scalars<S>;
-
-    /// Broadcasts the value to each element in the output simd register.
-    fn simd_splat<S: Simd>(simd: S, value: Self) -> Self::Scalars<S>;
-
-    /// Add two SIMD registers.
-    fn simd_neg<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
-
-    /// Add two SIMD registers.
-    fn simd_add<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Scalars<S>;
-
-    /// Subtract two SIMD registers.
-    fn simd_sub<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Scalars<S>;
-
-    /// Multiply two SIMD registers.
-    fn simd_mul<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Scalars<S>;
-
-    /// Multiply two SIMD registers.
-    fn simd_mul_add<S: Simd>(
-        simd: S,
-        lhs: Self::Scalars<S>,
-        rhs: Self::Scalars<S>,
-        acc: Self::Scalars<S>,
-    ) -> Self::Scalars<S>;
-
-    /// Divide two SIMD registers.
-    fn simd_div<S: Simd>(simd: S, lhs: Self::Scalars<S>, rhs: Self::Scalars<S>)
-        -> Self::Scalars<S>;
-
-    /// Compute the sine and cosine of each element in the register.
-    fn simd_sin_cos<S: Simd>(
-        simd: S,
-        value: Self::Scalars<S>,
-    ) -> (Self::Scalars<S>, Self::Scalars<S>);
-
-    // /// Compute the sine and cosine of each element in the register,
-    // /// assuming that its absolute value is smaller than or equal to `pi / 2`.
-    // fn simd_sin_cos_quarter_circle<S: Simd>(
-    //     simd: S,
-    //     value: Self::Scalars<S>,
-    // ) -> (Self::Scalars<S>, Self::Scalars<S>);
-
-    /// Compute the base e exponential of a Simd vector.
-    fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
-
-    /// Compute the square root of each element in the register.
-    fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
-
-    /// Compute the approximate reciprocal of each element in the register.
-    fn simd_approx_recip<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
-
-    /// Compute the approximate reciprocal square root of each element in the register.
-    fn simd_approx_recip_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
-
-    /// Compute the horizontal sum of the given value.
-    fn simd_reduce_add<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self;
-
-    /// Deinterleaves a register of values `[x0, y0, x1, y1, ...]` to
-    /// `[x0, x1, ... y0, y1, ...]`.
-    fn simd_deinterleave_2<S: Simd>(simd: S, value: [Self::Scalars<S>; 2])
-        -> [Self::Scalars<S>; 2];
-
-    /// Deinterleaves a register of values `[x0, y0, z0, x1, y1, z1, ...]` to
-    /// `[x0, x1, ... y0, y1, ..., z0, z1, ...]`.
-    fn simd_deinterleave_3<S: Simd>(simd: S, value: [Self::Scalars<S>; 3])
-        -> [Self::Scalars<S>; 3];
-
-    /// Deinterleaves a register of values `[x0, y0, z0, w0, x1, y1, z1, w1, ...]` to
-    /// `[x0, x1, ... y0, y1, ..., z0, z1, ..., w0, w1, ...]`.
-    fn simd_deinterleave_4<S: Simd>(simd: S, value: [Self::Scalars<S>; 4])
-        -> [Self::Scalars<S>; 4];
-
-    /// Inverse of [deinterleave_2](RlstSimd::simd_deinterleave_2).
-    fn simd_interleave_2<S: Simd>(simd: S, value: [Self::Scalars<S>; 2]) -> [Self::Scalars<S>; 2] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 2];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[2 * i] = x[i];
-                out[2 * i + 1] = x[n + i];
-            }
-        }
-        out
-    }
-
-    /// Inverse of [deinterleave_3](RlstSimd::simd_deinterleave_3).
-    fn simd_interleave_3<S: Simd>(simd: S, value: [Self::Scalars<S>; 3]) -> [Self::Scalars<S>; 3] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 3];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[3 * i] = x[i];
-                out[3 * i + 1] = x[n + i];
-                out[3 * i + 2] = x[2 * n + i];
-            }
-        }
-        out
-    }
-
-    /// Inverse of [deinterleave_4](RlstSimd::simd_deinterleave_4).
-    fn simd_interleave_4<S: Simd>(simd: S, value: [Self::Scalars<S>; 4]) -> [Self::Scalars<S>; 4] {
-        let mut out = [Self::simd_splat(simd, Self::zero()); 4];
-        {
-            let n = std::mem::size_of::<Self::Scalars<S>>() / std::mem::size_of::<Self>();
-
-            let out: &mut [Self] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
-            let x: &[Self] = bytemuck::cast_slice(std::slice::from_ref(&value));
-            for i in 0..n {
-                out[4 * i] = x[i];
-                out[4 * i + 1] = x[n + i];
-                out[4 * i + 2] = x[2 * n + i];
-                out[4 * i + 3] = x[3 * n + i];
-            }
-        }
-        out
-    }
-}
-
 impl RlstSimd for f32 {
     type Scalars<S: Simd> = S::f32s;
     type Mask<S: Simd> = S::m32s;
@@ -507,22 +282,6 @@ impl RlstSimd for f32 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
-        if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f32; 4] = bytemuck::cast(value);
-            let sleef_neon::f32x4x2(s_out, c_out) =
-                unsafe { sleef_neon::rlst_neon_sin_cos_f32(value.as_ptr()) };
-            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
-        };
-
-        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
-        if coe::is_same::<S, pulp::x86::V3>() {
-            let value: [f32; 8] = bytemuck::cast(value);
-            let sleef_avx::F32x8x2(s_out, c_out) =
-                unsafe { sleef_avx::rlst_avx_sin_cos_f32(value.as_ptr()) };
-            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
-        }
-
         let mut s_out = Self::simd_splat(simd, Self::zero());
         let mut c_out = Self::simd_splat(simd, Self::zero());
         {
@@ -631,22 +390,6 @@ impl RlstSimd for f32 {
 
     #[inline(always)]
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
-        if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f32; 4] = bytemuck::cast(value);
-            let out = unsafe { sleef_neon::rlst_neon_exp_f32(value.as_ptr()) };
-
-            return bytemuck::cast(out);
-        }
-
-        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
-        if coe::is_same::<S, pulp::x86::V3>() {
-            let value: [f32; 8] = bytemuck::cast(value);
-            let out = unsafe { sleef_avx::rlst_avx_exp_f32(value.as_ptr()) };
-
-            return bytemuck::cast(out);
-        }
-
         let mut out = simd.splat_f32s(0.0);
         {
             let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
@@ -660,19 +403,6 @@ impl RlstSimd for f32 {
 
     #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        #[cfg(target_arch = "x86_64")]
-        {
-            use coe::coerce_static as to;
-            #[cfg(feature = "nightly")]
-            if coe::is_same::<S, pulp::x86::V4>() {
-                let simd: pulp::x86::V4 = to(simd);
-                return to(simd.sqrt_f32x16(to(value)));
-            }
-            if coe::is_same::<S, pulp::x86::V3>() {
-                let simd: pulp::x86::V3 = to(simd);
-                return to(simd.sqrt_f32x8(to(value)));
-            }
-        }
         let mut out = simd.splat_f32s(0.0);
         {
             let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
@@ -880,23 +610,6 @@ impl RlstSimd for f64 {
         simd: S,
         value: Self::Scalars<S>,
     ) -> (Self::Scalars<S>, Self::Scalars<S>) {
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
-        if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f64; 2] = bytemuck::cast(value);
-            let sleef_neon::f64x2x2(s_out, c_out) =
-                unsafe { sleef_neon::rlst_neon_sin_cos_f64(value.as_ptr()) };
-
-            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
-        }
-
-        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
-        if coe::is_same::<S, pulp::x86::V3>() {
-            let value: [f64; 4] = bytemuck::cast(value);
-            let sleef_avx::F64x4x2(s_out, c_out) =
-                unsafe { sleef_avx::rlst_avx_sin_cos_f64(value.as_ptr()) };
-            return (bytemuck::cast(s_out), bytemuck::cast(c_out));
-        }
-
         let mut s_out = Self::simd_splat(simd, Self::zero());
         let mut c_out = Self::simd_splat(simd, Self::zero());
         {
@@ -1006,22 +719,6 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
-        if coe::is_same::<S, pulp::aarch64::Neon>() {
-            let value: [f64; 2] = bytemuck::cast(value);
-            let out = unsafe { sleef_neon::rlst_neon_exp_f64(value.as_ptr()) };
-
-            return bytemuck::cast(out);
-        }
-
-        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
-        if coe::is_same::<S, pulp::x86::V3>() {
-            let value: [f64; 4] = bytemuck::cast(value);
-            let out = unsafe { sleef_avx::rlst_avx_exp_f64(value.as_ptr()) };
-
-            return bytemuck::cast(out);
-        }
-
         let mut out = simd.splat_f64s(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
@@ -1035,19 +732,6 @@ impl RlstSimd for f64 {
 
     #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
-        #[cfg(target_arch = "x86_64")]
-        {
-            use coe::coerce_static as to;
-            #[cfg(feature = "nightly")]
-            if coe::is_same::<S, pulp::x86::V4>() {
-                let simd: pulp::x86::V4 = to(simd);
-                return to(simd.sqrt_f64x8(to(value)));
-            }
-            if coe::is_same::<S, pulp::x86::V3>() {
-                let simd: pulp::x86::V3 = to(simd);
-                return to(simd.sqrt_f64x4(to(value)));
-            }
-        }
         let mut out = simd.splat_f64s(0.0);
         {
             let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));

@@ -25,6 +25,7 @@
 
 pub mod base_types;
 pub mod dense;
+pub mod simd;
 pub mod traits;
 // pub mod doc;
 // pub mod external;

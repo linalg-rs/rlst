@@ -12,4 +12,3 @@ pub mod gemm;
 pub mod layout;
 pub mod macros;
 pub mod matrix_multiply;
-pub mod simd;
