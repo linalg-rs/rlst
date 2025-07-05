@@ -1,6 +1,7 @@
 //! Gemm trait for matrix multiplication
-use crate::dense::traits::Gemm;
-use crate::dense::types::{c32, c64, TransMode};
+use crate::base_types::TransMode;
+use crate::base_types::{c32, c64};
+use crate::traits::linalg::base::Gemm;
 use blas::{cgemm, dgemm, sgemm, zgemm};
 
 /// Compute expected size of a data slice from stride and shape.

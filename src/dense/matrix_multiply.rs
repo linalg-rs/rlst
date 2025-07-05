@@ -3,9 +3,14 @@
 //! This module implements the matrix multiplication. The current implementation
 //! uses the [rlst-blis] crate::dense.
 
-use crate::dense::traits::Gemm;
-use crate::dense::traits::{RawAccess, RawAccessMut, Shape, Stride};
-use crate::dense::types::TransMode;
+use crate::{
+    base_types::TransMode,
+    traits::{
+        accessors::{RawAccess, RawAccessMut},
+        array::{Shape, Stride},
+        linalg::base::Gemm,
+    },
+};
 
 /// Matrix mulitplication
 ///

@@ -1,12 +1,14 @@
 //! Implementation of the singular value decomposition using LAPACK.
 
+use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::gesdd::JobZ;
-use crate::dense::linalg::traits::SingularvalueDecomposition;
-use crate::{dense::types::RlstResult, Shape};
-use crate::{BaseItem, EvaluateArray, FillFromResize, Gemm, RawAccessMut, RlstScalar};
-
-use super::interface::Lapack;
+use crate::traits::accessors::RawAccessMut;
+use crate::traits::array::{BaseItem, EvaluateArray, FillFromResize, Shape};
+use crate::traits::linalg::base::Gemm;
+use crate::traits::linalg::decompositions::SingularvalueDecomposition;
+use crate::traits::linalg::lapack::Lapack;
+use crate::traits::rlst_num::RlstScalar;
 
 /// Symmetric eigenvalue decomposition mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -2,8 +2,6 @@
 
 pub mod lapack;
 
-pub mod traits;
-
 // pub mod inverse;
 // pub mod lu;
 // pub mod pseudo_inverse;

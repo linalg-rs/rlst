@@ -1,15 +1,15 @@
 //! Implementation of the QR decomposition.
 
+use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
-use crate::dense::linalg::traits::Qr;
-use crate::dense::traits::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
-use crate::{dense::types::RlstResult, Shape};
-use crate::{BaseItem, FillFromResize};
+use crate::traits::accessors::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
+use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::linalg::decompositions::Qr;
+use crate::traits::linalg::lapack::Lapack;
 
 use super::interface::geqp3::Geqp3;
 use super::interface::geqrf::Geqrf;
 use super::interface::orgqr::Orgqr;
-use super::interface::Lapack;
 
 /// Stores the result of a QR decomposition of a matrix.
 pub struct QrDecomposition<Item> {

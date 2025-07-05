@@ -1,18 +1,20 @@
 //! Implementation of the linear solver trait.
 
 use crate::{
+    base_types::{RlstError, RlstResult, TransMode},
     dense::{
-        array::DynArray,
+        array::{Array, DynArray},
+        linalg::lapack::interface::gels::GelsTransMode,
+    },
+    traits::{
+        accessors::{RawAccessMut, UnsafeRandom1DAccessByValue},
+        array::{BaseItem, EvaluateArray, FillFrom, FillFromResize, Shape},
         linalg::{
-            lapack::interface::gels::GelsTransMode,
-            traits::{Lu, Solve},
+            decompositions::{Lu, Solve},
+            lapack::Lapack,
         },
     },
-    Array, BaseItem, EvaluateArray, FillFrom, FillFromResize, RawAccessMut, Shape,
-    UnsafeRandom1DAccessByValue,
 };
-
-use super::interface::Lapack;
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> Solve<Array<RhsArrayImpl, NDIM>>
     for Array<ArrayImpl, 2>
@@ -26,12 +28,9 @@ where
 {
     type Output = DynArray<Item, NDIM>;
 
-    fn solve(
-        &self,
-        rhs: &Array<RhsArrayImpl, NDIM>,
-    ) -> crate::dense::types::RlstResult<Self::Output> {
+    fn solve(&self, rhs: &Array<RhsArrayImpl, NDIM>) -> RlstResult<Self::Output> {
         if NDIM > 2 {
-            return Err(crate::dense::types::RlstError::GeneralError(
+            return Err(RlstError::GeneralError(
                 "The right-hand side cannot have more than two dimensions.".to_string(),
             ));
         }
@@ -48,9 +47,7 @@ where
 
         if m == n {
             // Square matrix case
-            Ok(self
-                .lu()?
-                .solve(crate::dense::types::TransMode::NoTrans, &rhs)?)
+            Ok(self.lu()?.solve(TransMode::NoTrans, &rhs)?)
         } else {
             // Rectangular matrix case
 

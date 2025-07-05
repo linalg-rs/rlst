@@ -1,17 +1,17 @@
 //! Implement the triangular solver trait.
 
 use crate::{
+    base_types::{RlstResult, UpLo},
     dense::{
-        array::DynArray,
-        linalg::{
-            lapack::interface::trsm::{TrsmDiag, TrsmSide, TrsmTransA, TrsmUplo},
-            traits::SolveTriangular,
-        },
+        array::{Array, DynArray},
+        linalg::lapack::interface::trsm::{TrsmDiag, TrsmSide, TrsmTransA, TrsmUplo},
     },
-    Array, BaseItem, FillFromResize, RawAccessMut, Shape,
+    traits::{
+        accessors::RawAccessMut,
+        array::{BaseItem, FillFromResize, Shape},
+        linalg::{decompositions::SolveTriangular, lapack::Lapack},
+    },
 };
-
-use super::interface::Lapack;
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> SolveTriangular<Array<RhsArrayImpl, NDIM>>
     for Array<ArrayImpl, 2>
@@ -26,9 +26,9 @@ where
 
     fn solve_triangular(
         &self,
-        uplo: crate::dense::linalg::traits::UpLo,
+        uplo: UpLo,
         rhs: &Array<RhsArrayImpl, NDIM>,
-    ) -> crate::dense::types::RlstResult<Self::Output> {
+    ) -> RlstResult<Self::Output> {
         let [m, n] = self.shape();
 
         assert_eq!(
@@ -51,8 +51,8 @@ where
         let mut b = DynArray::new_from(rhs);
 
         let uplo = match uplo {
-            crate::dense::linalg::traits::UpLo::Upper => TrsmUplo::Upper,
-            crate::dense::linalg::traits::UpLo::Lower => TrsmUplo::Lower,
+            UpLo::Upper => TrsmUplo::Upper,
+            UpLo::Lower => TrsmUplo::Lower,
         };
 
         Item::trsm(
