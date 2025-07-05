@@ -14,7 +14,10 @@ use crate::traits::{
         BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
         FillWithValue, Len, ResizeInPlace, Shape, SumFrom, ToType, Trace,
     },
-    iterators::{ArrayIterator, ArrayIteratorMut, GetDiag, GetDiagMut},
+    iterators::{
+        AijIterator, AijIteratorByRef, AijIteratorMut, ArrayIterator, ArrayIteratorMut, GetDiag,
+        GetDiagMut,
+    },
     linalg::base::{Inner, NormSup, NormTwo},
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };

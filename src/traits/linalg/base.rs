@@ -2,6 +2,9 @@
 
 use crate::{base_types::TransMode, traits::array::BaseItem};
 
+pub use num::traits::MulAdd;
+pub use std::ops::{Add, Mul, Sub};
+
 /// Multiply into
 pub trait MultInto<First, Second>: BaseItem {
     /// Multiply First * Second and sum into Self

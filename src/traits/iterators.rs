@@ -10,11 +10,35 @@ use super::{
 /// element.
 pub trait AijIterator: BaseItem {
     /// Iterator
-    type Iter<'a>: std::iter::Iterator<Item = (usize, usize, Self::Item)>
+    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], Self::Item)>
     where
         Self: 'a;
     /// Get iterator
-    fn iter_aij(&self) -> Self::Iter<'_>;
+    fn iter_aij_value(&self) -> Self::Iter<'_>;
+}
+
+/// Iterate through the elements in `([i, j], &data)` form, where
+/// `i` is row, `j` is column, and `data` is the corresponding
+/// element.
+pub trait AijIteratorByRef: BaseItem {
+    /// Iterator
+    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], &'a Self::Item)>
+    where
+        Self: 'a;
+    /// Get iterator
+    fn iter_aij_ref(&self) -> Self::Iter<'_>;
+}
+
+/// Iterate through the elements in `(i, j, &mut data)` form, where
+/// `i` is row, `j` is column, and `data` is the corresponding
+/// element.
+pub trait AijIteratorMut: BaseItem {
+    /// Iterator
+    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], &'a mut Self::Item)>
+    where
+        Self: 'a;
+    /// Get iterator
+    fn iter_aij_mut(&mut self) -> Self::Iter<'_>;
 }
 
 /// Helper trait that returns from an enumeration iterator a new iterator

@@ -91,11 +91,18 @@ where
     }
 }
 
-impl<ArrayImpl1, const NDIM: usize> Array<ArrayImpl1, NDIM> {
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> MulAdd<Item, Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
+    ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
+    Item: MulAdd<Output = Item> + Copy,
+{
+    type Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>;
     /// Compentwie form `self * a + b`, where `a` is a scalar and `b` is another array.
     /// The implementation depdends on the `MulAdd` trait from the `num` crate for the componets of
     /// the arrays.
-    pub fn mul_add<Item, ArrayImpl2>(
+    fn mul_add(
         self,
         a: Item,
         b: Array<ArrayImpl2, NDIM>,
