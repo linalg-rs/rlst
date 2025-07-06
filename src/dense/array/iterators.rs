@@ -10,6 +10,7 @@ use crate::traits::{
     array::{BaseItem, Len},
     iterators::AsMultiIndex,
 };
+use crate::{UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef};
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -17,7 +18,16 @@ use super::slice::ArraySlice;
 /// Default column major iterator.
 ///
 /// This iterator returns elements of an array in standard column major order.
-pub struct ArrayDefaultIterator<'a, ArrayImpl, const NDIM: usize> {
+pub struct ArrayDefaultIteratorByValue<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a Array<ArrayImpl, NDIM>,
+    pos: usize,
+    nelements: usize,
+}
+
+/// Default column major iterator by reference.
+///
+/// This iterator returns elements of an array in standard column major order.
+pub struct ArrayDefaultIteratorByRef<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
     pos: usize,
     nelements: usize,
@@ -56,7 +66,21 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, ND
     }
 }
 
-impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIterator<'a, ArrayImpl, NDIM>
+impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorByValue<'a, ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
+{
+    /// Create a new default iterator for the given array.
+    pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
+        Self {
+            arr,
+            pos: 0,
+            nelements: Len::len(arr),
+        }
+    }
+}
+
+impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorByRef<'a, ArrayImpl, NDIM>
 where
     ArrayImpl: Shape<NDIM>,
 {
@@ -86,7 +110,7 @@ where
 }
 
 impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> std::iter::Iterator
-    for ArrayDefaultIterator<'_, ArrayImpl, NDIM>
+    for ArrayDefaultIteratorByValue<'_, ArrayImpl, NDIM>
 {
     type Item = ArrayImpl::Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -94,6 +118,21 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> std::iter::Itera
             None
         } else {
             let value = unsafe { Some(self.arr.get_value_1d_unchecked(self.pos)) };
+            self.pos += 1;
+            value
+        }
+    }
+}
+
+impl<'a, ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> std::iter::Iterator
+    for ArrayDefaultIteratorByRef<'a, ArrayImpl, NDIM>
+{
+    type Item = &'a ArrayImpl::Item;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.nelements {
+            None
+        } else {
+            let value = unsafe { Some(self.arr.get_1d_unchecked(self.pos)) };
             self.pos += 1;
             value
         }
@@ -283,17 +322,17 @@ where
 }
 
 /// Diagonal iterator.
-pub struct ArrayDiagIterator<'a, ArrayImpl, const NDIM: usize> {
+pub struct ArrayDiagIteratorByValue<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a Array<ArrayImpl, NDIM>,
     pos: usize,
     nelements: usize,
 }
 
-impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIterator<'a, ArrayImpl, NDIM> {
+impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIteratorByValue<'a, ArrayImpl, NDIM> {
     /// Create a new diagonal iterator.
     pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
         let nelements = *arr.shape().iter().min().unwrap();
-        ArrayDiagIterator {
+        ArrayDiagIteratorByValue {
             arr,
             pos: 0,
             nelements,
@@ -302,7 +341,7 @@ impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIterator<'a, ArrayI
 }
 
 impl<'a, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> Iterator
-    for ArrayDiagIterator<'a, ArrayImpl, NDIM>
+    for ArrayDiagIteratorByValue<'a, ArrayImpl, NDIM>
 {
     type Item = ArrayImpl::Item;
 
@@ -311,6 +350,41 @@ impl<'a, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> Iterator
             None
         } else {
             let value = unsafe { self.arr.get_value_unchecked([self.pos; NDIM]) };
+            self.pos += 1;
+            Some(value)
+        }
+    }
+}
+
+/// Diagonal iterator.
+pub struct ArrayDiagIteratorByRef<'a, ArrayImpl, const NDIM: usize> {
+    arr: &'a Array<ArrayImpl, NDIM>,
+    pos: usize,
+    nelements: usize,
+}
+
+impl<'a, ArrayImpl: Shape<NDIM>, const NDIM: usize> ArrayDiagIteratorByRef<'a, ArrayImpl, NDIM> {
+    /// Create a new diagonal iterator.
+    pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
+        let nelements = *arr.shape().iter().min().unwrap();
+        ArrayDiagIteratorByRef {
+            arr,
+            pos: 0,
+            nelements,
+        }
+    }
+}
+
+impl<'a, ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> Iterator
+    for ArrayDiagIteratorByRef<'a, ArrayImpl, NDIM>
+{
+    type Item = &'a ArrayImpl::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.nelements {
+            None
+        } else {
+            let value = unsafe { self.arr.get_unchecked([self.pos; NDIM]) };
             self.pos += 1;
             Some(value)
         }

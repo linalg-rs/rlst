@@ -13,8 +13,9 @@ use crate::{
         },
         array::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::{
-            DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer, RefDataContainer,
-            RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
+            ContainerTypeHint, DataContainer, MutableRawAccessDataContainer,
+            RawAccessDataContainer, RefDataContainer, RefDataContainerMut, ResizeableDataContainer,
+            ValueDataContainer,
         },
     },
 };
@@ -24,6 +25,10 @@ use crate::{
 pub struct BaseArray<Data, const NDIM: usize> {
     data: Data,
     shape: [usize; NDIM],
+}
+
+impl<Data: ContainerTypeHint, const NDIM: usize> ContainerTypeHint for BaseArray<Data, NDIM> {
+    type TypeHint = Data::TypeHint;
 }
 
 impl<Data: DataContainer, const NDIM: usize> BaseArray<Data, NDIM> {

@@ -2,9 +2,12 @@
 
 use std::ops::Div;
 
+use lapack::Select1C32;
+
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Component-wise division
@@ -32,6 +35,19 @@ where
             operator2,
         }
     }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> ContainerTypeHint
+    for CmpWiseDivision<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    ArrayImpl1: ContainerTypeHint,
+    ArrayImpl2: ContainerTypeHint,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::TypeHint, ArrayImpl2::TypeHint>,
+{
+    type TypeHint = <SelectContainerType as ContainerTypeSelector<
+        ArrayImpl1::TypeHint,
+        ArrayImpl2::TypeHint,
+    >>::Type;
 }
 
 impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> BaseItem

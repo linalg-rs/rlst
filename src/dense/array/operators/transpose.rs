@@ -9,6 +9,7 @@ use crate::{
         },
         array::{BaseItem, Shape},
     },
+    ContainerTypeHint,
 };
 
 /// Transpose array
@@ -36,6 +37,13 @@ where
             shape,
         }
     }
+}
+
+impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayTranspose<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<Item, ArrayImpl, const NDIM: usize> BaseItem for ArrayTranspose<ArrayImpl, NDIM>

@@ -1,20 +1,18 @@
 //! Sparse matrix traits
 
-use crate::{
-    dense::array::DynArray, distributed_tools::IndexLayout, sparse::sparse_mat::SparseMatType,
-};
+use crate::{dense::array::DynArray, distributed_tools::IndexLayout, sparse::SparseMatType};
 
-use super::{AijIterator, BaseItem, Shape};
+use super::{AijIteratorByValue, BaseItem, Shape};
 
 pub trait SparseMat: BaseItem + Shape<2> {
     /// The type of the index set.
     type IndexSet;
 
     /// An iterator that iterates over non-zero elements of the sparse matrix.
-    type AijIter: AijIterator<Item = Self::Item>;
+    type AijIter: AijIteratorByValue<Item = Self::Item>;
 
     /// A mutable iterator that iterates over non-zero elements of the sparse matrix.
-    type AijIterMut: AijIterator<Item = Self::Item>;
+    type AijIterMut: AijIteratorByValue<Item = Self::Item>;
 
     /// Get the number of non-zero elements
     fn nnz(&self) -> usize;
@@ -35,7 +33,7 @@ pub trait DistributedSparseMat<'a>: BaseItem + Shape<2> {
     type LocalSparseMat: SparseMat<Item = Self::Item>;
 
     /// The type of the communicator.
-    type Comm;
+    type Comm: mpi::traits::Communicator;
 
     /// Return the index layout.
     fn index_layout(&self) -> &IndexLayout<'a, Self::Comm>;

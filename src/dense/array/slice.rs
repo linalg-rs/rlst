@@ -10,6 +10,7 @@ use crate::{
         array::BaseItem,
         number_relations::{IsGreaterByOne, IsGreaterZero},
     },
+    ContainerTypeHint, Heap,
 };
 
 use super::{
@@ -29,6 +30,16 @@ where
 }
 
 // Implementation of ArraySlice
+
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerTypeHint
+    for ArraySlice<ArrayImpl, ADIM, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    type TypeHint = Heap;
+}
 
 impl<ArrayImpl, const ADIM: usize, const NDIM: usize> BaseItem for ArraySlice<ArrayImpl, ADIM, NDIM>
 where

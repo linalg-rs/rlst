@@ -17,6 +17,7 @@ use crate::{
             UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
         },
         array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
+        data_container::ContainerTypeHint,
     },
 };
 
@@ -89,6 +90,13 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
+}
+
+impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for Array<ArrayImpl, NDIM>

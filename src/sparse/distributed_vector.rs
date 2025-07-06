@@ -5,11 +5,9 @@ use std::rc::Rc;
 use crate::distributed_tools::IndexLayout;
 
 use crate::dense::array::DynArray;
-use crate::dense::traits::{RawAccess, RawAccessMut, Shape};
-use crate::dense::types::RlstScalar;
 use crate::{Array, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
 use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
+use mpi::traits::{Communicator, CommunicatorCollectives, Root};
 use mpi::Rank;
 use num::Zero;
 

@@ -7,7 +7,7 @@ use crate::{
     diag, dot,
     traits::{
         array::EvaluateArray,
-        iterators::{ArrayIterator, ArrayIteratorMut, ColumnIteratorMut},
+        iterators::{ArrayIteratorByValue, ArrayIteratorMut, ColumnIteratorMut},
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
@@ -70,7 +70,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
             let arr = arr.eval().coerce_dim::<2>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
             for mut col in ColumnIteratorMut::col_iter_mut(&mut tmp) {
-                for (elem, si) in izip!(col.iter_mut(), sinv.iter()) {
+                for (elem, si) in izip!(col.iter_mut(), sinv.iter_value()) {
                     *elem *= si;
                 }
             }
@@ -78,7 +78,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         } else if NDIM == 1 {
             let arr = arr.eval().coerce_dim::<1>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
-            for (elem, si) in izip!(tmp.iter_mut(), sinv.iter()) {
+            for (elem, si) in izip!(tmp.iter_mut(), sinv.iter_value()) {
                 *elem *= si;
             }
             dot!(self.v.r(), tmp).coerce_dim::<NDIM>().unwrap().eval()

@@ -7,41 +7,61 @@ use num::traits::{MulAdd, MulAddAssign};
 //use crate::{dense::types::RlstResult, TransMode};
 
 use crate::traits::accessors::UnsafeRandom1DAccessByValue;
+use crate::traits::iterators::GetDiagByRef;
 use crate::traits::iterators::{ColumnIterator, ColumnIteratorMut};
 use crate::traits::{
-    accessors::{UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut},
+    accessors::{
+        UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
+        UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    },
     array::{
         BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
         FillWithValue, Len, ResizeInPlace, Shape, SumFrom, ToType, Trace,
     },
     iterators::{
-        AijIterator, AijIteratorByRef, AijIteratorMut, ArrayIterator, ArrayIteratorMut, GetDiag,
-        GetDiagMut,
+        AijIteratorByRef, AijIteratorByValue, AijIteratorMut, ArrayIteratorByRef,
+        ArrayIteratorByValue, ArrayIteratorMut, GetDiagByValue, GetDiagMut,
     },
     linalg::base::{Inner, NormSup, NormTwo},
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
+use crate::AsMultiIndex;
 
 use super::iterators::{
-    ArrayDefaultIterator, ArrayDefaultIteratorMut, ArrayDiagIterator, ArrayDiagIteratorMut,
-    ColIterator, ColIteratorMut,
+    ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
+    ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
+    ColIteratorMut, MultiIndexIterator,
 };
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;
 use super::{Array, DynArray};
 
-impl<Item, ArrayImpl, const NDIM: usize> GetDiag for Array<ArrayImpl, NDIM>
+impl<Item, ArrayImpl, const NDIM: usize> GetDiagByValue for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
 {
     type Iter<'a>
-        = ArrayDiagIterator<'a, ArrayImpl, NDIM>
+        = ArrayDiagIteratorByValue<'a, ArrayImpl, NDIM>
     where
         Self: 'a;
 
-    fn diag_iter(&self) -> Self::Iter<'_> {
-        ArrayDiagIterator::new(self)
+    fn diag_iter_value(&self) -> Self::Iter<'_> {
+        ArrayDiagIteratorByValue::new(self)
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> GetDiagByRef for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandomAccessByRef<NDIM, Item = Item> + Shape<NDIM>,
+{
+    type Iter<'a>
+        = ArrayDiagIteratorByRef<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
+
+    fn diag_iter_ref(&self) -> Self::Iter<'_> {
+        ArrayDiagIteratorByRef::new(self)
     }
 }
 
@@ -64,12 +84,12 @@ impl<Item, ArrayImpl, ArrayImplOther, const NDIM: usize> FillFrom<Array<ArrayImp
 where
     ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
     Self: ArrayIteratorMut<Item = Item>,
-    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
 {
     fn fill_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
         assert_eq!(self.shape(), other.shape());
 
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+        for (item, other_item) in self.iter_mut().zip(other.iter_value()) {
             *item = other_item;
         }
     }
@@ -81,12 +101,12 @@ where
     Item: AddAssign<Item>,
     ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
     Self: ArrayIteratorMut<Item = Item>,
-    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
 {
     fn sum_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
         assert_eq!(self.shape(), other.shape());
 
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+        for (item, other_item) in self.iter_mut().zip(other.iter_value()) {
             *item += other_item;
         }
     }
@@ -98,12 +118,12 @@ where
     Item: MulAssign<Item>,
     ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
     Self: ArrayIteratorMut<Item = Item>,
-    Array<ArrayImplOther, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
 {
     fn cmp_mult_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
         assert_eq!(self.shape(), other.shape());
 
-        for (item, other_item) in self.iter_mut().zip(other.iter()) {
+        for (item, other_item) in self.iter_mut().zip(other.iter_value()) {
             *item *= other_item;
         }
     }
@@ -116,8 +136,8 @@ where
     Item: MulAddAssign<Item>,
     ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
     Self: ArrayIteratorMut<Item = Item>,
-    Array<ArrayImplOther1, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
-    Array<ArrayImplOther2, NDIM>: ArrayIterator<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther1, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
+    Array<ArrayImplOther2, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
 {
     fn cmp_mul_add_from(
         &mut self,
@@ -127,7 +147,8 @@ where
         assert_eq!(self.shape(), other1.shape());
         assert_eq!(self.shape(), other2.shape());
 
-        for (item, other_item1, other_item2) in izip!(self.iter_mut(), other1.iter(), other2.iter())
+        for (item, other_item1, other_item2) in
+            izip!(self.iter_mut(), other1.iter_value(), other2.iter_value())
         {
             MulAddAssign::mul_add_assign(item, other_item1, other_item2);
         }
@@ -161,11 +182,11 @@ where
 
 impl<Item, ArrayImpl, const NDIM: usize> Trace for Array<ArrayImpl, NDIM>
 where
-    Array<ArrayImpl, NDIM>: GetDiag<Item = Item>,
+    Array<ArrayImpl, NDIM>: GetDiagByValue<Item = Item>,
     Item: std::iter::Sum,
 {
     fn trace(&self) -> Self::Item {
-        self.diag_iter().sum::<Self::Item>()
+        self.diag_iter_value().sum::<Self::Item>()
     }
 }
 
@@ -174,22 +195,23 @@ where
     Item: Default + MulAdd<Output = Item> + Conj<Output = Item>,
     ArrayImpl: BaseItem<Item = Item>,
     ArrayImplOther: BaseItem<Item = Item>,
-    Self: ArrayIterator<Item = Item> + Len,
-    Array<ArrayImplOther, 1>: ArrayIterator<Item = Item> + Len,
+    Self: ArrayIteratorByValue<Item = Item> + Len,
+    Array<ArrayImplOther, 1>: ArrayIteratorByValue<Item = Item> + Len,
 {
     type Output = Item;
 
     fn inner(&self, other: &Array<ArrayImplOther, 1>) -> Self::Output {
         assert_eq!(self.len(), other.len());
-        izip!(self.iter(), other.iter()).fold(Default::default(), |acc, (elem, other_elem)| {
-            MulAdd::mul_add(elem, Conj::conj(&other_elem), acc)
-        })
+        izip!(self.iter_value(), other.iter_value())
+            .fold(Default::default(), |acc, (elem, other_elem)| {
+                MulAdd::mul_add(elem, Conj::conj(&other_elem), acc)
+            })
     }
 }
 
 impl<ArrayImpl> NormSup for Array<ArrayImpl, 1>
 where
-    Self: ArrayIterator,
+    Self: ArrayIteratorByValue,
     <Self as BaseItem>::Item: Abs,
     <<Self as BaseItem>::Item as Abs>::Output:
         Max<Output = <<Self as BaseItem>::Item as Abs>::Output> + Default,
@@ -197,7 +219,7 @@ where
     type Output = <<Self as BaseItem>::Item as Abs>::Output;
 
     fn norm_sup(&self) -> Self::Output {
-        self.iter()
+        self.iter_value()
             .fold(<Self::Output as Default>::default(), |acc, elem| {
                 Max::max(&acc, &elem.abs())
             })
@@ -206,14 +228,14 @@ where
 
 impl<ArrayImpl> AbsSquare for Array<ArrayImpl, 1>
 where
-    Self: ArrayIterator,
+    Self: ArrayIteratorByValue,
     <Self as BaseItem>::Item: AbsSquare,
     <<Self as BaseItem>::Item as AbsSquare>::Output: Sum,
 {
     type Output = <<Self as BaseItem>::Item as AbsSquare>::Output;
 
     fn abs_square(&self) -> Self::Output {
-        self.iter().map(|elem| elem.abs_square()).sum()
+        self.iter_value().map(|elem| elem.abs_square()).sum()
     }
 }
 
@@ -282,17 +304,31 @@ where
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ArrayIteratorByValue for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Iter<'a>
-        = ArrayDefaultIterator<'a, ArrayImpl, NDIM>
+        = ArrayDefaultIteratorByValue<'a, ArrayImpl, NDIM>
     where
         Self: 'a;
 
-    fn iter(&self) -> Self::Iter<'_> {
-        ArrayDefaultIterator::new(self)
+    fn iter_value(&self) -> Self::Iter<'_> {
+        ArrayDefaultIteratorByValue::new(self)
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> ArrayIteratorByRef for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessByRef + Shape<NDIM>,
+{
+    type Iter<'a>
+        = ArrayDefaultIteratorByRef<'a, ArrayImpl, NDIM>
+    where
+        Self: 'a;
+
+    fn iter_ref(&self) -> Self::Iter<'_> {
+        ArrayDefaultIteratorByRef::new(self)
     }
 }
 
@@ -383,6 +419,52 @@ where
 
     fn row_iter_mut(&mut self) -> Self::Iter<'_> {
         crate::dense::array::iterators::RowIteratorMut::new(self)
+    }
+}
+
+impl<ArrayImpl> AijIteratorByValue for Array<ArrayImpl, 2>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<2>,
+{
+    type Iter<'a>
+        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorByValue<'a, ArrayImpl, 2>>, 2>
+    where
+        Self: 'a;
+
+    fn iter_aij_value(&self) -> Self::Iter<'_> {
+        let iter = ArrayDefaultIteratorByValue::new(self);
+        AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
+    }
+}
+
+impl<ArrayImpl> AijIteratorByRef for Array<ArrayImpl, 2>
+where
+    ArrayImpl: UnsafeRandom1DAccessByRef + Shape<2>,
+{
+    type Iter<'a>
+        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorByRef<'a, ArrayImpl, 2>>, 2>
+    where
+        Self: 'a;
+
+    fn iter_aij_ref(&self) -> Self::Iter<'_> {
+        let iter = ArrayDefaultIteratorByRef::new(self);
+        AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
+    }
+}
+
+impl<ArrayImpl> AijIteratorMut for Array<ArrayImpl, 2>
+where
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<2>,
+{
+    type Iter<'a>
+        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorMut<'a, ArrayImpl, 2>>, 2>
+    where
+        Self: 'a;
+
+    fn iter_aij_mut(&mut self) -> Self::Iter<'_> {
+        let shape = self.shape();
+        let iter = ArrayDefaultIteratorMut::new(self);
+        AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), shape)
     }
 }
 

@@ -5,12 +5,26 @@ use std::ops::Mul;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Component-wise product
 pub struct CmpWiseProduct<ArrayImpl1, ArrayImpl2, const NDIM: usize> {
     operator1: Array<ArrayImpl1, NDIM>,
     operator2: Array<ArrayImpl2, NDIM>,
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> ContainerTypeHint
+    for CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    ArrayImpl1: ContainerTypeHint,
+    ArrayImpl2: ContainerTypeHint,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::TypeHint, ArrayImpl2::TypeHint>,
+{
+    type TypeHint = <SelectContainerType as ContainerTypeSelector<
+        ArrayImpl1::TypeHint,
+        ArrayImpl2::TypeHint,
+    >>::Type;
 }
 
 impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>

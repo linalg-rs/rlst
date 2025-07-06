@@ -19,7 +19,7 @@ use crate::{
     },
     traits::{
         array::{ConjArray, EvaluateArray, Len, Shape, ToType},
-        iterators::ArrayIterator,
+        iterators::ArrayIteratorByValue,
         rlst_num::RlstScalar,
     },
 };
@@ -171,7 +171,7 @@ pub trait SingularvalueDecomposition {
         };
 
         let count = match s
-            .iter()
+            .iter_value()
             .take(nvalues)
             .find_position(|&elem| elem <= tol * s[[0]])
         {

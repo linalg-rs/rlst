@@ -10,6 +10,7 @@ use crate::{
         },
         array::{BaseItem, Shape},
     },
+    ContainerTypeHint,
 };
 
 /// A flattened view onto an array.
@@ -22,6 +23,13 @@ impl<ArrayImpl, const NDIM: usize> ArrayFlatView<ArrayImpl, NDIM> {
     pub fn new(arr: Array<ArrayImpl, NDIM>) -> Self {
         Self(arr)
     }
+}
+
+impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayFlatView<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for ArrayFlatView<ArrayImpl, NDIM>

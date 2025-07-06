@@ -11,9 +11,12 @@
 //!
 
 use crate::traits::data_container::{
-    DataContainer, ModifiableDataContainer, MutableRawAccessDataContainer, RawAccessDataContainer,
-    RefDataContainer, RefDataContainerMut, ResizeableDataContainer, ValueDataContainer,
+    ContainerTypeHint, DataContainer, ModifiableDataContainer, MutableRawAccessDataContainer,
+    RawAccessDataContainer, RefDataContainer, RefDataContainerMut, ResizeableDataContainer,
+    ValueDataContainer,
 };
+
+use crate::base_types::{Heap, Stack};
 
 /// A container that uses dynamic vectors.
 pub struct VectorContainer<Item> {
@@ -30,6 +33,10 @@ impl<Item: Default + Clone> VectorContainer<Item> {
             data: vec![<Item as Default>::default(); nelems],
         }
     }
+}
+
+impl<Item> ContainerTypeHint for VectorContainer<Item> {
+    type TypeHint = Heap;
 }
 
 impl<Item> DataContainer for VectorContainer<Item> {
@@ -100,6 +107,10 @@ impl<Item> MutableRawAccessDataContainer for VectorContainer<Item> {
 /// It is useful for data structures that should be stack allocated.
 pub struct ArrayContainer<Item, const N: usize> {
     data: [Item; N],
+}
+
+impl<Item, const N: usize> ContainerTypeHint for ArrayContainer<Item, N> {
+    type TypeHint = Stack<N>;
 }
 
 impl<Item: Default + Copy, const N: usize> ArrayContainer<Item, N> {
@@ -179,6 +190,10 @@ pub struct SliceContainer<'a, Item> {
     data: &'a [Item],
 }
 
+impl<'a, Item> ContainerTypeHint for SliceContainer<'a, Item> {
+    type TypeHint = Heap; // Slice does not have a fixed size, but we can use a marker.
+}
+
 impl<'a, Item> SliceContainer<'a, Item> {
     /// New slice container from a reference.
     #[inline(always)]
@@ -222,6 +237,10 @@ impl<Item> RawAccessDataContainer for SliceContainer<'_, Item> {
 /// A container that takes a mutable reference to a slice.
 pub struct SliceContainerMut<'a, Item> {
     data: &'a mut [Item],
+}
+
+impl<'a, Item> ContainerTypeHint for SliceContainerMut<'a, Item> {
+    type TypeHint = Heap; // Slice does not have a fixed size, but we can use a marker.
 }
 
 impl<'a, Item> SliceContainerMut<'a, Item> {

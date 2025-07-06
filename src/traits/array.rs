@@ -7,7 +7,10 @@ use num::{One, Zero};
 
 use crate::base_types::MemoryLayout;
 
-use super::iterators::{ArrayIterator, ArrayIteratorMut, GetDiagMut};
+use super::{
+    iterators::{ArrayIteratorMut, GetDiagMut},
+    ArrayIteratorByValue,
+};
 
 ///Base item type of an array.
 pub trait BaseItem {
@@ -197,11 +200,11 @@ pub trait Sum: BaseItem {
 
 impl<T> Sum for T
 where
-    T: ArrayIterator,
+    T: ArrayIteratorByValue,
     T::Item: std::iter::Sum,
 {
     fn sum(&self) -> Self::Item {
-        self.iter().sum()
+        self.iter_value().sum()
     }
 }
 

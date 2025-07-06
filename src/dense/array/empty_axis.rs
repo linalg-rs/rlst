@@ -9,6 +9,7 @@ use crate::{
         array::BaseItem,
         number_relations::IsSmallerByOne,
     },
+    ContainerTypeHint,
 };
 
 use super::{
@@ -42,6 +43,15 @@ where
     pub fn new(arr: Array<ArrayImpl, ADIM>, axis_position: AxisPosition) -> Self {
         Self { arr, axis_position }
     }
+}
+
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerTypeHint
+    for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsSmallerByOne<NDIM>,
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<ArrayImpl, const ADIM: usize, const NDIM: usize> BaseItem

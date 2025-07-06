@@ -5,6 +5,7 @@ use std::ops::Add;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Addition
@@ -30,6 +31,19 @@ impl<ArrayImpl1: Shape<NDIM>, ArrayImpl2: Shape<NDIM>, const NDIM: usize>
             operator2,
         }
     }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> ContainerTypeHint
+    for ArrayAddition<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    ArrayImpl1: ContainerTypeHint,
+    ArrayImpl2: ContainerTypeHint,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::TypeHint, ArrayImpl2::TypeHint>,
+{
+    type TypeHint = <SelectContainerType as ContainerTypeSelector<
+        ArrayImpl1::TypeHint,
+        ArrayImpl2::TypeHint,
+    >>::Type;
 }
 
 impl<

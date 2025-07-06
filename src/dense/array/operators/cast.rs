@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    ContainerType, ContainerTypeHint,
 };
 
 /// Array to complex
@@ -21,6 +22,13 @@ impl<Target, ArrayImpl, const NDIM: usize> ArrayCast<Target, ArrayImpl, NDIM> {
             _marker: PhantomData,
         }
     }
+}
+
+impl<Target, ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayCast<Target, ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<Target, ArrayImpl, const NDIM: usize> BaseItem for ArrayCast<Target, ArrayImpl, NDIM> {

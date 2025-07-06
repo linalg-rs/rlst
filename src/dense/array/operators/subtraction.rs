@@ -8,6 +8,7 @@ use crate::{
         accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
         array::{BaseItem, Shape},
     },
+    ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Subtraction
@@ -35,6 +36,19 @@ where
             operator2,
         }
     }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> ContainerTypeHint
+    for ArraySubtraction<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    ArrayImpl1: ContainerTypeHint,
+    ArrayImpl2: ContainerTypeHint,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::TypeHint, ArrayImpl2::TypeHint>,
+{
+    type TypeHint = <SelectContainerType as ContainerTypeSelector<
+        ArrayImpl1::TypeHint,
+        ArrayImpl2::TypeHint,
+    >>::Type;
 }
 
 impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> BaseItem

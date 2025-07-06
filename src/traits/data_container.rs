@@ -64,3 +64,17 @@ pub trait MutableRawAccessDataContainer: RawAccessDataContainer {
     /// Return a raw pointer to the data.
     fn data_mut(&mut self) -> &mut [Self::Item];
 }
+
+/// Stores the type of a container.
+pub trait ContainerTypeHint {
+    type TypeHint: ContainerType;
+}
+
+/// Marker trait for container types.
+pub trait ContainerType {}
+
+/// Selects a container type based on two other container types.
+pub trait ContainerTypeSelector<U: ContainerType, V: ContainerType> {
+    /// Select the container type.
+    type Type: ContainerType;
+}

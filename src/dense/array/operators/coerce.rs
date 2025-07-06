@@ -12,6 +12,7 @@ use crate::{
         },
         array::{BaseItem, Shape, Stride},
     },
+    ContainerTypeHint,
 };
 
 /// A wrapper around an array that coerces its dimension.
@@ -46,6 +47,14 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
             ))
         }
     }
+}
+
+impl<ArrayImpl, const NDIM: usize, const CDIM: usize> ContainerTypeHint
+    for CoerceArray<ArrayImpl, NDIM, CDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<ArrayImpl, const NDIM: usize, const CDIM: usize> BaseItem

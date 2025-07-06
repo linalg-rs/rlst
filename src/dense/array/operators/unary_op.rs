@@ -3,6 +3,7 @@
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    ContainerTypeHint,
 };
 use paste::paste;
 
@@ -27,6 +28,14 @@ impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize>
             _marker: std::marker::PhantomData,
         }
     }
+}
+
+impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> ContainerTypeHint
+    for ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> BaseItem

@@ -8,7 +8,7 @@ use super::{
 /// Iterate through the elements in `(i, j, data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
-pub trait AijIterator: BaseItem {
+pub trait AijIteratorByValue: BaseItem {
     /// Iterator
     type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], Self::Item)>
     where
@@ -55,14 +55,28 @@ pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
 ///
 /// The returned iterator is expected to iterate through the array
 /// in column major order independent of the underlying memory layout.
-pub trait ArrayIterator: BaseItem {
+pub trait ArrayIteratorByValue: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
         Self: 'a;
 
     /// Returns an iterator that produces elements of type `Self::Item`.
-    fn iter(&self) -> Self::Iter<'_>;
+    fn iter_value(&self) -> Self::Iter<'_>;
+}
+
+/// Provides a default iterator over elements of an array by reference.
+///
+/// The returned iterator is expected to iterate through the array
+/// in column major order independent of the underlying memory layout.
+pub trait ArrayIteratorByRef: BaseItem {
+    /// Type of the iterator.
+    type Iter<'a>: Iterator<Item = &'a Self::Item>
+    where
+        Self: 'a;
+
+    /// Returns an iterator that produces elements of type `Self::Item`.
+    fn iter_ref(&self) -> Self::Iter<'_>;
 }
 
 /// Provides a default mutable iterator over elements of an array.
@@ -80,14 +94,25 @@ pub trait ArrayIteratorMut: BaseItem {
 }
 
 /// Get an iterator to the diagonal of an array.
-pub trait GetDiag: BaseItem {
+pub trait GetDiagByRef: BaseItem {
+    /// Type of the iterator.
+    type Iter<'a>: Iterator<Item = &'a Self::Item>
+    where
+        Self: 'a;
+
+    /// Return an iterator for the diagonal of an array.
+    fn diag_iter_ref(&self) -> Self::Iter<'_>;
+}
+
+/// Get an iterator to the diagonal of an array.
+pub trait GetDiagByValue: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
         Self: 'a;
 
     /// Return an iterator for the diagonal of an array.
-    fn diag_iter(&self) -> Self::Iter<'_>;
+    fn diag_iter_value(&self) -> Self::Iter<'_>;
 }
 
 /// Get a mutable iterator to the diagonal of an array.

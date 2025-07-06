@@ -9,6 +9,8 @@ pub use num::complex::Complex64 as c64;
 use thiserror::Error;
 
 use crate::traits::number_relations::{IsGreaterByOne, IsGreaterZero, IsSmallerByOne};
+use crate::ContainerType;
+use crate::ContainerTypeSelector;
 
 /// The Rlst error type.
 #[derive(Error, Debug)]
@@ -191,4 +193,34 @@ pub enum UpLo {
     Upper,
     /// Lower triangular matrix.
     Lower,
+}
+
+// Container types.
+
+/// An unknown container type.
+pub struct Heap;
+
+/// A static container with fixed size N.
+pub struct Stack<const N: usize>;
+
+impl ContainerType for Heap {}
+impl<const N: usize> ContainerType for Stack<N> {}
+
+/// Trait to select a container type based on the input types.
+pub struct SelectContainerType;
+
+impl ContainerTypeSelector<Heap, Heap> for SelectContainerType {
+    type Type = Heap;
+}
+
+impl<const N: usize> ContainerTypeSelector<Stack<N>, Heap> for SelectContainerType {
+    type Type = Stack<N>;
+}
+
+impl<const N: usize> ContainerTypeSelector<Heap, Stack<N>> for SelectContainerType {
+    type Type = Stack<N>;
+}
+
+impl<const N: usize> ContainerTypeSelector<Stack<N>, Stack<N>> for SelectContainerType {
+    type Type = Stack<N>;
 }

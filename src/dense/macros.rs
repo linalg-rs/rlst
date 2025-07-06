@@ -32,11 +32,11 @@ macro_rules! diag {
 
     ($d:expr, $ndim:literal) => {{
         use itertools::izip;
-        use $crate::traits::{array::Len, iterators::ArrayIterator, iterators::GetDiagMut};
+        use $crate::traits::{array::Len, iterators::ArrayIteratorByValue, iterators::GetDiagMut};
 
         let mut diag_array =
             $crate::dense::array::DynArray::<_, $ndim>::from_shape([$d.len(); $ndim]);
-        izip!(diag_array.diag_iter_mut(), $d.iter()).for_each(|(diag_entry, entry)| {
+        izip!(diag_array.diag_iter_mut(), $d.iter_value()).for_each(|(diag_entry, entry)| {
             *diag_entry = entry;
         });
         diag_array

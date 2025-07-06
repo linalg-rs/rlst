@@ -86,9 +86,9 @@ macro_rules! assert_array_abs_diff_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_abs_diff_eq;
         use $crate::traits::array::Shape;
-        use $crate::traits::iterators::ArrayIterator;
+        use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
-        for (actual, expected) in $actual_array.iter().zip($expected_array.iter()) {
+        for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {
             assert_abs_diff_eq!(actual, expected, epsilon = $epsilon);
         }
     }};
@@ -100,9 +100,9 @@ macro_rules! assert_array_relative_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_relative_eq;
         use $crate::traits::array::Shape;
-        use $crate::traits::iterators::ArrayIterator;
+        use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
-        for (actual, expected) in $actual_array.iter().zip($expected_array.iter()) {
+        for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {
             assert_relative_eq!(actual, expected, max_relative = $epsilon);
         }
     }};

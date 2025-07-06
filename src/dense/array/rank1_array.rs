@@ -32,6 +32,12 @@ impl<
     }
 }
 
+impl<Item: RlstScalar, ArrayImplU, ArrayImplV> ContainerTypeMarker
+    for Rank1Array<Item, ArrayImplU, ArrayImplV>
+{
+    type Type = Item;
+}
+
 impl<
         Item: RlstScalar,
         ArrayImplU: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,

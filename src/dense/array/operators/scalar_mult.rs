@@ -4,6 +4,7 @@ use std::ops::Mul;
 
 use crate::base_types::{c32, c64};
 
+use crate::ContainerTypeHint;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
@@ -20,6 +21,14 @@ impl<Scalar, ArrayImpl, const NDIM: usize> ArrayScalarMult<Scalar, ArrayImpl, ND
     pub fn new(scalar: Scalar, arr: Array<ArrayImpl, NDIM>) -> Self {
         Self { arr, scalar }
     }
+}
+
+impl<Scalar, ArrayImpl, const NDIM: usize> ContainerTypeHint
+    for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint,
+{
+    type TypeHint = ArrayImpl::TypeHint;
 }
 
 impl<Scalar, ArrayImpl, const NDIM: usize> BaseItem for ArrayScalarMult<Scalar, ArrayImpl, NDIM>

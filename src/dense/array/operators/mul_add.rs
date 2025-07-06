@@ -11,6 +11,7 @@ use crate::{
         accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
         array::{BaseItem, Shape},
     },
+    ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Struct that represents the `mul_add` operation on two arrays.
@@ -40,6 +41,16 @@ impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize>
 
         Self { arr1, arr2, scalar }
     }
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> ContainerTypeHint
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: ContainerTypeHint,
+    ArrayImpl2: ContainerTypeHint,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::TypeHint, ArrayImpl2::TypeHint>,
+{
+    type TypeHint = <ArrayImpl1 as ContainerTypeHint>::TypeHint;
 }
 
 impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> BaseItem
