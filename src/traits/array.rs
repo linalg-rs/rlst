@@ -5,11 +5,11 @@ use std::ops::MulAssign;
 
 use num::{One, Zero};
 
-use crate::base_types::MemoryLayout;
+use crate::{base_types::MemoryLayout, Array};
 
 use super::{
     iterators::{ArrayIteratorMut, GetDiagMut},
-    ArrayIteratorByValue,
+    ArrayIteratorByValue, ContainerTypeHint, UnsafeRandom1DAccessByValue,
 };
 
 ///Base item type of an array.
@@ -237,6 +237,18 @@ pub trait EvaluateArray {
 
     /// Evaluate the array into a new array.
     fn eval(&self) -> Self::Output;
+}
+
+/// Dispatch the evaluation of an array to an actual implementation.
+pub trait DispatchEval<const NDIM: usize> {
+    /// The output type of the evaluated array.
+    type Output;
+
+    /// The implementation type of the array.
+    type ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue;
+
+    /// Dispatch the evaluation of the array to an actual implementation.
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output;
 }
 
 /// Convert to a new type.

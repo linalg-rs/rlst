@@ -24,6 +24,8 @@ where
     Item: Lapack + Gemm,
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
     DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
+    Array<ArrayImpl, 2>: EvaluateArray,
+    <Array<ArrayImpl, 2> as EvaluateArray>::Output: RawAccessMut<Item = Item> + Shape<2>,
 {
     type Item = Item;
 

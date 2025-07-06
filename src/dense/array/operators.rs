@@ -11,6 +11,7 @@ pub mod scalar_mult;
 pub mod subtraction;
 pub mod transpose;
 pub mod unary_op;
+pub mod with_type_hint;
 
 // pub fn simd_operator() {
 //     let mut a = DynArray::<f32, 2>::from_shape([5, 100]);

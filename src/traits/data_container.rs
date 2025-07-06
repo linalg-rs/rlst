@@ -67,11 +67,20 @@ pub trait MutableRawAccessDataContainer: RawAccessDataContainer {
 
 /// Stores the type of a container.
 pub trait ContainerTypeHint {
+    /// The type hint for the container.
     type TypeHint: ContainerType;
+
+    /// Returns the type hint for the container as string ref.
+    fn type_hint_as_str(&self) -> &'static str {
+        Self::TypeHint::STR
+    }
 }
 
 /// Marker trait for container types.
-pub trait ContainerType {}
+pub trait ContainerType {
+    /// The string representation of the container type hint.
+    const STR: &str;
+}
 
 /// Selects a container type based on two other container types.
 pub trait ContainerTypeSelector<U: ContainerType, V: ContainerType> {

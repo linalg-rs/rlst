@@ -25,7 +25,7 @@ use crate::traits::{
     linalg::base::{Inner, NormSup, NormTwo},
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
-use crate::AsMultiIndex;
+use crate::{AsMultiIndex, ContainerTypeHint, DispatchEval};
 
 use super::iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
@@ -35,7 +35,7 @@ use super::iterators::{
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;
-use super::{Array, DynArray};
+use super::{Array, DynArray, EvalDispatcher};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiagByValue for Array<ArrayImpl, NDIM>
 where
@@ -275,16 +275,29 @@ where
     }
 }
 
+// impl<Item, ArrayImpl, const NDIM: usize> EvaluateArray for Array<ArrayImpl, NDIM>
+// where
+//     DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
+//     Item: Clone + Default,
+//     ArrayImpl: BaseItem<Item = Item>,
+// {
+//     type Output = DynArray<Item, NDIM>;
+//
+//     fn eval(&self) -> Self::Output {
+//         DynArray::new_from(self)
+//     }
+// }
+
 impl<Item, ArrayImpl, const NDIM: usize> EvaluateArray for Array<ArrayImpl, NDIM>
 where
-    DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
-    Item: Clone + Default,
-    ArrayImpl: BaseItem<Item = Item>,
+    ArrayImpl: ContainerTypeHint + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalDispatcher<ArrayImpl::TypeHint, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,
 {
-    type Output = DynArray<Item, NDIM>;
+    type Output = <EvalDispatcher<ArrayImpl::TypeHint, ArrayImpl> as DispatchEval<NDIM>>::Output;
 
     fn eval(&self) -> Self::Output {
-        DynArray::new_from(self)
+        let dispatcher = EvalDispatcher::<ArrayImpl::TypeHint, ArrayImpl>::default();
+        dispatcher.dispatch(self)
     }
 }
 

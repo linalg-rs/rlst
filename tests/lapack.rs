@@ -313,7 +313,7 @@ macro_rules! implement_symm_eig_test {
 
             let mut lambda = rlst_dynamic_array!($scalar, [n, n]);
 
-            izip!(lambda.diag_iter_mut(), w1.iter()).for_each(|(v_elem, w_elem)| {
+            izip!(lambda.diag_iter_mut(), w1.iter_value()).for_each(|(v_elem, w_elem)| {
                 *v_elem = RlstScalar::from_real(w_elem);
             });
 
@@ -368,7 +368,7 @@ macro_rules! implement_eigendecomposition_tests {
 
             let mut diag = DynArray::from_shape([n, n]);
 
-            izip!(diag.diag_iter_mut(), lam2.iter()).for_each(|(v_elem, w_elem)| {
+            izip!(diag.diag_iter_mut(), lam2.iter_value()).for_each(|(v_elem, w_elem)| {
                 *v_elem = w_elem;
             });
 
@@ -437,7 +437,7 @@ macro_rules! implement_svd_tests {
 
             let s = {
                 let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
-                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
                     *v_elem = RlstScalar::from_real(w_elem);
                 });
                 s_mat
@@ -458,7 +458,7 @@ macro_rules! implement_svd_tests {
 
             let s = {
                 let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
-                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
                     *v_elem = RlstScalar::from_real(w_elem);
                 });
                 s_mat
@@ -480,7 +480,7 @@ macro_rules! implement_svd_tests {
 
             let s = {
                 let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
-                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
                     *v_elem = RlstScalar::from_real(w_elem);
                 });
                 s_mat
@@ -501,7 +501,7 @@ macro_rules! implement_svd_tests {
 
             let s = {
                 let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
-                izip!(s_mat.diag_iter_mut(), s.iter()).for_each(|(v_elem, w_elem)| {
+                izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
                     *v_elem = RlstScalar::from_real(w_elem);
                 });
                 s_mat
@@ -575,7 +575,7 @@ macro_rules! implement_test_solve {
             let x_actual = a.solve(&rhs).unwrap();
 
             let max_res = (dot!(a.r(), x_actual.r()) - rhs.r())
-                .iter()
+                .iter_value()
                 .map(|v| v.abs())
                 .fold(0.0, |acc, v| Max::max(&acc, &v));
 

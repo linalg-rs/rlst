@@ -203,8 +203,12 @@ pub struct Heap;
 /// A static container with fixed size N.
 pub struct Stack<const N: usize>;
 
-impl ContainerType for Heap {}
-impl<const N: usize> ContainerType for Stack<N> {}
+impl ContainerType for Heap {
+    const STR: &str = "Heap";
+}
+impl<const N: usize> ContainerType for Stack<N> {
+    const STR: &str = "Stack";
+}
 
 /// Trait to select a container type based on the input types.
 pub struct SelectContainerType;

@@ -4,6 +4,8 @@
 //! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
+use rlst_proc_macro::rlst_static_type;
+
 use crate::{
     dense::{
         base_array::BaseArray,
@@ -19,7 +21,10 @@ use crate::{
         array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
         data_container::ContainerTypeHint,
     },
+    DispatchEval, FillFrom, Heap, Stack,
 };
+
+use super::data_container::ArrayContainer;
 
 pub mod empty_axis;
 pub mod iterators;
@@ -358,6 +363,56 @@ where
     {
         let mut output = empty_array::<Item, NDIM>();
         output.fill_from_resize(&arr);
+        output
+    }
+}
+
+/// A dispatcher for evaluating arrays.
+pub struct EvalDispatcher<TypeHint, ArrayImpl> {
+    _type_hint: std::marker::PhantomData<(TypeHint, ArrayImpl)>,
+}
+
+impl<TypeHint, ArrayImpl> Default for EvalDispatcher<TypeHint, ArrayImpl> {
+    fn default() -> Self {
+        Self {
+            _type_hint: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize> DispatchEval<NDIM>
+    for EvalDispatcher<Heap, ArrayImpl>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Copy + Default,
+{
+    type Output = DynArray<ArrayImpl::Item, NDIM>;
+
+    type ArrayImpl = ArrayImpl;
+
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
+        let mut output = DynArray::new_from(&arr);
+        output.fill_from(&arr);
+        output
+    }
+}
+
+impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize, const N: usize>
+    DispatchEval<NDIM> for EvalDispatcher<Stack<N>, ArrayImpl>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Copy + Default,
+{
+    type Output = Array<BaseArray<ArrayContainer<ArrayImpl::Item, N>, NDIM>, NDIM>;
+
+    type ArrayImpl = ArrayImpl;
+
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
+        let mut output = Array::new(BaseArray::new(
+            ArrayContainer::<ArrayImpl::Item, N>::new(),
+            arr.shape(),
+        ));
+        output.fill_from(&arr);
         output
     }
 }
