@@ -12,7 +12,7 @@ use super::csc_mat::CscMatrix;
 
 /// A CSR matrix
 #[derive(Clone)]
-pub struct CsrMatrix<T: RlstScalar> {
+pub struct CsrMatrix<T> {
     mat_type: SparseMatType,
     shape: [usize; 2],
     indices: Vec<usize>,
@@ -26,7 +26,7 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
         shape: [usize; 2],
         indices: Vec<usize>,
         indptr: Vec<usize>,
-        data: Vec<Item>,
+        data: DynArray<Item, 1>,
     ) -> Self {
         Self {
             mat_type: SparseMatType::Csr,
@@ -37,109 +37,84 @@ impl<Item: RlstScalar> CsrMatrix<Item> {
         }
     }
 
-    /// Number of element
-    pub fn nelems(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Matrix type
-    pub fn mat_type(&self) -> &SparseMatType {
-        &self.mat_type
-    }
-
-    /// Indices of items
-    pub fn indices(&self) -> &[usize] {
-        &self.indices
-    }
-
-    /// Indices at which each row starts
-    pub fn indptr(&self) -> &[usize] {
-        &self.indptr
-    }
-
-    /// Entries of the matrix
-    pub fn data(&self) -> &[Item] {
-        &self.data
-    }
-
-    /// Matrix multiplication
-    pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
-        for (row, out) in y.iter_mut().enumerate() {
-            *out = beta * *out
-                + alpha * {
-                    let c1 = self.indptr()[row];
-                    let c2 = self.indptr()[1 + row];
-                    let mut acc = Item::zero();
-
-                    for index in c1..c2 {
-                        let col = self.indices()[index];
-                        acc += self.data()[index] * x[col];
-                    }
-                    acc
-                }
-        }
-    }
-
-    /// Convert to CSC matrix
-    pub fn into_csc(self) -> CscMatrix<Item> {
-        let mut rows = Vec::<usize>::with_capacity(self.nelems());
-        let mut cols = Vec::<usize>::with_capacity(self.nelems());
-        let mut data = Vec::<Item>::with_capacity(self.nelems());
-
-        for (row, col, elem) in self.iter_aij() {
-            rows.push(row);
-            cols.push(col);
-            data.push(elem);
-        }
-
-        CscMatrix::from_aij(self.shape(), &rows, &cols, &data).unwrap()
-    }
-
-    /// Create CSR matrix from rows, columns and data
-    pub fn from_aij(
-        shape: [usize; 2],
-        rows: &[usize],
-        cols: &[usize],
-        data: &[Item],
-    ) -> RlstResult<Self> {
-        let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
-
-        let max_col = if let Some(col) = cols.iter().max() {
-            *col
-        } else {
-            0
-        };
-        let max_row = if let Some(row) = rows.last() { *row } else { 0 };
-
-        assert!(
-            max_col < shape[1],
-            "Maximum column {} must be smaller than `shape.1` {}",
-            max_col,
-            shape[1]
-        );
-
-        assert!(
-            max_row < shape[0],
-            "Maximum row {} must be smaller than `shape.0` {}",
-            max_row,
-            shape[0]
-        );
-
-        let nelems = data.len();
-
-        let mut indptr = Vec::<usize>::with_capacity(1 + shape[0]);
-
-        let mut count: usize = 0;
-        for row in 0..(shape[0]) {
-            indptr.push(count);
-            while count < nelems && row == rows[count] {
-                count += 1;
-            }
-        }
-        indptr.push(count);
-
-        Ok(Self::new(shape, cols, indptr, data))
-    }
+    // /// Matrix multiplication
+    // pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
+    //     for (row, out) in y.iter_mut().enumerate() {
+    //         *out = beta * *out
+    //             + alpha * {
+    //                 let c1 = self.indptr()[row];
+    //                 let c2 = self.indptr()[1 + row];
+    //                 let mut acc = Item::zero();
+    //
+    //                 for index in c1..c2 {
+    //                     let col = self.indices()[index];
+    //                     acc += self.data()[index] * x[col];
+    //                 }
+    //                 acc
+    //             }
+    //     }
+    // }
+    //
+    // /// Convert to CSC matrix
+    // pub fn into_csc(self) -> CscMatrix<Item> {
+    //     let mut rows = Vec::<usize>::with_capacity(self.nelems());
+    //     let mut cols = Vec::<usize>::with_capacity(self.nelems());
+    //     let mut data = Vec::<Item>::with_capacity(self.nelems());
+    //
+    //     for (row, col, elem) in self.iter_aij() {
+    //         rows.push(row);
+    //         cols.push(col);
+    //         data.push(elem);
+    //     }
+    //
+    //     CscMatrix::from_aij(self.shape(), &rows, &cols, &data).unwrap()
+    // }
+    //
+    // /// Create CSR matrix from rows, columns and data
+    // pub fn from_aij(
+    //     shape: [usize; 2],
+    //     rows: &[usize],
+    //     cols: &[usize],
+    //     data: &[Item],
+    // ) -> RlstResult<Self> {
+    //     let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
+    //
+    //     let max_col = if let Some(col) = cols.iter().max() {
+    //         *col
+    //     } else {
+    //         0
+    //     };
+    //     let max_row = if let Some(row) = rows.last() { *row } else { 0 };
+    //
+    //     assert!(
+    //         max_col < shape[1],
+    //         "Maximum column {} must be smaller than `shape.1` {}",
+    //         max_col,
+    //         shape[1]
+    //     );
+    //
+    //     assert!(
+    //         max_row < shape[0],
+    //         "Maximum row {} must be smaller than `shape.0` {}",
+    //         max_row,
+    //         shape[0]
+    //     );
+    //
+    //     let nelems = data.len();
+    //
+    //     let mut indptr = Vec::<usize>::with_capacity(1 + shape[0]);
+    //
+    //     let mut count: usize = 0;
+    //     for row in 0..(shape[0]) {
+    //         indptr.push(count);
+    //         while count < nelems && row == rows[count] {
+    //             count += 1;
+    //         }
+    //     }
+    //     indptr.push(count);
+    //
+    //     Ok(Self::new(shape, cols, indptr, data))
+    // }
 }
 
 /// CSR iterator

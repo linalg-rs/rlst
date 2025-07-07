@@ -4,6 +4,7 @@ use crate::{dense::array::DynArray, distributed_tools::IndexLayout, sparse::Spar
 
 use super::{AijIteratorByValue, BaseItem, Shape};
 
+/// Traits for sparse matrices.
 pub trait SparseMat: BaseItem + Shape<2> {
     /// The type of the index set.
     type IndexSet;
@@ -20,14 +21,16 @@ pub trait SparseMat: BaseItem + Shape<2> {
     /// Get the type of the sparse matrix
     fn sparse_mat_type(&self) -> SparseMatType;
 
-    /// Convert to a dense matrix
-    fn to_dense(&self) -> DynArray<Self::Item, 2>;
-
     /// Return an iterator over the local non-zero elements in the form (row, column, value).
     fn iter(&self) -> Self::AijIter;
+
+    /// Return a mutable iterator over the local non-zero elements in the form (row, column,
+    /// value).
+    fn iter_mut(&mut self) -> Self::AijIterMut;
 }
 
 #[cfg(feature = "mpi")]
+/// Traits for distributed sparse matrices.
 pub trait DistributedSparseMat<'a>: BaseItem + Shape<2> {
     /// The type of the local space matrix.
     type LocalSparseMat: SparseMat<Item = Self::Item>;

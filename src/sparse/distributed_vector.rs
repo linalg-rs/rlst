@@ -1,244 +1,229 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
-use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 
-use crate::distributed_tools::IndexLayout;
+use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
 
 use crate::dense::array::DynArray;
-use crate::{Array, UnsafeRandomAccessByValue, UnsafeRandomAccessMut};
-use mpi::datatype::{Partition, PartitionMut};
-use mpi::traits::{Communicator, CommunicatorCollectives, Root};
+use crate::{
+    AbsSquare, Array, BaseItem, FillFromIter, Inner, NormSup, NormTwo, RawAccess, RawAccessMut,
+    Shape, Sqrt,
+};
+use mpi::datatype::PartitionMut;
+use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 use mpi::Rank;
-use num::Zero;
 
 /// Distributed vector
 pub struct DistributedVector<'a, C: Communicator, Item> {
-    index_layout: Rc<IndexLayout<'a, C>>,
-    local: RefCell<DynArray<Item, 1>>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
-                                       // But this would be disallowed by Rust's static borrow checker.
+    /// The index layout of the vector.
+    pub index_layout: Rc<IndexLayout<'a, C>>,
+    /// The local data of the vector
+    pub local: DynArray<Item, 1>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
+                                  // But this would be disallowed by Rust's static borrow checker.
 }
 
-impl<'a, C: Communicator, Item> DistributedVector<'a, C, Item> {
+impl<'a, C, Item> DistributedVector<'a, C, Item>
+where
+    C: Communicator,
+    Item: Equivalence,
+{
     /// Crate new
-    pub fn new(index_layout: Rc<IndexLayout<'a, C>>) -> Self {
+    pub fn new(index_layout: Rc<IndexLayout<'a, C>>) -> Self
+    where
+        Item: Copy + Default,
+    {
         let number_of_local_indices = index_layout.number_of_local_indices();
         DistributedVector {
             index_layout,
-            local: RefCell::new(DynArray::from_shape([number_of_local_indices])),
+            local: DynArray::from_shape([number_of_local_indices]),
         }
-    }
-    /// Local part
-    pub fn local(&self) -> Ref<'_, DynArray<Item, 1>> {
-        //Array<Item, ArrayView<'_, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1> {
-        self.local.borrow()
-    }
-
-    /// Mutable local part
-    pub fn local_mut(&self) -> RefMut<DynArray<Item, 1>> {
-        // The data is behind a RefCell, so do not require mutable reference to self.
-        self.local.borrow_mut()
-    }
-
-    /// Compute the inner product of `self` with `other`.
-    pub fn inner(&self, other: &Self) -> Item {
-        // First compute the local inner product.
-        let result = self.local().inner(other.local().r());
-
-        let comm = self.index_layout.comm();
-
-        let mut global_result = <Item as Zero>::zero();
-        comm.all_reduce_into(
-            &result,
-            &mut global_result,
-            mpi::collective::SystemOperation::sum(),
-        );
-        global_result
     }
 
     /// Gather `Self` to all processes and store in `arr`.
-    pub fn gather_to_all<
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1>
-            + RawAccessMut<Item = Item>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImpl, 1>,
-    ) {
+    pub fn gather_to_all<ArrayImpl>(&self, arr: &mut Array<ArrayImpl, 1>)
+    where
+        ArrayImpl: BaseItem<Item = Item> + Shape<1> + RawAccessMut,
+    {
         let comm = self.index_layout.comm();
         assert_eq!(self.index_layout.number_of_global_indices(), arr.shape()[0]);
 
         let this_process = comm.this_process();
 
-        let counts: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                (index_range.1 - index_range.0) as i32
-            })
-            .collect();
-        let displacements: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                index_range.0 as i32
-            })
-            .collect();
+        // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
+        let counts = self
+            .index_layout
+            .counts()
+            .iter()
+            .take(comm.size() as usize)
+            .map(|&x| x as i32)
+            .collect::<Vec<i32>>();
 
+        let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
         let mut partition = PartitionMut::new(arr.data_mut(), counts, displacements);
-
-        this_process.all_gather_varcount_into(self.local().data(), &mut partition);
+        this_process.all_gather_varcount_into(self.local.data(), &mut partition);
     }
 
     /// Send vector to a given rank (call this from the root)
-    pub fn gather_to_rank_root<
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item>
-            + Shape<1>
-            + UnsafeRandomAccessMut<1>
-            + RawAccessMut<Item = Item>,
-    >(
-        &self,
-        mut arr: Array<Item, ArrayImpl, 1>,
-    ) {
-        let comm = self.index_layout().comm();
+    pub fn gather_to_rank_root<ArrayImpl>(&self, arr: &mut Array<ArrayImpl, 1>)
+    where
+        ArrayImpl: Shape<1> + RawAccessMut<Item = Item>,
+    {
+        let comm = self.index_layout.comm();
         let my_process = comm.this_process();
 
-        let global_dim = self.index_layout().number_of_global_indices();
+        let global_dim = self.index_layout.number_of_global_indices();
 
         assert_eq!(arr.shape()[0], global_dim);
 
-        let counts: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                (index_range.1 - index_range.0) as i32
-            })
-            .collect();
+        // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
+        let counts = self
+            .index_layout
+            .counts()
+            .iter()
+            .take(comm.size() as usize)
+            .map(|&x| x as i32)
+            .collect::<Vec<i32>>();
 
-        let displacements: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                index_range.0 as i32
-            })
-            .collect();
-
+        let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
         let mut partition = PartitionMut::new(arr.data_mut(), counts, displacements);
 
-        my_process.gather_varcount_into_root(self.local().data(), &mut partition);
+        my_process.gather_varcount_into_root(self.local.data(), &mut partition);
     }
 
     /// Send vector to a given rank (call this from the root)
     pub fn gather_to_rank(&self, target_rank: usize) {
         let target_process = self
-            .index_layout()
+            .index_layout
             .comm()
             .process_at_rank(target_rank as Rank);
 
-        target_process.gather_varcount_into(self.local().data());
+        target_process.gather_varcount_into(self.local.data());
     }
 
     /// Create from root
-    pub fn scatter_from_root<
-        ArrayImpl: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1> + RawAccess<Item = Item>,
-    >(
+    pub fn scatter_from_root<ArrayImpl: Shape<1> + RawAccess<Item = Item>>(
         &mut self,
-        arr: Array<Item, ArrayImpl, 1>,
-    ) {
+        arr: &mut Array<ArrayImpl, 1>,
+    ) where
+        Item: Copy,
+    {
         let comm = self.index_layout.comm();
 
-        let root_process = comm.this_process();
-
         assert_eq!(arr.shape()[0], self.index_layout.number_of_global_indices());
-        let counts: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                (index_range.1 - index_range.0) as i32
-            })
-            .collect();
-        let displacements: Vec<i32> = (0..comm.size())
-            .map(|index| {
-                let index_range = self.index_layout.index_range(index as usize).unwrap();
-                index_range.0 as i32
-            })
-            .collect();
+        // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
+        let counts = self
+            .index_layout
+            .counts()
+            .iter()
+            .take(comm.size() as usize)
+            .copied()
+            .collect::<Vec<usize>>();
 
-        let partition = Partition::new(arr.data(), counts, displacements);
-
-        root_process.scatter_varcount_into_root(&partition, self.local_mut().data_mut());
+        self.local
+            .fill_from_iter(scatterv_root(comm, &counts, arr.data()).iter().copied());
     }
 
     /// Create from root
-    pub fn scatter_from(&mut self, root: usize) {
-        let source_process = self.index_layout().comm().process_at_rank(root as Rank);
+    pub fn scatter_from(&mut self, root: usize)
+    where
+        Item: Copy,
+    {
+        let comm = self.index_layout.comm();
 
-        source_process.scatter_varcount_into(self.local_mut().data_mut());
-    }
-
-    /// Return the index layout.
-    pub fn index_layout(&self) -> &IndexLayout<'a, C> {
-        &self.index_layout
+        self.local
+            .fill_from_iter(scatterv(comm, root).iter().copied());
     }
 }
 
-// impl<T: Scalar + Equivalence, C: Communicator> AbsSquareSum for DefaultMpiVector<'_, T, C>
-// where
-//     T::Real: Equivalence,
-// {
-//     fn abs_square_sum(&self) -> <Self::Item as Scalar>::Real {
-//         let comm = self.index_layout.comm();
+impl<'a, C, Item> Inner<DistributedVector<'a, C, Item>> for DistributedVector<'a, C, Item>
+where
+    C: Communicator,
+    Item: Equivalence + Default,
+    DynArray<Item, 1>: Inner<DynArray<Item, 1>, Output = Item>,
+{
+    type Output = Item;
 
-//         let local_result = self.local.abs_square_sum();
+    fn inner(&self, other: &DistributedVector<'a, C, Item>) -> Self::Output {
+        assert_eq!(
+            self.index_layout.number_of_local_indices(),
+            other.index_layout.number_of_local_indices()
+        );
 
-//         let mut global_result = <<Self::Item as Scalar>::Real>::zero();
-//         comm.all_reduce_into(
-//             &local_result,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::sum(),
-//         );
-//         global_result
-//     }
-// }
+        let local_inner = self.local.inner(&other.local);
+        let comm = self.index_layout.comm();
 
-// impl<T: Scalar + Equivalence, C: Communicator> Norm1 for DefaultMpiVector<'_, T, C>
-// where
-//     T::Real: Equivalence,
-// {
-//     fn norm_1(&self) -> <Self::Item as Scalar>::Real {
-//         let comm = self.index_layout.comm();
+        let mut global_result = Default::default();
+        comm.all_reduce_into(
+            &local_inner,
+            &mut global_result,
+            mpi::collective::SystemOperation::sum(),
+        );
+        global_result
+    }
+}
 
-//         let local_result = self.local.norm_1();
+impl<'a, C, Item> AbsSquare for DistributedVector<'a, C, Item>
+where
+    C: Communicator,
+    DynArray<Item, 1>: AbsSquare,
+    <DynArray<Item, 1> as AbsSquare>::Output: Equivalence + Default,
+{
+    type Output = <DynArray<Item, 1> as AbsSquare>::Output;
 
-//         let mut global_result = <<Self::Item as Scalar>::Real as Zero>::zero();
-//         comm.all_reduce_into(
-//             &local_result,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::sum(),
-//         );
-//         global_result
-//     }
-// }
+    fn abs_square(&self) -> Self::Output {
+        assert_eq!(
+            self.index_layout.number_of_local_indices(),
+            self.local.shape()[0]
+        );
 
-// impl<T: Scalar + Equivalence, C: Communicator> Norm2 for DefaultMpiVector<'_, T, C>
-// where
-//     T::Real: Equivalence,
-// {
-//     fn norm_2(&self) -> <Self::Item as Scalar>::Real {
-//         Float::sqrt(self.abs_square_sum())
-//     }
-// }
+        let local_abs_square = self.local.abs_square();
+        let comm = self.index_layout.comm();
 
-// impl<T: Scalar + Equivalence, C: Communicator> NormInfty for DefaultMpiVector<'_, T, C>
-// where
-//     T::Real: Equivalence,
-// {
-//     fn norm_infty(&self) -> <Self::Item as Scalar>::Real {
-//         let comm = self.index_layout.comm();
+        let mut global_result = Default::default();
+        comm.all_reduce_into(
+            &local_abs_square,
+            &mut global_result,
+            mpi::collective::SystemOperation::sum(),
+        );
+        global_result
+    }
+}
 
-//         let local_result = self.local.norm_infty();
+impl<'a, C, Item> NormSup for DistributedVector<'a, C, Item>
+where
+    C: Communicator,
+    DynArray<Item, 1>: NormSup,
+    <DynArray<Item, 1> as NormSup>::Output: Equivalence + Default,
+{
+    type Output = <DynArray<Item, 1> as NormSup>::Output;
 
-//         let mut global_result = <<Self::Item as Scalar>::Real as Zero>::zero();
-//         comm.all_reduce_into(
-//             &local_result,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::max(),
-//         );
-//         global_result
-//     }
-// }
+    fn norm_sup(&self) -> Self::Output {
+        assert_eq!(
+            self.index_layout.number_of_local_indices(),
+            self.local.shape()[0]
+        );
+
+        let local_norm_sup = self.local.norm_sup();
+        let comm = self.index_layout.comm();
+
+        let mut global_result = Default::default();
+        comm.all_reduce_into(
+            &local_norm_sup,
+            &mut global_result,
+            mpi::collective::SystemOperation::max(),
+        );
+        global_result
+    }
+}
+
+impl<'a, C, Item> NormTwo for DistributedVector<'a, C, Item>
+where
+    C: Communicator,
+    Self: AbsSquare,
+    <Self as AbsSquare>::Output: Sqrt,
+{
+    type Output = <<Self as AbsSquare>::Output as Sqrt>::Output;
+
+    fn norm_2(&self) -> Self::Output {
+        Sqrt::sqrt(&self.abs_square())
+    }
+}

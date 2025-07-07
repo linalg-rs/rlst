@@ -91,6 +91,12 @@ pub trait FillFrom<Other> {
     fn fill_from(&mut self, other: &Other);
 }
 
+/// Fill an array with values from an iterator.
+pub trait FillFromIter<Iter: Iterator> {
+    /// Fill an array with values from an iterator.
+    fn fill_from_iter(&mut self, iter: Iter);
+}
+
 /// Fill an array with values from another array and allow resizing.
 pub trait FillFromResize<Other> {
     /// Fill an array with values from another array and allow resizing.

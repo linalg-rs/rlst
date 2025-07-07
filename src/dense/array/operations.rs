@@ -25,7 +25,7 @@ use crate::traits::{
     linalg::base::{Inner, NormSup, NormTwo},
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
-use crate::{AsMultiIndex, ContainerTypeHint, DispatchEval};
+use crate::{AsMultiIndex, ContainerTypeHint, DispatchEval, FillFromIter, NormOne};
 
 use super::iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
@@ -90,6 +90,19 @@ where
         assert_eq!(self.shape(), other.shape());
 
         for (item, other_item) in self.iter_mut().zip(other.iter_value()) {
+            *item = other_item;
+        }
+    }
+}
+
+impl<ArrayImpl, Iter: Iterator<Item = ArrayImpl::Item>, const NDIM: usize> FillFromIter<Iter>
+    for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem,
+    Array<ArrayImpl, NDIM>: ArrayIteratorMut<Item = ArrayImpl::Item>,
+{
+    fn fill_from_iter(&mut self, iter: Iter) {
+        for (item, other_item) in izip!(self.iter_mut(), iter) {
             *item = other_item;
         }
     }
@@ -236,6 +249,24 @@ where
 
     fn abs_square(&self) -> Self::Output {
         self.iter_value().map(|elem| elem.abs_square()).sum()
+    }
+}
+
+impl<ArrayImpl> NormOne for Array<ArrayImpl, 1>
+where
+    ArrayImpl: BaseItem,
+    ArrayImpl::Item: Abs,
+    <ArrayImpl::Item as Abs>::Output:
+        std::ops::Add<Output = <ArrayImpl::Item as Abs>::Output> + Default,
+    Self: ArrayIteratorByValue<Item = ArrayImpl::Item>,
+{
+    type Output = <<Self as BaseItem>::Item as Abs>::Output;
+
+    fn norm_1(&self) -> Self::Output {
+        self.iter_value()
+            .fold(<Self::Output as Default>::default(), |acc, elem| {
+                acc + elem.abs()
+            })
     }
 }
 

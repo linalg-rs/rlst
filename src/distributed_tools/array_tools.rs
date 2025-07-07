@@ -110,11 +110,11 @@ pub fn redistribute<T: Equivalence, C: CommunicatorCollectives>(
     output
 }
 
-/// Compute displacements from a vector of counts.
+/// Compute displacements on n processes from a vector of n counts of local indices.
 ///
 /// This is useful for global MPI varcount operations. Let
-/// count [ 3, 4, 5]. Then the corresponding displacements are
-// [0, 3, 7]. Note that the last element `5` is ignored.
+/// count be `[ 3, 4, 5]`. Then the corresponding displacements are
+// [0, 3, 7]. Note that the last element `5` is ignored for the displacements.
 pub fn displacements(counts: &[i32]) -> Vec<i32> {
     counts
         .iter()

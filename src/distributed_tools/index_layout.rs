@@ -128,7 +128,7 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
 
     /// The cumulative sum of indices over the ranks.
     ///
-    /// The number of indices on rank is is counts[1 + i] - counts[i].
+    /// The number of indices on rank i counts[1 + i] - counts[i].
     /// The last entry is the total number of indices.
     pub fn counts(&self) -> &[usize] {
         &self.counts
