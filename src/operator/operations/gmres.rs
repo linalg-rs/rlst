@@ -1,24 +1,93 @@
 //! Arnoldi Iteration
 use crate::dense::types::RlstScalar;
+use crate::operator;
 use crate::operator::space::frame::Frame;
 use crate::operator::{
     zero_element, AsApply, ElementImpl, ElementType, InnerProductSpace, Operator,
 };
+use crate::ElementContainerMut;
+use crate::IndexableSpace;
 use crate::{
     rlst_dynamic_array2, DefaultIteratorMut, Element, ElementContainer, GivensRotations,
-    GivensRotationsData, LinearSpace, OperatorBase, RawAccess, TriangularMatrix,
+    GivensRotationsData, LinearSpace, OperatorBase, RawAccess, TransMode, TriangularMatrix,
     TriangularOperations, TriangularType, VectorFrame,
 };
 use core::f64;
 use std::cmp::min;
+use std::rc::Rc;
+
+pub struct IdOperator<Space: IndexableSpace> {
+    domain: Rc<Space>,
+    range: Rc<Space>,
+}
+
+impl<Space: IndexableSpace> std::fmt::Debug for IdOperator<Space> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let dim_1 = self.domain().dimension();
+        let dim_2 = self.range().dimension();
+        write!(f, "Id Operator: [{}x{}]", dim_1, dim_2).unwrap();
+        Ok(())
+    }
+}
+
+impl<Space: IndexableSpace> OperatorBase for IdOperator<Space> {
+    type Domain = Space;
+    type Range = Space;
+
+    fn domain(&self) -> Rc<Self::Domain> {
+        self.domain.clone()
+    }
+
+    fn range(&self) -> Rc<Self::Range> {
+        self.range.clone()
+    }
+}
+
+impl<Space: IndexableSpace> AsApply for IdOperator<Space> {
+    fn apply_extended<
+        ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>,
+        ContainerOut: ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
+    >(
+        &self,
+        _alpha: <Self::Range as LinearSpace>::F,
+        x: Element<ContainerIn>,
+        _beta: <Self::Range as LinearSpace>::F,
+        mut y: Element<ContainerOut>,
+        _trans_mode: TransMode,
+    ) {
+        y.fill_inplace(x);
+    }
+
+    fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
+        &self,
+        x: Element<ContainerIn>,
+        trans_mode: TransMode,
+    ) -> operator::ElementType<<Self::Range as LinearSpace>::E> {
+        let mut y = zero_element(self.range());
+        self.apply_extended(
+            <<Self::Range as LinearSpace>::F as num::One>::one(),
+            x,
+            <<Self::Range as LinearSpace>::F as num::Zero>::zero(),
+            y.r_mut(),
+            trans_mode,
+        );
+        y
+    }
+}
+
+impl<Space: IndexableSpace> IdOperator<Space> {
+    pub fn new(domain: Rc<Space>, range: Rc<Space>) -> Self {
+        IdOperator { domain, range }
+    }
+}
 
 /// Iteration for GMRES
 pub struct GmresIteration<
     'a,
     Space: InnerProductSpace,
     OpImpl: AsApply<Domain = Space, Range = Space>,
-    PrecImpl: AsApply<Domain = Space, Range = Space>,
     Container: ElementContainer<E = Space::E>,
+    PrecImpl: AsApply<Domain = Space, Range = Space> = IdOperator<Space>,
 > where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
@@ -47,7 +116,7 @@ impl<
         OpImpl: AsApply<Domain = Space, Range = Space>,
         PrecImpl: AsApply<Domain = Space, Range = Space>,
         Container: ElementContainer<E = Space::E>,
-    > GmresIteration<'a, Space, OpImpl, PrecImpl, Container>
+    > GmresIteration<'a, Space, OpImpl, Container, PrecImpl>
 where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
     Space: LinearSpace,
@@ -258,7 +327,7 @@ where
                 inner = it_count;
 
                 if let Some(callable) = self.callable.as_mut() {
-                    rel_res = presid / rhs_norm;
+                    rel_res = presid / p_norm;
                     callable(&self.x, rel_res);
                 }
 

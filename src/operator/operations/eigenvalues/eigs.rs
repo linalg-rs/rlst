@@ -127,7 +127,7 @@ where
         let dim = self.operator.domain().dimension() as i32;
 
         assert!(k <= dim - 2, "k must be at most N-2");
-        
+
         let mut ido = 0;
         let mut info = 0;
         let ncv = i32::min(i32::max(2 * k + 1, 20), dim);

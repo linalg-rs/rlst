@@ -1,5 +1,6 @@
 //! Example of GMRES iterations
 use num::Complex;
+use rlst::operator::operations::gmres::IdOperator;
 use rlst::operator::Operator;
 use rlst::{c64, rlst_dynamic_array2, zero_element, GmresIteration, OperatorBase, RawAccessMut};
 
@@ -26,6 +27,7 @@ pub fn main() {
     // Wrap matrix into operator
     let op = Operator::from(mat);
 
+    let id_operator = IdOperator::new(op.r().domain(), op.r().range());
     // Right-hand side
     let mut rhs = zero_element(op.range());
     rhs.view_mut().data_mut()[0] = 1.0;
@@ -43,7 +45,8 @@ pub fn main() {
             residuals.push(res);
         })
         .set_tol(tol)
-        .set_restart(5);
+        .set_restart(5)
+        .set_preconditioner(id_operator.r());
 
     let (_sol, _res) = gmres.run();
 
@@ -71,7 +74,7 @@ pub fn main() {
 
     // We can now wrap the matrix into an operator.
     let op = Operator::from(mat);
-
+    let id_operator = IdOperator::new(op.r().domain(), op.r().range());
     // Let's create a right-hand side.
     let mut rhs = zero_element(op.range());
     rhs.view_mut().data_mut()[0] = Complex::new(1.0, 2.0);
@@ -89,7 +92,8 @@ pub fn main() {
             residuals.push(res);
         })
         .set_tol(tol)
-        .set_restart(5);
+        .set_restart(5)
+        .set_preconditioner(id_operator.r());
     let (_sol, _res) = gmres.run();
 
     println!("Residuals: {:?}", residuals)
