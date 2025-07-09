@@ -3,10 +3,11 @@
 
 use mpi::traits::Communicator;
 
-use crate::Shape;
+use crate::Array;
 
 /// This struct describes the distribution of an n-dimensional array across processes.
-pub struct DistArrayDescriptor<const NDIM: usize> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BlockCyclicArrayDescriptor<const NDIM: usize> {
     /// The shape of the array.
     pub shape: [usize; NDIM],
     /// The block size in each dimension.
@@ -14,9 +15,9 @@ pub struct DistArrayDescriptor<const NDIM: usize> {
     /// The process count in each dimension.
     pub nprocs: [usize; NDIM],
     /// The total number of processes.
-    pub comm_size: usize,
+    pub size: usize,
     /// The rank of the current process.
-    pub comm_rank: usize,
+    pub rank: usize,
     /// The index of the current process.
     pub proc_index: [usize; NDIM],
     /// The local shape of the array on this process.
@@ -25,7 +26,7 @@ pub struct DistArrayDescriptor<const NDIM: usize> {
     pub nlocal_blocks: [usize; NDIM],
 }
 
-impl<const NDIM: usize> DistArrayDescriptor<NDIM> {
+impl<const NDIM: usize> BlockCyclicArrayDescriptor<NDIM> {
     /// Create a new distribution descriptor.
     pub fn new(
         shape: [usize; NDIM],
@@ -47,8 +48,8 @@ impl<const NDIM: usize> DistArrayDescriptor<NDIM> {
             shape,
             block_size,
             nprocs,
-            comm_size,
-            comm_rank,
+            size: comm_size,
+            rank: comm_rank,
             proc_index,
             local_shape: my_shape,
             nlocal_blocks,
@@ -57,20 +58,48 @@ impl<const NDIM: usize> DistArrayDescriptor<NDIM> {
 }
 
 /// Definition of a distributed array.
-pub struct DistributedArray<'a, C, ArrayImpl, const NDIM: usize> {
+pub struct BlockCyclicArray<'a, C, ArrayImpl, const NDIM: usize> {
     comm: &'a C,
-    local: ArrayImpl,
-    desc: DistArrayDescriptor<NDIM>,
+    local: Array<ArrayImpl, NDIM>,
+    desc: BlockCyclicArrayDescriptor<NDIM>,
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, const NDIM: usize> BlockCyclicArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
 {
     /// Create a new distributed array.
-    pub(crate) fn new(comm: &'a C, local: ArrayImpl, desc: DistArrayDescriptor<NDIM>) -> Self {
-        DistributedArray { comm, local, desc }
+    pub(crate) fn new(
+        comm: &'a C,
+        local: Array<ArrayImpl, NDIM>,
+        desc: BlockCyclicArrayDescriptor<NDIM>,
+    ) -> Self {
+        BlockCyclicArray { comm, local, desc }
     }
+}
+
+#[macro_export]
+/// Create a new distributed array with given shape, block size, and process grid.
+macro_rules! dist_array {
+    ($ndim:literal, $dtype:ty, $shape:expr, $block_size:expr, $nprocs:expr, $comm:expr) => {{
+        use mpi::traits::Communicator;
+        let size = $comm.size() as usize;
+        let rank = $comm.rank() as usize;
+        assert_eq!(
+            size,
+            $nprocs.iter().product::<usize>(),
+            "Number of processes does not match the product of `nprocs` dimensions."
+        );
+        let desc = $crate::dense::block_cyclic_array::BlockCyclicArrayDescriptor::new(
+            $shape,
+            $block_size,
+            $nprocs,
+            size,
+            rank,
+        );
+        let local = $crate::dense::array::DynArray::<$dtype, $ndim>::from_shape(desc.local_shape);
+        $crate::dense::block_cyclic_array::BlockCyclicArray::new($comm, local, desc)
+    }};
 }
 
 /// This function is a port of the `numroc` function from ScaLAPACK.
@@ -139,4 +168,18 @@ fn local_shape<const NDIM: usize>(
         );
     }
     local_shape
+}
+
+#[cfg(test)]
+mod test {
+
+    #[test]
+    pub fn test() {
+        use mpi;
+
+        let universe = mpi::initialize().unwrap();
+        let world = universe.world();
+
+        let dist_array = dist_array!(2, f64, [100, 100], [10, 10], [1, 1], &world);
+    }
 }

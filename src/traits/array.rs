@@ -245,8 +245,29 @@ pub trait EvaluateArray {
     fn eval(&self) -> Self::Output;
 }
 
+/// Evaluate array into a new row-major array.
+pub trait EvaluateRowMajorArray {
+    /// The output type of the evaluated array.
+    type Output;
+
+    /// Evaluate the array into a new row-major array.
+    fn eval_row_major(&self) -> Self::Output;
+}
+
 /// Dispatch the evaluation of an array to an actual implementation.
 pub trait DispatchEval<const NDIM: usize> {
+    /// The output type of the evaluated array.
+    type Output;
+
+    /// The implementation type of the array.
+    type ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue;
+
+    /// Dispatch the evaluation of the array to an actual implementation.
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output;
+}
+
+/// Dispatch the row-major evaluation of an array to an actual implementation.
+pub trait DispatchEvalRowMajor<const NDIM: usize> {
     /// The output type of the evaluated array.
     type Output;
 

@@ -12,3 +12,6 @@ pub mod gemm;
 pub mod layout;
 pub mod macros;
 pub mod matrix_multiply;
+
+#[cfg(feature = "mpi")]
+pub mod block_cyclic_array;

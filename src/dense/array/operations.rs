@@ -25,7 +25,10 @@ use crate::traits::{
     linalg::base::{Inner, NormSup, NormTwo},
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
-use crate::{AsMultiIndex, ContainerTypeHint, DispatchEval, FillFromIter, NormOne};
+use crate::{
+    AsMultiIndex, ContainerTypeHint, DispatchEval, DispatchEvalRowMajor, EvaluateRowMajorArray,
+    FillFromIter, NormOne,
+};
 
 use super::iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
@@ -35,7 +38,7 @@ use super::iterators::{
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;
-use super::{Array, DynArray, EvalDispatcher};
+use super::{Array, DynArray, EvalDispatcher, EvalRowMajorDispatcher};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiagByValue for Array<ArrayImpl, NDIM>
 where
@@ -328,6 +331,20 @@ where
 
     fn eval(&self) -> Self::Output {
         let dispatcher = EvalDispatcher::<ArrayImpl::TypeHint, ArrayImpl>::default();
+        dispatcher.dispatch(self)
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> EvaluateRowMajorArray for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerTypeHint + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalRowMajorDispatcher<ArrayImpl::TypeHint, ArrayImpl>:
+        DispatchEvalRowMajor<NDIM, ArrayImpl = ArrayImpl>,
+{
+    type Output = <EvalRowMajorDispatcher<ArrayImpl::TypeHint, ArrayImpl> as DispatchEvalRowMajor<NDIM>>::Output;
+
+    fn eval_row_major(&self) -> Self::Output {
+        let dispatcher = EvalRowMajorDispatcher::<ArrayImpl::TypeHint, ArrayImpl>::default();
         dispatcher.dispatch(self)
     }
 }

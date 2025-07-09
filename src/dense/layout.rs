@@ -4,15 +4,30 @@
 //! index `[a0, a1, a2, ...]` the left-most axis is stored consecutively in memory.
 //!
 
-/// Compute stride from a shape.
+/// Compute a column major stride from a shape.
 ///
 /// Given an array shape, compute the corresponding stride assuming column-major ordering.
 #[inline(always)]
-pub fn stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {
+pub fn col_major_stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {
     let mut output = [0; NDIM];
 
     let mut state = 1;
     for (elem, s) in output.iter_mut().zip(shape.iter()) {
+        *elem = state;
+        state *= s;
+    }
+    output
+}
+
+/// Compute a row major stride from a shape.
+///
+/// Given an array shape, compute the corresponding stride assuming row-major ordering.
+#[inline(always)]
+pub fn row_major_stride_from_shape<const NDIM: usize>(shape: [usize; NDIM]) -> [usize; NDIM] {
+    let mut output = [0; NDIM];
+
+    let mut state = 1;
+    for (elem, s) in output.iter_mut().zip(shape.iter()).rev() {
         *elem = state;
         state *= s;
     }

@@ -21,10 +21,10 @@ use crate::{
         array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
         data_container::ContainerTypeHint,
     },
-    DispatchEval, FillFrom, Heap, Stack,
+    DispatchEval, DispatchEvalRowMajor, FillFrom, Heap, Stack,
 };
 
-use super::data_container::ArrayContainer;
+use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
 
 pub mod empty_axis;
 pub mod iterators;
@@ -35,11 +35,16 @@ pub mod random;
 // pub mod rank1_array;
 pub mod flattened;
 pub mod reference;
+pub mod row_major_view;
 pub mod slice;
 pub mod subview;
 
 /// A basic dynamically allocated array.
 pub type DynArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A basic dynamically allocated array with a given stride.
+pub type StridedDynArray<Item, const NDIM: usize> =
+    Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>;
 
 /// A dynamically allocated array from a data slice.
 pub type SliceArray<'a, Item, const NDIM: usize> =
@@ -94,6 +99,36 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
+    }
+}
+
+impl<Item: Clone + Default, const NDIM: usize>
+    Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
+{
+    /// Create a new heap allocated array from a given shape and stride.
+    #[inline(always)]
+    pub fn from_shape_with_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(StridedBaseArray::new(
+            VectorContainer::new(size),
+            shape,
+            stride,
+        ))
+    }
+}
+
+impl<Item: Clone + Default, const NDIM: usize>
+    Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
+{
+    /// Create a new heap allocated row-major array.
+    #[inline(always)]
+    pub fn row_major(shape: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(StridedBaseArray::new(
+            VectorContainer::new(size),
+            shape,
+            row_major_stride_from_shape(shape),
+        ))
     }
 }
 
@@ -411,6 +446,57 @@ where
         let mut output = Array::new(BaseArray::new(
             ArrayContainer::<ArrayImpl::Item, N>::new(),
             arr.shape(),
+        ));
+        output.fill_from(&arr);
+        output
+    }
+}
+
+/// A dispatcher for evaluating arrays.
+pub struct EvalRowMajorDispatcher<TypeHint, ArrayImpl> {
+    _type_hint: std::marker::PhantomData<(TypeHint, ArrayImpl)>,
+}
+
+impl<TypeHint, ArrayImpl> Default for EvalRowMajorDispatcher<TypeHint, ArrayImpl> {
+    fn default() -> Self {
+        Self {
+            _type_hint: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize>
+    DispatchEvalRowMajor<NDIM> for EvalRowMajorDispatcher<Heap, ArrayImpl>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Copy + Default,
+{
+    type Output = StridedDynArray<ArrayImpl::Item, NDIM>;
+
+    type ArrayImpl = ArrayImpl;
+
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
+        let mut output = StridedDynArray::row_major(arr.shape());
+        output.fill_from(&arr);
+        output
+    }
+}
+
+impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize, const N: usize>
+    DispatchEvalRowMajor<NDIM> for EvalRowMajorDispatcher<Stack<N>, ArrayImpl>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Copy + Default,
+{
+    type Output = Array<StridedBaseArray<ArrayContainer<ArrayImpl::Item, N>, NDIM>, NDIM>;
+
+    type ArrayImpl = ArrayImpl;
+
+    fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
+        let mut output = Array::new(StridedBaseArray::new(
+            ArrayContainer::<ArrayImpl::Item, N>::new(),
+            arr.shape(),
+            row_major_stride_from_shape(arr.shape()),
         ));
         output.fill_from(&arr);
         output

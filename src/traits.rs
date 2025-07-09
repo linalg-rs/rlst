@@ -3,6 +3,7 @@
 pub mod accessors;
 pub mod array;
 pub mod data_container;
+pub mod distributed_array;
 pub mod iterators;
 pub mod linalg;
 pub mod number_relations;
@@ -13,6 +14,7 @@ pub mod sparse;
 pub use accessors::*;
 pub use array::*;
 pub use data_container::*;
+pub use distributed_array::*;
 pub use iterators::*;
 pub use linalg::*;
 pub use number_relations::*;

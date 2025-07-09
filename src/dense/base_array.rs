@@ -4,7 +4,7 @@
 //! to a data container and adds a `shape`, `stride`, and n-dimensional accessor methods.
 
 use crate::{
-    dense::layout::{check_multi_index_in_bounds, stride_from_shape},
+    dense::layout::{check_multi_index_in_bounds, col_major_stride_from_shape},
     traits::{
         accessors::{
             RawAccess, RawAccessMut, UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue,
@@ -136,7 +136,7 @@ impl<Data: MutableRawAccessDataContainer, const NDIM: usize> RawAccessMut
 impl<Data, const NDIM: usize> Stride<NDIM> for BaseArray<Data, NDIM> {
     #[inline(always)]
     fn stride(&self) -> [usize; NDIM] {
-        stride_from_shape(self.shape)
+        col_major_stride_from_shape(self.shape)
     }
 }
 
