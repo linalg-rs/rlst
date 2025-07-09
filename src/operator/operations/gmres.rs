@@ -17,12 +17,13 @@ pub struct GmresIteration<
     'a,
     Space: InnerProductSpace,
     OpImpl: AsApply<Domain = Space, Range = Space>,
+    PrecImpl: AsApply<Domain = Space, Range = Space>,
     Container: ElementContainer<E = Space::E>,
 > where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     operator: Operator<OpImpl>,
-    prec: Option<Operator<OpImpl>>,
+    prec: Option<Operator<PrecImpl>>,
     rhs: Element<Container>,
     x: ElementType<Space::E>,
     max_iter: usize,
@@ -44,8 +45,9 @@ impl<
         'a,
         Space: InnerProductSpace,
         OpImpl: AsApply<Domain = Space, Range = Space>,
+        PrecImpl: AsApply<Domain = Space, Range = Space>,
         Container: ElementContainer<E = Space::E>,
-    > GmresIteration<'a, Space, OpImpl, Container>
+    > GmresIteration<'a, Space, OpImpl, PrecImpl, Container>
 where
     <Space::E as ElementImpl>::Space: InnerProductSpace,
     Space: LinearSpace,
@@ -114,7 +116,7 @@ where
     }
 
     /// Set preconditioner
-    pub fn set_preconditioner(mut self, prec: Operator<OpImpl>) -> Self {
+    pub fn set_preconditioner(mut self, prec: Operator<PrecImpl>) -> Self {
         self.prec = Some(prec);
         self
     }
