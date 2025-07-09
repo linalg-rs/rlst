@@ -22,7 +22,7 @@ pub struct GmresIteration<
     <Space::E as ElementImpl>::Space: InnerProductSpace,
 {
     operator: Operator<OpImpl>,
-    prec: Option<Operator<OpImpl>>,
+    prec: Option<OpImpl>,
     rhs: Element<Container>,
     x: ElementType<Space::E>,
     max_iter: usize,
@@ -114,7 +114,7 @@ where
     }
 
     /// Set preconditioner
-    pub fn set_preconditioner(mut self, prec: Operator<OpImpl>) -> Self {
+    pub fn set_preconditioner(mut self, prec: OpImpl) -> Self {
         self.prec = Some(prec);
         self
     }
