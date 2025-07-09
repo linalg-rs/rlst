@@ -135,6 +135,14 @@ impl<'a, C: Communicator, Item: RlstScalar + Equivalence> ElementImpl
     fn sub_inplace(&mut self, other: &Self) {
         self.elem.local_mut().sub_into(other.view().local().r());
     }
+
+    fn fill_inplace_raw(&mut self, other: &[Self::F]) {
+        self.elem.local_mut().fill_from_raw_data(other);
+    }
+
+    fn fill_raw_data(&mut self, other: &mut [Self::F]) {
+        self.elem.local_mut().fill_raw_data(other);
+    }
 }
 
 impl<C: Communicator, Item: RlstScalar + Equivalence> Clone
