@@ -12,7 +12,7 @@ use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence};
 /// This index layout assumes a contiguous set of indices
 /// starting with the first n0 indices on rank 0, the next n1 indices on rank 1, etc.
 pub struct IndexLayout<'a, C: Communicator> {
-    counts: Vec<usize>,
+    scan: Vec<usize>,
     comm: &'a C,
 }
 
@@ -30,7 +30,7 @@ impl<C: Communicator> std::fmt::Debug for IndexLayout<'_, C> {
 impl<C: Communicator> Clone for IndexLayout<'_, C> {
     fn clone(&self) -> Self {
         Self {
-            counts: self.counts.clone(),
+            scan: self.scan.clone(),
             comm: self.comm,
         }
     }
@@ -39,9 +39,9 @@ impl<C: Communicator> Clone for IndexLayout<'_, C> {
 impl<'a, C: Communicator> IndexLayout<'a, C> {
     /// Create a new index layout.
     ///
-    /// The counts specify the number of indices on each rank.
-    pub fn new(counts: Vec<usize>, comm: &'a C) -> Self {
-        Self { counts, comm }
+    /// `scan` is a vector of cumulative counts of indices of all previous ranks.
+    pub fn new(scan: Vec<usize>, comm: &'a C) -> Self {
+        Self { scan, comm }
     }
 
     /// Create an index layout with equidistributed chunks.
@@ -59,7 +59,7 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
             comm_size > 0,
             "Group size is zero. At least one process needs to be in the group."
         );
-        let mut counts = vec![0; 1 + comm_size];
+        let mut scan = vec![0; 1 + comm_size];
 
         // The following code computes what index is on what rank. No MPI operation necessary.
         // Each process computes it from its own rank and the number of MPI processes in
@@ -70,15 +70,15 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
             // give chunk_size indices to each rank until filled up.
             // Then fill the rest with None.
 
-            for (index, item) in counts.iter_mut().enumerate().take(nchunks) {
+            for (index, item) in scan.iter_mut().enumerate().take(nchunks) {
                 *item = index * chunk_size;
             }
 
-            for item in counts.iter_mut().take(comm_size).skip(nchunks) {
+            for item in scan.iter_mut().take(comm_size).skip(nchunks) {
                 *item = nindices;
             }
 
-            counts[comm_size] = nindices;
+            scan[comm_size] = nindices;
         } else {
             // We want to equally distribute the range
             // among the ranks. Assume that we have 12
@@ -108,59 +108,59 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
                     // add chunk size indices to each rank.
                     new_count = count + chunks_per_rank * chunk_size;
                 }
-                counts[1 + index] = new_count;
+                scan[1 + index] = new_count;
                 count = new_count;
             }
         }
-        Self { counts, comm }
+        Self { scan, comm }
     }
 
     /// Create an index layout from each process reporting its own number of indices.
     pub fn from_local_counts(number_of_local_indices: usize, comm: &'a C) -> Self {
         let size = comm.size() as usize;
-        let mut counts = vec![0; size + 1];
-        comm.all_gather_into(&number_of_local_indices, &mut counts[1..]);
+        let mut scan = vec![0; size + 1];
+        comm.all_gather_into(&number_of_local_indices, &mut scan[1..]);
         for i in 1..=size {
-            counts[i] += counts[i - 1];
+            scan[i] += scan[i - 1];
         }
-        Self { counts, comm }
+        Self { scan, comm }
     }
 
     /// The cumulative sum of indices over the ranks.
     ///
-    /// The number of indices on rank i counts[1 + i] - counts[i].
+    /// The number of indices on rank i scan[1 + i] - scan[i].
     /// The last entry is the total number of indices.
-    pub fn counts(&self) -> &[usize] {
-        &self.counts
+    pub fn scan(&self) -> &[usize] {
+        &self.scan
     }
 
     /// The local index range. If there is no local index
     /// the left and right bound are identical.
     pub fn local_range(&self) -> (usize, usize) {
-        let counts = self.counts();
+        let scan = self.scan();
         (
-            counts[self.comm().rank() as usize],
-            counts[1 + self.comm().rank() as usize],
+            scan[self.comm().rank() as usize],
+            scan[1 + self.comm().rank() as usize],
         )
     }
 
     /// The number of global indices.
     pub fn number_of_global_indices(&self) -> usize {
-        *self.counts().last().unwrap()
+        *self.scan().last().unwrap()
     }
 
     /// The number of local indicies, that is the amount of indicies
     /// on my process.
     pub fn number_of_local_indices(&self) -> usize {
-        let counts = self.counts();
-        counts[1 + self.comm().rank() as usize] - counts[self.comm().rank() as usize]
+        let scan = self.scan();
+        scan[1 + self.comm().rank() as usize] - scan[self.comm().rank() as usize]
     }
 
     /// Index range on a given process.
     pub fn index_range(&self, rank: usize) -> Option<(usize, usize)> {
-        let counts = self.counts();
+        let scan = self.scan();
         if rank < self.comm().size() as usize {
-            Some((counts[rank], counts[1 + rank]))
+            Some((scan[rank], scan[1 + rank]))
         } else {
             None
         }
@@ -174,7 +174,7 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
     pub fn local2global(&self, index: usize) -> Option<usize> {
         let rank = self.comm().rank() as usize;
         if index < self.number_of_local_indices() {
-            Some(self.counts()[rank] + index)
+            Some(self.scan()[rank] + index)
         } else {
             None
         }
@@ -196,12 +196,21 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
 
     /// Get the rank of a given index.
     pub fn rank_from_index(&self, index: usize) -> Option<usize> {
-        for (count_index, &count) in self.counts()[1..].iter().enumerate() {
+        for (count_index, &count) in self.scan()[1..].iter().enumerate() {
             if index < count {
                 return Some(count_index);
             }
         }
         None
+    }
+
+    /// Get an array with the number of indices on each rank.
+    pub fn local_counts(&self) -> Vec<usize> {
+        self.scan()
+            .iter()
+            .tuple_windows()
+            .map(|(start, end)| end - start)
+            .collect()
     }
 
     /// Remap indices from one layout to another.
@@ -220,12 +229,12 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
 
         let sorted_keys = (my_range.0..my_range.1).collect_vec();
 
-        let counts = super::array_tools::sort_to_bins(&sorted_keys, &other_bins)
+        let scan = super::array_tools::sort_to_bins(&sorted_keys, &other_bins)
             .iter()
             .map(|&key| key as i32)
             .collect_vec();
 
-        redistribute(data, &counts, other.comm())
+        redistribute(data, &scan, other.comm())
     }
 
     /// Return the communicator.

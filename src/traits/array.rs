@@ -9,7 +9,7 @@ use crate::{base_types::MemoryLayout, Array};
 
 use super::{
     iterators::{ArrayIteratorMut, GetDiagMut},
-    ArrayIteratorByValue, ContainerTypeHint, UnsafeRandom1DAccessByValue,
+    ArrayIteratorByValue, UnsafeRandom1DAccessByValue,
 };
 
 ///Base item type of an array.

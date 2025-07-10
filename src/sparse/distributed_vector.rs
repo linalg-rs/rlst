@@ -8,9 +8,8 @@ use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
-    empty_array, AbsSquare, Array, BaseItem, EvaluateArray, FillFromIter, FillFromResize,
-    GatherToOne, Inner, NormSup, NormTwo, RawAccess, RawAccessMut, ScatterFromOne, Shape, Sqrt,
-    Stride,
+    Array, BaseItem, EvaluateArray, FillFromResize, GatherToOne, RawAccess, RawAccessMut,
+    ScatterFromOne, Shape,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -33,10 +32,18 @@ pub struct DistributedArray<'a, C: Communicator, ArrayImpl, const NDIM: usize> {
 impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
+    ArrayImpl: Shape<NDIM>,
 {
     /// Crate new
     pub fn new(index_layout: Rc<IndexLayout<'a, C>>, arr: Array<ArrayImpl, NDIM>) -> Self {
         let number_of_local_indices = index_layout.number_of_local_indices();
+        assert_eq!(
+            number_of_local_indices,
+            arr.shape()[0],
+            "The number of local indices in the index layout ({}) does not match the first dimension of the array ({})",
+            number_of_local_indices,
+            arr.shape()[0]
+        );
         DistributedArray {
             index_layout,
             local: arr,
@@ -94,12 +101,10 @@ where
         // onwards. This is the same on every process as only the first dimension is distributed.
         let counts = self
             .index_layout
-            .counts()
+            .local_counts()
             .iter()
-            .take(comm.size() as usize)
             .map(|&x| (other_dims_count * x) as i32)
             .collect::<Vec<i32>>();
-
         let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
         let mut partition = PartitionMut::new(recv_arr.data_mut(), counts, displacements);
         this_process.all_gather_varcount_into(send_arr.data(), &mut partition);
@@ -166,9 +171,8 @@ where
         // onwards. This is the same on every process as only the first dimension is distributed.
         let counts = self
             .index_layout
-            .counts()
+            .local_counts()
             .iter()
-            .take(comm.size() as usize)
             .map(|&x| (other_dims_count * x) as i32)
             .collect::<Vec<i32>>();
 
@@ -185,7 +189,7 @@ where
     Array<ArrayImpl, NDIM>: EvaluateRowMajorArray + Shape<NDIM>,
     <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
     <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Clone + Default,
+        Equivalence + Copy + Default,
     for<'b> DynArray<<<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item, NDIM>:
         FillFromResize<
             StridedSliceArray<
@@ -235,10 +239,9 @@ where
         // We also have to multiply the counts by the number of elements in the second dimension
         // onwards. This is the same on every process as only the first dimension is distributed.
         let counts = index_layout
-            .counts()
+            .local_counts()
             .iter()
-            .take(comm.size() as usize)
-            .map(|&x| (other_dims_count * x))
+            .map(|&x| other_dims_count * x)
             .collect::<Vec<usize>>();
 
         // We can now scatter the data around.
@@ -257,82 +260,41 @@ where
         }
     }
 
-    fn scatter_from_one(&self, root: usize) -> Self::Output {
-        todo!()
+    fn scatter_from_one<'a, C: Communicator>(
+        root: usize,
+        index_layout: Rc<IndexLayout<'a, C>>,
+    ) -> Self::Output<'a, C> {
+        let comm = index_layout.comm();
+
+        let my_shape = {
+            let mut my_shape = [0_usize; NDIM];
+
+            comm.process_at_rank(root as Rank)
+                .broadcast_into(my_shape.as_mut_slice());
+
+            my_shape[0] = index_layout.number_of_local_indices();
+            my_shape
+        };
+        // We receive the data from the root process.
+        let my_data = scatterv::<
+            <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
+        >(comm, root);
+
+        // The data comes over in row-major order. We create a row-major view and
+        // copy it into a new column major array.
+
+        // We wrap this data into an array view and then transpose it to get a standard column-major array.
+        {
+            let local_arr = DynArray::new_from(&StridedSliceArray::from_shape_and_stride(
+                &my_data,
+                my_shape,
+                row_major_stride_from_shape(my_shape),
+            ));
+            DistributedArray::new(index_layout, local_arr)
+        }
     }
 }
 
-//     /// Send vector to a given root rank (call this from the root)
-//     pub fn gather_to_rank_root(&self, arr: &mut Array<ArrayImpl, 1>)
-//     where
-//         ArrayImpl: Shape<1> + RawAccessMut<Item = Item>,
-//     {
-//         let comm = self.index_layout.comm();
-//         let my_process = comm.this_process();
-//
-//         let global_dim = self.index_layout.number_of_global_indices();
-//
-//         assert_eq!(arr.shape()[0], global_dim);
-//
-//         // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
-//         let counts = self
-//             .index_layout
-//             .counts()
-//             .iter()
-//             .take(comm.size() as usize)
-//             .map(|&x| x as i32)
-//             .collect::<Vec<i32>>();
-//
-//         let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
-//         let mut partition = PartitionMut::new(arr.data_mut(), counts, displacements);
-//
-//         my_process.gather_varcount_into_root(self.local.data(), &mut partition);
-//     }
-//
-//     /// Send vector to a given rank (call this from the root)
-//     pub fn gather_to_rank(&self, target_rank: usize) {
-//         let target_process = self
-//             .index_layout
-//             .comm()
-//             .process_at_rank(target_rank as Rank);
-//
-//         target_process.gather_varcount_into(self.local.data());
-//     }
-//
-//     /// Create from root
-//     pub fn scatter_from_root<ArrayImpl: Shape<1> + RawAccess<Item = Item>>(
-//         &mut self,
-//         arr: &mut Array<ArrayImpl, 1>,
-//     ) where
-//         Item: Copy,
-//     {
-//         let comm = self.index_layout.comm();
-//
-//         assert_eq!(arr.shape()[0], self.index_layout.number_of_global_indices());
-//         // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
-//         let counts = self
-//             .index_layout
-//             .counts()
-//             .iter()
-//             .take(comm.size() as usize)
-//             .copied()
-//             .collect::<Vec<usize>>();
-//
-//         self.local
-//             .fill_from_iter(scatterv_root(comm, &counts, arr.data()).iter().copied());
-//     }
-//
-//     /// Create from root
-//     pub fn scatter_from(&mut self, root: usize)
-//     where
-//         Item: Copy,
-//     {
-//         let comm = self.index_layout.comm();
-//
-//         self.local
-//             .fill_from_iter(scatterv(comm, root).iter().copied());
-//     }
-// }
 //
 // impl<'a, C, Item> Inner<DistributedArray<'a, C, Item>> for DistributedArray<'a, C, Item>
 // where

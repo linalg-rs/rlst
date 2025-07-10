@@ -1,6 +1,6 @@
 //! Sparse matrix traits
 
-use crate::{dense::array::DynArray, distributed_tools::IndexLayout, sparse::SparseMatType};
+use crate::{distributed_tools::IndexLayout, sparse::SparseMatType};
 
 use super::{AijIteratorByValue, BaseItem, Shape};
 
