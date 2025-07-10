@@ -88,15 +88,13 @@ where
     pub fn run(mut self) -> (ElementType<Space::E>, <Space::F as RlstScalar>::Real) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
-                "CG converged in {} iterations with relative residual {:+E}.",
-                it_count, rel_res
+                "CG converged in {it_count} iterations with relative residual {rel_res:+E}."
             );
         }
 
         fn print_fail<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!(
-                "CG did not converge in {} iterations. Final relative residual is {:+E}.",
-                it_count, rel_res
+                "CG did not converge in {it_count} iterations. Final relative residual is {rel_res:+E}."
             );
         }
 
