@@ -87,9 +87,7 @@ where
     /// Run CG
     pub fn run(mut self) -> (ElementType<Space::E>, <Space::F as RlstScalar>::Real) {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
-            println!(
-                "CG converged in {it_count} iterations with relative residual {rel_res:+E}."
-            );
+            println!("CG converged in {it_count} iterations with relative residual {rel_res:+E}.");
         }
 
         fn print_fail<T: RlstScalar>(it_count: usize, rel_res: T) {
