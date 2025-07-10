@@ -345,7 +345,7 @@ impl<
         let shape = self.shape();
         write!(f, "Array[").unwrap();
         for item in shape {
-            write!(f, "{},", item).unwrap();
+            write!(f, "{item},").unwrap();
         }
         write!(f, "]")
     }

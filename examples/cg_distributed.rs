@@ -1,4 +1,5 @@
 //! Example of a distributed CG iteration across several MPI ranks.
+//? mpirun -n {{NPROCESSES}} --features "mpi"
 
 use std::rc::Rc;
 

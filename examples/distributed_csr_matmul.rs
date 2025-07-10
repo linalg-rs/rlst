@@ -1,4 +1,5 @@
 //! Demonstrate the creation of a distributed CSR matrix and its multiplication with a vector.
+//? mpirun -n {{NPROCESSES}} --features "mpi"
 
 use std::rc::Rc;
 

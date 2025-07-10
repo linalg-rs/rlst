@@ -1,4 +1,5 @@
 //! Gather a vector on the root rank.
+//? mpirun -n {{NPROCESSES}} --features "mpi"
 
 use std::rc::Rc;
 

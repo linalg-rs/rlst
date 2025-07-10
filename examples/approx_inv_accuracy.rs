@@ -103,6 +103,6 @@ fn main() {
         );
     }
 
-    println!("Maximum relative error f32: {:.2E}", max_error_f32);
-    println!("Maximum relative error f64: {:.2E}", max_error_f64);
+    println!("Maximum relative error f32: {max_error_f32:.2E}");
+    println!("Maximum relative error f64: {max_error_f64:.2E}");
 }

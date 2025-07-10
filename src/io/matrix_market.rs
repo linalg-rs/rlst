@@ -112,7 +112,7 @@ pub fn write_coordinate_mm<
 
         Ok(())
     } else {
-        Err(RlstError::IoError(format!("Could not open file {}", fname)))
+        Err(RlstError::IoError(format!("Could not open file {fname}")))
     }
 }
 
@@ -135,12 +135,12 @@ pub fn write_array_mm<
         writeln!(output, "%").unwrap();
         writeln!(output, "{} {}", mat.shape()[0], mat.shape()[1]).unwrap();
         for value in mat.iter() {
-            writeln!(output, "{}", value).unwrap();
+            writeln!(output, "{value}").unwrap();
         }
 
         Ok(())
     } else {
-        Err(RlstError::IoError(format!("Could not open file {}", fname)))
+        Err(RlstError::IoError(format!("Could not open file {fname}")))
     }
 }
 
@@ -361,8 +361,7 @@ fn parse_array<T: RlstScalar>(
 
         if items.len() != 1 {
             return Err(RlstError::IoError(format!(
-                "Failed to read data line: {}.",
-                current_str,
+                "Failed to read data line: {current_str}.",
             )));
         }
 
@@ -375,8 +374,7 @@ fn parse_array<T: RlstScalar>(
             }
             Err(_) => {
                 return Err(RlstError::IoError(format!(
-                    "Failed to read data line: {}.",
-                    current_str,
+                    "Failed to read data line: {current_str}.",
                 )));
             }
         };
@@ -387,8 +385,7 @@ fn parse_array<T: RlstScalar>(
 
     if count != nelems {
         return Err(RlstError::IoError(format!(
-            "There were only {} data lines, expected {}",
-            count, nelems
+            "There were only {count} data lines, expected {nelems}"
         )));
     }
 
@@ -414,8 +411,7 @@ fn parse_coordinate<T: RlstScalar>(
 
         if items.len() != 3 {
             return Err(RlstError::IoError(format!(
-                "Failed to read data line: {}.",
-                current_str,
+                "Failed to read data line: {current_str}.",
             )));
         }
 
@@ -429,8 +425,7 @@ fn parse_coordinate<T: RlstScalar>(
             }
             Err(_) => {
                 return Err(RlstError::IoError(format!(
-                    "Failed to read data line: {}.",
-                    current_str,
+                    "Failed to read data line: {current_str}.",
                 )));
             }
         };
@@ -441,8 +436,7 @@ fn parse_coordinate<T: RlstScalar>(
             }
             Err(_) => {
                 return Err(RlstError::IoError(format!(
-                    "Failed to read data line: {}.",
-                    current_str,
+                    "Failed to read data line: {current_str}.",
                 )));
             }
         };
@@ -453,8 +447,7 @@ fn parse_coordinate<T: RlstScalar>(
             }
             Err(_) => {
                 return Err(RlstError::IoError(format!(
-                    "Failed to read data line: {}.",
-                    current_str,
+                    "Failed to read data line: {current_str}.",
                 )));
             }
         };
@@ -466,8 +459,7 @@ fn parse_coordinate<T: RlstScalar>(
 
     if count != nelems {
         return Err(RlstError::IoError(format!(
-            "There were only {} data lines, expected {}",
-            count, nelems
+            "There were only {count} data lines, expected {nelems}"
         )));
     }
 
