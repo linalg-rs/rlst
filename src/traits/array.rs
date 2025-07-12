@@ -112,7 +112,7 @@ pub trait SumFrom<Other> {
 /// Componentwise Multiply other array into this array.
 pub trait CmpMulFrom<Other> {
     /// Multiply other array into this array.
-    fn cmp_mult_from(&mut self, other: &Other);
+    fn cmp_mul_from(&mut self, other: &Other);
 }
 
 /// Componentwise form `Self = Self * Other1 + Other2`.

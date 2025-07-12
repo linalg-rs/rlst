@@ -136,7 +136,7 @@ where
     Self: ArrayIteratorMut<Item = Item>,
     Array<ArrayImplOther, NDIM>: ArrayIteratorByValue<Item = Item> + Shape<NDIM>,
 {
-    fn cmp_mult_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
+    fn cmp_mul_from(&mut self, other: &Array<ArrayImplOther, NDIM>) {
         assert_eq!(self.shape(), other.shape());
 
         for (item, other_item) in self.iter_mut().zip(other.iter_value()) {

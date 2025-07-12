@@ -241,4 +241,9 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
     pub fn comm(&self) -> &C {
         self.comm
     }
+
+    /// Check if two index layouts are pointer equal.
+    pub fn is_same(&self, other: &IndexLayout<'a, C>) -> bool {
+        std::ptr::eq(self, other)
+    }
 }

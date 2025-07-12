@@ -6,7 +6,7 @@
 pub mod tools;
 
 #[cfg(feature = "mpi")]
-pub mod distributed_vector;
+pub mod distributed_array;
 
 /// Sparse matrix type
 #[derive(Copy, Clone)]
