@@ -9,9 +9,10 @@ use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
-    Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromIter,
-    FillFromResize, FillWithValue, GatherToOne, Len, NumberOfElements, RawAccess, RawAccessMut,
-    ScaleInPlace, ScatterFromOne, SetZero, Shape, Stride, Sum, SumFrom, ToType,
+    AbsSquare, Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom,
+    FillFromIter, FillFromResize, FillWithValue, GatherToOne, Inner, Len, NormSup, NormTwo,
+    NumberOfElements, RawAccess, RawAccessMut, ScaleInPlace, ScatterFromOne, SetZero, Shape, Sqrt,
+    Stride, Sum, SumFrom, ToType,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -521,120 +522,112 @@ where
     }
 }
 
-impl<'a, C, Item, ArrayImpl, const NDIM: usize> ToType for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, T, Item, ArrayImpl, const NDIM: usize> ToType<T>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    Self: BaseItem<Item = Item>,
-    ArrayImpl: BaseItem<Item = Item>,
+    ArrayImpl: BaseItem<Item = Item> + Shape<NDIM>,
     Array<ArrayImpl, NDIM>: ToType<
+        T,
         Item = Item,
-        Output<K> = Array<ArrayUnaryOperator<Item, K, ArrayImpl, fn(Item) -> K, NDIM>, NDIM>,
+        Output = Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>,
     >,
 {
     type Item = Item;
 
-    type Output<T> =
+    type Output =
         DistributedArray<'a, C, ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>;
 
-    fn to_type<T>(self) -> Self::Output<T>
+    fn into_type(self) -> Self::Output
     where
         Self::Item: Into<T>,
     {
-        todo!()
+        DistributedArray::new(self.index_layout.clone(), self.local.into_type())
     }
 }
 
-//
-// impl<'a, C, Item> Inner<DistributedArray<'a, C, Item>> for DistributedArray<'a, C, Item>
-// where
-//     C: Communicator,
-//     Item: Equivalence + Default,
-//     DynArray<Item, 1>: Inner<DynArray<Item, 1>, Output = Item>,
-// {
-//     type Output = Item;
-//
-//     fn inner(&self, other: &DistributedArray<'a, C, Item>) -> Self::Output {
-//         assert_eq!(
-//             self.index_layout.number_of_local_indices(),
-//             other.index_layout.number_of_local_indices()
-//         );
-//
-//         let local_inner = self.local.inner(&other.local);
-//         let comm = self.index_layout.comm();
-//
-//         let mut global_result = Default::default();
-//         comm.all_reduce_into(
-//             &local_inner,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::sum(),
-//         );
-//         global_result
-//     }
-// }
-//
-// impl<'a, C, Item> AbsSquare for DistributedArray<'a, C, Item>
-// where
-//     C: Communicator,
-//     DynArray<Item, 1>: AbsSquare,
-//     <DynArray<Item, 1> as AbsSquare>::Output: Equivalence + Default,
-// {
-//     type Output = <DynArray<Item, 1> as AbsSquare>::Output;
-//
-//     fn abs_square(&self) -> Self::Output {
-//         assert_eq!(
-//             self.index_layout.number_of_local_indices(),
-//             self.local.shape()[0]
-//         );
-//
-//         let local_abs_square = self.local.abs_square();
-//         let comm = self.index_layout.comm();
-//
-//         let mut global_result = Default::default();
-//         comm.all_reduce_into(
-//             &local_abs_square,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::sum(),
-//         );
-//         global_result
-//     }
-// }
-//
-// impl<'a, C, Item> NormSup for DistributedArray<'a, C, Item>
-// where
-//     C: Communicator,
-//     DynArray<Item, 1>: NormSup,
-//     <DynArray<Item, 1> as NormSup>::Output: Equivalence + Default,
-// {
-//     type Output = <DynArray<Item, 1> as NormSup>::Output;
-//
-//     fn norm_sup(&self) -> Self::Output {
-//         assert_eq!(
-//             self.index_layout.number_of_local_indices(),
-//             self.local.shape()[0]
-//         );
-//
-//         let local_norm_sup = self.local.norm_sup();
-//         let comm = self.index_layout.comm();
-//
-//         let mut global_result = Default::default();
-//         comm.all_reduce_into(
-//             &local_norm_sup,
-//             &mut global_result,
-//             mpi::collective::SystemOperation::max(),
-//         );
-//         global_result
-//     }
-// }
-//
-// impl<'a, C, Item> NormTwo for DistributedArray<'a, C, Item>
-// where
-//     C: Communicator,
-//     Self: AbsSquare,
-//     <Self as AbsSquare>::Output: Sqrt,
-// {
-//     type Output = <<Self as AbsSquare>::Output as Sqrt>::Output;
-//
-//     fn norm_2(&self) -> Self::Output {
-//         Sqrt::sqrt(&self.abs_square())
-//     }
-// }
+impl<'a, C, ArrayImpl, ArrayImplOther, T, const NDIM: usize>
+    Inner<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    T: Equivalence + Default,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+    Array<ArrayImpl, NDIM>: Inner<Array<ArrayImplOther, NDIM>, Output = T>,
+{
+    type Output = T;
+
+    fn inner(&self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(other),
+            "DistributedArray::inner: The index layout and shape of the arrays do not match."
+        );
+        // We can just sum from the local data.
+        let local_inner = self.local.inner(&other.local);
+        let mut global_inner = Default::default();
+
+        self.index_layout.comm().all_reduce_into(
+            &local_inner,
+            &mut global_inner,
+            mpi::collective::SystemOperation::sum(),
+        );
+
+        global_inner
+    }
+}
+
+impl<'a, C, ArrayImpl, T, const NDIM: usize> AbsSquare for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    T: Equivalence + Default,
+    ArrayImpl: Shape<NDIM>,
+    Array<ArrayImpl, NDIM>: AbsSquare<Output = T>,
+{
+    type Output = T;
+
+    fn abs_square(&self) -> Self::Output {
+        let local_abs_square = self.local.abs_square();
+        let mut global_result = Default::default();
+        self.index_layout.comm().all_reduce_into(
+            &local_abs_square,
+            &mut global_result,
+            mpi::collective::SystemOperation::sum(),
+        );
+        global_result
+    }
+}
+
+impl<'a, C, ArrayImpl, T> NormSup for DistributedArray<'a, C, ArrayImpl, 1>
+where
+    C: Communicator,
+    T: Equivalence + Default,
+    ArrayImpl: Shape<1>,
+    Array<ArrayImpl, 1>: NormSup<Output = T>,
+{
+    type Output = T;
+
+    fn norm_sup(&self) -> Self::Output {
+        let local_norm_sup = self.local.norm_sup();
+        let mut global_result = Default::default();
+        self.index_layout.comm().all_reduce_into(
+            &local_norm_sup,
+            &mut global_result,
+            mpi::collective::SystemOperation::max(),
+        );
+        global_result
+    }
+}
+
+impl<'a, C, ArrayImpl, T> NormTwo for DistributedArray<'a, C, ArrayImpl, 1>
+where
+    C: Communicator,
+    Self: AbsSquare<Output = T>,
+    T: Sqrt,
+{
+    type Output = <T as Sqrt>::Output;
+
+    fn norm_2(&self) -> Self::Output {
+        Sqrt::sqrt(&self.abs_square())
+    }
+}

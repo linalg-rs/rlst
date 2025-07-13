@@ -198,7 +198,7 @@ pub trait SingularvalueDecomposition {
         let (s, u, vh) = self.svd_truncated(max_singular_values, tol)?;
 
         Ok(PInv::new(
-            s.to_type::<Self::Item>().eval(),
+            s.into_type().eval(),
             u.conj().transpose().eval(),
             vh.conj().transpose().eval(),
         ))

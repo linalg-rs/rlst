@@ -282,14 +282,14 @@ pub trait DispatchEvalRowMajor<const NDIM: usize> {
 ///
 /// This trait is used to convert an array of one type into an array of another type.
 /// It depends on the `Into` trait to convert each element of the array.
-pub trait ToType {
+pub trait ToType<T> {
     /// The element type of the array.
     type Item;
     /// The output type of the array.
-    type Output<T>;
+    type Output;
 
     /// Convert the array into a new array.
-    fn to_type<T>(self) -> Self::Output<T>
+    fn into_type(self) -> Self::Output
     where
         Self::Item: Into<T>;
 }

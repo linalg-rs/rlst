@@ -349,15 +349,15 @@ where
     }
 }
 
-impl<Item, ArrayImpl, const NDIM: usize> ToType for Array<ArrayImpl, NDIM>
+impl<Item, T, ArrayImpl, const NDIM: usize> ToType<T> for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: BaseItem<Item = Item>,
 {
     type Item = Item;
 
-    type Output<T> = Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>;
+    type Output = Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>;
 
-    fn to_type<T>(self) -> Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>
+    fn into_type(self) -> Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>
     where
         Item: Into<T>,
     {
