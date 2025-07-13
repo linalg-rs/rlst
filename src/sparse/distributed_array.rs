@@ -2,17 +2,18 @@
 use std::rc::Rc;
 
 use crate::dense::array::operators::unary_op::ArrayUnaryOperator;
+use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::layout::row_major_stride_from_shape;
 use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
+use paste::paste;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
-    AbsSquare, Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom,
-    FillFromIter, FillFromResize, FillWithValue, GatherToOne, Inner, Len, NormSup, NormTwo,
-    NumberOfElements, RawAccess, RawAccessMut, ScaleInPlace, ScatterFromOne, SetZero, Shape, Sqrt,
-    Stride, Sum, SumFrom, ToType,
+    Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
+    FillWithValue, GatherToOne, Inner, Len, NormSup, NormTwo, NumberOfElements, RawAccess,
+    RawAccessMut, ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -51,6 +52,18 @@ where
             index_layout,
             local: arr,
         }
+    }
+
+    /// Get a reference struct to an existing array.
+    pub fn r<'b>(&'b self) -> DistributedArray<'a, C, ArrayRef<'b, ArrayImpl, NDIM>, NDIM> {
+        DistributedArray::new(self.index_layout.clone(), self.local.r())
+    }
+
+    /// Get a mutable reference struct to an existing array.
+    pub fn r_mut<'b>(
+        &'b mut self,
+    ) -> DistributedArray<'a, C, ArrayRefMut<'b, ArrayImpl, NDIM>, NDIM> {
+        DistributedArray::new(self.index_layout.clone(), self.local.r_mut())
     }
 
     /// Check that index layout and shape is the same as the other array.
@@ -577,27 +590,6 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, T, const NDIM: usize> AbsSquare for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    T: Equivalence + Default,
-    ArrayImpl: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: AbsSquare<Output = T>,
-{
-    type Output = T;
-
-    fn abs_square(&self) -> Self::Output {
-        let local_abs_square = self.local.abs_square();
-        let mut global_result = Default::default();
-        self.index_layout.comm().all_reduce_into(
-            &local_abs_square,
-            &mut global_result,
-            mpi::collective::SystemOperation::sum(),
-        );
-        global_result
-    }
-}
-
 impl<'a, C, ArrayImpl, T> NormSup for DistributedArray<'a, C, ArrayImpl, 1>
 where
     C: Communicator,
@@ -622,12 +614,56 @@ where
 impl<'a, C, ArrayImpl, T> NormTwo for DistributedArray<'a, C, ArrayImpl, 1>
 where
     C: Communicator,
-    Self: AbsSquare<Output = T>,
+    ArrayImpl: Shape<1>,
+    for<'b> DistributedArray<'a, C, ArrayRef<'b, ArrayImpl, 1>, 1>: ArrayOpAbsSquare,
+    for<'b> <DistributedArray<'a, C, ArrayRef<'b, ArrayImpl, 1>, 1> as ArrayOpAbsSquare>::Output:
+        Sum + BaseItem<Item = T>,
     T: Sqrt,
 {
     type Output = <T as Sqrt>::Output;
 
     fn norm_2(&self) -> Self::Output {
-        Sqrt::sqrt(&self.abs_square())
+        Sqrt::sqrt(&self.r().abs_square().sum())
     }
 }
+
+macro_rules! impl_unary_op_trait {
+    ($trait_name:expr, $method_name:ident) => {
+        paste! {
+        use $crate::traits::array::[<ArrayOp $trait_name>];
+        impl<'a, C, ArrayImpl, ArrayImplOutput, const NDIM: usize> $crate::traits::array::[<ArrayOp $trait_name>]
+            for DistributedArray<'a, C, ArrayImpl, NDIM>
+        where
+            C: Communicator,
+            ArrayImpl: Shape<NDIM>,
+            Array<ArrayImpl, NDIM>: [<ArrayOp $trait_name>]<Output = Array<ArrayImplOutput, NDIM>>,
+            ArrayImplOutput: Shape<NDIM>,
+        {
+            type Output = DistributedArray<'a, C, ArrayImplOutput, NDIM>;
+
+            fn $method_name(self) -> Self::Output {
+                DistributedArray::new(self.index_layout.clone(), self.local.$method_name())
+            }
+        }}
+    };
+}
+
+impl_unary_op_trait!(Abs, abs);
+impl_unary_op_trait!(Square, square);
+impl_unary_op_trait!(AbsSquare, abs_square);
+impl_unary_op_trait!(Sqrt, sqrt);
+impl_unary_op_trait!(Exp, exp);
+impl_unary_op_trait!(Ln, ln);
+impl_unary_op_trait!(Recip, recip);
+impl_unary_op_trait!(Sin, sin);
+impl_unary_op_trait!(Cos, cos);
+impl_unary_op_trait!(Tan, tan);
+impl_unary_op_trait!(Asin, asin);
+impl_unary_op_trait!(Acos, acos);
+impl_unary_op_trait!(Atan, atan);
+impl_unary_op_trait!(Sinh, sinh);
+impl_unary_op_trait!(Cosh, cosh);
+impl_unary_op_trait!(Tanh, tanh);
+impl_unary_op_trait!(Asinh, asinh);
+impl_unary_op_trait!(Acosh, acosh);
+impl_unary_op_trait!(Atanh, atanh);
