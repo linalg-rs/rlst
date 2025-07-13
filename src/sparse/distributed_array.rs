@@ -1,19 +1,30 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
 use std::rc::Rc;
 
+use crate::base_types::{c32, c64};
+use crate::dense::array::operators::addition::ArrayAddition;
+use crate::dense::array::operators::cast::ArrayCast;
+use crate::dense::array::operators::cmp_wise_division::CmpWiseDivision;
+use crate::dense::array::operators::cmp_wise_product::CmpWiseProduct;
+use crate::dense::array::operators::coerce::CoerceArray;
+use crate::dense::array::operators::mul_add::MulAddImpl;
+use crate::dense::array::operators::scalar_mult::ArrayScalarMult;
+use crate::dense::array::operators::subtraction::ArraySubtraction;
 use crate::dense::array::operators::unary_op::ArrayUnaryOperator;
 use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::layout::row_major_stride_from_shape;
 use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
+use coe::Coerce;
+use num::traits::MulAdd;
 use paste::paste;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
     Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
     FillWithValue, GatherToOne, Inner, Len, NormSup, NormTwo, NumberOfElements, RawAccess,
-    RawAccessMut, ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
+    RawAccessMut, RlstResult, ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -667,3 +678,240 @@ impl_unary_op_trait!(Tanh, tanh);
 impl_unary_op_trait!(Asinh, asinh);
 impl_unary_op_trait!(Acosh, acosh);
 impl_unary_op_trait!(Atanh, atanh);
+
+// Now implement the traits for the standard operators
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    std::ops::Add<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: std::ops::Add<
+        Array<ArrayImplOther, NDIM>,
+        Output = Array<ArrayAddition<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+    >,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+{
+    type Output = DistributedArray<'a, C, ArrayAddition<ArrayImpl, ArrayImplOther, NDIM>, NDIM>;
+
+    fn add(self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::add: The index layout and shape of the arrays do not match."
+        );
+        DistributedArray::new(self.index_layout.clone(), self.local + rhs.local)
+    }
+}
+
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    std::ops::Sub<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: std::ops::Sub<
+        Array<ArrayImplOther, NDIM>,
+        Output = Array<ArraySubtraction<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+    >,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+{
+    type Output = DistributedArray<'a, C, ArraySubtraction<ArrayImpl, ArrayImplOther, NDIM>, NDIM>;
+
+    fn sub(self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::add: The index layout and shape of the arrays do not match."
+        );
+        DistributedArray::new(self.index_layout.clone(), self.local - rhs.local)
+    }
+}
+
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    std::ops::Mul<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: std::ops::Mul<
+        Array<ArrayImplOther, NDIM>,
+        Output = Array<CmpWiseProduct<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+    >,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+{
+    type Output = DistributedArray<'a, C, CmpWiseProduct<ArrayImpl, ArrayImplOther, NDIM>, NDIM>;
+
+    fn mul(self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::add: The index layout and shape of the arrays do not match."
+        );
+        DistributedArray::new(self.index_layout.clone(), self.local * rhs.local)
+    }
+}
+
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    std::ops::Div<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: std::ops::Div<
+        Array<ArrayImplOther, NDIM>,
+        Output = Array<CmpWiseDivision<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+    >,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+{
+    type Output = DistributedArray<'a, C, CmpWiseDivision<ArrayImpl, ArrayImplOther, NDIM>, NDIM>;
+
+    fn div(self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::add: The index layout and shape of the arrays do not match."
+        );
+        DistributedArray::new(self.index_layout.clone(), self.local / rhs.local)
+    }
+}
+
+macro_rules! impl_scalar_mult {
+    ($scalar:ty) => {
+        impl<'a, C, ArrayImpl, const NDIM: usize>
+            std::ops::Mul<DistributedArray<'a, C, ArrayImpl, NDIM>> for $scalar
+        where
+            C: Communicator,
+            ArrayImpl: Shape<NDIM> + BaseItem<Item = $scalar>,
+            $scalar: std::ops::Mul<
+                Array<ArrayImpl, NDIM>,
+                Output = Array<ArrayScalarMult<$scalar, ArrayImpl, NDIM>, NDIM>,
+            >,
+        {
+            type Output = DistributedArray<'a, C, ArrayScalarMult<$scalar, ArrayImpl, NDIM>, NDIM>;
+
+            fn mul(self, rhs: DistributedArray<'a, C, ArrayImpl, NDIM>) -> Self::Output {
+                DistributedArray::new(rhs.index_layout.clone(), self.mul(rhs.local))
+            }
+        }
+    };
+}
+
+impl_scalar_mult!(f64);
+impl_scalar_mult!(f32);
+impl_scalar_mult!(c64);
+impl_scalar_mult!(c32);
+impl_scalar_mult!(usize);
+impl_scalar_mult!(i8);
+impl_scalar_mult!(i16);
+impl_scalar_mult!(i32);
+impl_scalar_mult!(i64);
+impl_scalar_mult!(u8);
+impl_scalar_mult!(u16);
+impl_scalar_mult!(u32);
+impl_scalar_mult!(u64);
+
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> std::ops::Mul<Item>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM> + BaseItem<Item = Item>,
+    Array<ArrayImpl, NDIM>:
+        std::ops::Mul<Item, Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>>,
+{
+    type Output = DistributedArray<'a, C, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
+
+    fn mul(self, rhs: Item) -> Self::Output {
+        DistributedArray::new(self.index_layout.clone(), self.local.mul(rhs))
+    }
+}
+
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+{
+    /// Cast the distributed array to a different type.
+    pub fn cast<Target>(self) -> DistributedArray<'a, C, ArrayCast<Target, ArrayImpl, NDIM>, NDIM> {
+        DistributedArray::new(self.index_layout.clone(), self.local.cast::<Target>())
+    }
+}
+
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+{
+    /// Cast the distributed array to a different dimensionality.
+    pub fn coerce_dim<const CDIM: usize>(
+        self,
+    ) -> RlstResult<DistributedArray<'a, C, CoerceArray<ArrayImpl, NDIM, CDIM>, CDIM>> {
+        Ok(DistributedArray::new(
+            self.index_layout.clone(),
+            self.local.coerce_dim::<CDIM>()?,
+        ))
+    }
+}
+
+impl<'a, C, Item, ArrayImpl1, ArrayImpl2, const NDIM: usize>
+    MulAdd<Item, DistributedArray<'a, C, ArrayImpl2, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl1, NDIM>
+where
+    C: Communicator,
+    ArrayImpl1: Shape<NDIM>,
+    ArrayImpl2: Shape<NDIM>,
+    Array<ArrayImpl1, NDIM>: MulAdd<
+        Item,
+        Array<ArrayImpl2, NDIM>,
+        Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>,
+    >,
+{
+    type Output = DistributedArray<'a, C, MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>;
+
+    fn mul_add(self, alpha: Item, rhs: DistributedArray<'a, C, ArrayImpl2, NDIM>) -> Self::Output {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::mul_add: The index layout and shape of the arrays do not match."
+        );
+        DistributedArray::new(
+            self.index_layout.clone(),
+            self.local.mul_add(alpha, rhs.local),
+        )
+    }
+}
+
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+{
+    /// Apply a unary operator to the distributed array.
+    pub fn apply_unary_op<OpItem, OpTarget, Op: Fn(OpItem) -> OpTarget>(
+        self,
+        op: Op,
+    ) -> DistributedArray<'a, C, ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>, NDIM>
+    {
+        DistributedArray::new(self.index_layout.clone(), self.local.apply_unary_op(op))
+    }
+}
+
+/// Create a new distributed vector with the given scalar type and index layout.
+#[macro_export]
+macro_rules! dist_vec {
+    ($scalar:ty, $index_layout:expr) => {
+        $crate::sparse::distributed_array::DistributedArray::new(
+            $index_layout,
+            $crate::DynArray::<$scalar, 1>::new([$index_layout.number_of_local_indices()]),
+        )
+    };
+}
+
+/// Create a new distributed matri.
+///
+/// The number of rows is determined by the index layout, while the number of columns is
+/// determined by `ncols`.
+#[macro_export]
+macro_rules! dist_mat {
+    ($scalar:ty, $index_layout:expr, ncols:expr) => {
+        $crate::sparse::distributed_array::DistributedArray::new(
+            $index_layout,
+            $crate::DynArray::<$scalar, 2>::new([$index_layout.number_of_local_indices(), ncols]),
+        )
+    };
+}
