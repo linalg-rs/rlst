@@ -327,7 +327,7 @@ fn test_convert_1d_nd() {
     let index_1d = dense::layout::convert_nd_raw(multi_index, stride);
     let actual_nd = dense::layout::convert_1d_nd_from_shape(index_1d, shape);
 
-    println!("{}, {:#?}", index_1d, actual_nd);
+    println!("{index_1d}, {actual_nd:#?}");
 
     for (&expected, actual) in multi_index.iter().zip(actual_nd) {
         assert_eq!(expected, actual)
