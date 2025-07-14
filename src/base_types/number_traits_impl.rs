@@ -16,7 +16,7 @@ where
 {
     type Output = Self;
     fn conj(&self) -> Self {
-        RlstScalar::conj(&self)
+        RlstScalar::conj(self)
     }
 }
 

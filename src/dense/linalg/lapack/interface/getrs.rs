@@ -29,6 +29,7 @@ pub enum GetrsTransMode {
 /// - The Lapack info code if the solve fails.
 pub trait Getrs: Sized {
     /// Solve a system of linear equations using LU factorization.
+    #[allow(clippy::too_many_arguments)]
     fn getrs(
         trans: GetrsTransMode,
         n: usize,

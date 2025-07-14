@@ -20,7 +20,7 @@ where
     fn lu(&self) -> RlstResult<LuDecomposition<Item>> {
         let mut lu_mat = DynArray::new_from(self);
         let (m, n, lda) = (lu_mat.shape()[0], lu_mat.shape()[1], lu_mat.shape()[0]);
-        let mut ipiv = vec![0 as i32; std::cmp::min(m, n)];
+        let mut ipiv = vec![0_i32; std::cmp::min(m, n)];
 
         Item::getrf(m, n, lu_mat.data_mut(), lda, &mut ipiv)?;
 
@@ -103,13 +103,13 @@ where
         let mut l_mat = DynArray::from_shape([m, k]);
 
         for col in 0..k as usize {
-            for row in col..m as usize {
+            for row in col..m {
                 if col == row {
                     unsafe { *l_mat.get_unchecked_mut([row, col]) = <Item as One>::one() };
                 } else {
                     unsafe {
                         *l_mat.get_unchecked_mut([row, col]) =
-                            *self.lu.data().get_unchecked(col * m as usize + row);
+                            *self.lu.data().get_unchecked(col * m + row);
                     };
                 }
             }
@@ -128,7 +128,7 @@ where
             for row in 0..=std::cmp::min(col, k - 1) {
                 unsafe {
                     *u_mat.get_unchecked_mut([row, col]) =
-                        *self.lu.data().get_unchecked(col * m as usize + row);
+                        *self.lu.data().get_unchecked(col * m + row);
                 }
             }
         }
@@ -175,8 +175,8 @@ where
         if self.ipiv[0] != 1 {
             det = -det;
         }
-        for i in 1..m as usize {
-            det *= unsafe { *self.lu.data().get_unchecked(i * m as usize + i) };
+        for i in 1..m {
+            det *= unsafe { *self.lu.data().get_unchecked(i * m + i) };
             if self.ipiv[i] != (i + 1) as i32 {
                 det = -det;
             }

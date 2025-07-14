@@ -38,7 +38,7 @@ use super::iterators::{
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;
-use super::{Array, DynArray, EvalDispatcher, EvalRowMajorDispatcher};
+use super::{Array, EvalDispatcher, EvalRowMajorDispatcher};
 
 impl<Item, ArrayImpl, const NDIM: usize> GetDiagByValue for Array<ArrayImpl, NDIM>
 where

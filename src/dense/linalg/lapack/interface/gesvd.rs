@@ -39,6 +39,7 @@ pub trait Gesvd: RlstScalar {
     /// If either `jobu` or `jobvt` is `JobU::N` or `JobVt::N`, the corresponding singular vectors
     /// are not computed, and the array u or correspondingly vt is not referenced and can be
     /// `None`.
+    #[allow(clippy::too_many_arguments)]
     fn gesvd(
         jobu: JobU,
         jobvt: JobVt,

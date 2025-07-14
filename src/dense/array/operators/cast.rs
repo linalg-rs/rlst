@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
-    ContainerType, ContainerTypeHint,
+    ContainerTypeHint,
 };
 
 /// Array to complex

@@ -134,7 +134,6 @@ pub trait ColumnIterator: BaseItem {
         Self: 'a;
 
     /// Type of the iterator.
-
     type Iter<'a>: Iterator<Item = Self::Col<'a>>
     where
         Self: 'a;
@@ -151,7 +150,6 @@ pub trait RowIterator: BaseItem {
         Self: 'a;
 
     /// Type of the iterator.
-
     type Iter<'a>: Iterator<Item = Self::Row<'a>>
     where
         Self: 'a;
@@ -168,7 +166,6 @@ pub trait ColumnIteratorMut: BaseItem {
         Self: 'a;
 
     /// Type of the iterator.
-
     type Iter<'a>: Iterator<Item = Self::Col<'a>>
     where
         Self: 'a;
@@ -185,7 +182,6 @@ pub trait RowIteratorMut: BaseItem {
         Self: 'a;
 
     /// Type of the iterator.
-
     type Iter<'a>: Iterator<Item = Self::Row<'a>>
     where
         Self: 'a;

@@ -35,6 +35,7 @@ pub trait Gels: Sized {
     ///
     /// **Returns:**
     /// A `LapackResult<()>` indicating success or failure.
+    #[allow(clippy::too_many_arguments)]
     fn gels(
         trans: GelsTransMode,
         m: usize,
@@ -185,6 +186,7 @@ extern "C" {
 }
 
 #[inline]
+#[allow(clippy::too_many_arguments)]
 unsafe fn dgels(
     trans: u8,
     m: i32,

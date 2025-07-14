@@ -16,7 +16,6 @@ use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::layout::row_major_stride_from_shape;
 use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
-use coe::Coerce;
 use num::traits::MulAdd;
 use paste::paste;
 
@@ -124,7 +123,7 @@ where
         // This is going to be the new global shape. All dimensions except the first one are the
         // same as the local shape. The first dimension is the number of global indices.
         let global_shape = {
-            let mut tmp = local_shape.clone();
+            let mut tmp = local_shape;
             tmp[0] = self.index_layout.number_of_global_indices();
             tmp
         };
@@ -194,7 +193,7 @@ where
         // This is going to be the new global shape. All dimensions except the first one are the
         // same as the local shape. The first dimension is the number of global indices.
         let global_shape = {
-            let mut tmp = local_shape.clone();
+            let mut tmp = local_shape;
             tmp[0] = self.index_layout.number_of_global_indices();
             tmp
         };
@@ -288,7 +287,7 @@ where
         let my_data = scatterv_root(comm, &counts, send_arr.data());
         // We wrap this data into an array view and then transpose it to get a standard column-major array.
         {
-            let mut local_shape = my_shape.clone();
+            let mut local_shape = my_shape;
             local_shape[0] = index_layout.number_of_local_indices();
             let local_arr = DynArray::new_from(&StridedSliceArray::from_shape_and_stride(
                 &my_data,

@@ -28,8 +28,6 @@ pub trait GatherToOne {
 ///
 /// This trait should be implemented on a standard array and produce a distributed array.
 pub trait ScatterFromOne {
-    /// The communicator type used for scattering.
-
     /// The output type after scattering the distributed array.
     type Output<'a, C>
     where

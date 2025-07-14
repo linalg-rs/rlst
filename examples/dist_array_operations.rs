@@ -3,11 +3,9 @@
 use std::rc::Rc;
 
 use approx::assert_relative_eq;
-use mpi;
-use mpi::traits::*;
-use rlst;
+use mpi::traits::Communicator;
 use rlst::dense::array::DynArray;
-use rlst::traits::*;
+use rlst::traits::{ArrayOpSin, GatherToAll, NormTwo, ScatterFromOne};
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();

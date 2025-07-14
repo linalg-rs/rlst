@@ -65,7 +65,7 @@ pub trait Trsm {
     /// - `lda`: The leading dimension of the matrix A.
     /// - `b`: The right-hand side matrix B. On exit contains the solution.
     /// - `ldb`: The leading dimension of the matrix B.
-    /// ** Returns:**
+    #[allow(clippy::too_many_arguments)]
     fn trsm(
         side: TrsmSide,
         uplo: TrsmUplo,

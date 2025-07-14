@@ -41,21 +41,18 @@ where
         let (m, n, lda) = (a.shape()[0], a.shape()[1], a.shape()[0]);
         let k = std::cmp::min(m, n);
 
-        let mut jpvt = vec![0 as i32; n];
+        let mut jpvt = vec![0_i32; n];
         let mut tau = vec![Item::zero(); k];
 
         match pivoting {
             EnablePivoting::No => {
-                for i in 0..n {
-                    jpvt[i] = i as i32 + 1; // LAPACK uses 1-based indexing
+                for (i, item) in jpvt.iter_mut().enumerate() {
+                    *item = 1 + i as i32;
                 }
                 <Item as Geqrf>::geqrf(m, n, a.data_mut(), lda, &mut tau)?;
                 Ok(QrDecomposition { a, jpvt, tau })
             }
             EnablePivoting::Yes => {
-                for i in 0..n {
-                    jpvt[i] = 0;
-                }
                 <Item as Geqp3>::geqp3(m, n, a.data_mut(), lda, &mut jpvt, &mut tau)?;
                 Ok(QrDecomposition { a, jpvt, tau })
             }

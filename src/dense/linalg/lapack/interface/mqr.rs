@@ -75,6 +75,7 @@ implement_transpose_to_char!(c64, b'C');
 /// - The Lapack info code if the function fails.
 pub trait Mqr: Sized {
     /// Apply an orthogonal or unitary matrix given through elementary reflectors.
+    #[allow(clippy::too_many_arguments)]
     fn mqr(
         side: MqrSide,
         trans: MqrTransMode,

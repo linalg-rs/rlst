@@ -69,6 +69,7 @@ pub trait SymmEig {
     }
 
     /// Compute the symmetric eigenvalue decomposition of a matrix.
+    #[allow(clippy::type_complexity)]
     fn eigh(
         &self,
         uplo: UpLo,
@@ -90,8 +91,10 @@ pub trait EigenvalueDecomposition {
     /// Compute the Schur decomposition of the matrix.
     /// Returns a tuple containing:
     /// - A block-upper triangular matrix `T`. The diagonal blocks are 1x1 or 2x2.
+    ///
     /// and encode the eigenvalues of the matrix.
     /// - A unitary matrix `Z` such that `A = Z * T * Z^H`, where `Z^H` is the conjugate transpose
+    #[allow(clippy::type_complexity)]
     fn schur(&self) -> RlstResult<(DynArray<Self::Item, 2>, DynArray<Self::Item, 2>)>;
 
     /// Compute the eigenvalues and eigenvectors of the matrix.
@@ -100,6 +103,7 @@ pub trait EigenvalueDecomposition {
     /// - A vector `lam` of eigenvalues.
     /// - An optional matrix `v` of right eigenvectors.
     /// - An optional matrix `w` of left eigenvectors.
+    #[allow(clippy::type_complexity)]
     fn eig(
         &self,
         mode: EigMode,
@@ -124,6 +128,7 @@ pub trait SingularvalueDecomposition {
     /// - A vector of singular values.
     /// - A matrix `U` containing the left singular vectors.
     /// - A matrix `Vh` containing the right singular vectors as rows.
+    #[allow(clippy::type_complexity)]
     fn svd(
         &self,
         mode: SvdMode,
@@ -137,15 +142,16 @@ pub trait SingularvalueDecomposition {
     ///
     /// **Arguments:**
     /// - `max_singular_values`: Maximum number of singular values to compute. If `None`, all
-    /// singular values are computed.
+    ///   singular values are computed.
     /// - `tol`: Relative tolerance for truncation. Singular values smaller or equal to `tol *
-    /// s[0]`, where `s[0]` is the largest singular value, will be discarded. Zero singular values
-    /// are always discarded.
+    ///   s[0]`, where `s[0]` is the largest singular value, will be discarded. Zero singular values
+    ///   are always discarded.
     ///
     /// Returns a tuple containing:
     /// - A vector of singular values
     /// - A matrix `U` containing the left singular vectors.
     /// - A matrix `Vh` containing the right singular vectors as rows.
+    #[allow(clippy::type_complexity)]
     fn svd_truncated(
         &self,
         max_singular_values: Option<usize>,

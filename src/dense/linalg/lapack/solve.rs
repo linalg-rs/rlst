@@ -47,7 +47,7 @@ where
 
         if m == n {
             // Square matrix case
-            Ok(self.lu()?.solve(TransMode::NoTrans, &rhs)?)
+            Ok(self.lu()?.solve(TransMode::NoTrans, rhs)?)
         } else {
             // Rectangular matrix case
 
@@ -61,7 +61,7 @@ where
             new_rhs
                 .r_mut()
                 .into_subview([0; NDIM], rhs.shape())
-                .fill_from(&rhs);
+                .fill_from(rhs);
 
             let n_rhs = if NDIM == 1 { 1 } else { rhs.shape()[1] };
 

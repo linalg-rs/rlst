@@ -41,7 +41,7 @@ impl<const NDIM: usize> BlockCyclicArrayDescriptor<NDIM> {
         let mut nlocal_blocks = [0; NDIM];
 
         for i in 0..NDIM {
-            nlocal_blocks[i] = (my_shape[i] + block_size[i] - 1) / block_size[i];
+            nlocal_blocks[i] = my_shape[i].div_ceil(block_size[i])
         }
 
         Self {
@@ -59,9 +59,12 @@ impl<const NDIM: usize> BlockCyclicArrayDescriptor<NDIM> {
 
 /// Definition of a distributed array.
 pub struct BlockCyclicArray<'a, C, ArrayImpl, const NDIM: usize> {
-    comm: &'a C,
-    local: Array<ArrayImpl, NDIM>,
-    desc: BlockCyclicArrayDescriptor<NDIM>,
+    /// Communicator that this array is distributed over.
+    pub comm: &'a C,
+    /// Local array on this process.
+    pub local: Array<ArrayImpl, NDIM>,
+    /// Descriptor that describes the distribution of the array.
+    pub desc: BlockCyclicArrayDescriptor<NDIM>,
 }
 
 impl<'a, C, ArrayImpl, const NDIM: usize> BlockCyclicArray<'a, C, ArrayImpl, NDIM>
@@ -69,7 +72,7 @@ where
     C: Communicator,
 {
     /// Create a new distributed array.
-    pub(crate) fn new(
+    pub fn new(
         comm: &'a C,
         local: Array<ArrayImpl, NDIM>,
         desc: BlockCyclicArrayDescriptor<NDIM>,
@@ -111,8 +114,8 @@ macro_rules! dist_array {
 /// - `iproc`: The rank of the process.
 /// - `isrcproc`: The rank of the source process (the process that owns the first block).
 /// - `nprocs`: The total number of processes.
-/// **Returns:**
-/// The number of rows or columns that the process `iproc` should own.
+///
+/// Returns the number of rows or columns that the process `iproc` should own.
 fn numroc(n: usize, nb: usize, iproc: usize, isrcproc: usize, nprocs: usize) -> usize {
     // The processes distance from the source process.
     let mydist = (nprocs + iproc - isrcproc) % nprocs;
@@ -180,6 +183,6 @@ mod test {
         let universe = mpi::initialize().unwrap();
         let world = universe.world();
 
-        let dist_array = dist_array!(2, f64, [100, 100], [10, 10], [1, 1], &world);
+        let _dist_array = dist_array!(2, f64, [100, 100], [10, 10], [1, 1], &world);
     }
 }

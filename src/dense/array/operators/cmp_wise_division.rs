@@ -2,8 +2,6 @@
 
 use std::ops::Div;
 
-use lapack::Select1C32;
-
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},

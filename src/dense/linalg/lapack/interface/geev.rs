@@ -35,6 +35,7 @@ pub enum JobVr {
 /// ?geev - Compute the eigenvalues and, optionally, the eigenvectors of a general matrix.
 pub trait Geev: RlstScalar {
     /// Compute the eigenvalues and, optionally, the eigenvectors of a general matrix.
+    #[allow(clippy::too_many_arguments)]
     fn geev(
         jobvl: JobVl,
         jobvr: JobVr,

@@ -13,7 +13,7 @@ use crate::base_types::{c32, c64, LapackError};
 /// - `n`: Number of columns in the matrix `a`.
 /// - `a`: The matrix to be factored, stored in column-major order.
 /// - `ipiv`: Output vector of pivot indices, which indicates the row swaps performed during.
-///           `ipiv` must have length `min(m, n)`.
+///   `ipiv` must have length `min(m, n)`.
 /// - `lda`: Leading dimension of the matrix `a`.
 ///
 pub trait Getrf: Sized {

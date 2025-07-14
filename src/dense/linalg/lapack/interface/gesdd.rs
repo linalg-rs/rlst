@@ -26,6 +26,7 @@ pub trait Gesdd: RlstScalar {
     /// Perform a singular value decomposition (SVD) of a matrix `a` with dimensions `m` x `n`.
     /// If `jobz` is `JobZ::N`, the singular vectors are not computed and `u` and `vt` can be
     /// `None`.
+    #[allow(clippy::too_many_arguments)]
     fn gesdd(
         jobz: JobZ,
         m: usize,

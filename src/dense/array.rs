@@ -4,8 +4,6 @@
 //! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
 //! (e.g. `f64`), and implemented through `ArrayImpl`.
 
-use rlst_proc_macro::rlst_static_type;
-
 use crate::{
     dense::{
         base_array::BaseArray,
@@ -397,7 +395,7 @@ where
         DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
     {
         let mut output = empty_array::<Item, NDIM>();
-        output.fill_from_resize(&arr);
+        output.fill_from_resize(arr);
         output
     }
 }
@@ -426,8 +424,8 @@ where
     type ArrayImpl = ArrayImpl;
 
     fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
-        let mut output = DynArray::new_from(&arr);
-        output.fill_from(&arr);
+        let mut output = DynArray::new_from(arr);
+        output.fill_from(arr);
         output
     }
 }
@@ -447,7 +445,7 @@ where
             ArrayContainer::<ArrayImpl::Item, N>::new(),
             arr.shape(),
         ));
-        output.fill_from(&arr);
+        output.fill_from(arr);
         output
     }
 }
@@ -477,7 +475,7 @@ where
 
     fn dispatch(&self, arr: &Array<Self::ArrayImpl, NDIM>) -> Self::Output {
         let mut output = StridedDynArray::row_major(arr.shape());
-        output.fill_from(&arr);
+        output.fill_from(arr);
         output
     }
 }
@@ -498,7 +496,7 @@ where
             arr.shape(),
             row_major_stride_from_shape(arr.shape()),
         ));
-        output.fill_from(&arr);
+        output.fill_from(arr);
         output
     }
 }

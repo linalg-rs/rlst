@@ -361,8 +361,7 @@ macro_rules! implement_eigendecomposition_tests {
             // Test the left eigenvectors
 
             // First convert a to a complex matrix
-
-            let a_complex = a.to_type::<<$scalar as RlstScalar>::Complex>().eval();
+            let a_complex = ToType::<<$scalar as RlstScalar>::Complex>::into_type(a).eval();
 
             // Now create a diagonal matrix from the eigenvalues
 

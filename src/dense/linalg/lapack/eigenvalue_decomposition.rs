@@ -124,9 +124,9 @@ where
             a.data_mut(),
             n,
             w.data_mut(),
-            vl.as_mut().and_then(|v| Some(v.data_mut())),
+            vl.as_mut().map(|v| v.data_mut()),
             n,
-            vr.as_mut().and_then(|v| Some(v.data_mut())),
+            vr.as_mut().map(|v| v.data_mut()),
             n,
         )?;
 
