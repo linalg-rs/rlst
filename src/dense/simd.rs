@@ -130,6 +130,12 @@ impl<T: RlstSimd, S: Simd> SimdFor<T, S> {
         T::simd_exp(self.simd, value)
     }
 
+    /// Compute the natural logarithm of a Simd vector.
+    #[inline(always)]
+    pub fn log(self, value: T::Scalars<S>) -> T::Scalars<S> {
+        T::simd_log(self.simd, value)
+    }
+
     /// Compute the square root of a Simd vector.
     #[inline(always)]
     pub fn sqrt(self, value: T::Scalars<S>) -> T::Scalars<S> {
@@ -318,6 +324,9 @@ pub trait RlstSimd: Pod + Send + Sync + num::Zero + 'static {
 
     /// Compute the base e exponential of a Simd vector.
     fn simd_exp<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
+
+    /// Compute the approximate log of each element in the register.
+    fn simd_log<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
 
     /// Compute the square root of each element in the register.
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S>;
@@ -653,6 +662,35 @@ impl RlstSimd for f32 {
             let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
             for (out, x) in itertools::izip!(out, x) {
                 *out = x.exp();
+            }
+        }
+        out
+    }
+
+    #[inline(always)]
+    fn simd_log<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f32; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_log_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f32; 8] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_log_f32(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.splat_f32s(0.0);
+        {
+            let out: &mut [f32] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f32] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.ln();
             }
         }
         out
@@ -1034,6 +1072,36 @@ impl RlstSimd for f64 {
     }
 
     #[inline(always)]
+    fn simd_log<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", feature = "sleef"))]
+        if coe::is_same::<S, pulp::aarch64::Neon>() {
+            let value: [f64; 2] = bytemuck::cast(value);
+            let out = unsafe { sleef_neon::rlst_neon_log_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        #[cfg(all(target_arch = "x86_64", feature = "sleef"))]
+        if coe::is_same::<S, pulp::x86::V3>() {
+            let value: [f64; 4] = bytemuck::cast(value);
+            let out = unsafe { sleef_avx::rlst_avx_log_f64(value.as_ptr()) };
+
+            return bytemuck::cast(out);
+        }
+
+        let mut out = simd.splat_f64s(0.0);
+        {
+            let out: &mut [f64] = bytemuck::cast_slice_mut(std::slice::from_mut(&mut out));
+            let x: &[f64] = bytemuck::cast_slice(std::slice::from_ref(&value));
+            for (out, x) in itertools::izip!(out, x) {
+                *out = x.ln();
+            }
+        }
+        out
+    }
+
+
+    #[inline(always)]
     fn simd_sqrt<S: Simd>(simd: S, value: Self::Scalars<S>) -> Self::Scalars<S> {
         #[cfg(target_arch = "x86_64")]
         {
@@ -1142,6 +1210,97 @@ mod tests {
     use coe::{coerce_static, Coerce};
     use paste;
     use rand::prelude::*;
+
+    #[test]
+    fn test_simd_log() {
+        let nsamples = 1001;
+
+        trait Tolerance: RlstScalar<Real = Self> {
+            const TOL: Self;
+        }
+
+        impl Tolerance for f32 {
+            const TOL: f32 = 1E-6;
+        }
+
+        impl Tolerance for f64 {
+            const TOL: f64 = 1E-13;
+        }
+
+        struct Impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> {
+            rng: StdRng,
+            nsamples: usize,
+            _marker: PhantomData<T>,
+        }
+
+        impl<T: RlstScalar<Real = T> + RlstSimd + Tolerance> pulp::WithSimd for Impl<T> {
+            type Output = ();
+
+            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+                let Self {
+                    mut rng, nsamples, ..
+                } = self;
+
+                let samples = (0..nsamples)
+                    .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                    .collect::<Vec<_>>();
+
+                let mut actual = vec![T::default(); nsamples];
+
+                let (value_head, value_tail) =
+                    <T as RlstSimd>::as_simd_slice::<S>(samples.as_slice());
+                let (actual_head, actual_tail) =
+                    <T as RlstSimd>::as_simd_slice_mut::<S>(actual.as_mut_slice());
+
+                fn impl_slice<T: RlstScalar<Real = T> + RlstSimd + Tolerance, S: Simd>(
+                    simd: S,
+                    values: &[<T as RlstSimd>::Scalars<S>],
+                    actual: &mut [<T as RlstSimd>::Scalars<S>],
+                ) {
+                    let simd = SimdFor::<T, S>::new(simd);
+
+                    for (&v, a) in itertools::izip!(values, actual) {
+                        *a = simd.log(v);
+                    }
+                }
+
+                impl_slice::<T, _>(simd, value_head, actual_head);
+                impl_slice::<T, _>(
+                    pulp::Scalar::new(),
+                    value_tail.coerce(),
+                    actual_tail.coerce(),
+                );
+
+                if coe::is_same::<T, f32>() {
+                    for (v, a) in itertools::izip!(samples, actual) {
+                        let v: f32 = coerce_static(v);
+                        let a: f32 = coerce_static(a);
+                        assert_relative_eq!(v.ln(), a, max_relative = f32::TOL);
+                    }
+                } else if coe::is_same::<T, f64>() {
+                    for (v, a) in itertools::izip!(samples, actual) {
+                        let v: f64 = coerce_static(v);
+                        let a: f64 = coerce_static(a);
+                        assert_relative_eq!(v.ln(), a, max_relative = f64::TOL);
+                    }
+                } else {
+                    panic!("Unsupported type");
+                }
+            }
+        }
+
+        pulp::Arch::new().dispatch(Impl::<f32> {
+            rng: StdRng::seed_from_u64(0),
+            nsamples,
+            _marker: PhantomData,
+        });
+
+        pulp::Arch::new().dispatch(Impl::<f64> {
+            rng: StdRng::seed_from_u64(0),
+            nsamples,
+            _marker: PhantomData,
+        });
+    }
 
     #[test]
     fn test_simd_approx_recip() {
