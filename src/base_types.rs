@@ -11,6 +11,7 @@ use thiserror::Error;
 use crate::traits::number_relations::{IsGreaterByOne, IsGreaterZero, IsSmallerByOne};
 use crate::ContainerType;
 use crate::ContainerTypeSelector;
+use crate::IsSmallerThan;
 
 /// The Rlst error type.
 #[derive(Error, Debug)]
@@ -185,6 +186,33 @@ impl IsSmallerByOne<17> for NumberType<16> {}
 impl IsSmallerByOne<18> for NumberType<17> {}
 impl IsSmallerByOne<19> for NumberType<18> {}
 impl IsSmallerByOne<20> for NumberType<19> {}
+
+impl IsSmallerThan<1> for NumberType<0> {}
+
+impl IsSmallerThan<2> for NumberType<0> {}
+impl IsSmallerThan<2> for NumberType<1> {}
+
+impl IsSmallerThan<3> for NumberType<0> {}
+impl IsSmallerThan<3> for NumberType<1> {}
+impl IsSmallerThan<3> for NumberType<2> {}
+
+impl IsSmallerThan<4> for NumberType<0> {}
+impl IsSmallerThan<4> for NumberType<1> {}
+impl IsSmallerThan<4> for NumberType<2> {}
+impl IsSmallerThan<4> for NumberType<3> {}
+
+impl IsSmallerThan<5> for NumberType<0> {}
+impl IsSmallerThan<5> for NumberType<1> {}
+impl IsSmallerThan<5> for NumberType<2> {}
+impl IsSmallerThan<5> for NumberType<3> {}
+impl IsSmallerThan<5> for NumberType<4> {}
+
+impl IsSmallerThan<6> for NumberType<0> {}
+impl IsSmallerThan<6> for NumberType<1> {}
+impl IsSmallerThan<6> for NumberType<2> {}
+impl IsSmallerThan<6> for NumberType<3> {}
+impl IsSmallerThan<6> for NumberType<4> {}
+impl IsSmallerThan<6> for NumberType<5> {}
 
 /// Determine whether a matrix is upper or lower triangular.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

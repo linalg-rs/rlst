@@ -6,3 +6,6 @@ pub trait IsGreaterByOne<const N: usize> {}
 pub trait IsSmallerByOne<const N: usize> {}
 /// Is greater than zero
 pub trait IsGreaterZero {}
+
+/// Is smaller than a given number a
+pub trait IsSmallerThan<const N: usize> {}

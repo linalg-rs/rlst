@@ -9,36 +9,24 @@ use super::{
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIteratorByValue: BaseItem {
-    /// Iterator
-    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], Self::Item)>
-    where
-        Self: 'a;
     /// Get iterator
-    fn iter_aij_value(&self) -> Self::Iter<'_>;
+    fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_;
 }
 
 /// Iterate through the elements in `([i, j], &data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIteratorByRef: BaseItem {
-    /// Iterator
-    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], &'a Self::Item)>
-    where
-        Self: 'a;
     /// Get iterator
-    fn iter_aij_ref(&self) -> Self::Iter<'_>;
+    fn iter_aij_ref(&self) -> impl Iterator<Item = ([usize; 2], &Self::Item)> + '_;
 }
 
 /// Iterate through the elements in `(i, j, &mut data)` form, where
 /// `i` is row, `j` is column, and `data` is the corresponding
 /// element.
 pub trait AijIteratorMut: BaseItem {
-    /// Iterator
-    type Iter<'a>: std::iter::Iterator<Item = ([usize; 2], &'a mut Self::Item)>
-    where
-        Self: 'a;
     /// Get iterator
-    fn iter_aij_mut(&mut self) -> Self::Iter<'_>;
+    fn iter_aij_mut(&mut self) -> impl Iterator<Item = ([usize; 2], &mut Self::Item)> + '_;
 }
 
 /// Helper trait that returns from an enumeration iterator a new iterator

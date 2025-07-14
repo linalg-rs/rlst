@@ -487,12 +487,7 @@ impl<ArrayImpl> AijIteratorByValue for Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<2>,
 {
-    type Iter<'a>
-        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorByValue<'a, ArrayImpl, 2>>, 2>
-    where
-        Self: 'a;
-
-    fn iter_aij_value(&self) -> Self::Iter<'_> {
+    fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_ {
         let iter = ArrayDefaultIteratorByValue::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
     }
@@ -502,12 +497,7 @@ impl<ArrayImpl> AijIteratorByRef for Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessByRef + Shape<2>,
 {
-    type Iter<'a>
-        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorByRef<'a, ArrayImpl, 2>>, 2>
-    where
-        Self: 'a;
-
-    fn iter_aij_ref(&self) -> Self::Iter<'_> {
+    fn iter_aij_ref(&self) -> impl Iterator<Item = ([usize; 2], &Self::Item)> + '_ {
         let iter = ArrayDefaultIteratorByRef::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
     }
@@ -517,12 +507,7 @@ impl<ArrayImpl> AijIteratorMut for Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<2>,
 {
-    type Iter<'a>
-        = MultiIndexIterator<std::iter::Enumerate<ArrayDefaultIteratorMut<'a, ArrayImpl, 2>>, 2>
-    where
-        Self: 'a;
-
-    fn iter_aij_mut(&mut self) -> Self::Iter<'_> {
+    fn iter_aij_mut(&mut self) -> impl Iterator<Item = ([usize; 2], &mut Self::Item)> + '_ {
         let shape = self.shape();
         let iter = ArrayDefaultIteratorMut::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), shape)

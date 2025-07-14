@@ -2,7 +2,7 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 #![warn(missing_docs)]
 
-//pub mod sparse_mat;
+pub mod sparse_mat;
 pub mod tools;
 
 #[cfg(feature = "mpi")]
