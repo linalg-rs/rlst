@@ -91,22 +91,23 @@ pub trait AsApply: OperatorBase {
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     );
 
     /// Apply an operator to a vector
     fn apply<ContainerIn: ElementContainer<E = <Self::Domain as LinearSpace>::E>>(
         &self,
         x: Element<ContainerIn>,
+        trans_mode: crate::TransMode,
     ) -> ElementType<<Self::Range as LinearSpace>::E> {
         let mut y = zero_element(self.range());
-
         self.apply_extended(
             <<Self::Range as LinearSpace>::F as One>::one(),
             x,
             <<Self::Range as LinearSpace>::F as Zero>::zero(),
             y.r_mut(),
+            trans_mode,
         );
-
         y
     }
 }
@@ -144,8 +145,9 @@ impl<Op: AsApply> AsApply for RlstOperatorReference<'_, Op> {
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.0.apply_extended(alpha, x, beta, y);
+        self.0.apply_extended(alpha, x, beta, y, trans_mode);
     }
 }
 
@@ -182,8 +184,9 @@ impl<OpImpl: AsApply> AsApply for Operator<OpImpl> {
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.0.apply_extended(alpha, x, beta, y);
+        self.0.apply_extended(alpha, x, beta, y, trans_mode);
     }
 }
 
@@ -351,10 +354,17 @@ impl<
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         mut y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.0.apply_extended(alpha, x.r(), beta, y.r_mut());
-        self.1
-            .apply_extended(alpha, x, <<Self::Range as LinearSpace>::F as One>::one(), y);
+        self.0
+            .apply_extended(alpha, x.r(), beta, y.r_mut(), trans_mode);
+        self.1.apply_extended(
+            alpha,
+            x,
+            <<Self::Range as LinearSpace>::F as One>::one(),
+            y,
+            trans_mode,
+        );
     }
 }
 
@@ -394,8 +404,10 @@ impl<Op: AsApply> AsApply for ScalarTimesOperator<Op> {
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.0.apply_extended(self.1 * alpha, x, beta, y);
+        self.0
+            .apply_extended(self.1 * alpha, x, beta, y, trans_mode);
     }
 }
 
@@ -448,8 +460,15 @@ impl<Space: LinearSpace, Op1: AsApply<Range = Space>, Op2: AsApply<Domain = Spac
         x: Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         y: Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.op2.apply_extended(alpha, self.op1.apply(x), beta, y);
+        self.op2.apply_extended(
+            alpha,
+            self.op1.apply(x, crate::TransMode::NoTrans),
+            beta,
+            y,
+            trans_mode,
+        );
     }
 }
 
