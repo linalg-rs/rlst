@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build docs
-        run: RUSTDOCFLAGS="-Zunstable-options" cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi,strict"
+        run: cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi,strict"
 
       - name: Set file permissions
         run: |
