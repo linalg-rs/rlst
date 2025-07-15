@@ -2,7 +2,7 @@
 
 use crate::traits::ArrayIteratorByValue;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
-use crate::{AijIteratorMut, RawAccess, RawAccessMut};
+use crate::{AijIteratorMut, Len, Nonzeros, RawAccess, RawAccessMut, SparseMatrixType};
 use itertools::{izip, Itertools};
 
 /// A CSR matrix
@@ -40,6 +40,18 @@ impl<Item> Shape<2> for CsrMatrix<Item> {
 
 impl<Item> BaseItem for CsrMatrix<Item> {
     type Item = Item;
+}
+
+impl<Item> Nonzeros for CsrMatrix<Item> {
+    fn nnz(&self) -> usize {
+        self.data.len()
+    }
+}
+
+impl<Item> SparseMatrixType for CsrMatrix<Item> {
+    fn mat_type(&self) -> SparseMatType {
+        self.mat_type
+    }
 }
 
 impl<Item> AijIteratorByValue for CsrMatrix<Item>
