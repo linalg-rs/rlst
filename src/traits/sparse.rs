@@ -17,10 +17,15 @@ pub trait SparseMatrixType {
 }
 
 /// Construct a sparse matrix from an iterator of (i, j, value) tuples.
-pub trait FromAijIterator<I: Iterator<Item = ([usize; 2], Self::Item)>>
+pub trait FromAij
 where
     Self: BaseItem,
 {
     /// Create a sparse matrix from an iterator of (i, j, value) tuples.
-    fn from_aij_iter(iter: I, shape: [usize; 2]) -> Self;
+    fn from_aij(
+        shape: [usize; 2],
+        rows: &[usize],
+        cols: &[usize],
+        data: &[<Self as BaseItem>::Item],
+    ) -> Self;
 }

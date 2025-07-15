@@ -33,6 +33,11 @@ impl<Item: Default + Clone> VectorContainer<Item> {
             data: vec![<Item as Default>::default(); nelems],
         }
     }
+
+    #[inline(always)]
+    pub fn from_vec(data: Vec<Item>) -> VectorContainer<Item> {
+        VectorContainer::<Item> { data }
+    }
 }
 
 impl<Item> ContainerTypeHint for VectorContainer<Item> {

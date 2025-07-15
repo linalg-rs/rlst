@@ -98,6 +98,18 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
         let size = shape.iter().product();
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
+
+    #[inline(always)]
+    pub fn from_shape_and_vec(shape: [usize; NDIM], data: Vec<Item>) -> Self {
+        assert_eq!(
+            data.len(),
+            shape.iter().product::<usize>(),
+            "Data length does not match the shape: {} != {}",
+            data.len(),
+            shape.iter().product::<usize>()
+        );
+        Self::new(BaseArray::new(VectorContainer::from_vec(data), shape))
+    }
 }
 
 impl<Item: Clone + Default, const NDIM: usize>

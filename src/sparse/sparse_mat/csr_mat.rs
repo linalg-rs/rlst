@@ -1,9 +1,13 @@
 //! Definition of CSR matrices.
 
+use std::ops::AddAssign;
+
+use crate::sparse::tools::normalize_aij;
 use crate::traits::ArrayIteratorByValue;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
-use crate::{AijIteratorMut, Len, Nonzeros, RawAccess, RawAccessMut, SparseMatrixType};
+use crate::{AijIteratorMut, FromAij, Len, Nonzeros, RawAccess, RawAccessMut, SparseMatrixType};
 use itertools::{izip, Itertools};
+use num::Zero;
 
 /// A CSR matrix
 pub struct CsrMatrix<Item> {
@@ -29,6 +33,52 @@ impl<Item> CsrMatrix<Item> {
             indptr,
             data,
         }
+    }
+}
+
+impl<Item: Zero + AddAssign + PartialEq + Copy + Default> FromAij for CsrMatrix<Item> {
+    fn from_aij(shape: [usize; 2], rows: &[usize], cols: &[usize], data: &[Item]) -> Self {
+        let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
+
+        let max_col = if let Some(col) = cols.iter().max() {
+            *col
+        } else {
+            0
+        };
+        let max_row = if let Some(row) = rows.last() { *row } else { 0 };
+
+        assert!(
+            max_col < shape[1],
+            "Maximum column {} must be smaller than `shape.1` {}",
+            max_col,
+            shape[1]
+        );
+
+        assert!(
+            max_row < shape[0],
+            "Maximum row {} must be smaller than `shape.0` {}",
+            max_row,
+            shape[0]
+        );
+
+        let nelems = data.len();
+
+        let mut indptr = Vec::<usize>::with_capacity(1 + shape[0]);
+
+        let mut count: usize = 0;
+        for row in 0..(shape[0]) {
+            indptr.push(count);
+            while count < nelems && row == rows[count] {
+                count += 1;
+            }
+        }
+        indptr.push(count);
+
+        let indptr = DynArray::from_shape_and_vec([1 + shape[0]], cols);
+        let indices = DynArray::from_shape_and_vec([nelems], rows);
+        let data = DynArray::from_shape_and_vec([nelems], data);
+
+        Self::new(shape, indices, indptr, data)
     }
 }
 
