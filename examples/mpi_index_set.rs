@@ -1,5 +1,4 @@
 //! Setup an index range.
-//? mpirun -n {{NPROCESSES}} --features "mpi"
 
 use rlst::prelude::*;
 
