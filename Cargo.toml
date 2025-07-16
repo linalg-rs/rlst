@@ -88,22 +88,40 @@ harness = false
 name = "mpi_gather_to_all_vector"
 required-features = ["mpi"]
 
+[package.metadata.example.mpi_gather_to_all_vector.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
 [[example]]
 name = "mpi_gather_vector"
 required-features = ["mpi"]
+
+[package.metadata.example.mpi_gather_vector.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
 
 [[example]]
 name = "mpi_index_set"
 required-features = ["mpi"]
 
+[package.metadata.example.mpi_index_set.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
 [[example]]
 name = "mpi_scatter_vector"
 required-features = ["mpi"]
+
+[package.metadata.example.mpi_scatter_vector.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
 
 [[example]]
 name = "distributed_csr_matmul"
 required-features = ["mpi"]
 
+[package.metadata.example.distributed_csr_matmul.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
 [[example]]
 name = "cg_distributed"
 required-features = ["mpi"]
+
+[package.metadata.example.cg_distributed.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"

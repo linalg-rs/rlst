@@ -1,5 +1,4 @@
 //! Gather a vector to all ranks.
-//? mpirun -n {{NPROCESSES}} --features "mpi"
 
 mod approx_inv_sqrt_accuracy;
 
