@@ -99,6 +99,7 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
         Self::new(BaseArray::new(VectorContainer::new(size), shape))
     }
 
+    /// Create a new heap allocated array by providing a shape and a vector of data.
     #[inline(always)]
     pub fn from_shape_and_vec(shape: [usize; NDIM], data: Vec<Item>) -> Self {
         assert_eq!(

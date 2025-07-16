@@ -35,6 +35,7 @@ impl<Item: Default + Clone> VectorContainer<Item> {
     }
 
     #[inline(always)]
+    /// Create a data container by taking ownership of a vector.
     pub fn from_vec(data: Vec<Item>) -> VectorContainer<Item> {
         VectorContainer::<Item> { data }
     }

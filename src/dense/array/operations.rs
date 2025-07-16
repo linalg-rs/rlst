@@ -33,7 +33,7 @@ use crate::{
 use super::iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
     ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
-    ColIteratorMut, MultiIndexIterator,
+    ColIteratorMut,
 };
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
