@@ -1,6 +1,6 @@
 //!  Examples for using sparse matrices.
 
-use rlst::{self, sparse::csr_mat::CsrMatrix, AijIteratorByValue, ArrayOpAbs, FromAij, Shape};
+use rlst::{self, sparse::csr_mat::CsrMatrix, Abs, AijIteratorByValue, FromAij, Shape};
 
 fn main() {
     // This is a placeholder for the main function.
@@ -21,5 +21,8 @@ fn main() {
     }
 
     println!("Apply operator.");
-    let csr_abs = csr_mat.op().abs();
+    let csr_abs = csr_mat.op().abs().into_csr();
+    for ([i, j], v) in csr_abs.iter_aij_value() {
+        println!("Row: {}, Col: {}, Value: {}", i, j, v);
+    }
 }

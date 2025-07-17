@@ -15,8 +15,8 @@ where
     T: RlstScalar,
 {
     type Output = Self;
-    fn conj(&self) -> Self {
-        RlstScalar::conj(self)
+    fn conj(self) -> Self {
+        RlstScalar::conj(&self)
     }
 }
 
@@ -24,8 +24,8 @@ macro_rules! impl_conj {
     ($dtype:ty) => {
         impl Conj for $dtype {
             type Output = $dtype;
-            fn conj(&self) -> $dtype {
-                *self
+            fn conj(self) -> $dtype {
+                self
             }
         }
     };
@@ -47,32 +47,32 @@ impl_conj!(usize);
 impl Max for f32 {
     type Output = f32;
 
-    fn max(&self, other: &Self) -> Self::Output {
-        f32::max(*self, *other)
+    fn max(self, other: Self) -> Self::Output {
+        f32::max(self, other)
     }
 }
 
 impl Max for f64 {
     type Output = f64;
 
-    fn max(&self, other: &Self) -> Self::Output {
-        f64::max(*self, *other)
+    fn max(self, other: Self) -> Self::Output {
+        f64::max(self, other)
     }
 }
 
 impl Min for f32 {
     type Output = f32;
 
-    fn min(&self, other: &Self) -> Self::Output {
-        f32::min(*self, *other)
+    fn min(self, other: Self) -> Self::Output {
+        f32::min(self, other)
     }
 }
 
 impl Min for f64 {
     type Output = f64;
 
-    fn min(&self, other: &Self) -> Self::Output {
-        f64::min(*self, *other)
+    fn min(self, other: Self) -> Self::Output {
+        f64::min(self, other)
     }
 }
 
@@ -80,8 +80,8 @@ macro_rules! impl_max {
     ($dtype:ty) => {
         impl Max for $dtype {
             type Output = $dtype;
-            fn max(&self, other: &$dtype) -> $dtype {
-                std::cmp::max(*self, *other)
+            fn max(self, other: $dtype) -> $dtype {
+                std::cmp::max(self, other)
             }
         }
     };
@@ -104,8 +104,8 @@ macro_rules! impl_min {
     ($dtype:ty) => {
         impl Min for $dtype {
             type Output = $dtype;
-            fn min(&self, other: &$dtype) -> $dtype {
-                std::cmp::min(*self, *other)
+            fn min(self, other: $dtype) -> $dtype {
+                std::cmp::min(self, other)
             }
         }
     };
@@ -127,16 +127,16 @@ impl_min!(usize);
 impl Abs for c32 {
     type Output = f32;
 
-    fn abs(&self) -> Self::Output {
-        RlstScalar::abs(*self)
+    fn abs(self) -> Self::Output {
+        RlstScalar::abs(self)
     }
 }
 
 impl Abs for c64 {
     type Output = f64;
 
-    fn abs(&self) -> Self::Output {
-        RlstScalar::abs(*self)
+    fn abs(self) -> Self::Output {
+        RlstScalar::abs(self)
     }
 }
 
@@ -144,8 +144,8 @@ macro_rules! impl_abs {
     ($dtype:ty) => {
         impl Abs for $dtype {
             type Output = $dtype;
-            fn abs(&self) -> $dtype {
-                <$dtype>::abs(*self)
+            fn abs(self) -> $dtype {
+                <$dtype>::abs(self)
             }
         }
     };
@@ -155,8 +155,8 @@ macro_rules! impl_abs_ident {
     ($dtype:ty) => {
         impl Abs for $dtype {
             type Output = $dtype;
-            fn abs(&self) -> $dtype {
-                *self
+            fn abs(self) -> $dtype {
+                self
             }
         }
     };
@@ -181,16 +181,16 @@ impl_abs_ident!(usize);
 impl AbsSquare for c32 {
     type Output = f32;
 
-    fn abs_square(&self) -> Self::Output {
-        <c32 as RlstScalar>::square(*self)
+    fn abs_square(self) -> Self::Output {
+        <c32 as RlstScalar>::square(self)
     }
 }
 
 impl AbsSquare for c64 {
     type Output = f64;
 
-    fn abs_square(&self) -> Self::Output {
-        <c64 as RlstScalar>::square(*self)
+    fn abs_square(self) -> Self::Output {
+        <c64 as RlstScalar>::square(self)
     }
 }
 
@@ -199,8 +199,8 @@ macro_rules! impl_abs_square {
         impl AbsSquare for $dtype {
             type Output = $dtype;
 
-            fn abs_square(&self) -> $dtype {
-                *self * *self
+            fn abs_square(self) -> $dtype {
+                self * self
             }
         }
     };
@@ -224,8 +224,8 @@ impl_abs_square!(usize);
 impl<T: Mul<Output = T> + Copy> Square for T {
     type Output = T;
 
-    fn square(&self) -> Self::Output {
-        *self * *self
+    fn square(self) -> Self::Output {
+        self * self
     }
 }
 
@@ -234,8 +234,8 @@ macro_rules! impl_unary_op {
         impl<T: RlstScalar> $trait_name for T {
             type Output = T;
 
-            fn $method_name(&self) -> Self::Output {
-                <T as RlstScalar>::$method_name(*self)
+            fn $method_name(self) -> Self::Output {
+                <T as RlstScalar>::$method_name(self)
             }
         }
     };

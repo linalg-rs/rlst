@@ -220,7 +220,7 @@ where
         assert_eq!(self.len(), other.len());
         izip!(self.iter_value(), other.iter_value())
             .fold(Default::default(), |acc, (elem, other_elem)| {
-                MulAdd::mul_add(elem, Conj::conj(&other_elem), acc)
+                MulAdd::mul_add(elem, Conj::conj(other_elem), acc)
             })
     }
 }
@@ -237,23 +237,23 @@ where
     fn norm_sup(&self) -> Self::Output {
         self.iter_value()
             .fold(<Self::Output as Default>::default(), |acc, elem| {
-                Max::max(&acc, &elem.abs())
+                Max::max(acc, elem.abs())
             })
     }
 }
 
-impl<ArrayImpl> AbsSquare for Array<ArrayImpl, 1>
-where
-    Self: ArrayIteratorByValue,
-    <Self as BaseItem>::Item: AbsSquare,
-    <<Self as BaseItem>::Item as AbsSquare>::Output: Sum,
-{
-    type Output = <<Self as BaseItem>::Item as AbsSquare>::Output;
+// impl<ArrayImpl> AbsSquare for Array<ArrayImpl, 1>
+// where
+//     Self: ArrayIteratorByValue,
+//     <Self as BaseItem>::Item: AbsSquare,
+//     <<Self as BaseItem>::Item as AbsSquare>::Output: Sum,
+// {
+//     type Output = <<Self as BaseItem>::Item as AbsSquare>::Output;
 
-    fn abs_square(&self) -> Self::Output {
-        self.iter_value().map(|elem| elem.abs_square()).sum()
-    }
-}
+//     fn abs_square(&self) -> Self::Output {
+//         self.iter_value().map(|elem| elem.abs_square()).sum()
+//     }
+// }
 
 impl<ArrayImpl> NormOne for Array<ArrayImpl, 1>
 where
@@ -273,15 +273,19 @@ where
     }
 }
 
-impl<ArrayImpl> NormTwo for Array<ArrayImpl, 1>
+impl<Item, ArrayImpl> NormTwo for Array<ArrayImpl, 1>
 where
-    Array<ArrayImpl, 1>: AbsSquare,
-    <Array<ArrayImpl, 1> as AbsSquare>::Output: Sqrt,
+    Array<ArrayImpl, 1>: ArrayIteratorByValue<Item = Item>,
+    Item: AbsSquare,
+    <Item as AbsSquare>::Output: Sqrt + Sum,
 {
-    type Output = <<Self as AbsSquare>::Output as Sqrt>::Output;
+    type Output = <<Item as AbsSquare>::Output as Sqrt>::Output;
 
     fn norm_2(&self) -> Self::Output {
-        self.abs_square().sqrt()
+        self.iter_value()
+            .map(|elem| elem.abs_square())
+            .sum::<<Item as AbsSquare>::Output>()
+            .sqrt()
     }
 }
 

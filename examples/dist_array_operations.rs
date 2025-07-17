@@ -5,7 +5,8 @@ use std::rc::Rc;
 use approx::assert_relative_eq;
 use mpi::traits::Communicator;
 use rlst::dense::array::DynArray;
-use rlst::traits::{ArrayOpSin, GatherToAll, NormTwo, ScatterFromOne};
+use rlst::traits::{GatherToAll, NormTwo, ScatterFromOne};
+use rlst::Sin;
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();

@@ -575,8 +575,8 @@ macro_rules! implement_test_solve {
 
             let max_res = (dot!(a.r(), x_actual.r()) - rhs.r())
                 .iter_value()
-                .map(|v| v.abs())
-                .fold(0.0, |acc, v| Max::max(&acc, &v));
+                .map(|v| rlst::RlstScalar::abs(v))
+                .fold(0.0, |acc, v| Max::max(acc, v));
 
             assert!(max_res < $tol);
         }

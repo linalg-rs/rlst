@@ -4,7 +4,7 @@ use std::ops::AddAssign;
 
 use num::Zero;
 
-use crate::{Abs, ArrayOpAbs, BaseItem, FromAij, Shape};
+use crate::{Abs, BaseItem, FromAij, Shape};
 
 use super::{csr_mat::CsrMatrix, unary_aij_operator::UnaryAijOperator};
 
@@ -62,7 +62,7 @@ where
     type Item = Item;
 }
 
-impl<Item, I> ArrayOpAbs for SparseMatOpIterator<Item, I>
+impl<Item, I> Abs for SparseMatOpIterator<Item, I>
 where
     Item: Copy + Default + Abs,
     <Item as Abs>::Output: Copy + Default + PartialEq,

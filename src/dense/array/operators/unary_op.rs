@@ -93,9 +93,8 @@ macro_rules! impl_unary_op_trait {
     ($name:ident, $method_name:ident) => {
         paste! {
 
-        use crate::traits::array::[<ArrayOp $name>];
         use crate::traits::number_traits::$name;
-        impl<Item: $name, ArrayImpl, const NDIM: usize> [<ArrayOp $name>] for Array<ArrayImpl, NDIM>
+        impl<Item: $name, ArrayImpl, const NDIM: usize> $name for Array<ArrayImpl, NDIM>
             where
                 ArrayImpl: BaseItem<Item = Item>,
             {

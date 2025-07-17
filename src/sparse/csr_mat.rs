@@ -75,8 +75,8 @@ impl<Item: AddAssign + PartialEq + Copy + Default> FromAij for CsrMatrix<Item> {
         }
         indptr.push(count);
 
-        let indptr = DynArray::from_shape_and_vec([1 + shape[0]], cols);
-        let indices = DynArray::from_shape_and_vec([nelems], rows);
+        let indptr = DynArray::from_shape_and_vec([1 + shape[0]], indptr);
+        let indices = DynArray::from_shape_and_vec([nelems], cols);
         let data = DynArray::from_shape_and_vec([nelems], data);
 
         Self::new(shape, indices, indptr, data)

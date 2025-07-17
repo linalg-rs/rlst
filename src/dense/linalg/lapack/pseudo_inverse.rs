@@ -69,8 +69,10 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         if NDIM == 2 {
             let arr = arr.eval().coerce_dim::<2>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
-            for mut col in ColumnIteratorMut::col_iter_mut(&mut tmp) {
-                for (elem, si) in izip!(col.iter_mut(), sinv.iter_value()) {
+            for mut col in tmp.col_iter_mut() {
+                for (elem, si) in izip!(ArrayIteratorMut::iter_mut(&mut col), sinv.iter_value()) {
+                    // Needed because rust analyzer had trouble identifying the type correctly.
+                    let elem: &mut Item = elem;
                     *elem *= si;
                 }
             }

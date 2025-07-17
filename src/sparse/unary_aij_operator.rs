@@ -1,7 +1,5 @@
 //! A unary operator that takes an iterator over sparse matrix entries and applies a function to them.
 
-use crate::{Abs, ArrayOpAbs};
-
 /// Apply a unary operation to each entry in a sparse matrix represented as an iterator of (i, j, value) tuples.
 pub struct UnaryAijOperator<Item, Iter, Out, F>
 where
