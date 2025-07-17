@@ -5,8 +5,9 @@
 //pub mod sparse_mat;
 pub mod binary_operator;
 pub mod csr_mat;
+pub mod mat_operations;
 pub mod tools;
-pub mod unary_operator;
+pub mod unary_aij_operator;
 
 #[cfg(feature = "mpi")]
 pub mod distributed_array;

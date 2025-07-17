@@ -3,7 +3,6 @@
 use std::ops::AddAssign;
 
 use super::SparseMatType;
-use num::Zero;
 
 /// Normalize an Aij matrix.
 ///
@@ -19,7 +18,7 @@ pub fn normalize_aij<T>(
     sort_mode: SparseMatType,
 ) -> (Vec<usize>, Vec<usize>, Vec<T>)
 where
-    T: Zero + AddAssign + PartialEq + Copy,
+    T: Default + AddAssign + PartialEq + Copy,
 {
     let nelems = data.len();
 
@@ -66,7 +65,7 @@ where
     while count < nelems {
         let current_row = rows[sorted[count]];
         let current_col = cols[sorted[count]];
-        let mut current_data = T::zero();
+        let mut current_data = T::default();
         while count < nelems
             && rows[sorted[count]] == current_row
             && cols[sorted[count]] == current_col
@@ -74,7 +73,7 @@ where
             current_data += data[sorted[count]];
             count += 1;
         }
-        if current_data != T::zero() {
+        if current_data != T::default() {
             new_rows.push(current_row);
             new_cols.push(current_col);
             new_data.push(current_data);

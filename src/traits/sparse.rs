@@ -2,7 +2,7 @@
 
 use crate::sparse::SparseMatType;
 
-use super::BaseItem;
+use super::{BaseItem, Shape};
 
 /// Return the number of non-zero entries in the sparse matrix.
 pub trait Nonzeros {
@@ -16,16 +16,44 @@ pub trait SparseMatrixType {
     fn mat_type(&self) -> SparseMatType;
 }
 
-/// Construct a sparse matrix from an iterator of (i, j, value) tuples.
+/// Construct a sparse matrix from Aij style slices.
 pub trait FromAij
 where
-    Self: BaseItem,
+    Self: BaseItem + Sized,
 {
-    /// Create a sparse matrix from an iterator of (i, j, value) tuples.
+    /// Create a sparse matrix from `rows`, `cols`, and `data` slices.
     fn from_aij(
         shape: [usize; 2],
         rows: &[usize],
         cols: &[usize],
         data: &[<Self as BaseItem>::Item],
     ) -> Self;
+
+    /// Create a sparse matrix from an iterator of ([i, j], value) tuples.
+    fn from_aij_iter<I>(shape: [usize; 2], iter: I) -> Self
+    where
+        I: Iterator<Item = ([usize; 2], <Self as BaseItem>::Item)>,
+    {
+        let (rows, cols, data): (Vec<_>, Vec<_>, Vec<_>) = {
+            let mut rows = Vec::new();
+            let mut cols = Vec::new();
+            let mut data = Vec::new();
+
+            for (index, value) in iter {
+                rows.push(index[0]);
+                cols.push(index[1]);
+                data.push(value);
+            }
+
+            (rows, cols, data)
+        };
+
+        Self::from_aij(shape, &rows, &cols, &data)
+    }
+}
+
+/// Trait for matrices that have a shape and can return a AijIterator.
+pub trait AijIterMat: BaseItem + Shape<2> {
+    /// Get an iterator over the matrix in (i, j, value) form.
+    fn iter_aij(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_;
 }
