@@ -1,9 +1,10 @@
 //! Operations for sparse matrices
 
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
 use num::Zero;
 
+use crate::base_types::{c32, c64};
 use crate::{BaseItem, FromAij, Shape};
 
 use super::{
@@ -20,16 +21,43 @@ where
     shape: [usize; 2],
 }
 
-// /// Iterator that multiplies each entry  by a scalar.
-// /// This is
-// pub struct ScalarMulIterator<Item, I>
-// where
-//     Item: Copy + Default,
-//     I: Iterator<Item = ([usize; 2], Item)>,
-// {
-//     iter: I,
-//     scalar: Item,
-// }
+/// Iterator that multiplies each entry  by a scalar.
+/// This is necessary to avoid issues with variable capturing in the closure for the iterator.
+/// Basically, since we use a closure of type  `fn(Item) -> Out`, we cannot capture the scalar directly
+/// as this is not allowed for `fn` style closures.
+pub struct ScalarMulIterator<Item, I>
+where
+    Item: Copy + Default,
+    I: Iterator<Item = ([usize; 2], Item)>,
+{
+    iter: I,
+    scalar: Item,
+}
+
+impl<Item, I> ScalarMulIterator<Item, I>
+where
+    Item: Copy + Default,
+    I: Iterator<Item = ([usize; 2], Item)>,
+{
+    /// Create a new scalar multiplication iterator.
+    pub fn new(iter: I, scalar: Item) -> Self {
+        Self { iter, scalar }
+    }
+}
+
+impl<Item, I> Iterator for ScalarMulIterator<Item, I>
+where
+    Item: Copy + Default + Mul<Item, Output = Item>,
+    I: Iterator<Item = ([usize; 2], Item)>,
+{
+    type Item = ([usize; 2], Item);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next()
+            .map(|(index, value)| (index, value * self.scalar))
+    }
+}
 
 impl<Item, I> SparseMatOpIterator<Item, I>
 where
@@ -104,6 +132,9 @@ macro_rules! impl_unary_op {
     };
 }
 
+impl_unary_op!(Abs, abs);
+impl_unary_op!(Square, square);
+impl_unary_op!(AbsSquare, abs_square);
 impl_unary_op!(Sqrt, sqrt);
 impl_unary_op!(Exp, exp);
 impl_unary_op!(Ln, ln);
@@ -167,17 +198,93 @@ where
     }
 }
 
-impl<Item, Out, I> std::ops::Mul<SparseMatOpIterator<Item, I>> for f64
+macro_rules! impl_scalar_mult {
+    ($scalar_type:ty) => {
+        impl<I> std::ops::Mul<SparseMatOpIterator<$scalar_type, I>> for $scalar_type
+        where
+            I: Iterator<Item = ([usize; 2], $scalar_type)>,
+        {
+            type Output = SparseMatOpIterator<$scalar_type, ScalarMulIterator<$scalar_type, I>>;
+
+            fn mul(self, other: SparseMatOpIterator<$scalar_type, I>) -> Self::Output {
+                let shape = other.shape();
+                let new_iter = ScalarMulIterator::new(other.iter, self);
+                SparseMatOpIterator::new(new_iter, shape)
+            }
+        }
+    };
+}
+
+impl_scalar_mult!(f64);
+impl_scalar_mult!(f32);
+impl_scalar_mult!(c64);
+impl_scalar_mult!(c32);
+impl_scalar_mult!(usize);
+impl_scalar_mult!(i8);
+impl_scalar_mult!(i16);
+impl_scalar_mult!(i32);
+impl_scalar_mult!(i64);
+impl_scalar_mult!(u8);
+impl_scalar_mult!(u16);
+impl_scalar_mult!(u32);
+impl_scalar_mult!(u64);
+
+impl<Item, I> std::ops::Mul<Item> for SparseMatOpIterator<Item, I>
 where
-    f64: Mul<Item, Output = Out>,
-    Item: Copy + Default,
-    Out: PartialEq + Default + Copy,
+    Item: Copy + Default + Mul<Item, Output = Item>,
     I: Iterator<Item = ([usize; 2], Item)>,
 {
-    type Output = SparseMatOpIterator<Out, UnaryAijOperator<Item, I, Out, fn(Item) -> Out>>;
+    type Output = SparseMatOpIterator<Item, ScalarMulIterator<Item, I>>;
 
-    fn mul(self, other: SparseMatOpIterator<Item, I>) -> Self::Output {
-        let shape = other.shape();
-        SparseMatOpIterator::new(UnaryAijOperator::new(other.iter, |val| self * val), shape)
+    fn mul(self, scalar: Item) -> Self::Output {
+        let shape = self.shape();
+        let new_iter = ScalarMulIterator::new(self.iter, scalar);
+        SparseMatOpIterator::new(new_iter, shape)
+    }
+}
+
+impl<Item1, Item2, Out, I1, I2> std::ops::Mul<SparseMatOpIterator<Item2, I2>>
+    for SparseMatOpIterator<Item1, I1>
+where
+    Item1: Mul<Item2, Output = Out> + Copy + Default,
+    Item2: Default + Copy,
+    Out: PartialEq + Default + Copy,
+    I1: Iterator<Item = ([usize; 2], Item1)>,
+    I2: Iterator<Item = ([usize; 2], Item2)>,
+{
+    type Output = SparseMatOpIterator<
+        Out,
+        BinaryAijOperator<Item1, Item2, I1, I2, Out, fn(Item1, Item2) -> Out>,
+    >;
+
+    fn mul(self, other: SparseMatOpIterator<Item2, I2>) -> Self::Output {
+        let shape = self.shape();
+        SparseMatOpIterator::new(
+            BinaryAijOperator::new(self.iter, other.iter, |a, b| a * b),
+            shape,
+        )
+    }
+}
+
+impl<Item1, Item2, Out, I1, I2> std::ops::Div<SparseMatOpIterator<Item2, I2>>
+    for SparseMatOpIterator<Item1, I1>
+where
+    Item1: Div<Item2, Output = Out> + Copy + Default,
+    Item2: Default + Copy,
+    Out: PartialEq + Default + Copy,
+    I1: Iterator<Item = ([usize; 2], Item1)>,
+    I2: Iterator<Item = ([usize; 2], Item2)>,
+{
+    type Output = SparseMatOpIterator<
+        Out,
+        BinaryAijOperator<Item1, Item2, I1, I2, Out, fn(Item1, Item2) -> Out>,
+    >;
+
+    fn div(self, other: SparseMatOpIterator<Item2, I2>) -> Self::Output {
+        let shape = self.shape();
+        SparseMatOpIterator::new(
+            BinaryAijOperator::new(self.iter, other.iter, |a, b| a / b),
+            shape,
+        )
     }
 }
