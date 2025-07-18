@@ -900,7 +900,7 @@ macro_rules! dist_vec {
     };
 }
 
-/// Create a new distributed matri.
+/// Create a new distributed array.
 ///
 /// The number of rows is determined by the index layout, while the number of columns is
 /// determined by `ncols`.

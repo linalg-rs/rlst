@@ -1,6 +1,9 @@
 //! Basic traits for linear algebra operations.
 
-use crate::{base_types::TransMode, traits::array::BaseItem};
+use crate::{
+    base_types::TransMode, dense::array::DynArray, traits::array::BaseItem, Array, IsGreaterZero,
+    IsSmallerThan, NumberType, UnsafeRandomAccessByValue,
+};
 
 pub use num::traits::MulAdd;
 pub use std::ops::{Add, Mul, Sub};
@@ -93,15 +96,9 @@ pub trait MultIntoResize<First, Second>: BaseItem {
 }
 
 /// A helper trait to implement generic operators over matrices.
-pub trait AsOperatorApply: BaseItem {
-    /// Apply the operator to a vector.
-    fn apply_extended(
-        &self,
-        alpha: Self::Item,
-        x: &[Self::Item],
-        beta: Self::Item,
-        y: &mut [Self::Item],
-    );
+pub trait AsMatrixApply<OtherX, OtherY, const NDIM: usize>: BaseItem {
+    ///  Compute the matvec `y -> alpha * self * x  + beta * y` with `self` a matrix.
+    fn apply(&self, alpha: Self::Item, x: &OtherX, beta: Self::Item, y: &mut OtherY);
 }
 
 /// Compute the inner product with another vector.

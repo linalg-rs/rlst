@@ -1,12 +1,16 @@
 //! Definition of CSR matrices.
 
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign, Mul};
 
 use crate::sparse::tools::normalize_aij;
 use crate::traits::ArrayIteratorByValue;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
-use crate::{AijIteratorMut, FromAij, Len, Nonzeros, RawAccess, RawAccessMut, SparseMatrixType};
+use crate::{
+    AijIteratorMut, Array, ArrayIteratorMut, AsMatrixApply, ColumnIterator, ColumnIteratorMut,
+    FromAij, Len, Nonzeros, RandomAccessByRef, RawAccess, RawAccessMut, SparseMatrixType,
+};
 use itertools::{izip, Itertools};
+use num::One;
 
 use super::mat_operations::SparseMatOpIterator;
 
@@ -157,24 +161,65 @@ impl<Item: Copy + Default> CsrMatrix<Item> {
     }
 }
 
-// /// Matrix multiplication
-// pub fn matmul(&self, alpha: Item, x: &[Item], beta: Item, y: &mut [Item]) {
-//     for (row, out) in y.iter_mut().enumerate() {
-//         *out = beta * *out
-//             + alpha * {
-//                 let c1 = self.indptr()[row];
-//                 let c2 = self.indptr()[1 + row];
-//                 let mut acc = Item::zero();
-//
-//                 for index in c1..c2 {
-//                     let col = self.indices()[index];
-//                     acc += self.data()[index] * x[col];
-//                 }
-//                 acc
-//             }
-//     }
-// }
-//
+impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 1>, Array<ArrayImplY, 1>, 1>
+    for CsrMatrix<Item>
+where
+    Item: Default + Mul<Output = Item> + AddAssign<Item> + Add<Output = Item> + Copy + One,
+    Self: BaseItem<Item = Item>,
+    ArrayImplX: RandomAccessByRef<1, Item = Item>,
+    ArrayImplY: BaseItem<Item = Item>,
+    Array<ArrayImplY, 1>: ArrayIteratorMut<Item = Item>,
+{
+    fn apply(
+        &self,
+        alpha: Self::Item,
+        x: &crate::Array<ArrayImplX, 1>,
+        beta: Self::Item,
+        y: &mut crate::Array<ArrayImplY, 1>,
+    ) {
+        for (row, out) in y.iter_mut().enumerate() {
+            *out = beta * *out
+                + alpha * {
+                    let c1 = self.indptr[[row]];
+                    let c2 = self.indptr[[1 + row]];
+                    let mut acc = Item::default();
+
+                    for index in c1..c2 {
+                        let col = self.indices[[index]];
+                        acc += self.data[[index]] * x[[col]];
+                    }
+                    acc
+                }
+        }
+    }
+}
+
+impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 2>, Array<ArrayImplY, 2>, 2>
+    for CsrMatrix<Item>
+where
+    Item: Copy,
+    Self: BaseItem<Item = Item>,
+    Array<ArrayImplX, 2>: ColumnIterator<Item = Array<ArrayImplX, 1>>,
+    Array<ArrayImplY, 2>: ColumnIteratorMut<Item = Array<ArrayImplY, 1>>,
+    for<'b> Self: AsMatrixApply<
+        <Array<ArrayImplX, 2> as ColumnIterator>::Col<'b>,
+        <Array<ArrayImplY, 2> as ColumnIteratorMut>::Col<'b>,
+        1,
+    >,
+{
+    fn apply(
+        &self,
+        alpha: Self::Item,
+        x: &crate::Array<ArrayImplX, 2>,
+        beta: Self::Item,
+        y: &mut crate::Array<ArrayImplY, 2>,
+    ) {
+        for (colx, mut coly) in izip!(x.col_iter(), y.col_iter_mut()) {
+            self.apply(alpha, &colx, beta, &mut coly)
+        }
+    }
+}
+
 // /// Convert to CSC matrix
 // pub fn into_csc(self) -> CscMatrix<Item> {
 //     let mut rows = Vec::<usize>::with_capacity(self.nelems());
@@ -235,75 +280,4 @@ impl<Item: Copy + Default> CsrMatrix<Item> {
 //
 //     Ok(Self::new(shape, cols, indptr, data))
 // }
-// }
-
-// /// CSR iterator
-// pub struct CsrAijIterator<'a, Item: RlstScalar> {
-//     mat: &'a CsrMatrix<Item>,
-//     row: usize,
-//     pos: usize,
-// }
-
-// impl<'a, Item: RlstScalar> CsrAijIterator<'a, Item> {
-//     /// Create a new iterator
-//     pub fn new(mat: &'a CsrMatrix<Item>) -> Self {
-//         // We need to move the row pointer to the first row that has at least one element.
-
-//         let mut row: usize = 0;
-
-//         while row < mat.shape()[0] && mat.indptr[row] == mat.indptr[1 + row] {
-//             row += 1;
-//         }
-
-//         Self { mat, row, pos: 0 }
-//     }
-// }
-
-// impl<Item: RlstScalar> std::iter::Iterator for CsrAijIterator<'_, Item> {
-//     type Item = (usize, usize, Item);
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         if self.pos == self.mat.data().len() {
-//             return None;
-//         }
-
-//         let result = Some((
-//             self.row,
-//             *self.mat.indices().get(self.pos).unwrap(),
-//             *self.mat.data().get(self.pos).unwrap(),
-//         ));
-
-//         self.pos += 1;
-
-//         // The following jumps over all zero rows to the next relevant row
-//         while self.row < self.mat.shape()[0] && self.mat.indptr()[1 + self.row] <= self.pos {
-//             self.row += 1;
-//         }
-
-//         result
-//     }
-
-//     fn count(self) -> usize
-//     where
-//         Self: Sized,
-//     {
-//         self.mat.data().len()
-//     }
-// }
-
-// impl<Item: RlstScalar> AijIterator for CsrMatrix<Item> {
-//     type Item = Item;
-//     type Iter<'a>
-//         = CsrAijIterator<'a, Item>
-//     where
-//         Self: 'a;
-
-//     fn iter_aij(&self) -> Self::Iter<'_> {
-//         CsrAijIterator::new(self)
-//     }
-// }
-
-//     fn shape(&self) -> [usize; 2] {
-//         self.shape
-//     }
 // }
