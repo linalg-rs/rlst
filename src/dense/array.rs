@@ -113,6 +113,18 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
     }
 }
 
+impl<Item: Clone + Default> From<&[Item]> for DynArray<Item, 1> {
+    fn from(value: &[Item]) -> Self {
+        DynArray::<Item, 1>::from_shape_and_vec([value.len()], value.to_vec())
+    }
+}
+
+impl<Item: Clone + Default> From<Vec<Item>> for DynArray<Item, 1> {
+    fn from(value: Vec<Item>) -> Self {
+        DynArray::<Item, 1>::from_shape_and_vec([value.len()], value)
+    }
+}
+
 impl<Item: Clone + Default, const NDIM: usize>
     Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
 {

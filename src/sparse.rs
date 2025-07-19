@@ -5,7 +5,9 @@
 //pub mod sparse_mat;
 pub mod binary_operator;
 pub mod csr_mat;
+pub mod distributed_csr_mat;
 pub mod mat_operations;
+pub mod mat_operations_distributed;
 pub mod tools;
 pub mod unary_aij_operator;
 

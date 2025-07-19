@@ -77,7 +77,7 @@ where
     /// Convert into a Csr matrix.
     pub fn into_csr(self) -> CsrMatrix<Item>
     where
-        Item: Copy + Default + PartialEq + AddAssign + Zero,
+        Item: Copy + Default + PartialEq + AddAssign,
     {
         let shape = self.shape();
 

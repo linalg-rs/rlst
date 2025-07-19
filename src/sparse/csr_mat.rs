@@ -39,6 +39,18 @@ impl<Item> CsrMatrix<Item> {
             data,
         }
     }
+
+    pub fn indptr(&self) -> &DynArray<usize, 1> {
+        &self.indptr
+    }
+
+    pub fn indices(&self) -> &DynArray<usize, 1> {
+        &self.indices
+    }
+
+    pub fn data(&self) -> &DynArray<Item, 1> {
+        &self.data
+    }
 }
 
 impl<Item: AddAssign + PartialEq + Copy + Default> FromAij for CsrMatrix<Item> {
