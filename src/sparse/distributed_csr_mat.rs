@@ -11,11 +11,13 @@ use mpi::traits::{Communicator, Equivalence};
 use crate::dense::array::DynArray;
 use crate::distributed_tools::{redistribute, sort_to_bins, GhostCommunicator, IndexLayout};
 use crate::{
-    empty_array, AijIteratorByValue, AijIteratorMut, ArrayIteratorByValue, BaseItem, FromAij,
-    FromAijDistributed, Len, Nonzeros, RawAccess, Shape,
+    empty_array, AijIteratorByValue, AijIteratorMut, Array, ArrayIteratorByValue, AsMatrixApply,
+    BaseItem, FromAij, FromAijDistributed, Len, Nonzeros, RandomAccessByValue, RawAccess, Shape,
+    UnsafeRandomAccessByValue,
 };
 
 use super::csr_mat::CsrMatrix;
+use super::distributed_array::DistributedArray;
 use super::tools::normalize_aij;
 use super::SparseMatType;
 
@@ -324,6 +326,69 @@ where
                 range_layout,
             )
         }
+    }
+}
+
+impl<'a, Item, C, ArrayImplX, ArrayImplY>
+    AsMatrixApply<DistributedArray<'a, C, ArrayImplX, 1>, DistributedArray<'a, C, ArrayImplY, 1>, 1>
+    for DistributedCsrMatrix<'a, Item, C>
+where
+    Item: Default + Copy + AddAssign + PartialEq + Equivalence,
+    C: Communicator,
+    ArrayImplX: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
+    Array<ArrayImplX, 1>: ArrayIteratorByValue<Item = Item>,
+    CsrMatrix<Item>: AsMatrixApply<DynArray<Item, 1>, Array<ArrayImplY, 1>, 1, Item = Item>,
+{
+    fn apply(
+        &self,
+        alpha: Self::Item,
+        x: &DistributedArray<'a, C, ArrayImplX, 1>,
+        beta: Self::Item,
+        y: &mut DistributedArray<'a, C, ArrayImplY, 1>,
+    ) {
+        // Create a vector that combines local dofs and ghosts
+
+        let my_rank = self.domain_layout.comm().rank() as usize;
+
+        let out_values = {
+            let mut out_values =
+                Vec::<Self::Item>::with_capacity(self.domain_ghosts.total_send_count());
+            let out_buff: &mut [Self::Item] =
+                unsafe { std::mem::transmute(out_values.spare_capacity_mut()) };
+
+            for (out, out_index) in
+                izip!(out_buff.iter_mut(), self.domain_ghosts.send_indices.iter())
+            {
+                *out = x
+                    .local
+                    .get_value([self
+                        .domain_layout()
+                        .global2local(my_rank, *out_index)
+                        .unwrap()])
+                    .unwrap();
+            }
+
+            unsafe { out_values.set_len(self.domain_ghosts.total_send_count()) };
+            out_values
+        };
+
+        let local_vec = {
+            let mut local_vec = Vec::<Self::Item>::with_capacity(self.local_dof_count);
+            local_vec.extend(x.local.iter_value());
+            let ghost_data: &mut [Item] =
+                unsafe { std::mem::transmute(local_vec.spare_capacity_mut()) };
+
+            // Prepare the values that are sent to other ranks
+
+            self.domain_ghosts
+                .forward_send_values(&out_values, ghost_data);
+            unsafe { local_vec.set_len(self.local_dof_count) };
+            local_vec
+        };
+
+        // Compute result
+        self.local_matrix
+            .apply(alpha, &local_vec.into(), beta, &mut y.local);
     }
 }
 

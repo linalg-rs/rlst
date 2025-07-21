@@ -31,7 +31,7 @@ pub mod sparse;
 pub mod traits;
 // pub mod doc;
 // pub mod external;
-// pub mod io;
+pub mod io;
 // pub mod tracing;
 //pub mod distributed_tools;
 

@@ -895,7 +895,9 @@ macro_rules! dist_vec {
     ($scalar:ty, $index_layout:expr) => {
         $crate::sparse::distributed_array::DistributedArray::new(
             $index_layout,
-            $crate::DynArray::<$scalar, 1>::new([$index_layout.number_of_local_indices()]),
+            $crate::dense::array::DynArray::<$scalar, 1>::from_shape([
+                $index_layout.number_of_local_indices()
+            ]),
         )
     };
 }

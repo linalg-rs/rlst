@@ -5,15 +5,18 @@
 //! files must use the `general` property. To write out matrices the functions [write_array_mm] and
 //! [write_coordinate_mm] are provided.
 
-use crate::dense::array::DynamicArray;
-use crate::dense::traits::RawAccessMut;
-use crate::dense::types::RlstScalar;
-use crate::dense::types::{RlstError, RlstResult};
-use crate::sparse::sparse_mat::csr_mat::CsrMatrix;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
 use std::io::{self, BufRead};
+use std::ops::AddAssign;
 use std::path::Path;
+
+use num::Num;
+
+use crate::dense::array::DynArray;
+use crate::sparse::csr_mat::CsrMatrix;
+use crate::{FromAij, Len, MmIdentifier, RawAccessMut, RlstError, RlstResult};
 
 /// Definition of Matrix format types
 #[derive(PartialEq, Clone, Copy)]
@@ -37,28 +40,6 @@ pub enum DataType {
     Integer,
     /// Complex entries.
     Complex,
-}
-
-/// Identifier trait to associate a matrix market identifier with a Rust type.
-pub trait MmIdentifier {
-    /// Matrix market type
-    const MMTYPE: &'static str;
-}
-
-impl MmIdentifier for f32 {
-    const MMTYPE: &'static str = "real";
-}
-
-impl MmIdentifier for f64 {
-    const MMTYPE: &'static str = "real";
-}
-
-impl MmIdentifier for crate::dense::types::c32 {
-    const MMTYPE: &'static str = "complex";
-}
-
-impl MmIdentifier for crate::dense::types::c64 {
-    const MMTYPE: &'static str = "complex";
 }
 
 /// Matrix market symmetry type.
@@ -87,15 +68,15 @@ pub struct MatrixMarketInfo {
 /// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
-    T: RlstScalar + MmIdentifier,
-    Mat: crate::dense::traits::AijIterator<Item = T> + crate::dense::traits::Shape<2>,
+    T: MmIdentifier + Display,
+    Mat: crate::traits::iterators::AijIteratorByValue<Item = T> + crate::traits::Shape<2> + Len,
 >(
     mat: &Mat,
     fname: &str,
 ) -> RlstResult<()> {
     let output = File::create(fname);
 
-    let count = mat.iter_aij().count();
+    let count = mat.len();
 
     if let Ok(mut output) = output {
         writeln!(
@@ -106,7 +87,7 @@ pub fn write_coordinate_mm<
         .unwrap();
         writeln!(output, "%").unwrap();
         writeln!(output, "{} {} {}", mat.shape()[0], mat.shape()[1], count).unwrap();
-        for (row, col, data) in mat.iter_aij() {
+        for ([row, col], data) in mat.iter_aij_value() {
             writeln!(output, "{} {} {} ", 1 + row, 1 + col, data).unwrap();
         }
 
@@ -122,8 +103,8 @@ pub fn write_coordinate_mm<
 /// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
-    T: RlstScalar + MmIdentifier,
-    Mat: crate::dense::traits::DefaultIterator<Item = T> + crate::dense::traits::Shape<2>,
+    T: MmIdentifier + Display,
+    Mat: crate::traits::iterators::ArrayIteratorByValue<Item = T> + crate::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -134,7 +115,7 @@ pub fn write_array_mm<
         writeln!(output, "%%MatrixMarket matrix array {} general", T::MMTYPE).unwrap();
         writeln!(output, "%").unwrap();
         writeln!(output, "{} {}", mat.shape()[0], mat.shape()[1]).unwrap();
-        for value in mat.iter() {
+        for value in mat.iter_value() {
             writeln!(output, "{}", value).unwrap();
         }
 
@@ -148,7 +129,7 @@ pub fn write_array_mm<
 ///
 /// The function returns a [DynamicArray] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2>> {
+pub fn read_array_mm<T: Clone + Default + Num>(fname: &str) -> RlstResult<DynArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -195,7 +176,7 @@ pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2
         }
     }
 
-    let mut mat = crate::rlst_dynamic_array2!(T, [nrows, ncols]);
+    let mut mat = DynArray::<T, 2>::from_shape([nrows, ncols]);
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
     if let Err(e) = res {
@@ -210,7 +191,9 @@ pub fn read_array_mm<T: RlstScalar>(fname: &str) -> RlstResult<DynamicArray<T, 2
 /// Returns a [crate::sparse::sparse_mat::csr_mat::CsrMatrix] sparse matrix object representing
 /// the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_coordinate_mm<T: RlstScalar>(fname: &str) -> RlstResult<CsrMatrix<T>> {
+pub fn read_coordinate_mm<T: Default + Copy + Num + AddAssign>(
+    fname: &str,
+) -> RlstResult<CsrMatrix<T>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 
@@ -269,7 +252,7 @@ pub fn read_coordinate_mm<T: RlstScalar>(fname: &str) -> RlstResult<CsrMatrix<T>
     } else {
         rows.iter_mut().for_each(|elem| *elem -= 1);
         cols.iter_mut().for_each(|elem| *elem -= 1);
-        Ok(CsrMatrix::from_aij([nrows, ncols], &rows, &cols, &data).unwrap())
+        Ok(CsrMatrix::from_aij([nrows, ncols], &rows, &cols, &data))
     }
 }
 
@@ -345,7 +328,7 @@ fn parse_header(reader: &mut io::Lines<io::BufReader<File>>) -> RlstResult<Matri
 }
 
 /// Parse array information.
-fn parse_array<T: RlstScalar>(
+fn parse_array<T: Num>(
     reader: &mut io::Lines<io::BufReader<File>>,
     buf: &mut [T],
     nelems: usize,
@@ -396,7 +379,7 @@ fn parse_array<T: RlstScalar>(
 }
 
 /// Parse coordinate information.
-fn parse_coordinate<T: RlstScalar>(
+fn parse_coordinate<T: Num>(
     reader: &mut io::Lines<io::BufReader<File>>,
     rows: &mut [usize],
     cols: &mut [usize],

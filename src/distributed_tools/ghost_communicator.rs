@@ -87,12 +87,9 @@ impl<I: Default + Copy + Equivalence> GhostCommunicator<I> {
         let mut send_counts = vec![0; comm.size() as usize];
         comm.all_to_all_into(&receive_counts, &mut send_counts);
 
-        // Each process now has a list of ranks from which it receives and a list of indices
+        // Each process now has a list of ranks from which it receives and a list of ranks
         // to which it sends. We now create a neighborhood communicator across all the ranks
         // from which a rank sends or receives
-
-        // The following loop creates the neighbors, the receive displacements and the send
-        // displacements.
 
         let mut out_ranks = Vec::<i32>::new();
         let mut in_ranks = Vec::<i32>::new();

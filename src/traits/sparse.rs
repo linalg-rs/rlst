@@ -72,6 +72,7 @@ where
         data: &[<Self as BaseItem>::Item],
     ) -> Self;
 
+    /// Create a sparse matrix from an iterator of ([i, j], value) tuples.
     fn from_aij_iter<I>(
         domain_layout: Rc<IndexLayout<'a, Self::C>>,
         range_layout: Rc<IndexLayout<'a, Self::C>>,
