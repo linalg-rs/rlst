@@ -129,6 +129,28 @@ pub struct IdDecomposition<Item: RlstScalar> {
     pub id_mat: Array<Item, BaseArray<Item, VectorContainer<Item>, 2>, 2>,
 }
 
+pub fn condition_number<Item: RlstScalar + MatrixSvd>(mat: &DynamicArray<Item, 2>) -> Real<Item> {
+    let shape = mat.shape();
+    let dim: usize = min(shape).unwrap();
+    let mut singular_values: DynamicArray<Real<Item>, 1> = rlst_dynamic_array1!(Real<Item>, [dim]);
+    let mode: SvdMode = SvdMode::Reduced;
+    let mut u: DynamicArray<Item, 2> = rlst_dynamic_array2!(Item, [shape[0], dim]);
+    let mut vt: DynamicArray<Item, 2> = rlst_dynamic_array2!(Item, [dim, shape[1]]);
+
+    let mut aux_data = empty_array();
+    aux_data.fill_from_resize(mat.r());
+
+    aux_data
+        .r_mut()
+        .into_svd_alloc(u.r_mut(), vt.r_mut(), singular_values.data_mut(), mode)
+        .unwrap();
+
+    let sigma_max = singular_values[[0]];
+    let sigma_min = singular_values[[dim - 1]];
+
+    sigma_max / sigma_min
+}
+
 #[derive(Debug, Clone)]
 ///Options to decide the matrix rank
 pub enum Accuracy<T> {
@@ -231,6 +253,13 @@ macro_rules! impl_id {
                         TriangularType::Upper,
                     )
                     .unwrap();
+
+                    let cond = condition_number(&r11.tri);
+
+                    println!(
+                        "Condition number of the pivot: {}",
+                        cond
+                    );
 
                     let mut r12 = u_tri
                         .r_mut()
