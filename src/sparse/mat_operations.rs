@@ -2,8 +2,6 @@
 
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
-use num::Zero;
-
 use crate::base_types::{c32, c64};
 use crate::{BaseItem, FromAij, Shape};
 

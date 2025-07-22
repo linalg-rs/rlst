@@ -1,9 +1,6 @@
 //! Basic traits for linear algebra operations.
 
-use crate::{
-    base_types::TransMode, dense::array::DynArray, traits::array::BaseItem, Array, IsGreaterZero,
-    IsSmallerThan, NumberType, UnsafeRandomAccessByValue,
-};
+use crate::{base_types::TransMode, traits::array::BaseItem};
 
 pub use num::traits::MulAdd;
 pub use std::ops::{Add, Mul, Sub};

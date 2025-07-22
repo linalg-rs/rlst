@@ -11,8 +11,8 @@ use mpi::traits::{Communicator, Equivalence};
 use crate::dense::array::DynArray;
 use crate::distributed_tools::{redistribute, sort_to_bins, GhostCommunicator, IndexLayout};
 use crate::{
-    empty_array, AijIteratorByValue, AijIteratorMut, Array, ArrayIteratorByValue, AsMatrixApply,
-    BaseItem, FromAij, FromAijDistributed, Len, Nonzeros, RandomAccessByValue, RawAccess, Shape,
+    empty_array, AijIteratorByValue, Array, ArrayIteratorByValue, AsMatrixApply, BaseItem,
+    FromAijDistributed, Len, Nonzeros, RandomAccessByValue, Shape, SparseMatrixType,
     UnsafeRandomAccessByValue,
 };
 
@@ -28,7 +28,6 @@ where
 {
     mat_type: SparseMatType,
     local_matrix: CsrMatrix<Item>,
-    global_indices: DynArray<usize, 1>,
     local_dof_count: usize,
     domain_layout: Rc<IndexLayout<'a, C>>,
     range_layout: Rc<IndexLayout<'a, C>>,
@@ -110,7 +109,7 @@ where
             .collect::<Vec<_>>();
 
         Self {
-            mat_type: SparseMatType::Csr,
+            mat_type: SparseMatType::DistCsr,
             local_matrix: CsrMatrix::new(
                 [
                     range_layout.number_of_local_indices(),
@@ -120,7 +119,6 @@ where
                 indptr,
                 data,
             ),
-            global_indices: indices,
             local_dof_count,
             domain_layout,
             range_layout,
@@ -221,6 +219,12 @@ where
             self.range_layout.number_of_global_indices(),
             self.domain_layout.number_of_global_indices(),
         ]
+    }
+}
+
+impl<'a, Item, C: Communicator> SparseMatrixType for DistributedCsrMatrix<'a, Item, C> {
+    fn mat_type(&self) -> SparseMatType {
+        self.mat_type
     }
 }
 

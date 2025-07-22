@@ -10,9 +10,7 @@ use crate::distributed_tools::IndexLayout;
 use crate::{BaseItem, FromAijDistributed, Shape};
 
 use super::distributed_csr_mat::DistributedCsrMatrix;
-use super::{
-    binary_operator::BinaryAijOperator, csr_mat::CsrMatrix, unary_aij_operator::UnaryAijOperator,
-};
+use super::{binary_operator::BinaryAijOperator, unary_aij_operator::UnaryAijOperator};
 
 use super::mat_operations::ScalarMulIterator;
 
@@ -52,10 +50,12 @@ where
         &self.iter
     }
 
+    /// Return the index layout for the domain (columns).
     pub fn domain_layout(&self) -> &Rc<IndexLayout<'a, C>> {
         &self.domain_layout
     }
 
+    /// Return the index layout for the range (rows).
     pub fn range_layout(&self) -> &Rc<IndexLayout<'a, C>> {
         &self.range_layout
     }

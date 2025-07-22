@@ -15,10 +15,12 @@ pub mod unary_aij_operator;
 pub mod distributed_array;
 
 /// Sparse matrix type
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum SparseMatType {
     /// CSR matrix
     Csr,
     /// CSC matrix
     Csc,
+    /// Distributed CSR matrix
+    DistCsr,
 }

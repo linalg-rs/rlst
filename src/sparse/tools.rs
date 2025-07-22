@@ -57,6 +57,12 @@ where
             sorted.sort_by_key(|&idx| cols[idx]);
             sorted.sort_by_key(|&idx| rows[idx]);
         }
+        _ => {
+            panic!(
+                "Unsupported sparse matrix type for normalization: {:?}",
+                sort_mode
+            );
+        }
     }
 
     // Now sum up equal entries

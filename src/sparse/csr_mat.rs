@@ -40,14 +40,17 @@ impl<Item> CsrMatrix<Item> {
         }
     }
 
+    /// Return the index pointer.
     pub fn indptr(&self) -> &DynArray<usize, 1> {
         &self.indptr
     }
 
+    /// Return the indices.
     pub fn indices(&self) -> &DynArray<usize, 1> {
         &self.indices
     }
 
+    /// Return the data.
     pub fn data(&self) -> &DynArray<Item, 1> {
         &self.data
     }
