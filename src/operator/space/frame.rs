@@ -4,49 +4,6 @@ use crate::operator::ElementImpl;
 
 use super::{Element, ElementContainer, ElementContainerMut, ElementType};
 
-/// A frame is a collection of elements of a space.
-pub trait Frame {
-    /// Element type
-    type E: ElementImpl;
-    /// Iterator
-    type Iter<'iter>: std::iter::Iterator<Item = &'iter ElementType<Self::E>>
-    where
-        Self: 'iter,
-        Self::E: 'iter;
-    /// Mutable iterator
-    type IterMut<'iter>: std::iter::Iterator<Item = &'iter mut ElementType<Self::E>>
-    where
-        Self: 'iter,
-        Self::E: 'iter;
-    /// Get an element
-    fn get(&self, index: usize) -> Option<&ElementType<Self::E>>;
-    /// Get a mutable element
-    fn get_mut(&mut self, index: usize) -> Option<&mut ElementType<Self::E>>;
-    /// Number of elements
-    fn len(&self) -> usize;
-    /// Is empty
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-    /// Get iterator
-    fn iter(&self) -> Self::Iter<'_>;
-    /// Get mutable iterator
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
-    /// Add an element
-    fn push(&mut self, elem: Element<impl ElementContainer<E = Self::E>>);
-    /// Evaluate
-    fn evaluate(
-        &self,
-        coeffs: &[<Self::E as ElementImpl>::F],
-        mut result: Element<impl ElementContainerMut<E = Self::E>>,
-    ) {
-        assert_eq!(coeffs.len(), self.len());
-        for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
-            result.axpy_inplace(coeff, elem.r());
-        }
-    }
-}
-
 /// A vector frame
 pub struct VectorFrame<Elem: ElementImpl> {
     data: Vec<ElementType<Elem>>,

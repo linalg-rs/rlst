@@ -38,7 +38,7 @@ pub mod io;
 //pub mod prelude;
 // pub mod threading;
 
-// pub mod operator;
+pub mod operator;
 
 //pub use prelude::*;
 
