@@ -133,7 +133,7 @@ pub struct IdDecomposition<Item: RlstScalar> {
     pub id_mat: Array<Item, BaseArray<Item, VectorContainer<Item>, 2>, 2>,
 }
 
-type Real<T> = <T as rlst::RlstScalar>::Real;
+type Real<T> = <T as RlstScalar>::Real;
 pub fn condition_number<Item: RlstScalar + MatrixSvd>(mat: &DynamicArray<Item, 2>) -> Real<Item> {
     let shape = mat.shape();
     let dim: usize = min(shape).unwrap();
