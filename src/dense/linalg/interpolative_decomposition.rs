@@ -10,6 +10,10 @@ use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
 use crate::dense::types::{Side, TransMode, TriangularType}; // Import TransMode from the appropriate module
 use crate::DynamicArray;
 use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
+use crate::rlst_dynamic_array1;
+use crate::MatrixSvd;
+use itertools::min;
+use crate::SvdMode;
 use crate::{TriangularMatrix, TriangularOperations}; // Import TriangularType from the appropriate module
 /// Compute the matrix interpolative decomposition, by providing a rank and an interpolation matrix.
 ///
@@ -129,6 +133,7 @@ pub struct IdDecomposition<Item: RlstScalar> {
     pub id_mat: Array<Item, BaseArray<Item, VectorContainer<Item>, 2>, 2>,
 }
 
+type Real<T> = <T as rlst::RlstScalar>::Real;
 pub fn condition_number<Item: RlstScalar + MatrixSvd>(mat: &DynamicArray<Item, 2>) -> Real<Item> {
     let shape = mat.shape();
     let dim: usize = min(shape).unwrap();
