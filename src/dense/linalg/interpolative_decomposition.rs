@@ -266,6 +266,16 @@ macro_rules! impl_id {
                         cond
                     );
 
+                    let mut rect = empty_array();
+                    rect.fill_from_resize(u_tri
+                        .r_mut()
+                        .into_subview([0, rank], [rank, shape[1] - rank]));
+
+                    println!(
+                        "Condition number of rect: {}",
+                        condition_number(&rect)
+                    );
+
                     let mut r12 = u_tri
                         .r_mut()
                         .into_subview([0, rank], [rank, shape[1] - rank]);
