@@ -13,7 +13,7 @@ use crate::{
         },
         array::{BaseItem, ResizeInPlace, Shape, Stride},
     },
-    ContainerTypeHint,
+    AsRefType, AsRefTypeMut, ContainerTypeHint,
 };
 
 /// Basic structure for a `View`
@@ -207,15 +207,24 @@ impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Return a reference to an array.
-    pub fn r(&self) -> Array<ArrayRef<'_, ArrayImpl, NDIM>, NDIM> {
+impl<ArrayImpl, const NDIM: usize> AsRefType for Array<ArrayImpl, NDIM> {
+    type RefType<'a>
+        = Array<ArrayRef<'a, ArrayImpl, NDIM>, NDIM>
+    where
+        Self: 'a;
+
+    fn r(&self) -> Self::RefType<'_> {
         Array::new(ArrayRef::new(self))
     }
 }
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Return a mutable view onto the array.
-    pub fn r_mut(&mut self) -> Array<ArrayRefMut<'_, ArrayImpl, NDIM>, NDIM> {
+
+impl<ArrayImpl, const NDIM: usize> AsRefTypeMut for Array<ArrayImpl, NDIM> {
+    type RefTypeMut<'a>
+        = Array<ArrayRefMut<'a, ArrayImpl, NDIM>, NDIM>
+    where
+        Self: 'a;
+
+    fn r_mut(&mut self) -> Self::RefTypeMut<'_> {
         Array::new(ArrayRefMut::new(self))
     }
 }

@@ -3,7 +3,7 @@
 #![warn(missing_docs)]
 
 // pub mod abstract_operator;
-// pub mod interface;
+pub mod interface;
 // pub mod linalg;
 // pub mod operations;
 pub mod element;

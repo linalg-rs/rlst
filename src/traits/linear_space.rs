@@ -1,40 +1,53 @@
 //! Abstract linear spaces and their elements.
 
-use std::rc::Rc;
-
-use crate::operator::element::{Element, ElementContainer};
+use crate::operator::element::Element;
 
 /// Definition of a linear space
 ///
 /// Linear spaces are basic objects that can create
 /// elements of the space.
-pub trait LinearSpace {
+pub trait LinearSpace: Sized {
     /// Field Type.
     type F;
 
     /// Concrete type associated with elements of the space.
-    type E;
+    type Impl;
 
     /// Create a new zero element from the space.
-    fn zero(space: Rc<Self>) -> Element<ElementContainer<Self::E>>;
-}
+    fn zero(&self) -> Element<Self>;
 
-/// Defne and return the space of an element.
-pub trait ElementSpace {
-    ///  Space type.
-    type Space;
+    /// Add two elements of the space.
+    fn add(&self, x: &Element<Self>, y: &Element<Self>) -> Element<Self>;
 
-    /// Get the space of the element.
-    fn space(&self) -> &Self::Space;
+    /// Subtract two elements of the space.
+    fn sub(&self, x: &Element<Self>, y: &Element<Self>) -> Element<Self>;
+
+    /// Multiply an element of the space by a scalar.
+    fn scalar_mul(&self, scalar: &Self::F, x: &Element<Self>) -> Element<Self>;
+
+    /// Negate an element of the space.
+    fn neg(&self, x: &Element<Self>) -> Element<Self>;
+
+    /// Sum element `y` into  element `x`
+    fn sum_inplace(&self, x: &mut Element<Self>, y: &Element<Self>);
+
+    /// Subtract element `y` from element `x`
+    fn sub_inplace(&self, x: &mut Element<Self>, y: &Element<Self>);
+
+    /// Multiply with a scalar in place.
+    fn scale_inplace(&self, scalar: &Self::F, x: &mut Element<Self>);
+
+    /// Create a new element by copying an existing  one.
+    fn copy_from(&self, x: &Element<Self>) -> Element<Self>;
 }
 
 /// A dual space
-pub trait DualSpace<ContainerX, ContainerY>: LinearSpace {
-    /// Space type
-    type Space: LinearSpace<F = Self::F>;
+pub trait DualSpace: LinearSpace {
+    /// Dual Space
+    type DualSpace: LinearSpace<F = Self::F>;
 
     /// Dual pairing
-    fn dual_pairing(&self, x: &Element<ContainerX>, y: &Element<ContainerY>) -> Self::F;
+    fn dual_pairing(&self, x: &Element<Self>, y: &Element<Self::DualSpace>) -> Self::F;
 }
 
 /// Indexable space
@@ -46,16 +59,16 @@ pub trait IndexableSpace: LinearSpace {
 /// Inner product space
 pub trait InnerProductSpace: LinearSpace {
     /// Inner product
-    fn inner_product(&self, x: &Self::E, other: &Self::E) -> Self::F;
+    fn inner_product(&self, x: &Element<Self>, other: &Element<Self>) -> Self::F;
 }
 
 /// Normed space
-pub trait NormedSpace<Container>: LinearSpace {
+pub trait NormedSpace: LinearSpace {
     /// The output type of the norm.
     type Output;
 
-    /// Norm of a vector.
-    fn norm(&self, x: &Element<Container>) -> Self::Output;
+    /// Norm of an element.
+    fn norm(&self, x: &Element<Self>) -> Self::Output;
 }
 
 /// A frame is a collection of elements of a space.
@@ -63,27 +76,17 @@ pub trait Frame {
     ///  The underlying linear space.
     type Space: LinearSpace;
     /// Iterator
-    type Iter<'iter>: std::iter::Iterator<
-        Item = &'iter Element<ElementContainer<<Self::Space as LinearSpace>::E>>,
-    >
+    type Iter<'iter>: std::iter::Iterator<Item = &'iter Element<'iter, Self::Space>>
     where
         Self: 'iter;
     /// Mutable iterator
-    type IterMut<'iter>: std::iter::Iterator<
-        Item = &'iter mut Element<ElementContainer<<Self::Space as LinearSpace>::E>>,
-    >
+    type IterMut<'iter>: std::iter::Iterator<Item = &'iter mut Element<'iter, Self::Space>>
     where
         Self: 'iter;
     /// Get a reference to an element
-    fn get(
-        &self,
-        index: usize,
-    ) -> Option<&Element<ElementContainer<<Self::Space as LinearSpace>::E>>>;
+    fn get(&self, index: usize) -> Option<&Element<Self::Space>>;
     /// Get a mutable reference to an element
-    fn get_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<&mut Element<ElementContainer<<Self::Space as LinearSpace>::E>>>;
+    fn get_mut(&mut self, index: usize) -> Option<&mut Element<Self::Space>>;
     /// Number of elements
     fn len(&self) -> usize;
     /// Is empty
@@ -95,8 +98,8 @@ pub trait Frame {
     /// Get mutable iterator
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
     /// Add an element
-    fn push(&mut self, elem: Element<ElementContainer<<Self::Space as LinearSpace>::E>>);
+    fn push(&mut self, elem: Element<Self::Space>);
 
     /// Remove the last element and return it. If the frame is empty, return None.
-    fn pop(&mut self) -> Option<Element<ElementContainer<<Self::Space as LinearSpace>::E>>>;
+    fn pop(&mut self) -> Option<Element<Self::Space>>;
 }

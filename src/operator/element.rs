@@ -6,332 +6,195 @@
 //     NormedSpace, RlstScalar,
 // };
 
-/// An element is a wrapper type around an element implementation.
-pub struct Element<ElementContainer>(ElementContainer);
+use crate::LinearSpace;
 
-/// Element container holding ownership of an element implementation
-pub struct ElementContainer<ElementImpl>(ElementImpl);
+use crate::base_types::{c32, c64};
 
-/// Element container holding a mutable reference to an element implementation
-pub struct ElementContainerRefMut<'a, ElementImpl>(&'a mut ElementImpl);
+/// Define a generic element type for a given implementation.
+pub struct Element<'a, Space: LinearSpace> {
+    space: &'a Space,
+    imp: Space::Impl,
+}
 
-/// Element container holding a reference to an element implementation
-pub struct ElementContainerRef<'a, ElementImpl>(&'a ElementImpl);
+impl<'a, Space: LinearSpace> Element<'a, Space> {
+    /// Create a new element from a space and an implementation.
+    pub fn new(space: &'a Space, imp: <Space as LinearSpace>::Impl) -> Self {
+        Self { space, imp }
+    }
 
-// Implementation of element view.
+    /// Return a reference to the space associated with the element.
+    pub fn space(&self) -> &'a Space {
+        self.space
+    }
 
-impl<
+    /// Return a reference to the implementation of the element.
+    pub fn imp(&self) -> &Space::Impl {
+        &self.imp
+    }
 
+    /// Return a mutable reference to the implementation of the element.
+    pub fn imp_mut(&mut self) -> &mut Space::Impl {
+        &mut self.imp
+    }
 
-// /// Element type
-// pub type ElementImplType<Space> = <Space as LinearSpace>::E;
-// /// Field type
-// pub type FieldType<Space> = <Space as LinearSpace>::F;
+    ///  Destruct into the implementation.
+    pub fn into_imp(self) -> Space::Impl {
+        self.imp
+    }
+}
 
-// /// The view type associated with elements of linear spaces.
-// pub type ElementView<'view, Space> = <<Space as LinearSpace>::E as ElementImpl>::View<'view>;
+//  Implementation of traits for elements.
 
-// /// The mutable view type associated with elements of linear spaces.
-// pub type ElementViewMut<'view, Space> = <<Space as LinearSpace>::E as ElementImpl>::ViewMut<'view>;
+// Addition operations
 
-// impl<ElemImpl: ElementImpl> ElementContainer for ConcreteElementContainer<ElemImpl> {
-//     type E = ElemImpl;
+impl<'a, Space: LinearSpace> std::ops::Add<Element<'a, Space>> for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     fn imp(&self) -> &Self::E {
-//         &self.0
-//     }
-// }
+    fn add(self, other: Element<'a, Space>) -> Self::Output {
+        self.space().add(&self, &other)
+    }
+}
 
-// impl<ElemImpl: ElementImpl> ElementContainerMut for ConcreteElementContainer<ElemImpl> {
-//     fn imp_mut(&mut self) -> &mut Self::E {
-//         &mut self.0
-//     }
-// }
+impl<'a, Space: LinearSpace> std::ops::Add<&Element<'a, Space>> for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-// impl<ElemImpl: ElementImpl> ElementContainer for ConcreteElementContainerRef<'_, ElemImpl> {
-//     type E = ElemImpl;
+    fn add(self, other: &Element<'a, Space>) -> Self::Output {
+        self.space().add(&self, other)
+    }
+}
 
-//     fn imp(&self) -> &Self::E {
-//         self.elem
-//     }
-// }
+impl<'a, Space: LinearSpace> std::ops::Add<Element<'a, Space>> for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-// impl<ElemImpl: ElementImpl> ElementContainer for ConcreteElementContainerRefMut<'_, ElemImpl> {
-//     type E = ElemImpl;
+    fn add(self, other: Element<'a, Space>) -> Self::Output {
+        self.space().add(self, &other)
+    }
+}
 
-//     fn imp(&self) -> &Self::E {
-//         self.elem
-//     }
-// }
+impl<'a, Space: LinearSpace> std::ops::Add<&Element<'a, Space>> for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-// impl<ElemImpl: ElementImpl> ElementContainerMut for ConcreteElementContainerRefMut<'_, ElemImpl> {
-//     fn imp_mut(&mut self) -> &mut Self::E {
-//         self.elem
-//     }
-// }
+    fn add(self, other: &Element<'a, Space>) -> Self::Output {
+        self.space().add(self, other)
+    }
+}
 
-// impl<Container: ElementContainer> Element<Container> {
-//     /// Return a reference to the element implementation
-//     pub fn imp(&self) -> &Container::E {
-//         self.0.imp()
-//     }
+// Subtraction operations
 
-//     /// Create a new struct that holds a reference to this struct's element implementation
-//     pub fn r(&self) -> Element<ConcreteElementContainerRef<'_, Container::E>> {
-//         Element(ConcreteElementContainerRef { elem: self.imp() })
-//     }
+impl<'a, Space: LinearSpace> std::ops::Sub<Element<'a, Space>> for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     /// Duplicate the element as a new element that does not reference the current element
-//     pub fn duplicate(&self) -> Element<ConcreteElementContainer<Container::E>> {
-//         let mut x = zero_element(self.space());
+    fn sub(self, other: Element<'a, Space>) -> Self::Output {
+        self.space().sub(&self, &other)
+    }
+}
 
-//         x.fill_inplace(self.r());
+impl<'a, Space: LinearSpace> std::ops::Sub<&Element<'a, Space>> for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//         x
-//     }
+    fn sub(self, other: &Element<'a, Space>) -> Self::Output {
+        self.space().sub(&self, other)
+    }
+}
 
-//     /// Return the space associated with the element
-//     pub fn space(&self) -> Rc<<Container::E as ElementImpl>::Space> {
-//         self.0.imp().space()
-//     }
+impl<'a, Space: LinearSpace> std::ops::Sub<Element<'a, Space>> for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     /// Return a view to the underlying type of the element implementation
-//     pub fn view(&self) -> ElementView<'_, <Container::E as ElementImpl>::Space> {
-//         self.0.imp().view()
-//     }
+    fn sub(self, other: Element<'a, Space>) -> Self::Output {
+        self.space().sub(self, &other)
+    }
+}
 
-//     /// Take the inner product with another element if the space is an inner product space
-//     pub fn inner_product(
-//         &self,
-//         other: Element<impl ElementContainer<E = Container::E>>,
-//     ) -> <Container::E as ElementImpl>::F
-//     where
-//         <Container::E as ElementImpl>::Space: InnerProductSpace,
-//     {
-//         self.0
-//             .imp()
-//             .space()
-//             .inner_product(self.0.imp(), other.0.imp())
-//     }
+impl<'a, Space: LinearSpace> std::ops::Sub<&Element<'a, Space>> for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     /// The norm of the element if the space is a normed space
-//     pub fn norm(&self) -> <<Container::E as ElementImpl>::F as RlstScalar>::Real
-//     where
-//         <Container::E as ElementImpl>::Space: NormedSpace,
-//     {
-//         self.0.imp().space().norm(self.0.imp())
-//     }
-// }
+    fn sub(self, other: &Element<'a, Space>) -> Self::Output {
+        self.space().sub(self, other)
+    }
+}
 
-// impl<Container: ElementContainerMut> Element<Container> {
-//     /// Return a mutable reference to the element implementation
-//     pub fn imp_mut(&mut self) -> &mut Container::E {
-//         self.0.imp_mut()
-//     }
+// Scalar multiplication operations
 
-//     /// Create a new struct that holds a mutable reference to this struct's element implementation
-//     pub fn r_mut(&mut self) -> Element<ConcreteElementContainerRefMut<'_, Container::E>> {
-//         Element(ConcreteElementContainerRefMut {
-//             elem: self.imp_mut(),
-//         })
-//     }
+impl<'a, Space: LinearSpace> std::ops::Mul<Space::F> for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     /// Return a mutable view to the underlying type of the element implementation
-//     pub fn view_mut(&mut self) -> ElementViewMut<'_, <Container::E as ElementImpl>::Space> {
-//         self.imp_mut().view_mut()
-//     }
+    fn mul(self, scalar: Space::F) -> Self::Output {
+        self.space().scalar_mul(&scalar, &self)
+    }
+}
 
-//     /// Add `alpha * x` to `self`
-//     pub fn axpy_inplace(
-//         &mut self,
-//         alpha: <Container::E as ElementImpl>::F,
-//         x: Element<impl ElementContainer<E = Container::E>>,
-//     ) {
-//         self.imp_mut().axpy_inplace(alpha, x.imp());
-//     }
+impl<'a, Space: LinearSpace> std::ops::Mul<&Space::F> for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     /// Sum `other` into `self`
-//     pub fn sum_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
-//         self.imp_mut().sum_inplace(other.imp());
-//     }
+    fn mul(self, scalar: &Space::F) -> Self::Output {
+        self.space().scalar_mul(scalar, self)
+    }
+}
 
-//     /// Subtract `other` from `self`
-//     pub fn sub_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
-//         self.imp_mut().sub_inplace(other.imp());
-//     }
+macro_rules! impl_scalar_mult {
+    ($scalar:ty) => {
+        impl<'a, Space: LinearSpace<F = $scalar>> std::ops::Mul<Element<'a, Space>> for $scalar {
+            type Output = Element<'a, Space>;
 
-//     /// Fill `self` with `other`
-//     pub fn fill_inplace(&mut self, other: Element<impl ElementContainer<E = Container::E>>) {
-//         self.imp_mut().fill_inplace(other.imp());
-//     }
+            fn mul(self, element: Element<'a, Space>) -> Self::Output {
+                element.space().scalar_mul(&self, &element)
+            }
+        }
 
-//     /// Scale `self` by `alpha`
-//     pub fn scale_inplace(&mut self, alpha: <Container::E as ElementImpl>::F) {
-//         self.imp_mut().scale_inplace(alpha);
-//     }
-// }
+        impl<'a, Space: LinearSpace<F = $scalar>> std::ops::Mul<&Element<'a, Space>> for $scalar {
+            type Output = Element<'a, Space>;
 
-// impl<ElemImpl: ElementImpl> Element<ConcreteElementContainer<ElemImpl>> {
-//     /// Create a new Element from an implementation
-//     pub fn new(elem: ElemImpl) -> Self {
-//         Self(ConcreteElementContainer(elem))
-//     }
-// }
+            fn mul(self, element: &Element<'a, Space>) -> Self::Output {
+                element.space().scalar_mul(&self, element)
+            }
+        }
+    };
+}
 
-// impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRef<'a, ElemImpl>> {
-//     /// Create a new element reference from an implementation reference
-//     pub fn new(elem: &'a ElemImpl) -> Self {
-//         Self(ConcreteElementContainerRef { elem })
-//     }
-// }
+impl_scalar_mult!(f64);
+impl_scalar_mult!(f32);
+impl_scalar_mult!(c64);
+impl_scalar_mult!(c32);
+impl_scalar_mult!(usize);
+impl_scalar_mult!(i8);
+impl_scalar_mult!(i16);
+impl_scalar_mult!(i32);
+impl_scalar_mult!(i64);
+impl_scalar_mult!(u8);
+impl_scalar_mult!(u16);
+impl_scalar_mult!(u32);
+impl_scalar_mult!(u64);
 
-// impl<'a, ElemImpl: ElementImpl> Element<ConcreteElementContainerRefMut<'a, ElemImpl>> {
-//     /// Create a new mutable element reference from an implementation mutable reference
-//     pub fn new(elem: &'a mut ElemImpl) -> Self {
-//         Self(ConcreteElementContainerRefMut { elem })
-//     }
-// }
+impl<'a, Space: LinearSpace> std::ops::Neg for Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-// // Arithmetic operations
+    fn neg(self) -> Self::Output {
+        self.space().neg(&self)
+    }
+}
 
-// impl<E: ElementImpl, Container1: ElementContainer<E = E>, Container2: ElementContainer<E = E>>
-//     std::ops::Add<Element<Container2>> for Element<Container1>
-// {
-//     type Output = ElementType<E>;
+impl<'a, Space: LinearSpace> std::ops::Neg for &Element<'a, Space> {
+    type Output = Element<'a, Space>;
 
-//     fn add(self, other: Element<Container2>) -> Self::Output {
-//         let mut x = self.duplicate();
-//         x.sum_inplace(other);
-//         x
-//     }
-// }
+    fn neg(self) -> Self::Output {
+        self.space().neg(self)
+    }
+}
 
-// impl<E: ElementImpl, Container1: ElementContainer<E = E>, Container2: ElementContainer<E = E>>
-//     std::ops::Sub<Element<Container2>> for Element<Container1>
-// {
-//     type Output = ElementType<E>;
+impl<'a, Space: LinearSpace> std::ops::AddAssign<Element<'a, Space>> for Element<'a, Space> {
+    fn add_assign(&mut self, other: Element<'a, Space>) {
+        self.space().sum_inplace(self, &other);
+    }
+}
 
-//     fn sub(self, other: Element<Container2>) -> Self::Output {
-//         let mut x = self.duplicate();
-//         x.sub_inplace(other);
-//         x
-//     }
-// }
+impl<'a, Space: LinearSpace> std::ops::SubAssign<Element<'a, Space>> for Element<'a, Space> {
+    fn sub_assign(&mut self, other: Element<'a, Space>) {
+        self.space().sub_inplace(self, &other);
+    }
+}
 
-// impl<
-//         E: ElementImpl,
-//         Container1: ElementContainerMut<E = E>,
-//         Container2: ElementContainer<E = E>,
-//     > std::ops::AddAssign<Element<Container2>> for Element<Container1>
-// {
-//     fn add_assign(&mut self, rhs: Element<Container2>) {
-//         self.sum_inplace(rhs);
-//     }
-// }
-
-// impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Neg for Element<Container> {
-//     type Output = ElementType<E>;
-
-//     fn neg(self) -> Self::Output {
-//         let mut x = self.duplicate();
-//         x.scale_inplace(-<E as ElementImpl>::F::one());
-//         x
-//     }
-// }
-
-// impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Mul<<E as ElementImpl>::F>
-//     for Element<Container>
-// {
-//     type Output = ElementType<E>;
-
-//     fn mul(self, rhs: <E as ElementImpl>::F) -> Self::Output {
-//         let mut x = self.duplicate();
-//         x.scale_inplace(rhs);
-//         x
-//     }
-// }
-
-// impl<E: ElementImpl, Container: ElementContainerMut<E = E>>
-//     std::ops::MulAssign<<E as ElementImpl>::F> for Element<Container>
-// {
-//     fn mul_assign(&mut self, rhs: <E as ElementImpl>::F) {
-//         self.scale_inplace(rhs);
-//     }
-// }
-
-// impl<E: ElementImpl, Container: ElementContainer<E = E>> std::ops::Div<<E as ElementImpl>::F>
-//     for Element<Container>
-// {
-//     type Output = ElementType<E>;
-
-//     fn div(self, rhs: <E as ElementImpl>::F) -> Self::Output {
-//         let mut x = self.duplicate();
-//         x.scale_inplace(<E as ElementImpl>::F::one() / rhs);
-//         x
-//     }
-// }
-
-// impl<E: ElementImpl, Container: ElementContainerMut<E = E>>
-//     std::ops::DivAssign<<E as ElementImpl>::F> for Element<Container>
-// {
-//     fn div_assign(&mut self, rhs: <E as ElementImpl>::F) {
-//         self.scale_inplace(<E as ElementImpl>::F::one() / rhs);
-//     }
-// }
-
-// impl<
-//         E: ElementImpl,
-//         Container1: ElementContainerMut<E = E>,
-//         Container2: ElementContainer<E = E>,
-//     > std::ops::SubAssign<Element<Container2>> for Element<Container1>
-// {
-//     fn sub_assign(&mut self, rhs: Element<Container2>) {
-//         self.sub_inplace(rhs);
-//     }
-// }
-
-// macro_rules! impl_element_scalar_mul {
-//     ($scalar:ty) => {
-//         impl<E: ElementImpl<F = $scalar>, Container: ElementContainer<E = E>>
-//             std::ops::Mul<Element<Container>> for $scalar
-//         {
-//             type Output = ElementType<E>;
-
-//             fn mul(self, rhs: Element<Container>) -> Self::Output {
-//                 rhs * self
-//             }
-//         }
-//     };
-// }
-
-// impl_element_scalar_mul!(f32);
-// impl_element_scalar_mul!(f64);
-// impl_element_scalar_mul!(c32);
-// impl_element_scalar_mul!(c64);
-
-// /// A trait for scalar times element operations
-// pub trait ScalarTimesElement<Container: ElementContainer>:
-//     std::ops::Mul<Element<Container>>
-// {
-// }
-
-// impl<T: RlstScalar, E: ElementImpl<F = T>, Container: ElementContainer<E = E>>
-//     ScalarTimesElement<Container> for T
-// where
-//     T: std::ops::Mul<Element<Container>>,
-// {
-// }
-
-// /// The type of an owned element for a given implementation type
-// pub type ElementType<ElemImpl> = Element<ConcreteElementContainer<ElemImpl>>;
-// /// The type of an element reference for a given implementation type
-// pub type ElementTypeRef<'a, ElemImpl> = Element<ConcreteElementContainerRef<'a, ElemImpl>>;
-// /// The type of a mutable element reference for a given implementation type
-// pub type ElementTypeRefMut<'a, ElemImpl> = Element<ConcreteElementContainerRefMut<'a, ElemImpl>>;
-
-// /// Create a new zero element from a given space.
-// pub fn zero_element<Space: LinearSpace>(
-//     space: Rc<Space>,
-// ) -> Element<ConcreteElementContainer<ElementImplType<Space>>> {
-//     Space::zero(space)
-// }
+impl<'a, Space: LinearSpace> std::ops::MulAssign<Space::F> for Element<'a, Space> {
+    fn mul_assign(&mut self, scalar: Space::F) {
+        self.space().scale_inplace(&scalar, self);
+    }
+}

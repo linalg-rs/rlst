@@ -19,7 +19,7 @@ use crate::{
         array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
         data_container::ContainerTypeHint,
     },
-    DispatchEval, DispatchEvalRowMajor, FillFrom, Heap, Stack,
+    AsRefType, AsRefTypeMut, DispatchEval, DispatchEvalRowMajor, FillFrom, Heap, Stack,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -59,6 +59,12 @@ pub type SliceArrayMut<'a, Item, const NDIM: usize> =
 /// A mutable dynamically allocated array from a data slice with a given stride.
 pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
     Array<StridedBaseArray<SliceContainerMut<'a, Item>, NDIM>, NDIM>;
+
+/// The reference type associated with an array.
+pub type RefType<'a, Arr> = <Arr as AsRefType>::RefType<'a>;
+
+/// The mutable reference type associated with an array.
+pub type RefTypeMut<'a, Arr> = <Arr as AsRefTypeMut>::RefTypeMut<'a>;
 
 // /// A view onto a matrix
 // pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =

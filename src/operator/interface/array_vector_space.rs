@@ -1,127 +1,111 @@
 //! Implementation of operator concepts for dense arrays.
 
-use std::marker::PhantomData;
-use std::rc::Rc;
-
-use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
-use crate::dense::types::RlstScalar;
-use crate::dense::{
-    array::{Array, DynamicArray},
-    base_array::BaseArray,
-    data_container::VectorContainer,
+use std::{
+    marker::PhantomData,
+    ops::{Add, AddAssign, Mul, MulAssign, Neg},
 };
-use crate::operator::space::{ElementImpl, IndexableSpace, InnerProductSpace, LinearSpace};
-use crate::operator::{ConcreteElementContainer, Element};
-use crate::rlst_dynamic_array1;
+
+use crate::{
+    dense::{
+        array::{operators::addition::ArrayAddition, reference::ArrayRef, DynArray, RefType},
+        base_array::BaseArray,
+        data_container::VectorContainer,
+    },
+    operator::element::Element,
+    Array, AsRefType, BaseItem, EvaluateArray, LinearSpace, ScalarMul, ScaleInPlace,
+};
 
 /// Array vector space
-pub struct ArrayVectorSpace<Item: RlstScalar> {
+pub struct ArrayVectorSpace<Item> {
     dimension: usize,
     _marker: PhantomData<Item>,
 }
 
-/// Element of an array vector space
-pub struct ArrayVectorSpaceElement<Item: RlstScalar> {
-    elem: DynamicArray<Item, 1>,
-    space: Rc<ArrayVectorSpace<Item>>,
-}
-
-impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
-    /// Create a new element
-    pub fn new(space: Rc<ArrayVectorSpace<Item>>) -> Self {
+impl<Item> ArrayVectorSpace<Item> {
+    /// Create a new array vector space with the given dimension.
+    pub fn new(dimension: usize) -> Self {
         Self {
-            elem: rlst_dynamic_array1!(Item, [space.dimension()]),
-            space,
-        }
-    }
-}
-
-impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<Item> {
-    fn clone(&self) -> Self {
-        let mut new_array = rlst_dynamic_array1!(Item, [self.space.dimension()]);
-        new_array.fill_from(self.view().r());
-        Self {
-            elem: new_array,
-            space: self.space.clone(),
-        }
-    }
-}
-
-impl<Item: RlstScalar> ArrayVectorSpace<Item> {
-    /// Create a new vector space
-    pub fn from_dimension(dimension: usize) -> Rc<Self> {
-        Rc::new(Self {
             dimension,
             _marker: PhantomData,
-        })
+        }
     }
 }
 
-impl<Item: RlstScalar> IndexableSpace for ArrayVectorSpace<Item> {
-    fn dimension(&self) -> usize {
-        self.dimension
-    }
-}
-
-impl<Item: RlstScalar> LinearSpace for ArrayVectorSpace<Item> {
-    type E = ArrayVectorSpaceElement<Item>;
-
+impl<Item> LinearSpace for ArrayVectorSpace<Item>
+where
+    Item: Copy
+        + Default
+        + 'static
+        + std::ops::Add<Output = Item>
+        + std::ops::Sub<Output = Item>
+        + std::ops::Neg<Output = Item>
+        + std::ops::AddAssign<Item>
+        + std::ops::Mul<Item, Output = Item>
+        + std::ops::MulAssign<Item>,
+{
     type F = Item;
 
-    fn zero(space: Rc<Self>) -> Element<ConcreteElementContainer<Self::E>> {
-        Element::<ConcreteElementContainer<Self::E>>::new(ArrayVectorSpaceElement::new(space))
-    }
-}
+    type Impl = DynArray<Item, 1>;
 
-impl<Item: RlstScalar> InnerProductSpace for ArrayVectorSpace<Item> {
-    fn inner_product(&self, x: &Self::E, other: &Self::E) -> Self::F {
-        x.view().inner(other.view())
-    }
-}
-
-impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
-    type F = Item;
-    type Space = ArrayVectorSpace<Item>;
-
-    type View<'b>
-        = Array<Item, ArrayRef<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
-    where
-        Self: 'b;
-
-    type ViewMut<'b>
-        = Array<Item, ArrayRefMut<'b, Item, BaseArray<Item, VectorContainer<Item>, 1>, 1>, 1>
-    where
-        Self: 'b;
-
-    fn space(&self) -> Rc<Self::Space> {
-        self.space.clone()
+    fn zero(&self) -> crate::operator::element::Element<Self> {
+        Element::new(self, DynArray::<Item, 1>::from_shape([self.dimension]))
     }
 
-    fn view(&self) -> Self::View<'_> {
-        self.elem.r()
+    fn add(
+        &self,
+        x: &crate::operator::element::Element<Self>,
+        y: &crate::operator::element::Element<Self>,
+    ) -> crate::operator::element::Element<Self> {
+        Element::new(self, (x.imp().r() + y.imp().r()).eval())
     }
 
-    fn view_mut(&mut self) -> Self::ViewMut<'_> {
-        self.elem.r_mut()
+    fn sub(
+        &self,
+        x: &crate::operator::element::Element<Self>,
+        y: &crate::operator::element::Element<Self>,
+    ) -> crate::operator::element::Element<Self> {
+        Element::new(self, (x.imp().r() - y.imp().r()).eval())
     }
 
-    fn axpy_inplace(&mut self, alpha: Self::F, x: &Self) {
-        self.elem.sum_into(x.view().scalar_mul(alpha));
+    fn scalar_mul(
+        &self,
+        scalar: &Self::F,
+        x: &crate::operator::element::Element<Self>,
+    ) -> crate::operator::element::Element<Self> {
+        Element::new(self, (x.imp().r().scalar_mul(*scalar)).eval())
     }
 
-    fn sum_inplace(&mut self, other: &Self) {
-        self.elem.sum_into(other.view());
+    fn neg(
+        &self,
+        x: &crate::operator::element::Element<Self>,
+    ) -> crate::operator::element::Element<Self> {
+        Element::new(self, x.imp().r().neg().eval())
     }
 
-    fn fill_inplace(&mut self, other: &Self) {
-        self.elem.fill_from(other.view());
+    fn sum_inplace(
+        &self,
+        x: &mut crate::operator::element::Element<Self>,
+        y: &crate::operator::element::Element<Self>,
+    ) {
+        *x.imp_mut() += y.imp().r();
     }
 
-    fn scale_inplace(&mut self, alpha: Self::F) {
-        self.view_mut().scale_inplace(alpha);
+    fn sub_inplace(
+        &self,
+        x: &mut crate::operator::element::Element<Self>,
+        y: &crate::operator::element::Element<Self>,
+    ) {
+        *x.imp_mut() -= y.imp().r();
     }
 
-    fn sub_inplace(&mut self, other: &Self) {
-        self.elem.sub_into(other.view());
+    fn scale_inplace(&self, scalar: &Self::F, x: &mut crate::operator::element::Element<Self>) {
+        *x.imp_mut() *= *scalar;
+    }
+
+    fn copy_from(
+        &self,
+        x: &crate::operator::element::Element<Self>,
+    ) -> crate::operator::element::Element<Self> {
+        Element::new(self, x.imp().eval())
     }
 }

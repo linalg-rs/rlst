@@ -1,4 +1,5 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
+use std::ops::{AddAssign, MulAssign, SubAssign};
 use std::rc::Rc;
 
 use crate::base_types::{c32, c64};
@@ -20,10 +21,10 @@ use num::traits::MulAdd;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
-    AbsSquare, Array, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom,
-    FillFromResize, FillWithValue, GatherToOne, Inner, Len, NormSup, NormTwo, NumberOfElements,
-    RawAccess, RawAccessMut, RlstResult, ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom,
-    ToType,
+    AbsSquare, Array, AsRefType, AsRefTypeMut, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray,
+    EvaluateArray, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len, NormSup,
+    NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul, ScaleInPlace,
+    ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -467,8 +468,8 @@ where
     Self: BaseItem,
     Array<ArrayImpl, NDIM>: ScaleInPlace<Item = <Self as BaseItem>::Item>,
 {
-    fn scale_in_place(&mut self, alpha: Self::Item) {
-        self.local.scale_in_place(alpha);
+    fn scale_inplace(&mut self, alpha: Self::Item) {
+        self.local.scale_inplace(alpha);
     }
 }
 
@@ -566,6 +567,21 @@ where
         Self::Item: Into<T>,
     {
         DistributedArray::new(self.index_layout.clone(), self.local.into_type())
+    }
+}
+
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> ScalarMul<Item>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM> + BaseItem<Item = Item>,
+    Array<ArrayImpl, NDIM>:
+        ScalarMul<Item, Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>>,
+{
+    type Output = DistributedArray<'a, C, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
+
+    fn scalar_mul(self, alpha: Item) -> Self::Output {
+        DistributedArray::new(self.index_layout.clone(), self.local.scalar_mul(alpha))
     }
 }
 
@@ -817,6 +833,69 @@ where
 
     fn mul(self, rhs: Item) -> Self::Output {
         DistributedArray::new(self.index_layout.clone(), self.local.mul(rhs))
+    }
+}
+
+impl<'a, C, OutImpl, ArrayImpl, const NDIM: usize> std::ops::Neg
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: std::ops::Neg<Output = Array<OutImpl, NDIM>>,
+    OutImpl: Shape<NDIM>,
+{
+    type Output = DistributedArray<'a, C, OutImpl, NDIM>;
+
+    fn neg(self) -> Self::Output {
+        DistributedArray::new(self.index_layout.clone(), self.local.neg())
+    }
+}
+
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    AddAssign<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+    Array<ArrayImpl, NDIM>: AddAssign<Array<ArrayImplOther, NDIM>>,
+{
+    fn add_assign(&mut self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::add_assign: The index layout and shape of the arrays do not match."
+        );
+        self.local += rhs.local;
+    }
+}
+
+impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
+    SubAssign<DistributedArray<'a, C, ArrayImplOther, NDIM>>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImplOther: Shape<NDIM>,
+    Array<ArrayImpl, NDIM>: SubAssign<Array<ArrayImplOther, NDIM>>,
+{
+    fn sub_assign(&mut self, rhs: DistributedArray<'a, C, ArrayImplOther, NDIM>) {
+        assert!(
+            self.is_compatible_with(&rhs),
+            "DistributedArray::sub_assign: The index layout and shape of the arrays do not match."
+        );
+        self.local -= rhs.local;
+    }
+}
+
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> MulAssign<Item>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    ArrayImpl: Shape<NDIM>,
+    ArrayImpl: BaseItem<Item = Item>,
+    Array<ArrayImpl, NDIM>: MulAssign<Item>,
+{
+    fn mul_assign(&mut self, rhs: Item) {
+        self.local *= rhs;
     }
 }
 

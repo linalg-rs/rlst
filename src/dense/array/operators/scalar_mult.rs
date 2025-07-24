@@ -2,13 +2,15 @@
 
 use std::ops::Mul;
 
+use num::One;
+
 use crate::base_types::{c32, c64};
 
-use crate::ContainerTypeHint;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
 };
+use crate::{ContainerTypeHint, ScalarMul};
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<Scalar, ArrayImpl, const NDIM: usize> {
@@ -71,13 +73,15 @@ impl<Scalar, ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM>
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Multiplication by a scalar
-    pub fn scalar_mul<Scalar>(
-        self,
-        other: Scalar,
-    ) -> Array<ArrayScalarMult<Scalar, ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArrayScalarMult::new(other, self))
+impl<Item, ArrayImpl, const NDIM: usize> ScalarMul<Item> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+{
+    type Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
+
+    /// Create a scalar multiplication of the array
+    fn scalar_mul(self, scalar: Item) -> Self::Output {
+        Array::new(ArrayScalarMult::new(scalar, self))
     }
 }
 

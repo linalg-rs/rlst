@@ -11,6 +11,7 @@ use crate::{
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
+    AsRefType,
 };
 
 /// A structure representing the pseudo-inverse of a matrix.

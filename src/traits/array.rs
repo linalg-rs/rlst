@@ -17,6 +17,26 @@ pub trait BaseItem {
     type Item;
 }
 
+///  Return reference type for the array.
+pub trait AsRefType {
+    /// The reference type of the array.
+    type RefType<'a>
+    where
+        Self: 'a;
+
+    fn r(&self) -> Self::RefType<'_>;
+}
+
+/// Return mutable reference type for the array.
+pub trait AsRefTypeMut {
+    /// The mutable reference type of the array.
+    type RefTypeMut<'a>
+    where
+        Self: 'a;
+
+    fn r_mut(&mut self) -> Self::RefTypeMut<'_>;
+}
+
 /// Shape of an object
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.
@@ -114,6 +134,14 @@ pub trait CmpMulFrom<Other> {
     fn cmp_mul_from(&mut self, other: &Other);
 }
 
+/// Multiply with a scalar.
+pub trait ScalarMul<Scalar> {
+    /// Output of multiplication with a scalar.
+    type Output;
+    /// Multiply with a scalar.
+    fn scalar_mul(self, scalar: Scalar) -> Self::Output;
+}
+
 /// Componentwise form `Self = Self * Other1 + Other2`.
 pub trait CmpMulAddFrom<Other1, Other2> {
     /// Componentwise form `Self = Self * Other1 + Other2`.
@@ -178,7 +206,7 @@ where
 /// Scale all elements by a value `alpha`.
 pub trait ScaleInPlace: BaseItem {
     /// Scale all elements by a value `alpha`.
-    fn scale_in_place(&mut self, alpha: Self::Item);
+    fn scale_inplace(&mut self, alpha: Self::Item);
 }
 
 impl<T> ScaleInPlace for T
@@ -186,7 +214,7 @@ where
     T: ArrayIteratorMut,
     T::Item: MulAssign<T::Item> + Copy,
 {
-    fn scale_in_place(&mut self, alpha: Self::Item) {
+    fn scale_inplace(&mut self, alpha: Self::Item) {
         self.iter_mut().for_each(|elem| *elem *= alpha);
     }
 }

@@ -6,6 +6,7 @@ pub mod cmp_wise_division;
 pub mod cmp_wise_product;
 pub mod coerce;
 pub mod mul_add;
+pub mod negation;
 pub mod reverse_axis;
 pub mod scalar_mult;
 pub mod subtraction;

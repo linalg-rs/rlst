@@ -22,6 +22,7 @@ use crate::{
         iterators::ArrayIteratorByValue,
         rlst_num::RlstScalar,
     },
+    AsRefType,
 };
 
 use super::{base::Gemm, lapack::Lapack};

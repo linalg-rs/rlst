@@ -1,9 +1,10 @@
 //! Operations on arrays.
 use std::iter::Sum;
-use std::ops::{AddAssign, MulAssign};
+use std::ops::{AddAssign, MulAssign, Neg, SubAssign};
 
 use itertools::izip;
 use num::traits::{MulAdd, MulAddAssign};
+use num::One;
 //use crate::{dense::types::RlstResult, TransMode};
 
 use crate::traits::accessors::UnsafeRandom1DAccessByValue;
@@ -35,6 +36,8 @@ use super::iterators::{
     ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
     ColIteratorMut,
 };
+use super::operators::negation::ArrayNeg;
+use super::operators::scalar_mult::ArrayScalarMult;
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;
@@ -515,6 +518,52 @@ where
         let shape = self.shape();
         let iter = ArrayDefaultIteratorMut::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), shape)
+    }
+}
+
+impl<ArrayImpl, ArrayImplOther, const NDIM: usize> AddAssign<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    Array<ArrayImpl, NDIM>: SumFrom<Array<ArrayImplOther, NDIM>>,
+{
+    fn add_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
+        self.sum_from(&rhs)
+    }
+}
+
+impl<Out, ArrayImpl, ArrayImplOther, const NDIM: usize> SubAssign<Array<ArrayImplOther, NDIM>>
+    for Array<ArrayImpl, NDIM>
+where
+    Array<ArrayImplOther, NDIM>: Neg<Output = Out>,
+    Array<ArrayImpl, NDIM>: SumFrom<Out>,
+{
+    fn sub_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
+        self.sum_from(&rhs.neg())
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> MulAssign<Item> for Array<ArrayImpl, NDIM>
+where
+    Item: Copy,
+    Self: ArrayIteratorMut<Item = Item>,
+    Item: MulAssign<Item>,
+{
+    fn mul_assign(&mut self, rhs: Item) {
+        for item in self.iter_mut() {
+            *item *= rhs;
+        }
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> Neg for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+    Item: Neg<Output = Item>,
+{
+    type Output = Array<ArrayNeg<ArrayImpl, NDIM>, NDIM>;
+
+    fn neg(self) -> Self::Output {
+        Array::new(ArrayNeg::new(self))
     }
 }
 
