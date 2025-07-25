@@ -12,7 +12,8 @@ use crate::{
         data_container::VectorContainer,
     },
     operator::element::Element,
-    Array, AsRefType, BaseItem, EvaluateArray, LinearSpace, ScalarMul, ScaleInPlace,
+    Array, AsRefType, BaseItem, EvaluateArray, Inner, InnerProductSpace, LinearSpace, ScalarMul,
+    ScaleInPlace,
 };
 
 /// Array vector space
@@ -107,5 +108,23 @@ where
         x: &crate::operator::element::Element<Self>,
     ) -> crate::operator::element::Element<Self> {
         Element::new(self, x.imp().eval())
+    }
+}
+
+impl<Item> InnerProductSpace for ArrayVectorSpace<Item>
+where
+    Item: Copy
+        + Default
+        + 'static
+        + std::ops::Add<Output = Item>
+        + std::ops::Sub<Output = Item>
+        + std::ops::Neg<Output = Item>
+        + std::ops::AddAssign<Item>
+        + std::ops::Mul<Item, Output = Item>
+        + std::ops::MulAssign<Item>,
+    DynArray<Item, 1>: Inner<DynArray<Item, 1>, Output = Item>,
+{
+    fn inner_product(&self, x: &Element<Self>, other: &Element<Self>) -> Self::F {
+        x.imp().inner(other.imp())
     }
 }

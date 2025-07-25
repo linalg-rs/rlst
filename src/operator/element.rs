@@ -6,7 +6,7 @@
 //     NormedSpace, RlstScalar,
 // };
 
-use crate::LinearSpace;
+use crate::{Inner, InnerProductSpace, LinearSpace, NormedSpace, RlstScalar};
 
 use crate::base_types::{c32, c64};
 
@@ -196,5 +196,19 @@ impl<'a, Space: LinearSpace> std::ops::SubAssign<Element<'a, Space>> for Element
 impl<'a, Space: LinearSpace> std::ops::MulAssign<Space::F> for Element<'a, Space> {
     fn mul_assign(&mut self, scalar: Space::F) {
         self.space().scale_inplace(&scalar, self);
+    }
+}
+
+impl<'a, Space: LinearSpace> Clone for Element<'a, Space> {
+    fn clone(&self) -> Self {
+        self.space().copy_from(self)
+    }
+}
+
+impl<'a, Space: InnerProductSpace> Inner for Element<'a, Space> {
+    type Output = Space::F;
+
+    fn inner(&self, other: &Self) -> Self::Output {
+        self.space().inner_product(self, other)
     }
 }

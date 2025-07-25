@@ -4,7 +4,6 @@ use std::ops::{AddAssign, MulAssign, Neg, SubAssign};
 
 use itertools::izip;
 use num::traits::{MulAdd, MulAddAssign};
-use num::One;
 //use crate::{dense::types::RlstResult, TransMode};
 
 use crate::traits::accessors::UnsafeRandom1DAccessByValue;

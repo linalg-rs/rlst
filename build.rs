@@ -85,7 +85,7 @@ fn build_umfpack(out_dir: String) {
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
     let out_path = PathBuf::from(std::env::var("OUT_DIR").unwrap());
-    println!("cargo:warning={}", out_dir);
+    println!("cargo:warning={out_dir}");
     //println!("Out path: {}", out_path.to_str().unwrap());
     bindings
         .write_to_file(out_path.join("umfpack.rs"))

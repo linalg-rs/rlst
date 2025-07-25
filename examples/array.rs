@@ -9,6 +9,6 @@ fn main() {
     arr.fill_from_seed_equally_distributed(0);
 
     for ([i, j], v) in arr.iter_aij_value() {
-        println!("{} {} {}", i, j, v);
+        println!("{i} {j} {v}");
     }
 }
