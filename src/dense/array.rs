@@ -82,8 +82,7 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     pub fn new(arr: ArrayImpl) -> Self {
         assert!(
             NDIM > 0,
-            "Array dimension must be greater than 0, got {}",
-            NDIM
+            "Array dimension must be greater than 0, got {NDIM}"
         );
         Self(arr)
     }
@@ -352,7 +351,7 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> std::fmt::Debug for Array<ArrayI
         let shape = self.shape();
         write!(f, "Array[").unwrap();
         for item in shape {
-            write!(f, "{},", item).unwrap();
+            write!(f, "{item},").unwrap();
         }
         write!(f, "]")
     }

@@ -111,6 +111,7 @@ pub trait Norm {
     /// The output of the norm.
     type Output;
 
+    /// Compute the norm of an object.
     fn norm(&self) -> Self::Output;
 }
 

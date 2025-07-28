@@ -30,7 +30,7 @@ pub trait OperatorBase {
         Operator::new(RlstOperatorReference::new(self))
     }
 
-    /// Apply an operator as y -> alpha * Ax + beta y
+    /// Apply an operator as y -> alpha * Ax + beta y.
     fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
@@ -39,6 +39,7 @@ pub trait OperatorBase {
         y: &mut Element<Self::Range>,
     );
 
+    /// Apply the operator to `x`.
     #[inline(always)]
     fn dot(&self, x: &Element<Self::Domain>) -> Element<Self::Range>
     where

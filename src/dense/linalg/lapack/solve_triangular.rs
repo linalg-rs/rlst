@@ -33,8 +33,7 @@ where
 
         assert_eq!(
             m, n,
-            "Triangular solver requires a square matrix, but got shape: {}x{}",
-            m, n
+            "Triangular solver requires a square matrix, but got shape: {m}x{n}"
         );
 
         assert_eq!(

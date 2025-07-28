@@ -38,8 +38,7 @@ where
         let [m, n] = a.shape();
         assert_eq!(
             m, n,
-            "Matrix must be square for eigenvalue decomposition. Got shape: [{}, {}]",
-            m, n
+            "Matrix must be square for eigenvalue decomposition. Got shape: [{m}, {n}]"
         );
 
         let mut w = DynArray::from_shape([n]);
@@ -55,8 +54,7 @@ where
         let [m, n] = a.shape();
         assert_eq!(
             m, n,
-            "Matrix must be square for Schur decomposition. Got shape: [{}, {}]",
-            m, n
+            "Matrix must be square for Schur decomposition. Got shape: [{m}, {n}]"
         );
 
         let mut w = DynArray::from_shape([n]);
@@ -89,8 +87,7 @@ where
         let [m, n] = a.shape();
         assert_eq!(
             m, n,
-            "Matrix must be square for eigenvalue decomposition. Got shape: [{}, {}]",
-            m, n
+            "Matrix must be square for eigenvalue decomposition. Got shape: [{m}, {n}]"
         );
 
         let mut w = DynArray::<<Item as RlstScalar>::Complex, 1>::from_shape([n]);

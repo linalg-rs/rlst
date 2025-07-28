@@ -219,7 +219,7 @@ pretty_print_impl!(c64, fmt_complex);
 
 // https://stackoverflow.com/a/65266882
 fn fmt_real<T: RlstScalar>(num: T::Real, width: usize, precision: usize, exp_pad: usize) -> String {
-    let mut num = format!("{:.precision$e}", num, precision = precision);
+    let mut num = format!("{num:.precision$e}");
     // Safe to `unwrap` as `num` is guaranteed to contain `'e'`
     let exp = num.split_off(num.find('e').unwrap());
 
@@ -227,9 +227,9 @@ fn fmt_real<T: RlstScalar>(num: T::Real, width: usize, precision: usize, exp_pad
         .strip_prefix("e-")
         .map_or_else(|| ('+', &exp[1..]), |stripped| ('-', stripped));
 
-    num.push_str(&format!("e{}{:0>pad$}", sign, exp, pad = exp_pad));
+    num.push_str(&format!("e{sign}{exp:0>exp_pad$}"));
 
-    format!("{:>width$}", num, width = width)
+    format!("{num:>width$}")
 }
 
 fn fmt_complex<T: RlstScalar>(num: T, width: usize, precision: usize, exp_pad: usize) -> String {

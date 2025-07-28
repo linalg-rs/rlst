@@ -22,7 +22,7 @@ fn main() {
 
     let (dist_mat, dist_x) = {
         if rank == 0 {
-            println!("Loading CSR matrix example on process {}", rank);
+            println!("Loading CSR matrix example on process {rank}");
 
             // Read the sparse matrix in matrix market format.
             let sparse_mat = read_coordinate_mm::<f64>("examples/mat_507_313.mm").unwrap();

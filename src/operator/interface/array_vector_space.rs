@@ -1,19 +1,10 @@
 //! Implementation of operator concepts for dense arrays.
 
-use std::{
-    marker::PhantomData,
-    ops::{Add, AddAssign, Mul, MulAssign, Neg},
-};
+use std::{marker::PhantomData, ops::Neg};
 
 use crate::{
-    dense::{
-        array::{operators::addition::ArrayAddition, reference::ArrayRef, DynArray, RefType},
-        base_array::BaseArray,
-        data_container::VectorContainer,
-    },
-    operator::element::Element,
-    Array, AsRefType, BaseItem, EvaluateArray, Inner, InnerProductSpace, LinearSpace, ScalarMul,
-    ScaleInPlace,
+    dense::array::DynArray, operator::element::Element, AsRefType, EvaluateArray, Inner,
+    InnerProductSpace, LinearSpace, ScalarMul,
 };
 
 /// Array vector space

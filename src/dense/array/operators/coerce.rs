@@ -39,11 +39,8 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
         } else {
             // Otherwise, we need to coerce the array.
             Err(RlstError::GeneralError(
-                format!(
-                    "Cannot coerce array: dimensions do not match {} != {}.",
-                    CDIM, NDIM
-                )
-                .to_string(),
+                format!("Cannot coerce array: dimensions do not match {CDIM} != {NDIM}.")
+                    .to_string(),
             ))
         }
     }

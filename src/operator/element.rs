@@ -6,7 +6,7 @@
 //     NormedSpace, RlstScalar,
 // };
 
-use crate::{Inner, InnerProductSpace, LinearSpace, Norm, NormTwo, NormedSpace, RlstScalar};
+use crate::{Inner, InnerProductSpace, LinearSpace, Norm, NormedSpace};
 
 use crate::base_types::{c32, c64};
 

@@ -29,8 +29,7 @@ where
 
         assert_eq!(
             m, n,
-            "Cholesky decomposition requires a square matrix, but got shape: {}x{}",
-            m, n
+            "Cholesky decomposition requires a square matrix, but got shape: {m}x{n}"
         );
 
         let mut a = DynArray::new_from(self);
@@ -88,8 +87,7 @@ where
 
         assert_eq!(
             m, n,
-            "Cholesky solve requires a square matrix, but got shape: {}x{}",
-            m, n
+            "Cholesky solve requires a square matrix, but got shape: {m}x{n}"
         );
 
         assert_eq!(

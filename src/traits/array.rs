@@ -24,6 +24,7 @@ pub trait AsRefType {
     where
         Self: 'a;
 
+    /// Return the reference type.
     fn r(&self) -> Self::RefType<'_>;
 }
 
@@ -34,6 +35,7 @@ pub trait AsRefTypeMut {
     where
         Self: 'a;
 
+    /// Return the mutable reference type.
     fn r_mut(&mut self) -> Self::RefTypeMut<'_>;
 }
 

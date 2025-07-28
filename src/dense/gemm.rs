@@ -19,8 +19,7 @@ fn assert_data_size(nelems: usize, stride: [usize; 2], shape: [usize; 2]) {
 
     assert_eq!(
         expected, nelems,
-        "Wrong size for data slice. Actual size {}. Expected size {}.",
-        nelems, expected
+        "Wrong size for data slice. Actual size {nelems}. Expected size {expected}."
     );
 }
 

@@ -2,8 +2,6 @@
 
 use std::ops::Mul;
 
-use num::One;
-
 use crate::base_types::{c32, c64};
 
 use crate::{

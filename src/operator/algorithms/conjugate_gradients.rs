@@ -1,7 +1,6 @@
 //! Arnoldi Iteration
 
-use std::convert::AsRef;
-use std::ops::{AddAssign, Mul};
+use std::ops::Mul;
 
 use num::One;
 

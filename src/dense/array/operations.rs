@@ -36,7 +36,6 @@ use super::iterators::{
     ColIteratorMut,
 };
 use super::operators::negation::ArrayNeg;
-use super::operators::scalar_mult::ArrayScalarMult;
 use super::operators::unary_op::ArrayUnaryOperator;
 use super::reference::{ArrayRef, ArrayRefMut};
 use super::slice::ArraySlice;

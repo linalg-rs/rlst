@@ -23,12 +23,12 @@ fn main() {
     println!("CSR Matrix Shape: {:#?}", csr_mat.shape());
 
     for ([i, j], v) in csr_mat.iter_aij_value() {
-        println!("Row: {}, Col: {}, Value: {}", i, j, v);
+        println!("Row: {i}, Col: {j}, Value: {v}");
     }
 
     println!("Apply operator.");
     let csr_res = (csr_mat.op().abs() + 7.0 * csr_mat2.op() * csr_mat.op()).into_csr();
     for ([i, j], v) in csr_res.iter_aij_value() {
-        println!("Row: {}, Col: {}, Value: {}", i, j, v);
+        println!("Row: {i}, Col: {j}, Value: {v}");
     }
 }
