@@ -1,5 +1,7 @@
 //! Definition of a general linear operator.
 
+use num::{One, Zero};
+
 use crate::{
     operator::{
         abstract_operator::{Operator, RlstOperatorReference},
@@ -36,4 +38,14 @@ pub trait OperatorBase {
         beta: <Self::Range as LinearSpace>::F,
         y: &mut Element<Self::Range>,
     );
+
+    #[inline(always)]
+    fn dot(&self, x: &Element<Self::Domain>) -> Element<Self::Range>
+    where
+        <Self::Range as crate::LinearSpace>::F: One + Zero,
+    {
+        let mut res = self.range().zero();
+        self.apply(One::one(), x, Zero::zero(), &mut res);
+        res
+    }
 }

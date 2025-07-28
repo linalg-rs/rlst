@@ -6,7 +6,7 @@
 //     NormedSpace, RlstScalar,
 // };
 
-use crate::{Inner, InnerProductSpace, LinearSpace, NormedSpace, RlstScalar};
+use crate::{Inner, InnerProductSpace, LinearSpace, Norm, NormTwo, NormedSpace, RlstScalar};
 
 use crate::base_types::{c32, c64};
 
@@ -123,11 +123,11 @@ impl<'a, Space: LinearSpace> std::ops::Mul<Space::F> for Element<'a, Space> {
     }
 }
 
-impl<'a, Space: LinearSpace> std::ops::Mul<&Space::F> for &Element<'a, Space> {
+impl<'a, Space: LinearSpace> std::ops::Mul<Space::F> for &Element<'a, Space> {
     type Output = Element<'a, Space>;
 
-    fn mul(self, scalar: &Space::F) -> Self::Output {
-        self.space().scalar_mul(scalar, self)
+    fn mul(self, scalar: Space::F) -> Self::Output {
+        self.space().scalar_mul(&scalar, self)
     }
 }
 
@@ -187,9 +187,21 @@ impl<'a, Space: LinearSpace> std::ops::AddAssign<Element<'a, Space>> for Element
     }
 }
 
+impl<'a, Space: LinearSpace> std::ops::AddAssign<&Element<'a, Space>> for Element<'a, Space> {
+    fn add_assign(&mut self, other: &Element<'a, Space>) {
+        self.space().sum_inplace(self, other);
+    }
+}
+
 impl<'a, Space: LinearSpace> std::ops::SubAssign<Element<'a, Space>> for Element<'a, Space> {
     fn sub_assign(&mut self, other: Element<'a, Space>) {
         self.space().sub_inplace(self, &other);
+    }
+}
+
+impl<'a, Space: LinearSpace> std::ops::SubAssign<&Element<'a, Space>> for Element<'a, Space> {
+    fn sub_assign(&mut self, other: &Element<'a, Space>) {
+        self.space().sub_inplace(self, other);
     }
 }
 
@@ -210,5 +222,13 @@ impl<'a, Space: InnerProductSpace> Inner for Element<'a, Space> {
 
     fn inner(&self, other: &Self) -> Self::Output {
         self.space().inner_product(self, other)
+    }
+}
+
+impl<'a, Space: NormedSpace> Norm for Element<'a, Space> {
+    type Output = Space::Output;
+
+    fn norm(&self) -> Self::Output {
+        self.space().norm(self)
     }
 }

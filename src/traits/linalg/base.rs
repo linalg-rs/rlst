@@ -106,6 +106,14 @@ pub trait Inner<Other = Self> {
     fn inner(&self, other: &Other) -> Self::Output;
 }
 
+/// Compute the norm of an entity.
+pub trait Norm {
+    /// The output of the norm.
+    type Output;
+
+    fn norm(&self) -> Self::Output;
+}
+
 /// Return the supremum norm of an array.
 pub trait NormSup {
     /// The Item type of the norm.
