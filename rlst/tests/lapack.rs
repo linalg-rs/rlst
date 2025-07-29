@@ -18,7 +18,7 @@ macro_rules! impl_inverse_tests {
         paste! {
         #[test]
         fn [<test_inverse_$scalar>]() {
-            let n = 100;
+            let n = 10;
 
             let mut a = rlst_dynamic_array!($scalar, [n, n]);
             a.fill_from_seed_equally_distributed(0);

@@ -55,8 +55,3 @@ pub use traits::*;
 
 // Re-export the base types
 pub use base_types::*;
-
-#[cfg(test)]
-mod test {
-    use criterion as _; // Hack to show that criterion is used, as cargo test does not see benches
-}

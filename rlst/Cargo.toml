@@ -27,7 +27,6 @@ lapack = "0.19"
 thiserror = "2"
 serde = "1"
 log = { version = "0.4", optional = true }
-typenum = "1"
 paste = "1"
 
 coe-rs = "0.1.2"
@@ -37,11 +36,10 @@ bytemuck = "1.16.0"
 mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 
-
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
 approx = { version = "0.5", features = ["num-complex"] }
 rand = "0.8"
+paste = "1"
 
 [build-dependencies]
 cc = "=1.2"
@@ -64,47 +62,29 @@ enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 [lints.clippy]
 wildcard_imports = "forbid"
 
-# [[bench]]
-# name = "matrix_multiplication"
-# harness = false
+[[example]]
+name = "array"
 
-# [[bench]]
-# name = "inverse_sqrt_f64"
-# harness = false
+[[example]]
+name = "sparse"
 
-# [[bench]]
-# name = "inverse_sqrt_f32"
-# harness = false
+[[example]]
+name = "dist_array_operations"
+required-features = ["mpi"]
 
-# [[bench]]
-# name = "sin_cos"
-# harness = false
+[package.metadata.example.dist_array_operations.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
 
-# [[bench]]
-# name = "exp"
-# harness = false
+[[example]]
+name = "dist_csr_matrix"
+required-features = ["mpi"]
 
+[package.metadata.example.dist_csr_matrix.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
 
-# [[example]]
-# name = "mpi_gather_to_all_vector"
-# required-features = ["mpi"]
+[[example]]
+name = "distributed_array"
+required-features = ["mpi"]
 
-# [[example]]
-# name = "mpi_gather_vector"
-# required-features = ["mpi"]
-
-# [[example]]
-# name = "mpi_index_set"
-# required-features = ["mpi"]
-
-# [[example]]
-# name = "mpi_scatter_vector"
-# required-features = ["mpi"]
-
-# [[example]]
-# name = "distributed_csr_matmul"
-# required-features = ["mpi"]
-
-# [[example]]
-# name = "cg_distributed"
-# required-features = ["mpi"]
+[package.metadata.example.distributed_array.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
