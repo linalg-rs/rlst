@@ -38,7 +38,6 @@ mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
 approx = { version = "0.5", features = ["num-complex"] }
 rand = "0.8"
 paste = "1"
