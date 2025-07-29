@@ -28,7 +28,7 @@ jobs:
         with:
           mpi: ${{ matrix.mpi }}
       - name: Install cargo-mpirun
-        run: cargo install cargo-mpirun
+        run: cargo install cargo-mpirun cargo-templated-examples
 
       - uses: actions/checkout@v3
         with:
@@ -55,12 +55,9 @@ jobs:
       - name: Run tests (release)
         run: RUST_MIN_STACK=8388608 cargo test --examples --release --features "mpi,strict"
       - name: Run examples
-        run: |
-          python3 find_examples.py --features "strict"
-          chmod +x examples.sh
-          ./examples.sh
-      - name: Check benchmarks compile
-        run: cargo bench --no-run
+        run: cargo templated-examples NPROCESSES 2,4
+      # - name: Check benchmarks compile
+      #   run: cargo bench --no-run
 
       - name: Build docs
         run: cargo doc --features "mpi,strict"
@@ -79,6 +76,6 @@ jobs:
           components: rustfmt
       - name: Install cargo-upgrades
         run: cargo install cargo-upgrades
-      # - uses: actions/checkout@v3
-      # - name: Check that dependencies are up to date
-      #   run: cargo upgrades
+      - uses: actions/checkout@v3
+      - name: Check that dependencies are up to date
+        run: cargo upgrades

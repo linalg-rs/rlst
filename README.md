@@ -1,10 +1,10 @@
 # Rust Linear Solver Toolbox
 
 The Rust Linear Solver toolbox is an in-development project for
-dense and sparse library routines in Rust.
+dense and sparse linear algebra routines in Rust.
 
 ## Documentation
-The latest documentation of the main branch of this repo is available at [linalg-rs.github.io/rlst](https://linalg-rs.github.io/rlst/).
+The latest documentation of the main branch of this repo is available at [linalg-rs.github.io/rlst/rlst](https://linalg-rs.github.io/rlst/rlst).
 
 ## LICENSE
 
