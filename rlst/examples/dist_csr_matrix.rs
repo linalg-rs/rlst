@@ -1,7 +1,7 @@
 //! Working with a distributed CSR matrix.
 
 use std::rc::Rc;
-
+use std::path::PathBuf;
 use mpi::traits::Root;
 use mpi::{self, traits::Communicator};
 use rlst::dense::array::DynArray;
@@ -15,17 +15,24 @@ use rlst::{
     ScatterFromOne,
 };
 
+fn relative_file(filename: &str) -> String {
+    let file = PathBuf::from(file!());
+    let dir = file.parent().unwrap();
+    format!("{}/{filename}", dir.display())
+}
+
 fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
     let rank = world.rank();
+
 
     let (dist_mat, dist_x) = {
         if rank == 0 {
             println!("Loading CSR matrix example on process {rank}");
 
             // Read the sparse matrix in matrix market format.
-            let sparse_mat = read_coordinate_mm::<f64>("examples/mat_507_313.mm").unwrap();
+            let sparse_mat = read_coordinate_mm::<f64>(&relative_file("mat_507_313.mm")).unwrap();
 
             // Communicate the shape of the matrix to all processes.
 
@@ -55,7 +62,7 @@ fn main() {
 
             //  We now read the vector x and distribute it across.
 
-            let x = read_array_mm::<f64>("examples/x_313.mm").unwrap();
+            let x = read_array_mm::<f64>(&relative_file("x_313.mm")).unwrap();
             let dist_x = x.slice(1, 0).scatter_from_one_root(domain_layout.clone());
 
             (dist_mat, dist_x)
@@ -105,7 +112,7 @@ fn main() {
         let result = dist_y.gather_to_one_root();
 
         // Read the expected result vector in matrix market format and slice to one dimension.
-        let y_expected = read_array_mm::<f64>("examples/y_507.mm")
+        let y_expected = read_array_mm::<f64>(&relative_file("/y_507.mm"))
             .unwrap()
             .slice(1, 0);
 
