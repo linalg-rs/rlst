@@ -102,7 +102,7 @@ where
         let k = std::cmp::min(m, n);
         let mut l_mat = DynArray::from_shape([m, k]);
 
-        for col in 0..k as usize {
+        for col in 0..k {
             for row in col..m {
                 if col == row {
                     unsafe { *l_mat.get_unchecked_mut([row, col]) = <Item as One>::one() };
