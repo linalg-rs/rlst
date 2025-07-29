@@ -1,7 +1,5 @@
 //! Working with a distributed CSR matrix.
 
-use std::rc::Rc;
-use std::path::PathBuf;
 use mpi::traits::Root;
 use mpi::{self, traits::Communicator};
 use rlst::dense::array::DynArray;
@@ -14,6 +12,8 @@ use rlst::{
     assert_array_relative_eq, AijIteratorByValue, AsMatrixApply, FromAijDistributed, GatherToOne,
     ScatterFromOne,
 };
+use std::path::PathBuf;
+use std::rc::Rc;
 
 fn relative_file(filename: &str) -> String {
     let file = PathBuf::from(file!());
@@ -25,7 +25,6 @@ fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
     let rank = world.rank();
-
 
     let (dist_mat, dist_x) = {
         if rank == 0 {
