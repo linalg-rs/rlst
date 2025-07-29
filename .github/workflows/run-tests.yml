@@ -27,7 +27,7 @@ jobs:
         uses: mpi4py/setup-mpi@v1
         with:
           mpi: ${{ matrix.mpi }}
-      - name: Install cargo-mpirun
+      - name: Install cargo-mpirun and cargo-templated-examples
         run: cargo install cargo-mpirun cargo-templated-examples
 
       - uses: actions/checkout@v3
