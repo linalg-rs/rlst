@@ -23,36 +23,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build docs
-        run: RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi,strict"
-
-  build-and-deploy-docs:
-    name: Build and deploy docs
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    concurrency:
-      group: "pages"
-      cancel-in-progress: true
-    steps:
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: "nightly"
-          components: rustfmt
-      - name: Set up MPI
-        uses: mpi4py/setup-mpi@v1
-        with:
-          mpi: "mpich"
-      - uses: actions/checkout@v3
-
-      - name: Build docs
-        run: RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi"
+        run: cargo +nightly doc --no-deps -Zunstable-options -Zrustdoc-scrape-examples --features "mpi,strict"
 
       - name: Set file permissions
         run: |
@@ -61,10 +32,26 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      - name: Upload artifact for docs
-        uses: actions/upload-pages-artifact@v1
+        if: github.ref == 'refs/heads/main'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'target/doc'
-      - name: Deploy docs to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+        if: github.ref == 'refs/heads/main'
+
+  deploy-docs:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build-docs
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
