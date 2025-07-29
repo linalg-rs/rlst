@@ -56,8 +56,13 @@ jobs:
         run: RUST_MIN_STACK=8388608 cargo test --examples --release --features "mpi,strict"
       - name: Run examples
         run: cargo templated-examples NPROCESSES 2,4
+<<<<<<< HEAD
       # - name: Check benchmarks compile
       #   run: cargo bench --no-run
+=======
+      - name: Check benchmarks compile
+        run: cargo bench --no-run
+>>>>>>> main
 
       - name: Build docs
         run: cargo doc --features "mpi,strict"
