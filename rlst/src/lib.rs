@@ -6,7 +6,7 @@
 //! RLST has the following feature set.
 //! - n-dimensional array structures that can be allocated on the stack or heap.
 //! - Support for BLAS matrix-matrix multiplication and a subset of Lapack operations (incl. LU, SVD, QR).
-//! - CSR and CSC sparse matrices on a single node or via MPI on multiple nodes.
+//! - CSR sparse matrices on a single node or via MPI on multiple nodes.
 //! - An interface to UMFPACK for the solution of sparse linear systems.
 //! - Import and export into Matrix-Market format.
 //! - A general `operator` interface that can abstract linear operators, and iterative solvers
@@ -18,7 +18,6 @@
 //! - Sparse matrix operations.
 //! - Using the operator interface for iterative solvers.
 //! - Import and export of matrices.
-//! - BLAS dependencies, multithreading, and GPU offloading.
 
 #![cfg_attr(feature = "strict", deny(warnings), deny(unused_crate_dependencies))]
 #![warn(missing_docs)]
@@ -32,8 +31,7 @@ pub mod traits;
 // pub mod doc;
 // pub mod external;
 pub mod io;
-// pub mod tracing;
-//pub mod distributed_tools;
+pub mod tracing;
 
 //pub mod prelude;
 // pub mod threading;

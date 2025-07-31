@@ -16,48 +16,45 @@ use crate::IsSmallerThan;
 /// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum RlstError {
-    /// Not implemented
+    /// Not implemented.
     #[error("Method {0} is not implemented.")]
     NotImplemented(String),
-    /// Operation failed
+    /// Operation failed.
     #[error("Operation {0} failed.")]
     OperationFailed(String),
-    /// Matrix is empty
+    /// Matrix is empty.
     #[error("Matrix has empty dimension {0:#?}.")]
     MatrixIsEmpty((usize, usize)),
-    /// Dimension mismatch
+    /// Dimension mismatch.
     #[error("Dimension mismatch. Expected {expected:}. Actual {actual:}")]
     SingleDimensionError {
-        /// Expected dimension
+        /// Expected dimension.
         expected: usize,
-        /// Actual dimension
+        /// Actual dimension.
         actual: usize,
     },
-    /// Index layout error
+    /// Index layout error.
     #[error("Index Layout error: {0}")]
     IndexLayoutError(String),
-    /// MPI rank error
+    /// MPI rank error.
     #[error("MPI Rank does not exist. {0}")]
     MpiRankError(i32),
-    /// Incompatible stride for Lapack
+    /// Incompatible stride for Lapack.
     #[error("Incompatible stride for Lapack.")]
     IncompatibleStride,
-    /// Lapack error
+    /// Lapack error.
     #[error("Lapack error: {0}")]
     LapackError(#[from] LapackError),
-    /// General error
+    /// General error.
     #[error("{0}")]
     GeneralError(String),
-    /// I/O error
+    /// I/O error.
     #[error("I/O Error: {0}")]
     IoError(String),
-    /// Umfpack error
-    #[error("Umfpack Error Code: {0}")]
-    UmfpackError(i32),
-    /// Matrix is not square
+    /// Matrix is not square.
     #[error("Matrix is not square. Dimension: {0}x{1}")]
     MatrixNotSquare(usize, usize),
-    /// Matrix is not Hermitian
+    /// Matrix is not Hermitian.
     #[error("Matrix is not Hermitian (complex conjugate symmetric).")]
     MatrixNotHermitian,
 }
@@ -99,21 +96,21 @@ mod sealed {
     }
 }
 
-/// Memory layout of an object
+/// Memory layout of an object.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryLayout {
-    /// Column major
+    /// Column major.
     ColumnMajor,
-    /// Row major
+    /// Row major.
     RowMajor,
-    /// Unknown
+    /// Unknown.
     Unknown,
 }
 
 /// The Rlst error type.
 #[derive(Error, Debug)]
 pub enum LapackError {
-    /// Info code from LAPACK
+    /// Info code from LAPACK.
     #[error("LAPACK error code: {0}")]
     LapackInfoCode(i32),
 }
@@ -121,7 +118,7 @@ pub enum LapackError {
 /// Alias for a Lapack Result type.
 pub type LapackResult<T> = std::result::Result<T, LapackError>;
 
-/// Empty type for number relations
+/// Empty type for number relations.
 pub struct NumberType<const N: usize>;
 
 impl IsGreaterByOne<0> for NumberType<1> {}
