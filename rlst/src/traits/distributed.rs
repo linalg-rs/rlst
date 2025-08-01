@@ -1,4 +1,6 @@
-//! Traits for distributed arrays.
+//! Traits for distributed patterns.
+//!
+//! The traits in this module provide typical patterns for working with distributed array data.
 
 use std::rc::Rc;
 
@@ -6,29 +8,31 @@ use mpi::traits::Communicator;
 
 use crate::distributed_tools::IndexLayout;
 
-/// Gather array to all processes.
+/// Gather to all processes.
 pub trait GatherToAll {
-    /// The output type after gathering the distributed array.
+    /// The output type after gathering the distributed data.
     type Output;
-    /// Gather the distributed array to all processes.
+    /// Gather the distributed data to all processes.
     fn gather_to_all(&self) -> Self::Output;
 }
 
-/// Gather array to one process.
+/// Gather to one process.
 pub trait GatherToOne {
     /// The output type after gathering the distributed array to one process.
     type Output;
-    /// Gather the distributed array to one process.
+    /// Gather the distributed array rank `root`.
+    ///
+    /// Call this method on all ranks that are not `root`.
     fn gather_to_one(&self, root: usize);
-    /// Call this on the root process that will receive the data.
+    /// Gather the distributed array rank `root`.
+    ///
+    /// Call this on the root rank that will receive the data.
     fn gather_to_one_root(&self) -> Self::Output;
 }
 
-/// Scatter array from one process to all processes.
-///
-/// This trait should be implemented on a standard array and produce a distributed array.
+/// Scatter data from one process to all processes.
 pub trait ScatterFromOne {
-    /// The output type after scattering the distributed array.
+    /// The output type after scattering the data.
     type Output<'a, C>
     where
         C: 'a,
