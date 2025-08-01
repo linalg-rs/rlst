@@ -6,7 +6,7 @@ use crate::base_types::{RlstError, RlstResult, TransMode};
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::getrs::GetrsTransMode;
 use crate::traits::accessors::{RawAccess, RawAccessMut, UnsafeRandomAccessMut};
-use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
 use crate::traits::linalg::decompositions::Lu;
 use crate::traits::linalg::lapack::Lapack;
 

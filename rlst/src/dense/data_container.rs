@@ -16,7 +16,7 @@ use crate::traits::data_container::{
     ValueDataContainer,
 };
 
-use crate::base_types::{Heap, Stack};
+use crate::base_types::{Stack, Unknown};
 
 /// A container that uses dynamic vectors.
 pub struct VectorContainer<Item> {
@@ -42,7 +42,7 @@ impl<Item: Default + Clone> VectorContainer<Item> {
 }
 
 impl<Item> ContainerTypeHint for VectorContainer<Item> {
-    type TypeHint = Heap;
+    type TypeHint = Unknown;
 }
 
 impl<Item> DataContainer for VectorContainer<Item> {
@@ -197,7 +197,7 @@ pub struct SliceContainer<'a, Item> {
 }
 
 impl<'a, Item> ContainerTypeHint for SliceContainer<'a, Item> {
-    type TypeHint = Heap; // Slice does not have a fixed size, but we can use a marker.
+    type TypeHint = Unknown; // Slice does not have a fixed size, but we can use a marker.
 }
 
 impl<'a, Item> SliceContainer<'a, Item> {
@@ -246,7 +246,7 @@ pub struct SliceContainerMut<'a, Item> {
 }
 
 impl<'a, Item> ContainerTypeHint for SliceContainerMut<'a, Item> {
-    type TypeHint = Heap; // Slice does not have a fixed size, but we can use a marker.
+    type TypeHint = Unknown; // Slice does not have a fixed size, but we can use a marker.
 }
 
 impl<'a, Item> SliceContainerMut<'a, Item> {

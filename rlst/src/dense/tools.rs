@@ -5,7 +5,7 @@ use rand_distr::Distribution;
 
 use crate::base_types::{c32, c64};
 use crate::traits::accessors::RandomAccessByValue;
-use crate::traits::array::Shape;
+use crate::traits::base_operations::Shape;
 use crate::traits::rlst_num::{RandScalar, RlstScalar};
 
 impl RandScalar for f32 {
@@ -85,7 +85,7 @@ macro_rules! assert_matrix_relative_eq {
 macro_rules! assert_array_abs_diff_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_abs_diff_eq;
-        use $crate::traits::array::Shape;
+        use $crate::traits::base_operations::Shape;
         use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
         for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {
@@ -99,7 +99,7 @@ macro_rules! assert_array_abs_diff_eq {
 macro_rules! assert_array_relative_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_relative_eq;
-        use $crate::traits::array::Shape;
+        use $crate::traits::base_operations::Shape;
         use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
         for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {

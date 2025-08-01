@@ -4,7 +4,7 @@ use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::gesdd::JobZ;
 use crate::traits::accessors::RawAccessMut;
-use crate::traits::array::{BaseItem, EvaluateArray, FillFromResize, Shape};
+use crate::traits::base_operations::{BaseItem, EvaluateObject, FillFromResize, Shape};
 use crate::traits::linalg::base::Gemm;
 use crate::traits::linalg::decompositions::SingularvalueDecomposition;
 use crate::traits::linalg::lapack::Lapack;
@@ -24,8 +24,8 @@ where
     Item: Lapack + Gemm,
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
     DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
-    Array<ArrayImpl, 2>: EvaluateArray,
-    <Array<ArrayImpl, 2> as EvaluateArray>::Output: RawAccessMut<Item = Item> + Shape<2>,
+    Array<ArrayImpl, 2>: EvaluateObject,
+    <Array<ArrayImpl, 2> as EvaluateObject>::Output: RawAccessMut<Item = Item> + Shape<2>,
 {
     type Item = Item;
 

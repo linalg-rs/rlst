@@ -7,9 +7,9 @@ use crate::traits::{
         UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
         UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
     },
-    array::{BaseItem, Shape, Stride},
+    base_operations::{BaseItem, Shape, Stride},
 };
-use crate::{ContainerTypeHint, Heap};
+use crate::{ContainerTypeHint, Unknown};
 
 /// Subview of an array
 pub struct ArraySubView<ArrayImpl, const NDIM: usize> {
@@ -41,7 +41,7 @@ impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArraySubView<ArrayImpl,
 where
     ArrayImpl: ContainerTypeHint,
 {
-    type TypeHint = Heap;
+    type TypeHint = Unknown;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for ArraySubView<ArrayImpl, NDIM>

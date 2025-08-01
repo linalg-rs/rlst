@@ -1,4 +1,5 @@
-//! Gemm trait for matrix multiplication
+//! Implementation of the Gemm trait for matrix multiplication.
+
 use crate::base_types::TransMode;
 use crate::base_types::{c32, c64};
 use crate::traits::linalg::base::Gemm;

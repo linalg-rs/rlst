@@ -14,8 +14,8 @@ use crate::traits::{
         UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
         UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
     },
-    array::{
-        BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray, EvaluateArray, FillFrom, FillFromResize,
+    base_operations::{
+        BaseItem, CmpMulAddFrom, CmpMulFrom, ConjObject, EvaluateObject, FillFrom, FillFromResize,
         FillWithValue, Len, ResizeInPlace, Shape, SumFrom, ToType, Trace,
     },
     iterators::{
@@ -290,7 +290,7 @@ where
     }
 }
 
-impl<Item, ArrayImpl, const NDIM: usize> ConjArray for Array<ArrayImpl, NDIM>
+impl<Item, ArrayImpl, const NDIM: usize> ConjObject for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: BaseItem<Item = Item>,
     Item: Conj,
@@ -327,7 +327,7 @@ where
 //     }
 // }
 
-impl<Item, ArrayImpl, const NDIM: usize> EvaluateArray for Array<ArrayImpl, NDIM>
+impl<Item, ArrayImpl, const NDIM: usize> EvaluateObject for Array<ArrayImpl, NDIM>
 where
     ArrayImpl: ContainerTypeHint + UnsafeRandom1DAccessByValue<Item = Item>,
     EvalDispatcher<ArrayImpl::TypeHint, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,

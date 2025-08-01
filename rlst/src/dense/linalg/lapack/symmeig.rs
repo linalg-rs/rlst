@@ -4,7 +4,7 @@ use crate::base_types::{RlstResult, UpLo};
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::ev::{self, Ev, EvUplo};
 use crate::traits::accessors::RawAccessMut;
-use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
 use crate::traits::linalg::decompositions::SymmEig;
 use crate::traits::linalg::lapack::Lapack;
 

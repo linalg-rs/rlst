@@ -2,7 +2,7 @@
 
 use super::{
     accessors::{RandomAccessByValue, RandomAccessMut},
-    array::BaseItem,
+    base_operations::BaseItem,
 };
 
 /// Iterate through the elements in `(i, j, data)` form, where

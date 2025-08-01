@@ -4,8 +4,8 @@ use std::rc::Rc;
 
 use mpi::{self, traits::Communicator};
 use rlst::{
-    assert_array_relative_eq, dense::array::DynArray, distributed_tools::IndexLayout, AsRefType,
-    GatherToAll, GatherToOne, ScatterFromOne,
+    assert_array_relative_eq, dense::array::DynArray, distributed_tools::IndexLayout,
+    AsOwnedRefType, GatherToAll, GatherToOne, ScatterFromOne,
 };
 
 /// Test three dimensional distributed arrays.

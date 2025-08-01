@@ -7,10 +7,10 @@ use crate::{
         accessors::{
             UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
         },
-        array::BaseItem,
+        base_operations::BaseItem,
         number_relations::{IsGreaterByOne, IsGreaterZero},
     },
-    ContainerTypeHint, Heap,
+    ContainerTypeHint, Unknown,
 };
 
 use super::{
@@ -38,7 +38,7 @@ where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
-    type TypeHint = Heap;
+    type TypeHint = Unknown;
 }
 
 impl<ArrayImpl, const ADIM: usize, const NDIM: usize> BaseItem for ArraySlice<ArrayImpl, ADIM, NDIM>

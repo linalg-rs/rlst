@@ -8,13 +8,13 @@ use crate::{
     },
     traits::{
         accessors::{RawAccessMut, UnsafeRandom1DAccessByValue},
-        array::{BaseItem, EvaluateArray, FillFrom, FillFromResize, Shape},
+        base_operations::{BaseItem, EvaluateObject, FillFrom, FillFromResize, Shape},
         linalg::{
             decompositions::{Lu, Solve},
             lapack::Lapack,
         },
     },
-    AsRefType, AsRefTypeMut,
+    AsOwnedRefType, AsOwnedRefTypeMut,
 };
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> Solve<Array<RhsArrayImpl, NDIM>>

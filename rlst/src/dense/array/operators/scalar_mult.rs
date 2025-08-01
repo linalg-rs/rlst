@@ -6,7 +6,7 @@ use crate::base_types::{c32, c64};
 
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
-    traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
 };
 use crate::{ContainerTypeHint, ScalarMul};
 

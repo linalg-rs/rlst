@@ -1,8 +1,8 @@
 //! Basic Array type
 //!
 //! [Array] is the basic type for dense calculations in Rlst. The full definition
-//! `Array<Item, ArrayImpl, NDIM>` represents a tensor with `NDIM` axes, `Item` as data type
-//! (e.g. `f64`), and implemented through `ArrayImpl`.
+//! `Array<ArrayImpl, NDIM>` represents a tensor with `NDIM` axes implemented through
+//! the implementeation type `ArrayImpl`.
 
 use crate::{
     dense::{
@@ -16,10 +16,13 @@ use crate::{
             UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
             UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
         },
-        array::{BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride},
+        base_operations::{
+            BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride,
+        },
         data_container::ContainerTypeHint,
     },
-    AsRefType, AsRefTypeMut, DispatchEval, DispatchEvalRowMajor, FillFrom, Heap, Stack,
+    AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval, DispatchEvalRowMajor, FillFrom, Stack,
+    Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -61,18 +64,10 @@ pub type StridedSliceArrayMut<'a, Item, const NDIM: usize> =
     Array<StridedBaseArray<SliceContainerMut<'a, Item>, NDIM>, NDIM>;
 
 /// The reference type associated with an array.
-pub type RefType<'a, Arr> = <Arr as AsRefType>::RefType<'a>;
+pub type RefType<'a, Arr> = <Arr as AsOwnedRefType>::RefType<'a>;
 
 /// The mutable reference type associated with an array.
-pub type RefTypeMut<'a, Arr> = <Arr as AsRefTypeMut>::RefTypeMut<'a>;
-
-// /// A view onto a matrix
-// pub type ViewArray<'a, Item, ArrayImpl, const NDIM: usize> =
-//     Array<crate::dense::array::views::ArrayView<'a, Item, ArrayImpl, NDIM>, NDIM>;
-
-// /// A mutable view onto a matrix
-// pub type ViewArrayMut<'a, Item, ArrayImpl, const NDIM: usize> =
-//     Array<Item, crate::dense::array::views::ArrayViewMut<'a, Item, ArrayImpl, NDIM>, NDIM>;
+pub type RefTypeMut<'a, Arr> = <Arr as AsOwnedRefTypeMut>::RefTypeMut<'a>;
 
 /// The basic tuple type defining an array.
 pub struct Array<ArrayImpl, const NDIM: usize>(ArrayImpl);
@@ -105,6 +100,9 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
     }
 
     /// Create a new heap allocated array by providing a shape and a vector of data.
+    ///
+    /// The number of elements in the vector must be compatible with the given shape.
+    /// Otherwise, an assertion error is triggered.
     #[inline(always)]
     pub fn from_shape_and_vec(shape: [usize; NDIM], data: Vec<Item>) -> Self {
         assert_eq!(
@@ -284,8 +282,7 @@ pub fn empty_array<Item: Clone + Default, const NDIM: usize>(
 }
 
 impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM> {
-    /// Create a new array from a slice with a given `shape`.
-    ///
+    /// Create a new array from `slice` with a given `shape`.
     pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
         assert_eq!(
             slice.len(),
@@ -299,8 +296,7 @@ impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM> {
 }
 
 impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
-    /// Create a new array from a mutable slice with a given `shape`.
-    ///
+    /// Create a new array from mutable `slice` with a given `shape`.
     pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
         assert_eq!(
             slice.len(),
@@ -314,8 +310,7 @@ impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
 }
 
 impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
-    /// Create a new array from a slice with a given `shape` and `stride`.
-    ///
+    /// Create a new array from `slice` with a given `shape` and `stride`.
     pub fn from_shape_and_stride(
         slice: &'a [Item],
         shape: [usize; NDIM],
@@ -330,9 +325,7 @@ impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
 }
 
 impl<'a, Item, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM> {
-    /// Create a new array from a slice with a given `shape` and `stride`.
-    ///
-    /// The `stride` is automatically assumed to be column major.
+    /// Create a new array from `slice` with a given `shape` and `stride`.
     pub fn from_shape_and_stride(
         slice: &'a mut [Item],
         shape: [usize; NDIM],
@@ -356,37 +349,6 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> std::fmt::Debug for Array<ArrayI
         write!(f, "]")
     }
 }
-
-// impl<ArrayImpl: ArrayIterator, const NDIM: usize> ArrayIterator for Array<ArrayImpl, NDIM> {
-//     type Item = ArrayImpl::Item;
-
-//     type Iter<'a>
-//         = <ArrayImpl as ArrayIterator>::Iter<'a>
-//     where
-//         Self: 'a;
-
-//     #[inline(always)]
-//     fn iter(&self) -> Self::Iter<'_> {
-//         self.0.iter()
-//     }
-// }
-
-// impl<ArrayImpl, const NDIM: usize> ArrayIteratorMut for Array<ArrayImpl, NDIM>
-// where
-//     ArrayImpl: ArrayIteratorMut,
-// {
-//     type Item = ArrayImpl::Item;
-
-//     type IterMut<'a>
-//         = <ArrayImpl as ArrayIteratorMut>::IterMut<'a>
-//     where
-//         Self: 'a;
-
-//     #[inline(always)]
-//     fn iter_mut(&self) -> Self::IterMut<'_> {
-//         self.0.iter_mut()
-//     }
-// }
 
 impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
     for Array<ArrayImpl, NDIM>
@@ -431,6 +393,10 @@ where
 }
 
 /// A dispatcher for evaluating arrays.
+///
+/// This dispatcher enables evaluating arrays either into a new heap
+/// allocated array or a new stack allocated array depending on the type hint
+/// of the array.
 pub struct EvalDispatcher<TypeHint, ArrayImpl> {
     _type_hint: std::marker::PhantomData<(TypeHint, ArrayImpl)>,
 }
@@ -443,11 +409,10 @@ impl<TypeHint, ArrayImpl> Default for EvalDispatcher<TypeHint, ArrayImpl> {
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize> DispatchEval<NDIM>
-    for EvalDispatcher<Heap, ArrayImpl>
+impl<ArrayImpl, const NDIM: usize> DispatchEval<NDIM> for EvalDispatcher<Unknown, ArrayImpl>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue,
     ArrayImpl::Item: Copy + Default,
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Output = DynArray<ArrayImpl::Item, NDIM>;
 
@@ -460,11 +425,11 @@ where
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize, const N: usize>
-    DispatchEval<NDIM> for EvalDispatcher<Stack<N>, ArrayImpl>
+impl<ArrayImpl, const NDIM: usize, const N: usize> DispatchEval<NDIM>
+    for EvalDispatcher<Stack<N>, ArrayImpl>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue,
     ArrayImpl::Item: Copy + Default,
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Output = Array<BaseArray<ArrayContainer<ArrayImpl::Item, N>, NDIM>, NDIM>;
 
@@ -480,7 +445,7 @@ where
     }
 }
 
-/// A dispatcher for evaluating arrays.
+/// A dispatcher for evaluating arrays into row-major order.
 pub struct EvalRowMajorDispatcher<TypeHint, ArrayImpl> {
     _type_hint: std::marker::PhantomData<(TypeHint, ArrayImpl)>,
 }
@@ -493,11 +458,11 @@ impl<TypeHint, ArrayImpl> Default for EvalRowMajorDispatcher<TypeHint, ArrayImpl
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize>
-    DispatchEvalRowMajor<NDIM> for EvalRowMajorDispatcher<Heap, ArrayImpl>
+impl<ArrayImpl, const NDIM: usize> DispatchEvalRowMajor<NDIM>
+    for EvalRowMajorDispatcher<Unknown, ArrayImpl>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue,
     ArrayImpl::Item: Copy + Default,
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Output = StridedDynArray<ArrayImpl::Item, NDIM>;
 
@@ -510,11 +475,11 @@ where
     }
 }
 
-impl<ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>, const NDIM: usize, const N: usize>
-    DispatchEvalRowMajor<NDIM> for EvalRowMajorDispatcher<Stack<N>, ArrayImpl>
+impl<ArrayImpl, const NDIM: usize, const N: usize> DispatchEvalRowMajor<NDIM>
+    for EvalRowMajorDispatcher<Stack<N>, ArrayImpl>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue,
     ArrayImpl::Item: Copy + Default,
+    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
     type Output = Array<StridedBaseArray<ArrayContainer<ArrayImpl::Item, N>, NDIM>, NDIM>;
 

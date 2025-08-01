@@ -2,7 +2,7 @@
 
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
-    traits::{accessors::UnsafeRandom1DAccessByValue, array::BaseItem},
+    traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
     ContainerTypeHint,
 };
 use paste::paste;

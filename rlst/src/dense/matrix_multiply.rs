@@ -1,20 +1,21 @@
 //! Implementation of matrix multiplication.
 //!
-//! This module implements the matrix multiplication. The current implementation
-//! uses the [rlst-blis] crate::dense.
 
 use crate::{
     base_types::TransMode,
     traits::{
         accessors::{RawAccess, RawAccessMut},
-        array::{Shape, Stride},
+        base_operations::{Shape, Stride},
         linalg::base::Gemm,
     },
 };
 
 /// Matrix mulitplication
 ///
-/// TODO: document what this computes
+/// This provides a convenient interface to BLAS3 Gemm.
+///
+/// Compute the product `C = alpha * transa(A) * transb(B)  + beta * C`.
+/// `transa` and `transb` are allowed to have all enum values from [TransMode].
 pub fn matrix_multiply<
     Item: Gemm,
     MatA: RawAccess<Item = Item> + Shape<2> + Stride<2>,

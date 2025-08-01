@@ -9,7 +9,7 @@ use crate::{
     dense::array::Array,
     traits::{
         accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
-        array::{BaseItem, Shape},
+        base_operations::{BaseItem, Shape},
     },
     ContainerTypeHint, ContainerTypeSelector, SelectContainerType,
 };

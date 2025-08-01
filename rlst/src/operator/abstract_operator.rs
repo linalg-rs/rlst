@@ -26,6 +26,11 @@ impl<'a, Op: OperatorBase> RlstOperatorReference<'a, Op> {
     pub fn new(op: &'a Op) -> Self {
         Self(op)
     }
+
+    /// Return an operator reference
+    pub fn r(&self) -> Operator<RlstOperatorReference<'_, Self>> {
+        Operator::new(RlstOperatorReference::new(self))
+    }
 }
 
 impl<OpImpl: OperatorBase> OperatorBase for Operator<OpImpl> {

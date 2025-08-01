@@ -8,7 +8,7 @@ use crate::{
     },
     traits::{
         accessors::{RawAccessMut, UnsafeRandomAccessMut},
-        array::{BaseItem, FillFromResize, Shape},
+        base_operations::{BaseItem, FillFromResize, Shape},
         linalg::{
             decompositions::{Cholesky, CholeskySolve},
             lapack::Lapack,

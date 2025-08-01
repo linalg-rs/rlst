@@ -6,7 +6,7 @@ use crate::{
         accessors::{
             UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
         },
-        array::BaseItem,
+        base_operations::BaseItem,
         number_relations::IsSmallerByOne,
     },
     ContainerTypeHint,

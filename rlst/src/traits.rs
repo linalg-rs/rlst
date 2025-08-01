@@ -2,7 +2,7 @@
 
 pub mod abstract_operator;
 pub mod accessors;
-pub mod array;
+pub mod base_operations;
 pub mod data_container;
 pub mod distributed_array;
 pub mod generic;
@@ -16,7 +16,7 @@ pub mod rlst_num;
 pub mod sparse;
 
 pub use accessors::*;
-pub use array::*;
+pub use base_operations::*;
 pub use data_container::*;
 pub use distributed_array::*;
 pub use generic::*;

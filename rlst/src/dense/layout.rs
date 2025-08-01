@@ -1,8 +1,7 @@
-//! Default layout for dense arrays.
+//! Helper functions for working with array layouts.
 //!
 //! The default layout is a column-major format such that in an
 //! index `[a0, a1, a2, ...]` the left-most axis is stored consecutively in memory.
-//!
 
 /// Compute a column major stride from a shape.
 ///
@@ -62,7 +61,7 @@ pub fn convert_nd_raw<const NDIM: usize>(
     acc
 }
 
-/// Convert a 1d index into a multi-index.
+/// Convert a 1d index into a multi-index assuming column major ordering.
 #[inline(always)]
 pub fn convert_1d_nd_from_shape<const NDIM: usize>(
     mut index: usize,
@@ -75,4 +74,43 @@ pub fn convert_1d_nd_from_shape<const NDIM: usize>(
         index /= shape[ind];
     }
     res
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_col_major_stride_from_shape() {
+        let shape = [2, 5, 4];
+        let expected = [1, 2, 10];
+
+        assert_eq!(expected, col_major_stride_from_shape(shape));
+    }
+
+    #[test]
+    fn test_row_major_stride_from_shape() {
+        let shape = [2, 5, 4];
+        let expected = [20, 4, 1];
+
+        assert_eq!(expected, row_major_stride_from_shape(shape));
+    }
+
+    #[test]
+    fn test_convert_nd_raw() {
+        let multi_index = [1, 3, 2];
+        let stride = [1, 3, 6];
+
+        assert_eq!(22, convert_nd_raw(multi_index, stride))
+    }
+
+    #[test]
+    fn test_convert_1d_nd() {
+        let index = 15;
+
+        let shape = [8, 2];
+
+        assert_eq!([7, 1], convert_1d_nd_from_shape(index, shape))
+    }
 }

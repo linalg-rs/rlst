@@ -7,10 +7,12 @@ use crate::traits::accessors::{
     UnsafeRandomAccessMut,
 };
 use crate::traits::{
-    array::{BaseItem, Len},
+    base_operations::{BaseItem, Len},
     iterators::AsMultiIndex,
 };
-use crate::{AsRefType, AsRefTypeMut, UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef};
+use crate::{
+    AsOwnedRefType, AsOwnedRefTypeMut, UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef,
+};
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;

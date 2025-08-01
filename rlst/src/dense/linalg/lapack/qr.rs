@@ -3,7 +3,7 @@
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::traits::accessors::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
-use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
 use crate::traits::linalg::decompositions::Qr;
 use crate::traits::linalg::lapack::Lapack;
 

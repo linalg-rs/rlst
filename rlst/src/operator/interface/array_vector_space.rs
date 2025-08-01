@@ -3,7 +3,7 @@
 use std::{marker::PhantomData, ops::Neg};
 
 use crate::{
-    dense::array::DynArray, operator::element::Element, AsRefType, EvaluateArray, Inner,
+    dense::array::DynArray, operator::element::Element, AsOwnedRefType, EvaluateObject, Inner,
     InnerProductSpace, LinearSpace, ScalarMul,
 };
 

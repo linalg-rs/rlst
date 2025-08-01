@@ -6,7 +6,7 @@ use crate::traits::accessors::{
     UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
-use crate::traits::array::{BaseItem, Shape};
+use crate::traits::base_operations::{BaseItem, Shape};
 use crate::ContainerTypeHint;
 
 /// This struct represents an array implementation with a single axis reversed.

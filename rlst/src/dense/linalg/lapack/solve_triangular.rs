@@ -8,7 +8,7 @@ use crate::{
     },
     traits::{
         accessors::RawAccessMut,
-        array::{BaseItem, FillFromResize, Shape},
+        base_operations::{BaseItem, FillFromResize, Shape},
         linalg::{decompositions::SolveTriangular, lapack::Lapack},
     },
 };

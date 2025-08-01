@@ -11,7 +11,7 @@ use crate::{
             UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
             UnsafeRandomAccessMut,
         },
-        array::{BaseItem, ResizeInPlace, Shape, Stride},
+        base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::{
             ContainerTypeHint, DataContainer, MutableRawAccessDataContainer,
             RawAccessDataContainer, RefDataContainer, RefDataContainerMut, ResizeableDataContainer,

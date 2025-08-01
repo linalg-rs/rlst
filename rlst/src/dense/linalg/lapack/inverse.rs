@@ -6,7 +6,7 @@ use super::interface::getri::Getri;
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::traits::accessors::RawAccessMut;
-use crate::traits::array::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
 use crate::traits::linalg::decompositions::Inverse;
 
 impl<Item, ArrayImpl> Inverse for Array<ArrayImpl, 2>

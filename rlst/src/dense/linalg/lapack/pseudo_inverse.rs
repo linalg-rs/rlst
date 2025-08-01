@@ -6,12 +6,12 @@ use crate::{
     dense::array::{Array, DynArray},
     diag, dot,
     traits::{
-        array::EvaluateArray,
+        base_operations::EvaluateObject,
         iterators::{ArrayIteratorByValue, ArrayIteratorMut, ColumnIteratorMut},
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
-    AsRefType,
+    AsOwnedRefType,
 };
 
 /// A structure representing the pseudo-inverse of a matrix.
@@ -60,7 +60,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         arr: &Array<ArrayImpl, NDIM>,
     ) -> DynArray<Item, NDIM>
     where
-        Array<ArrayImpl, NDIM>: EvaluateArray<Output = DynArray<Item, NDIM>>,
+        Array<ArrayImpl, NDIM>: EvaluateObject<Output = DynArray<Item, NDIM>>,
     {
         let sinv = self
             .s

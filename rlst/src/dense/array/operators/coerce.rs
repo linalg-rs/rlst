@@ -10,7 +10,7 @@ use crate::{
             UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
             UnsafeRandomAccessMut,
         },
-        array::{BaseItem, Shape, Stride},
+        base_operations::{BaseItem, Shape, Stride},
     },
     ContainerTypeHint,
 };

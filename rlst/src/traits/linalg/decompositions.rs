@@ -18,11 +18,11 @@ use crate::{
         },
     },
     traits::{
-        array::{ConjArray, EvaluateArray, Len, Shape, ToType},
+        base_operations::{ConjObject, EvaluateObject, Len, Shape, ToType},
         iterators::ArrayIteratorByValue,
         rlst_num::RlstScalar,
     },
-    AsRefType,
+    AsOwnedRefType,
 };
 
 use super::{base::Gemm, lapack::Lapack};

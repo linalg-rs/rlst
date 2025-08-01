@@ -859,7 +859,7 @@ mod tests {
                 } = self;
 
                 let samples = (0..nsamples)
-                    .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                    .map(|_| num::cast::<_, T>(rng.random::<f64>()).unwrap())
                     .collect::<Vec<_>>();
 
                 let mut actual = vec![T::default(); nsamples];
@@ -950,7 +950,7 @@ mod tests {
                 } = self;
 
                 let samples = (0..nsamples)
-                    .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                    .map(|_| num::cast::<_, T>(rng.random::<f64>()).unwrap())
                     .collect::<Vec<_>>();
 
                 let mut actual = vec![T::default(); nsamples];
@@ -1041,7 +1041,7 @@ mod tests {
                 } = self;
 
                 let samples = (0..nsamples)
-                    .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                    .map(|_| num::cast::<_, T>(rng.random::<f64>()).unwrap())
                     .collect::<Vec<_>>();
 
                 let mut actual_sin = vec![T::default(); nsamples];
@@ -1145,7 +1145,7 @@ mod tests {
                         } = self;
 
                         let samples = (0..nsamples)
-                            .map(|_| num::cast::<_, T>(rng.gen::<f64>()).unwrap())
+                            .map(|_| num::cast::<_, T>(rng.random::<f64>()).unwrap())
                             .collect::<Vec<_>>();
 
                         let mut actual = vec![T::default(); nsamples];

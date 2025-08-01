@@ -2,7 +2,7 @@
 
 use num::complex::Complex;
 use num::traits::{Float, NumCast, ToPrimitive, Zero};
-use rand::{distributions::Standard, prelude::*};
+use rand::{distr::StandardUniform, prelude::*};
 
 use super::{c32, c64};
 use crate::traits::rlst_num::RlstScalar;
@@ -101,7 +101,7 @@ macro_rules! impl_scalar {
             }
 
             fn rand(rng: &mut impl Rng) -> Self {
-                rng.sample(Standard)
+                rng.sample(StandardUniform)
             }
 
             impl_with_real!(add_real, +);
@@ -192,7 +192,7 @@ macro_rules! impl_scalar {
             }
 
             fn rand(rng: &mut impl Rng) -> Self {
-                rng.sample(Standard)
+                Complex { re: rng.sample(StandardUniform), im: rng.sample(StandardUniform) }
             }
 
             #[inline]

@@ -1,6 +1,6 @@
 //! Basic traits for linear algebra operations.
 
-use crate::{base_types::TransMode, traits::array::BaseItem};
+use crate::{base_types::TransMode, traits::base_operations::BaseItem};
 
 pub use num::traits::MulAdd;
 pub use std::ops::{Add, Mul, Sub};

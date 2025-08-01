@@ -11,9 +11,9 @@ use crate::{
             UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessByValue,
             UnsafeRandomAccessMut,
         },
-        array::{BaseItem, ResizeInPlace, Shape, Stride},
+        base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
     },
-    AsRefType, AsRefTypeMut, ContainerTypeHint,
+    AsOwnedRefType, AsOwnedRefTypeMut, ContainerTypeHint,
 };
 
 /// Basic structure for a `View`
@@ -207,7 +207,7 @@ impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> AsRefType for Array<ArrayImpl, NDIM> {
+impl<ArrayImpl, const NDIM: usize> AsOwnedRefType for Array<ArrayImpl, NDIM> {
     type RefType<'a>
         = Array<ArrayRef<'a, ArrayImpl, NDIM>, NDIM>
     where
@@ -218,7 +218,7 @@ impl<ArrayImpl, const NDIM: usize> AsRefType for Array<ArrayImpl, NDIM> {
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> AsRefTypeMut for Array<ArrayImpl, NDIM> {
+impl<ArrayImpl, const NDIM: usize> AsOwnedRefTypeMut for Array<ArrayImpl, NDIM> {
     type RefTypeMut<'a>
         = Array<ArrayRefMut<'a, ArrayImpl, NDIM>, NDIM>
     where

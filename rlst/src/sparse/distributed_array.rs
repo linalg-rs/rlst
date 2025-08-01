@@ -21,10 +21,10 @@ use num::traits::MulAdd;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::{
-    AbsSquare, Array, AsRefType, AsRefTypeMut, BaseItem, CmpMulAddFrom, CmpMulFrom, ConjArray,
-    EvaluateArray, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len, NormSup,
-    NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul, ScaleInPlace,
-    ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
+    AbsSquare, Array, AsOwnedRefType, AsOwnedRefTypeMut, BaseItem, CmpMulAddFrom, CmpMulFrom,
+    ConjObject, EvaluateObject, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len,
+    NormSup, NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul,
+    ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -101,12 +101,12 @@ where
     StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
-    >: EvaluateArray,
+    >: EvaluateObject,
 {
     type Output = <StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
-    > as EvaluateArray>::Output;
+    > as EvaluateObject>::Output;
     /// Gather `Self` to all processes and store in `arr`.
     fn gather_to_all(&self) -> Self::Output {
         let comm = self.index_layout.comm();
@@ -163,12 +163,12 @@ where
     StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
-    >: EvaluateArray,
+    >: EvaluateObject,
 {
     type Output = <StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
-    > as EvaluateArray>::Output;
+    > as EvaluateObject>::Output;
 
     fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
@@ -504,12 +504,12 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, ArrayImplConj, const NDIM: usize> ConjArray
+impl<'a, C, ArrayImpl, ArrayImplConj, const NDIM: usize> ConjObject
     for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
     ArrayImplConj: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: ConjArray<Output = Array<ArrayImplConj, NDIM>>,
+    Array<ArrayImpl, NDIM>: ConjObject<Output = Array<ArrayImplConj, NDIM>>,
 {
     type Output = DistributedArray<'a, C, ArrayImplConj, NDIM>;
 
@@ -518,12 +518,12 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, ArrayImplEval, const NDIM: usize> EvaluateArray
+impl<'a, C, ArrayImpl, ArrayImplEval, const NDIM: usize> EvaluateObject
     for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
     ArrayImplEval: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: EvaluateArray<Output = Array<ArrayImplEval, NDIM>>,
+    Array<ArrayImpl, NDIM>: EvaluateObject<Output = Array<ArrayImplEval, NDIM>>,
 {
     type Output = DistributedArray<'a, C, ArrayImplEval, NDIM>;
 

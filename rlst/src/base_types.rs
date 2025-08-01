@@ -181,13 +181,13 @@ pub enum UpLo {
 // Container types.
 
 /// An unknown container type.
-pub struct Heap;
+pub struct Unknown;
 
 /// A static container with fixed size N.
 pub struct Stack<const N: usize>;
 
-impl ContainerType for Heap {
-    const STR: &str = "Heap";
+impl ContainerType for Unknown {
+    const STR: &str = "Unknown";
 }
 impl<const N: usize> ContainerType for Stack<N> {
     const STR: &str = "Stack";
@@ -196,18 +196,24 @@ impl<const N: usize> ContainerType for Stack<N> {
 /// Trait to select a container type based on the input types.
 pub struct SelectContainerType;
 
-impl ContainerTypeSelector<Heap, Heap> for SelectContainerType {
-    type Type = Heap;
+// For combining two arrays with unkown type we select `Unknown`
+impl ContainerTypeSelector<Unknown, Unknown> for SelectContainerType {
+    type Type = Unknown;
 }
 
-impl<const N: usize> ContainerTypeSelector<Stack<N>, Heap> for SelectContainerType {
+// For combining a stack array and an unkown array we select `stack`.
+// In this way, evaluating the array gives back a stack size. This makes sense since
+// the output size is known as only arrays of the same size can be combined.
+impl<const N: usize> ContainerTypeSelector<Stack<N>, Unknown> for SelectContainerType {
     type Type = Stack<N>;
 }
 
-impl<const N: usize> ContainerTypeSelector<Heap, Stack<N>> for SelectContainerType {
+// As above.
+impl<const N: usize> ContainerTypeSelector<Unknown, Stack<N>> for SelectContainerType {
     type Type = Stack<N>;
 }
 
+// Two stack arrays of same size again give a stack array.
 impl<const N: usize> ContainerTypeSelector<Stack<N>, Stack<N>> for SelectContainerType {
     type Type = Stack<N>;
 }

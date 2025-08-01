@@ -1,4 +1,4 @@
-//! Traits for array properties and operations.
+//! Basic traits for elements of vector spaces.
 
 use std::ops::MulAssign;
 
@@ -11,14 +11,17 @@ use super::{
     ArrayIteratorByValue, UnsafeRandom1DAccessByValue,
 };
 
-///Base item type of an array.
+/// Define a basic item type associated with an object.
 pub trait BaseItem {
-    /// Item type
+    /// Item type.
     type Item;
 }
 
-///  Return reference type for the array.
-pub trait AsRefType {
+///  Define a type that holds a reference to the current object.
+///
+/// This is useful to avoid double definition of operations for
+/// references and owned types.
+pub trait AsOwnedRefType {
     /// The reference type of the array.
     type RefType<'a>
     where
@@ -28,8 +31,8 @@ pub trait AsRefType {
     fn r(&self) -> Self::RefType<'_>;
 }
 
-/// Return mutable reference type for the array.
-pub trait AsRefTypeMut {
+/// Define a type that holds a mutable reference to the current object.
+pub trait AsOwnedRefTypeMut {
     /// The mutable reference type of the array.
     type RefTypeMut<'a>
     where
@@ -39,18 +42,31 @@ pub trait AsRefTypeMut {
     fn r_mut(&mut self) -> Self::RefTypeMut<'_>;
 }
 
-/// Shape of an object
+/// Associate a shape with a given object.
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.
     fn shape(&self) -> [usize; NDIM];
 }
 
-/// Stride of an object
+/// Associate a strice with a given object.
+///
+/// A stride describes the memory layout of an array.
+/// If the stride is e.g. `[1, 5]`, this means
+/// moving from one to the next element in the first
+/// dimension jumps one memory entry and in the second
+/// dimension jumps 5 memory entries.
 pub trait Stride<const NDIM: usize> {
     /// Return the stride of the object.
     fn stride(&self) -> [usize; NDIM];
 
-    /// Return the memory layout
+    /// Return the memory layout.
+    ///
+    /// A column-major layout has entries continuous in memory
+    /// starting with the first outer dimension. A row-major layout
+    /// has entries continuous in memory starting with the last outer dimension.
+    ///
+    /// Possible return values are [MemoryLayout::ColumnMajor], [MemoryLayout::RowMajor],
+    /// and [MemoryLayout::Unknown].
     fn memory_layout(&self) -> MemoryLayout
     where
         Self: Shape<NDIM>,
@@ -86,6 +102,9 @@ pub trait Stride<const NDIM: usize> {
     }
 
     /// Return true if the array is contiguous in memory.
+    ///
+    /// This is the case of the data is either row-major or column-major.
+    /// Contgiuous memory orderings with respect to other layouts are not supported.
     fn is_contiguous(&self) -> bool
     where
         Self: Shape<NDIM>,
@@ -94,45 +113,51 @@ pub trait Stride<const NDIM: usize> {
     }
 }
 
-/// Number of elements
+/// Number of elements.
 pub trait NumberOfElements {
     /// Return the number of elements.
     fn number_of_elements(&self) -> usize;
 }
 
-/// Resize in place
+/// Resize in place.
 pub trait ResizeInPlace<const NDIM: usize> {
-    /// Resize an operator in place
+    /// Resize an object in place.
     fn resize_in_place(&mut self, shape: [usize; NDIM]);
 }
 
-/// Fill an array with values from another array.
+/// Fill an object with values from another object.
+///
+/// Behaviour if `self` and `other` have incompatible sizes
+/// is not determined.
 pub trait FillFrom<Other> {
-    /// Fill an array with values from another array.
+    /// Fill `self` with values from `other`.
     fn fill_from(&mut self, other: &Other);
 }
 
 /// Fill an array with values from an iterator.
+///
+/// Behaviour if `self` and `iter` have incompatible sizes
+/// is not determined.
 pub trait FillFromIter<Iter: Iterator> {
-    /// Fill an array with values from an iterator.
+    /// Fill `self` with values from `iter`.
     fn fill_from_iter(&mut self, iter: Iter);
 }
 
-/// Fill an array with values from another array and allow resizing.
+/// Fill from another object and resize if necessary.
 pub trait FillFromResize<Other> {
-    /// Fill an array with values from another array and allow resizing.
+    /// Fill `self` with values from `other` and resize if necessary.
     fn fill_from_resize(&mut self, other: &Other);
 }
 
-/// Sum into an array with values from another array.
+/// Sum into current object from another object.
 pub trait SumFrom<Other> {
-    /// Sum into array with values from `other`.
+    /// Sum values from `other` into `self`.
     fn sum_from(&mut self, other: &Other);
 }
 
 /// Componentwise Multiply other array into this array.
 pub trait CmpMulFrom<Other> {
-    /// Multiply other array into this array.
+    /// Componentwise multiply the elements of `self` with `other` and store in `self`.
     fn cmp_mul_from(&mut self, other: &Other);
 }
 
@@ -140,7 +165,7 @@ pub trait CmpMulFrom<Other> {
 pub trait ScalarMul<Scalar> {
     /// Output of multiplication with a scalar.
     type Output;
-    /// Multiply with a scalar.
+    /// Multiply `self` with `scalar`.
     fn scalar_mul(self, scalar: Scalar) -> Self::Output;
 }
 
@@ -150,21 +175,21 @@ pub trait CmpMulAddFrom<Other1, Other2> {
     fn cmp_mul_add_from(&mut self, other1: &Other1, other2: &Other2);
 }
 
-/// Fill an array with a specific value.
+/// Fill an object with a specific value.
 pub trait FillWithValue: BaseItem {
-    /// Fill an array with a specific value.
+    /// Fill `self` with `value`.
     fn fill_with_value(&mut self, value: Self::Item);
 }
 
-/// Fill an array with zero values.
+/// Set elements current object to zero.
 pub trait SetZero {
-    /// Fill an array with zero values.
+    /// Set all elements of `self` to `zero`.
     fn set_zero(&mut self);
 }
 
-/// Fill an array with one values.
+/// Set elements of current object to one.
 pub trait SetOne {
-    /// Fill an array with one values.
+    /// Set all elemnets of `self` to `zero`.
     fn set_one(&mut self);
 }
 
@@ -188,9 +213,9 @@ where
     }
 }
 
-/// Set the diagonal of an array to one and the off-diagonals to zero.
+/// Set the current object to the identity element.
 pub trait SetIdentity {
-    /// Fill the diagonal of an array with the value 1 and all other elements zero.
+    /// Set `self` to be the identity.
     fn set_identity(&mut self);
 }
 
@@ -205,9 +230,9 @@ where
     }
 }
 
-/// Scale all elements by a value `alpha`.
+/// Scale in place.
 pub trait ScaleInPlace: BaseItem {
-    /// Scale all elements by a value `alpha`.
+    /// Scale `self` by `alpha`.
     fn scale_inplace(&mut self, alpha: Self::Item);
 }
 
@@ -221,15 +246,15 @@ where
     }
 }
 
-/// Compute the trace of an operator.
+/// Compute the trace of an object.
 pub trait Trace: BaseItem {
-    /// Compute the trace.
+    /// Return the trace of `self`.
     fn trace(&self) -> Self::Item;
 }
 
-/// Sum all elements of an array.
+/// Sum all elements.
 pub trait Sum: BaseItem {
-    /// Compute the sum of all elemenets.
+    /// Compute the sum of all elements of `self`.
     fn sum(&self) -> Self::Item;
 }
 
@@ -243,34 +268,36 @@ where
     }
 }
 
-/// Compute the length of an array.
+/// Compute the length of an object.
 ///
 /// For multi-dimensional array the length is the product of the dimensions.
 pub trait Len {
-    /// Return the length of the array.
+    /// Return the length of `self`.
     fn len(&self) -> usize;
 
-    /// Return true if the array has no elements.
+    /// Return true if `self` is empty.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
 
-/// Return the array of conjugate numbers.
-pub trait ConjArray {
-    /// The output type of the conjugate array.
+/// Return the conjugate object.
+///
+/// For an array this is the array of conjugate entries.
+pub trait ConjObject {
+    /// The output type.
     type Output;
 
-    /// Return the conjugate array.
+    /// Return the conjugation of `self`.
     fn conj(self) -> Self::Output;
 }
 
-/// Evaluate array into a new array.
-pub trait EvaluateArray {
-    /// The output type of the evaluated array.
+/// Evaluate into a new object.
+pub trait EvaluateObject {
+    /// The output type of the evaluated object.
     type Output;
 
-    /// Evaluate the array into a new array.
+    /// Evaluate the object.
     fn eval(&self) -> Self::Output;
 }
 
@@ -285,10 +312,10 @@ pub trait EvaluateRowMajorArray {
 
 /// Dispatch the evaluation of an array to an actual implementation.
 pub trait DispatchEval<const NDIM: usize> {
-    /// The output type of the evaluated array.
+    /// The output type.
     type Output;
 
-    /// The implementation type of the array.
+    /// The implementation type.
     type ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue;
 
     /// Dispatch the evaluation of the array to an actual implementation.
@@ -309,8 +336,7 @@ pub trait DispatchEvalRowMajor<const NDIM: usize> {
 
 /// Convert to a new type.
 ///
-/// This trait is used to convert an array of one type into an array of another type.
-/// It depends on the `Into` trait to convert each element of the array.
+/// This trait is used to convert an object of one type into an object of another type.
 pub trait ToType<T> {
     /// The element type of the array.
     type Item;
