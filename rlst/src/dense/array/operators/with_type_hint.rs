@@ -10,7 +10,7 @@ use crate::{
         },
         base_operations::{BaseItem, Shape, Stride},
     },
-    ContainerType, ContainerTypeHint,
+    ContainerType, ContainerTypeRepr,
 };
 
 /// A wrapper around an array that coerces its dimension.
@@ -32,19 +32,19 @@ impl<ArrayImpl, TypeHint, const NDIM: usize> WithTypeHint<ArrayImpl, TypeHint, N
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Coerce the array to a specific item type and dimension.
-    pub fn with_container_type<TypeHint: ContainerType>(
+    pub fn with_container_type<TypeHint: ContainerTypeRepr>(
         self,
     ) -> Array<WithTypeHint<ArrayImpl, TypeHint, NDIM>, NDIM> {
         Array::new(WithTypeHint::new(self))
     }
 }
 
-impl<ArrayImpl, TypeHint: ContainerType, const NDIM: usize> ContainerTypeHint
+impl<ArrayImpl, TypeHint: ContainerTypeRepr, const NDIM: usize> ContainerType
     for WithTypeHint<ArrayImpl, TypeHint, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = TypeHint;
+    type Type = TypeHint;
 }
 
 impl<ArrayImpl, TypeHint, const NDIM: usize> BaseItem for WithTypeHint<ArrayImpl, TypeHint, NDIM>

@@ -2,7 +2,7 @@
 
 use std::ops::Neg;
 
-use crate::ContainerTypeHint;
+use crate::ContainerType;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
@@ -20,11 +20,11 @@ impl<ArrayImpl, const NDIM: usize> ArrayNeg<ArrayImpl, NDIM> {
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayNeg<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ContainerType for ArrayNeg<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for ArrayNeg<ArrayImpl, NDIM>

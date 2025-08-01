@@ -13,8 +13,8 @@ use crate::{
         },
         base_operations::{BaseItem, Shape, Stride},
         data_container::{
-            ContainerTypeHint, DataContainer, MutableRawAccessDataContainer,
-            RawAccessDataContainer, RefDataContainer, RefDataContainerMut, ValueDataContainer,
+            ContainerType, DataContainer, MutableRawAccessDataContainer, RawAccessDataContainer,
+            RefDataContainer, RefDataContainerMut, ValueDataContainer,
         },
     },
 };
@@ -27,10 +27,8 @@ pub struct StridedBaseArray<Data, const NDIM: usize> {
     stride: [usize; NDIM],
 }
 
-impl<Data: ContainerTypeHint, const NDIM: usize> ContainerTypeHint
-    for StridedBaseArray<Data, NDIM>
-{
-    type TypeHint = Data::TypeHint;
+impl<Data: ContainerType, const NDIM: usize> ContainerType for StridedBaseArray<Data, NDIM> {
+    type Type = Data::Type;
 }
 
 impl<Data: DataContainer, const NDIM: usize> StridedBaseArray<Data, NDIM> {

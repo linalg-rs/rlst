@@ -3,7 +3,7 @@
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
-    ContainerTypeHint,
+    ContainerType,
 };
 use paste::paste;
 
@@ -30,12 +30,12 @@ impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize>
     }
 }
 
-impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> ContainerTypeHint
+impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> ContainerType
     for ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<OpItem, OpTarget, ArrayImpl, Op: Fn(OpItem) -> OpTarget, const NDIM: usize> BaseItem

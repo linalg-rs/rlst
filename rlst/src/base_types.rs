@@ -19,7 +19,7 @@ use typenum::Unsigned;
 use typenum::U;
 
 use crate::traits::number_relations::{IsGreaterByOne, IsGreaterZero, IsSmallerByOne};
-use crate::ContainerType;
+use crate::ContainerTypeRepr;
 use crate::ContainerTypeSelector;
 use crate::IsSmallerThan;
 
@@ -186,10 +186,10 @@ pub struct Unknown;
 /// A static container with fixed size N.
 pub struct Stack<const N: usize>;
 
-impl ContainerType for Unknown {
+impl ContainerTypeRepr for Unknown {
     const STR: &str = "Unknown";
 }
-impl<const N: usize> ContainerType for Stack<N> {
+impl<const N: usize> ContainerTypeRepr for Stack<N> {
     const STR: &str = "Stack";
 }
 

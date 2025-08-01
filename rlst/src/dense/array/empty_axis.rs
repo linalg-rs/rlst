@@ -9,7 +9,7 @@ use crate::{
         base_operations::BaseItem,
         number_relations::IsSmallerByOne,
     },
-    ContainerTypeHint,
+    ContainerType,
 };
 
 use super::{
@@ -45,13 +45,13 @@ where
     }
 }
 
-impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerTypeHint
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerType
     for ArrayAppendAxis<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsSmallerByOne<NDIM>,
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<ArrayImpl, const ADIM: usize, const NDIM: usize> BaseItem

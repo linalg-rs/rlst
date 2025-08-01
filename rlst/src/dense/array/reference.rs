@@ -13,17 +13,17 @@ use crate::{
         },
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
     },
-    AsOwnedRefType, AsOwnedRefTypeMut, ContainerTypeHint,
+    AsOwnedRefType, AsOwnedRefTypeMut, ContainerType,
 };
 
 /// Basic structure for a `View`
 pub struct ArrayRef<'a, ArrayImpl, const NDIM: usize>(&'a Array<ArrayImpl, NDIM>);
 
-impl<'a, ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayRef<'a, ArrayImpl, NDIM>
+impl<'a, ArrayImpl, const NDIM: usize> ContainerType for ArrayRef<'a, ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<'a, ArrayImpl, const NDIM: usize> BaseItem for ArrayRef<'a, ArrayImpl, NDIM>

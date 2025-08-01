@@ -11,7 +11,7 @@
 //!
 
 use crate::traits::data_container::{
-    ContainerTypeHint, DataContainer, ModifiableDataContainer, MutableRawAccessDataContainer,
+    ContainerType, DataContainer, ModifiableDataContainer, MutableRawAccessDataContainer,
     RawAccessDataContainer, RefDataContainer, RefDataContainerMut, ResizeableDataContainer,
     ValueDataContainer,
 };
@@ -41,8 +41,8 @@ impl<Item: Default + Clone> VectorContainer<Item> {
     }
 }
 
-impl<Item> ContainerTypeHint for VectorContainer<Item> {
-    type TypeHint = Unknown;
+impl<Item> ContainerType for VectorContainer<Item> {
+    type Type = Unknown;
 }
 
 impl<Item> DataContainer for VectorContainer<Item> {
@@ -115,8 +115,8 @@ pub struct ArrayContainer<Item, const N: usize> {
     data: [Item; N],
 }
 
-impl<Item, const N: usize> ContainerTypeHint for ArrayContainer<Item, N> {
-    type TypeHint = Stack<N>;
+impl<Item, const N: usize> ContainerType for ArrayContainer<Item, N> {
+    type Type = Stack<N>;
 }
 
 impl<Item: Default + Copy, const N: usize> ArrayContainer<Item, N> {
@@ -196,8 +196,8 @@ pub struct SliceContainer<'a, Item> {
     data: &'a [Item],
 }
 
-impl<'a, Item> ContainerTypeHint for SliceContainer<'a, Item> {
-    type TypeHint = Unknown; // Slice does not have a fixed size, but we can use a marker.
+impl<'a, Item> ContainerType for SliceContainer<'a, Item> {
+    type Type = Unknown; // Slice does not have a fixed size, but we can use a marker.
 }
 
 impl<'a, Item> SliceContainer<'a, Item> {
@@ -245,8 +245,8 @@ pub struct SliceContainerMut<'a, Item> {
     data: &'a mut [Item],
 }
 
-impl<'a, Item> ContainerTypeHint for SliceContainerMut<'a, Item> {
-    type TypeHint = Unknown; // Slice does not have a fixed size, but we can use a marker.
+impl<'a, Item> ContainerType for SliceContainerMut<'a, Item> {
+    type Type = Unknown; // Slice does not have a fixed size, but we can use a marker.
 }
 
 impl<'a, Item> SliceContainerMut<'a, Item> {

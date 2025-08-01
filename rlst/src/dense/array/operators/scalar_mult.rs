@@ -8,7 +8,7 @@ use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
 };
-use crate::{ContainerTypeHint, ScalarMul};
+use crate::{ContainerType, ScalarMul};
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<Scalar, ArrayImpl, const NDIM: usize> {
@@ -23,12 +23,12 @@ impl<Scalar, ArrayImpl, const NDIM: usize> ArrayScalarMult<Scalar, ArrayImpl, ND
     }
 }
 
-impl<Scalar, ArrayImpl, const NDIM: usize> ContainerTypeHint
+impl<Scalar, ArrayImpl, const NDIM: usize> ContainerType
     for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<Scalar, ArrayImpl, const NDIM: usize> BaseItem for ArrayScalarMult<Scalar, ArrayImpl, NDIM>

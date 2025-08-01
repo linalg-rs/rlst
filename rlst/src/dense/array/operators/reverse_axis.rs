@@ -7,7 +7,7 @@ use crate::traits::accessors::{
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::traits::base_operations::{BaseItem, Shape};
-use crate::ContainerTypeHint;
+use crate::ContainerType;
 
 /// This struct represents an array implementation with a single axis reversed.
 pub struct ReverseAxis<ArrayImpl, const NDIM: usize> {
@@ -32,11 +32,11 @@ where
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ReverseAxis<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ContainerType for ReverseAxis<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<Item, ArrayImpl, const NDIM: usize> BaseItem for ReverseAxis<ArrayImpl, NDIM>

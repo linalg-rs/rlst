@@ -9,7 +9,7 @@ use crate::traits::{
     },
     base_operations::{BaseItem, Shape, Stride},
 };
-use crate::{ContainerTypeHint, Unknown};
+use crate::{ContainerType, Unknown};
 
 /// Subview of an array
 pub struct ArraySubView<ArrayImpl, const NDIM: usize> {
@@ -37,11 +37,11 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> ArraySubView<ArrayImpl, NDIM> {
 
 // Basic traits for ArraySubView
 
-impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArraySubView<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ContainerType for ArraySubView<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = Unknown;
+    type Type = Unknown;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for ArraySubView<ArrayImpl, NDIM>

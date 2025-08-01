@@ -10,7 +10,7 @@ use crate::{
         },
         base_operations::{BaseItem, Shape},
     },
-    ContainerTypeHint,
+    ContainerType,
 };
 
 /// A flattened view onto an array.
@@ -25,11 +25,11 @@ impl<ArrayImpl, const NDIM: usize> ArrayFlatView<ArrayImpl, NDIM> {
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for ArrayFlatView<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ContainerType for ArrayFlatView<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for ArrayFlatView<ArrayImpl, NDIM>

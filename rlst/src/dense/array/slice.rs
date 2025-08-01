@@ -10,7 +10,7 @@ use crate::{
         base_operations::BaseItem,
         number_relations::{IsGreaterByOne, IsGreaterZero},
     },
-    ContainerTypeHint, Unknown,
+    ContainerType, Unknown,
 };
 
 use super::{
@@ -31,14 +31,14 @@ where
 
 // Implementation of ArraySlice
 
-impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerTypeHint
+impl<ArrayImpl, const ADIM: usize, const NDIM: usize> ContainerType
     for ArraySlice<ArrayImpl, ADIM, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
-    type TypeHint = Unknown;
+    type Type = Unknown;
 }
 
 impl<ArrayImpl, const ADIM: usize, const NDIM: usize> BaseItem for ArraySlice<ArrayImpl, ADIM, NDIM>

@@ -19,7 +19,7 @@ use crate::{
         base_operations::{
             BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride,
         },
-        data_container::ContainerTypeHint,
+        data_container::ContainerType,
     },
     AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval, DispatchEvalRowMajor, FillFrom, Stack,
     Unknown,
@@ -158,11 +158,11 @@ impl<Item: Clone + Default, const NDIM: usize>
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ContainerTypeHint for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, const NDIM: usize> ContainerType for Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint,
+    ArrayImpl: ContainerType,
 {
-    type TypeHint = ArrayImpl::TypeHint;
+    type Type = ArrayImpl::Type;
 }
 
 impl<ArrayImpl, const NDIM: usize> BaseItem for Array<ArrayImpl, NDIM>

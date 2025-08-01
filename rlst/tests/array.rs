@@ -1,6 +1,6 @@
 //! Basic array functionality.
 
-use rlst::{self, ContainerTypeHint, EvaluateObject};
+use rlst::{self, ContainerType, EvaluateObject};
 
 #[test]
 fn test_array_eval() {
@@ -8,12 +8,11 @@ fn test_array_eval() {
 
     arr.fill_from_seed_normally_distributed(0);
     let arr = arr.eval();
-    let type_hint = arr.type_hint_as_str();
+    let type_hint = arr.type_as_str();
     assert_eq!(type_hint, "Stack");
 
     assert_eq!(
-        arr.with_container_type::<rlst::Unknown>()
-            .type_hint_as_str(),
+        arr.with_container_type::<rlst::Unknown>().type_as_str(),
         "Unknown"
     );
 
@@ -21,12 +20,10 @@ fn test_array_eval() {
 
     arr.fill_from_seed_normally_distributed(0);
     let arr = arr.eval();
-    let type_hint = arr.type_hint_as_str();
+    let type_hint = arr.type_as_str();
     assert_eq!(type_hint, "Unknown");
 
-    let type_hint = arr
-        .with_container_type::<rlst::Stack<20>>()
-        .type_hint_as_str();
+    let type_hint = arr.with_container_type::<rlst::Stack<20>>().type_as_str();
 
     assert_eq!(type_hint, "Stack");
 }

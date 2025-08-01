@@ -26,7 +26,7 @@ use crate::traits::{
     number_traits::{Abs, AbsSquare, Conj, Max, Sqrt},
 };
 use crate::{
-    AsMultiIndex, ContainerTypeHint, DispatchEval, DispatchEvalRowMajor, EvaluateRowMajorArray,
+    AsMultiIndex, ContainerType, DispatchEval, DispatchEvalRowMajor, EvaluateRowMajorArray,
     FillFromIter, NormOne,
 };
 
@@ -329,27 +329,28 @@ where
 
 impl<Item, ArrayImpl, const NDIM: usize> EvaluateObject for Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint + UnsafeRandom1DAccessByValue<Item = Item>,
-    EvalDispatcher<ArrayImpl::TypeHint, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,
+    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalDispatcher<ArrayImpl::Type, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,
 {
-    type Output = <EvalDispatcher<ArrayImpl::TypeHint, ArrayImpl> as DispatchEval<NDIM>>::Output;
+    type Output = <EvalDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEval<NDIM>>::Output;
 
     fn eval(&self) -> Self::Output {
-        let dispatcher = EvalDispatcher::<ArrayImpl::TypeHint, ArrayImpl>::default();
+        let dispatcher = EvalDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
         dispatcher.dispatch(self)
     }
 }
 
 impl<Item, ArrayImpl, const NDIM: usize> EvaluateRowMajorArray for Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: ContainerTypeHint + UnsafeRandom1DAccessByValue<Item = Item>,
-    EvalRowMajorDispatcher<ArrayImpl::TypeHint, ArrayImpl>:
+    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl>:
         DispatchEvalRowMajor<NDIM, ArrayImpl = ArrayImpl>,
 {
-    type Output = <EvalRowMajorDispatcher<ArrayImpl::TypeHint, ArrayImpl> as DispatchEvalRowMajor<NDIM>>::Output;
+    type Output =
+        <EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEvalRowMajor<NDIM>>::Output;
 
     fn eval_row_major(&self) -> Self::Output {
-        let dispatcher = EvalRowMajorDispatcher::<ArrayImpl::TypeHint, ArrayImpl>::default();
+        let dispatcher = EvalRowMajorDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
         dispatcher.dispatch(self)
     }
 }
