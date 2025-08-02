@@ -1,0 +1,91 @@
+[package]
+name = "rlst"
+version = "0.2.1"
+authors = ["The linalg-rs contributors"]
+edition = "2021"
+description = "A Rust native linear algebra library."
+license = "MIT / Apache-2.0"
+homepage = "https://github.com/linalg-rs"
+repository = "https://github.com/linalg-rs/rlst"
+readme = "README.md"
+keywords = ["numerics"]
+categories = ["mathematics", "science"]
+exclude = ["suitesparse-src", "netlib-lapack-src", "blis-src"]
+
+[lib]
+name = "rlst"
+
+[dependencies]
+rlst-proc-macro = { path = "proc-macro", version = "0.2" }
+num = { version = "0.4", features = ["serde", "rand"] }
+rand = "0.9"
+rand_chacha = "0.9"
+rand_distr = "0.5"
+itertools = "0.14"
+blas = "0.22"
+lapack = "0.19"
+thiserror = "2"
+serde = "1"
+log = { version = "0.4", optional = true }
+typenum = { version = "1", features = ["const-generics"]}
+paste = "1"
+
+coe-rs = "0.1.2"
+pulp = { version = "0.21" }
+bytemuck = "1.16.0"
+
+mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
+mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
+
+[dev-dependencies]
+approx = { version = "0.5", features = ["num-complex"] }
+rand = "0.9"
+paste = "1"
+
+[build-dependencies]
+cc = "=1.2"
+bindgen = { version = "0.72.0", default-features = false }
+cmake = "0.1"
+git2 = "0.20"
+
+[features]
+strict = []
+default = ["mpi"]
+mpi = ["dep:mpi", "dep:mpi-sys"]
+suitesparse = []
+disable_system_blas_lapack = []
+sleef = []
+nightly = []
+internal_blis = []
+openblas = []
+enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
+
+[lints.clippy]
+wildcard_imports = "forbid"
+
+[[example]]
+name = "array"
+
+[[example]]
+name = "sparse"
+
+[[example]]
+name = "dist_array_operations"
+required-features = ["mpi"]
+
+[package.metadata.example.dist_array_operations.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
+[[example]]
+name = "dist_csr_matrix"
+required-features = ["mpi"]
+
+[package.metadata.example.dist_csr_matrix.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
+[[example]]
+name = "distributed_array"
+required-features = ["mpi"]
+
+[package.metadata.example.distributed_array.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
