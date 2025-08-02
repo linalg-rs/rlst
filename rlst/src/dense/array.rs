@@ -8,7 +8,8 @@ use std::ops::AddAssign;
 
 use iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
-    ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut,
+    ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
+    ColIteratorMut, RowIterator, RowIteratorMut,
 };
 use itertools::izip;
 use operators::unary_op::ArrayUnaryOperator;
@@ -593,6 +594,35 @@ where
     }
 }
 
+impl<Item, ArrayImpl, const NDIM: usize> EvaluateObject for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalDispatcher<ArrayImpl::Type, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,
+{
+    type Output = <EvalDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEval<NDIM>>::Output;
+
+    #[inline(always)]
+    fn eval(&self) -> Self::Output {
+        let dispatcher = EvalDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
+        dispatcher.dispatch(self)
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> EvaluateRowMajorArray for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
+    EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl>:
+        DispatchEvalRowMajor<NDIM, ArrayImpl = ArrayImpl>,
+{
+    type Output =
+        <EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEvalRowMajor<NDIM>>::Output;
+
+    fn eval_row_major(&self) -> Self::Output {
+        let dispatcher = EvalRowMajorDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
+        dispatcher.dispatch(self)
+    }
+}
+
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
@@ -841,7 +871,7 @@ where
 
 impl<Item, ArrayImpl> Array<ArrayImpl, 1>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
     Item: Abs,
     <Item as Abs>::Output: std::iter::Sum,
 {
@@ -879,42 +909,17 @@ where
     }
 }
 
-impl<Item, ArrayImpl, const NDIM: usize> EvaluateObject for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
-    EvalDispatcher<ArrayImpl::Type, ArrayImpl>: DispatchEval<NDIM, ArrayImpl = ArrayImpl>,
-{
-    type Output = <EvalDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEval<NDIM>>::Output;
-
-    /// Evaluate array into a new array.
-    ///
-    /// The output
-    #[inline(always)]
-    fn eval(&self) -> Self::Output {
-        let dispatcher = EvalDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
-        dispatcher.dispatch(self)
-    }
-}
-
-impl<Item, ArrayImpl, const NDIM: usize> EvaluateRowMajorArray for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: ContainerType + UnsafeRandom1DAccessByValue<Item = Item>,
-    EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl>:
-        DispatchEvalRowMajor<NDIM, ArrayImpl = ArrayImpl>,
-{
-    type Output =
-        <EvalRowMajorDispatcher<ArrayImpl::Type, ArrayImpl> as DispatchEvalRowMajor<NDIM>>::Output;
-
-    fn eval_row_major(&self) -> Self::Output {
-        let dispatcher = EvalRowMajorDispatcher::<ArrayImpl::Type, ArrayImpl>::default();
-        dispatcher.dispatch(self)
-    }
-}
-
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
 {
+    /// Convert an array into the new item type T.
+    ///
+    /// Note: It is required that `ArrayImpl::Item: Into<T>`.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessByValue]
+    /// - [Shape]
     fn into_type<T>(
         self,
     ) -> Array<
@@ -928,79 +933,59 @@ where
     }
 }
 
-impl<ArrayImpl> ColumnIterator for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
 {
-    type Col<'a>
-        = Array<ArraySlice<ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>
-    where
-        Self: 'a;
-
-    type Iter<'a>
-        = ColIterator<'a, ArrayImpl, 2>
-    where
-        Self: 'a;
-
-    fn col_iter(&self) -> Self::Iter<'_> {
+    /// Return a column iterator for a 2d array.
+    ///
+    /// # Traits
+    /// - [UnsafeRandomAccessByValue]
+    /// - [Shape]
+    fn col_iter(&self) -> ColIterator<'_, ArrayImpl, 2> {
         ColIterator::new(self)
     }
 }
 
-impl<ArrayImpl> ColumnIteratorMut for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: Shape<2> + UnsafeRandomAccessMut<2>,
 {
-    type Col<'a>
-        = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>
-    where
-        Self: 'a;
-
-    type Iter<'a>
-        = ColIteratorMut<'a, ArrayImpl, 2>
-    where
-        Self: 'a;
-
-    fn col_iter_mut(&mut self) -> Self::Iter<'_> {
+    /// Return a mutable column iterator for a 2d array.
+    ///
+    /// # Traits
+    /// - [UnsafeRandomAccessMut]
+    /// - [Shape]
+    fn col_iter_mut(&mut self) -> ColIteratorMut<'_, ArrayImpl, 2> {
         ColIteratorMut::new(self)
     }
 }
 
-impl<ArrayImpl> crate::traits::iterators::RowIterator for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
 {
-    type Row<'a>
-        = Array<ArraySlice<ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>
-    where
-        Self: 'a;
-
-    type Iter<'a>
-        = crate::dense::array::iterators::RowIterator<'a, ArrayImpl, 2>
-    where
-        Self: 'a;
-
-    fn row_iter(&self) -> Self::Iter<'_> {
-        crate::dense::array::iterators::RowIterator::new(self)
+    /// Return a row iterator for a 2d array.
+    ///
+    /// # Traits
+    /// - [UnsafeRandomAccessByValue]
+    /// - [Shape]
+    fn row_iter(&self) -> RowIterator<'_, ArrayImpl, 2> {
+        RowIterator::new(self)
     }
 }
 
-impl<ArrayImpl> crate::traits::iterators::RowIteratorMut for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
-    ArrayImpl: Shape<2> + UnsafeRandomAccessMut<2>,
+    ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
 {
-    type Row<'a>
-        = Array<ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>
-    where
-        Self: 'a;
-
-    type Iter<'a>
-        = crate::dense::array::iterators::RowIteratorMut<'a, ArrayImpl, 2>
-    where
-        Self: 'a;
-
-    fn row_iter_mut(&mut self) -> Self::Iter<'_> {
-        crate::dense::array::iterators::RowIteratorMut::new(self)
+    /// Return a mutable row iterator for a 2d array.
+    ///
+    /// # Traits
+    /// - [UnsafeRandomAccessMut]
+    /// - [Shape]
+    fn row_iter_mut(&mut self) -> RowIteratorMut<'_, ArrayImpl, 2> {
+        RowIteratorMut::new(self)
     }
 }
 
