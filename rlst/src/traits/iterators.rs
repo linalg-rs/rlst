@@ -5,34 +5,40 @@ use super::{
     base_operations::BaseItem,
 };
 
-/// Iterate through the elements in `(i, j, data)` form, where
-/// `i` is row, `j` is column, and `data` is the corresponding
-/// element.
+/// An Aij iterator returns data in the form `(i, j, data)` with
+/// `i` and `j` the row and column.
 pub trait AijIteratorByValue: BaseItem {
-    /// Get iterator
+    /// Iterate through elements in `(i, j, data)` form, where
+    /// `i` is row, `j` is column, and `data` is the corresponding
+    /// element.
     fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_;
 }
 
-/// Iterate through the elements in `([i, j], &data)` form, where
-/// `i` is row, `j` is column, and `data` is the corresponding
-/// element.
+/// An Aij iterator that returns items of the form `(i, j, &data)` with
+/// `i` and `j` the row and column.
 pub trait AijIteratorByRef: BaseItem {
-    /// Get iterator
+    /// Iterate through elements in `(i, j, &data)` form, where
+    /// `i` is row, `j` is column, and `data` is the corresponding
+    /// element.
     fn iter_aij_ref(&self) -> impl Iterator<Item = ([usize; 2], &Self::Item)> + '_;
 }
 
-/// Iterate through the elements in `(i, j, &mut data)` form, where
-/// `i` is row, `j` is column, and `data` is the corresponding
-/// element.
+/// An Aij iterator that returns items of the form `(i, j, &mut data)` with
+/// `i` and `j` the row and column.
 pub trait AijIteratorMut: BaseItem {
-    /// Get iterator
+    /// Iterate through the elements in `(i, j, &mut data)` form, where
+    /// `i` is row, `j` is column, and `data` is the corresponding
+    /// element.
     fn iter_aij_mut(&mut self) -> impl Iterator<Item = ([usize; 2], &mut Self::Item)> + '_;
 }
 
 /// Helper trait that returns from an enumeration iterator a new iterator
 /// that converts the 1d index into a multi-index.
 pub trait AsMultiIndex<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> {
-    /// Get multi-index
+    /// Return a new iterator if the form `(multi_index, T)` that converts from
+    /// an iterator of the form `(usize, T)` returned from `enumerate`. To convert
+    /// from the 1d index to a multi index the `shape` of the data is required.
+    /// It is also assumed that the iteration happens in column-major order.
     fn multi_index(
         self,
         shape: [usize; NDIM],
@@ -50,6 +56,7 @@ pub trait ArrayIteratorByValue: BaseItem {
         Self: 'a;
 
     /// Returns an iterator that produces elements of type `Self::Item`.
+    /// The iterator is expected to use column-major order.
     fn iter_value(&self) -> Self::Iter<'_>;
 }
 
@@ -63,7 +70,8 @@ pub trait ArrayIteratorByRef: BaseItem {
     where
         Self: 'a;
 
-    /// Returns an iterator that produces elements of type `Self::Item`.
+    /// Returns an iterator that produces elements of type `&Self::Item`.
+    /// The iterator is expected to use column-major order.
     fn iter_ref(&self) -> Self::Iter<'_>;
 }
 
@@ -78,28 +86,29 @@ pub trait ArrayIteratorMut: BaseItem {
         Self: 'a;
 
     /// Returns an iterator that produces mutable references to elements of type `Self::Item`.
+    /// The iterator is expected to use column-major order.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
-/// Get an iterator to the diagonal of an array.
+/// Get an iterator to the diagonal of an array by reference.
 pub trait GetDiagByRef: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = &'a Self::Item>
     where
         Self: 'a;
 
-    /// Return an iterator for the diagonal of an array.
+    /// Return an iterator for the diagonal of an array by reference.
     fn diag_iter_ref(&self) -> Self::Iter<'_>;
 }
 
-/// Get an iterator to the diagonal of an array.
+/// Get an iterator to the diagonal of an array by value.
 pub trait GetDiagByValue: BaseItem {
     /// Type of the iterator.
     type Iter<'a>: Iterator<Item = Self::Item>
     where
         Self: 'a;
 
-    /// Return an iterator for the diagonal of an array.
+    /// Return an iterator for the diagonal of an array by value.
     fn diag_iter_value(&self) -> Self::Iter<'_>;
 }
 
@@ -114,7 +123,7 @@ pub trait GetDiagMut: BaseItem {
     fn diag_iter_mut(&mut self) -> Self::Iter<'_>;
 }
 
-/// Column Iterator.
+/// An iterator that iterates through the columns of a matrix.
 pub trait ColumnIterator: BaseItem {
     /// Column type.
     type Col<'a>: RandomAccessByValue<1, Item = Self::Item>
@@ -130,9 +139,9 @@ pub trait ColumnIterator: BaseItem {
     fn col_iter(&self) -> Self::Iter<'_>;
 }
 
-/// Row Iterator.
+/// An iterator that iterates through the rows of a matrix.
 pub trait RowIterator: BaseItem {
-    /// Column type.
+    /// Row type.
     type Row<'a>: RandomAccessByValue<1, Item = Self::Item>
     where
         Self: 'a;

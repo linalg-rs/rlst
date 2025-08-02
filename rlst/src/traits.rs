@@ -5,7 +5,6 @@ pub mod accessors;
 pub mod base_operations;
 pub mod data_container;
 pub mod distributed;
-pub mod generic;
 pub mod io;
 pub mod iterators;
 pub mod linalg;
