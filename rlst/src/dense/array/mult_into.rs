@@ -27,7 +27,13 @@ impl<
         beta: Item,
     ) -> Self {
         crate::dense::matrix_multiply::matrix_multiply(
-            transa, transb, alpha, &arr_a, &arr_b, beta, &mut self,
+            transa,
+            transb,
+            alpha,
+            arr_a.inner(),
+            arr_b.inner(),
+            beta,
+            self.inner_mut(),
         );
         self
     }
@@ -56,10 +62,10 @@ impl<
             transa,
             transb,
             alpha,
-            &arr_a,
-            &arr_with_padded_dim,
+            arr_a.inner(),
+            arr_with_padded_dim.inner(),
             beta,
-            &mut self_with_padded_dim,
+            self_with_padded_dim.inner_mut(),
         );
         self
     }
@@ -88,10 +94,10 @@ impl<
             transa,
             transb,
             alpha,
-            &arr_with_padded_dim,
-            &arr_b,
+            arr_with_padded_dim.inner(),
+            arr_b.inner(),
             beta,
-            &mut self_with_padded_dim,
+            self_with_padded_dim.inner_mut(),
         );
         self
     }
@@ -125,7 +131,13 @@ impl<
         }
 
         crate::dense::matrix_multiply::matrix_multiply(
-            transa, transb, alpha, &arr_a, &arr_b, beta, &mut self,
+            transa,
+            transb,
+            alpha,
+            arr_a.inner(),
+            arr_b.inner(),
+            beta,
+            self.inner_mut(),
         );
         self
     }
@@ -162,10 +174,10 @@ impl<
             transa,
             transb,
             alpha,
-            &arr_a,
-            &arr_with_padded_dim,
+            arr_a.inner(),
+            arr_with_padded_dim.inner(),
             beta,
-            &mut self_with_padded_dim,
+            self_with_padded_dim.inner_mut(),
         );
         self
     }
@@ -202,10 +214,10 @@ impl<
             transa,
             transb,
             alpha,
-            &arr_with_padded_dim,
-            &arr_b,
+            arr_with_padded_dim.inner(),
+            arr_b.inner(),
             beta,
-            &mut self_with_padded_dim,
+            self_with_padded_dim.inner_mut(),
         );
         self
     }

@@ -14,7 +14,7 @@ use super::{
 /// Define a basic item type associated with an object.
 pub trait BaseItem {
     /// Item type.
-    type Item;
+    type Item: Copy + Default;
 }
 
 ///  Define a type that holds a reference to the current object.
