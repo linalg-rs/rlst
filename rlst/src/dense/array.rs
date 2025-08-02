@@ -91,7 +91,7 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     }
 }
 
-impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
+impl<Item: Copy + Default, const NDIM: usize> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
     /// Create a new heap allocated array from a given shape.
     #[inline(always)]
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
@@ -116,19 +116,19 @@ impl<Item: Clone + Default, const NDIM: usize> Array<BaseArray<VectorContainer<I
     }
 }
 
-impl<Item: Clone + Default> From<&[Item]> for DynArray<Item, 1> {
+impl<Item: Copy + Default> From<&[Item]> for DynArray<Item, 1> {
     fn from(value: &[Item]) -> Self {
         DynArray::<Item, 1>::from_shape_and_vec([value.len()], value.to_vec())
     }
 }
 
-impl<Item: Clone + Default> From<Vec<Item>> for DynArray<Item, 1> {
+impl<Item: Copy + Default> From<Vec<Item>> for DynArray<Item, 1> {
     fn from(value: Vec<Item>) -> Self {
         DynArray::<Item, 1>::from_shape_and_vec([value.len()], value)
     }
 }
 
-impl<Item: Clone + Default, const NDIM: usize>
+impl<Item: Copy + Default, const NDIM: usize>
     Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
 {
     /// Create a new heap allocated array from a given shape and stride.
@@ -143,7 +143,7 @@ impl<Item: Clone + Default, const NDIM: usize>
     }
 }
 
-impl<Item: Clone + Default, const NDIM: usize>
+impl<Item: Copy + Default, const NDIM: usize>
     Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
 {
     /// Create a new heap allocated row-major array.
@@ -274,7 +274,7 @@ impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
 ///
 /// Empty arrays serve as convenient containers for input into functions that
 /// resize an array before filling it with data.
-pub fn empty_array<Item: Clone + Default, const NDIM: usize>(
+pub fn empty_array<Item: Copy + Default, const NDIM: usize>(
 ) -> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
@@ -379,7 +379,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccess
 
 impl<Item, const NDIM: usize> DynArray<Item, NDIM>
 where
-    Item: Clone + Default,
+    Item: Copy + Default,
 {
     /// Create a new array and fill with values from `arr`.
     pub fn new_from<ArrayImpl>(arr: &Array<ArrayImpl, NDIM>) -> Self

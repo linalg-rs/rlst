@@ -23,7 +23,7 @@ pub struct VectorContainer<Item> {
     data: Vec<Item>,
 }
 
-impl<Item: Default + Clone> VectorContainer<Item> {
+impl<Item: Default + Copy> VectorContainer<Item> {
     /// New vector container by specifying the number of elements.
     ///
     /// The container is initialized with zeros by default.

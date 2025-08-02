@@ -129,7 +129,7 @@ pub fn write_array_mm<
 ///
 /// The function returns a [DynamicArray] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
-pub fn read_array_mm<T: Clone + Default + Num>(fname: &str) -> RlstResult<DynArray<T, 2>> {
+pub fn read_array_mm<T: Copy + Default + Num>(fname: &str) -> RlstResult<DynArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();
     let mm_info = parse_header(&mut reader).unwrap();
 

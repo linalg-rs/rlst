@@ -12,7 +12,7 @@ use crate::traits::linalg::decompositions::Inverse;
 impl<Item, ArrayImpl> Inverse for Array<ArrayImpl, 2>
 where
     ArrayImpl: BaseItem<Item = Item> + Shape<2>,
-    Item: Clone + Default + Getri + Getrf,
+    Item: Copy + Default + Getri + Getrf,
     DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
 {
     type Output = DynArray<Item, 2>;

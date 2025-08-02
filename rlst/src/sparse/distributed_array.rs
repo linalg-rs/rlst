@@ -97,7 +97,7 @@ where
     Array<ArrayImpl, NDIM>: EvaluateRowMajorArray,
     <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
     <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Clone + Default,
+        Equivalence + Copy + Default,
     StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
@@ -159,7 +159,7 @@ where
     Array<ArrayImpl, NDIM>: EvaluateRowMajorArray,
     <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
     <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Clone + Default,
+        Equivalence + Copy + Default,
     StridedDynArray<
         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
         NDIM,
