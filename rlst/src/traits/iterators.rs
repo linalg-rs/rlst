@@ -171,7 +171,7 @@ pub trait ColumnIteratorMut: BaseItem {
     fn col_iter_mut(&mut self) -> Self::Iter<'_>;
 }
 
-/// Row Iterator.
+/// Mutable row Iterator.
 pub trait RowIteratorMut: BaseItem {
     /// Column type.
     type Row<'a>: RandomAccessMut<1, Item = Self::Item>
