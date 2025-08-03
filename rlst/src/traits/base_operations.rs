@@ -46,6 +46,12 @@ pub trait AsOwnedRefTypeMut {
 pub trait Shape<const NDIM: usize> {
     /// Return the shape of the object.
     fn shape(&self) -> [usize; NDIM];
+
+    /// Return the length, which for n dimension is the product of the dimensions.
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.shape().iter().product()
+    }
 }
 
 /// Associate a strice with a given object.

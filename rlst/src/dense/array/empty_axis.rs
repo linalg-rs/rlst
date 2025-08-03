@@ -84,7 +84,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.inner().get_value_1d_unchecked(index)
+        self.arr.imp().get_value_1d_unchecked(index)
     }
 }
 
@@ -96,7 +96,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.inner().get_1d_unchecked(index)
+        self.arr.imp().get_1d_unchecked(index)
     }
 }
 
@@ -108,7 +108,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.inner_mut().get_1d_unchecked_mut(index)
+        self.arr.imp_mut().get_1d_unchecked_mut(index)
     }
 }
 

@@ -603,7 +603,7 @@ where
             "DistributedArray::inner: The index layout and shape of the arrays do not match."
         );
         // We can just sum from the local data.
-        let local_inner = self.local.inner(&other.local);
+        let local_inner = self.local.imp(&other.local);
         let mut global_inner = Default::default();
 
         self.index_layout.comm().all_reduce_into(

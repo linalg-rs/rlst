@@ -40,18 +40,16 @@ where
     ArrayImpl2: ContainerType,
     SelectContainerType: ContainerTypeSelector<ArrayImpl1::Type, ArrayImpl2::Type>,
 {
-    type Type = <SelectContainerType as ContainerTypeSelector<
-        ArrayImpl1::Type,
-        ArrayImpl2::Type,
-    >>::Type;
+    type Type =
+        <SelectContainerType as ContainerTypeSelector<ArrayImpl1::Type, ArrayImpl2::Type>>::Type;
 }
 
-impl<
-        Item,
-        ArrayImpl1: BaseItem<Item = Item>,
-        ArrayImpl2: BaseItem<Item = Item>,
-        const NDIM: usize,
-    > BaseItem for ArrayAddition<ArrayImpl1, ArrayImpl2, NDIM>
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> BaseItem
+    for ArrayAddition<ArrayImpl1, ArrayImpl2, NDIM>
+where
+    Item: Copy + Default,
+    ArrayImpl1: BaseItem<Item = Item>,
+    ArrayImpl2: BaseItem<Item = Item>,
 {
     type Item = Item;
 }

@@ -30,10 +30,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_a.inner(),
-            arr_b.inner(),
+            arr_a.imp(),
+            arr_b.imp(),
             beta,
-            self.inner_mut(),
+            self.imp_mut(),
         );
         self
     }
@@ -62,10 +62,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_a.inner(),
-            arr_with_padded_dim.inner(),
+            arr_a.imp(),
+            arr_with_padded_dim.imp(),
             beta,
-            self_with_padded_dim.inner_mut(),
+            self_with_padded_dim.imp_mut(),
         );
         self
     }
@@ -94,10 +94,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_with_padded_dim.inner(),
-            arr_b.inner(),
+            arr_with_padded_dim.imp(),
+            arr_b.imp(),
             beta,
-            self_with_padded_dim.inner_mut(),
+            self_with_padded_dim.imp_mut(),
         );
         self
     }
@@ -134,10 +134,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_a.inner(),
-            arr_b.inner(),
+            arr_a.imp(),
+            arr_b.imp(),
             beta,
-            self.inner_mut(),
+            self.imp_mut(),
         );
         self
     }
@@ -174,10 +174,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_a.inner(),
-            arr_with_padded_dim.inner(),
+            arr_a.imp(),
+            arr_with_padded_dim.imp(),
             beta,
-            self_with_padded_dim.inner_mut(),
+            self_with_padded_dim.imp_mut(),
         );
         self
     }
@@ -214,10 +214,10 @@ impl<
             transa,
             transb,
             alpha,
-            arr_with_padded_dim.inner(),
-            arr_b.inner(),
+            arr_with_padded_dim.imp(),
+            arr_b.imp(),
             beta,
-            self_with_padded_dim.inner_mut(),
+            self_with_padded_dim.imp_mut(),
         );
         self
     }

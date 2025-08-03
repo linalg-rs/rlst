@@ -4,8 +4,6 @@
 //! `Array<ArrayImpl, NDIM>` represents a tensor with `NDIM` axes implemented through
 //! the implementeation type `ArrayImpl`.
 
-use std::ops::AddAssign;
-
 use iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
     ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
@@ -26,14 +24,12 @@ use crate::{
             UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
             UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
         },
-        base_operations::{
-            BaseItem, FillFromResize, Len, NumberOfElements, ResizeInPlace, Shape, Stride,
-        },
+        base_operations::{BaseItem, FillFromResize, ResizeInPlace, Shape, Stride},
         data_container::ContainerType,
     },
-    Abs, AbsSquare, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval, DispatchEvalRowMajor,
-    EvaluateObject, EvaluateRowMajorArray, FillFrom, FillFromIter, Max, RandomAccessByValue, Sqrt,
-    Stack, SumFrom, Unknown,
+    Abs, AbsSquare, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval,
+    DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Max, RandomAccessByValue, Sqrt,
+    Stack, Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -95,19 +91,19 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
 
     /// Return a reference to the implementation.
     #[inline(always)]
-    pub fn inner(&self) -> &ArrayImpl {
+    pub fn imp(&self) -> &ArrayImpl {
         &self.0
     }
 
     /// Return a mutable reference to the implementation.
     #[inline(always)]
-    pub fn inner_mut(&mut self) -> &mut ArrayImpl {
+    pub fn imp_mut(&mut self) -> &mut ArrayImpl {
         &mut self.0
     }
 
     /// Extract the inner implementation.
     #[inline(always)]
-    pub fn into_inner(self) -> ArrayImpl {
+    pub fn into_imp(self) -> ArrayImpl {
         self.0
     }
 }
@@ -203,7 +199,7 @@ where
     /// # Traits:
     /// - [Shape](crate::Shape)
     #[inline(always)]
-    fn shape(&self) -> [usize; NDIM] {
+    pub fn shape(&self) -> [usize; NDIM] {
         self.0.shape()
     }
 }
@@ -218,8 +214,8 @@ where
     /// # Traits:
     /// - [Shape](crate::Shape)
     #[inline(always)]
-    fn len(&self) -> usize {
-        self.shape().iter().product()
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
@@ -235,7 +231,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessByValue](crate::UnsafeRandomAccessByValue)
     #[inline(always)]
-    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> ArrayImpl::Item {
+    pub unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> ArrayImpl::Item {
         self.0.get_value_unchecked(multi_index)
     }
 }
@@ -252,7 +248,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessByRef](crate::UnsafeRandomAccessByRef)
     #[inline(always)]
-    unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &ArrayImpl::Item {
+    pub unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &ArrayImpl::Item {
         self.0.get_unchecked(multi_index)
     }
 }
@@ -269,7 +265,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessMut](crate::UnsafeRandomAccessMut)
     #[inline(always)]
-    unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut ArrayImpl::Item {
+    pub unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut ArrayImpl::Item {
         self.0.get_unchecked_mut(multi_index)
     }
 }
@@ -283,7 +279,7 @@ where
     /// # Traits
     /// - [RandomAccessByValue](crate::RandomAccessByValue)
     #[inline(always)]
-    unsafe fn get_value(&self, multi_index: [usize; NDIM]) -> Option<ArrayImpl::Item> {
+    pub unsafe fn get_value(&self, multi_index: [usize; NDIM]) -> Option<ArrayImpl::Item> {
         self.0.get_value(multi_index)
     }
 }
@@ -297,7 +293,7 @@ where
     /// # Traits
     /// - [RandomAccessByRef](crate::RandomAccessByRef)
     #[inline(always)]
-    unsafe fn get(&self, multi_index: [usize; NDIM]) -> Option<&ArrayImpl::Item> {
+    pub unsafe fn get(&self, multi_index: [usize; NDIM]) -> Option<&ArrayImpl::Item> {
         self.0.get(multi_index)
     }
 }
@@ -311,7 +307,7 @@ where
     /// # Traits
     /// - [RandomAccessMut](crate::RandomAccessMut)
     #[inline(always)]
-    unsafe fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut ArrayImpl::Item> {
+    pub unsafe fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut ArrayImpl::Item> {
         self.0.get_mut(multi_index)
     }
 }
@@ -347,7 +343,7 @@ where
     /// # Traits
     /// - [RawAccess](crate::RawAccess)
     #[inline(always)]
-    fn data(&self) -> &[ArrayImpl::Item] {
+    pub fn data(&self) -> &[ArrayImpl::Item] {
         self.0.data()
     }
 }
@@ -361,7 +357,7 @@ where
     /// # Traits
     /// - [RawAccessMut](crate::RawAccessMut)
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [ArrayImpl::Item] {
+    pub fn data_mut(&mut self) -> &mut [ArrayImpl::Item] {
         self.0.data_mut()
     }
 }
@@ -375,7 +371,7 @@ where
     /// # Traits
     /// - [Stride](crate::Stride)
     #[inline(always)]
-    fn stride(&self) -> [usize; NDIM] {
+    pub fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
     }
 }
@@ -390,7 +386,7 @@ where
     ///
     /// # Traits
     /// - [ResizeInPlace](crate::ResizeInPlace)
-    fn resize_in_place(&mut self, shape: [usize; NDIM]) {
+    pub fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.0.resize_in_place(shape)
     }
 }
@@ -482,7 +478,7 @@ where
     /// Create a new array and fill with values from `arr`.
     pub fn new_from<ArrayImpl>(arr: &Array<ArrayImpl, NDIM>) -> Self
     where
-        DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
+        ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     {
         let mut output = empty_array::<Item, NDIM>();
         output.fill_from_resize(arr);
@@ -635,7 +631,7 @@ where
     /// - [UnsafeRandom1DAccessByValue](UnsafeRandom1DAccessByValue)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn iter_value(&self) -> ArrayDefaultIteratorByValue<'_, ArrayImpl, NDIM> {
+    pub fn iter_value(&self) -> ArrayDefaultIteratorByValue<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorByValue::new(self)
     }
 }
@@ -652,7 +648,7 @@ where
     /// - [UnsafeRandom1DAccessByRef](UnsafeRandom1DAccessByRef)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn iter_ref(&self) -> ArrayDefaultIteratorByRef<'_, ArrayImpl, NDIM> {
+    pub fn iter_ref(&self) -> ArrayDefaultIteratorByRef<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorByRef::new(self)
     }
 }
@@ -669,7 +665,7 @@ where
     /// - [UnsafeRandom1DAccessMut](UnsafeRandom1DAccessMut)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn iter_mut(&mut self) -> ArrayDefaultIteratorMut<'_, ArrayImpl, NDIM> {
+    pub fn iter_mut(&mut self) -> ArrayDefaultIteratorMut<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorMut::new(self)
     }
 }
@@ -684,7 +680,7 @@ where
     /// - [UnsafeRandomAccessByValue](UnsafeRandomAccessByValue)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn diag_iter_value(&self) -> ArrayDiagIteratorByValue<'_, ArrayImpl, NDIM> {
+    pub fn diag_iter_value(&self) -> ArrayDiagIteratorByValue<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorByValue::new(self)
     }
 }
@@ -699,7 +695,7 @@ where
     /// - [UnsafeRandomAccessByRef](UnsafeRandomAccessByRef)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn diag_iter_ref(&self) -> ArrayDiagIteratorByRef<'_, ArrayImpl, NDIM> {
+    pub fn diag_iter_ref(&self) -> ArrayDiagIteratorByRef<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorByRef::new(self)
     }
 }
@@ -714,7 +710,7 @@ where
     /// - [UnsafeRandomAccessByRef](UnsafeRandomAccessByRef)
     /// - [Shape](Shape)
     #[inline(always)]
-    fn diag_iter_mut(&mut self) -> ArrayDiagIteratorMut<'_, ArrayImpl, NDIM> {
+    pub fn diag_iter_mut(&mut self) -> ArrayDiagIteratorMut<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorMut::new(self)
     }
 }
@@ -729,7 +725,7 @@ where
     /// - [UnsafeRandomAccessMut]
     /// - [Shape]
     #[inline(always)]
-    fn fill_from<ArrayImplOther>(&mut self, other: &Array<ArrayImplOther, NDIM>)
+    pub fn fill_from<ArrayImplOther>(&mut self, other: &Array<ArrayImplOther, NDIM>)
     where
         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     {
@@ -753,7 +749,7 @@ where
     /// - [UnsafeRandom1DAccessMut]
     /// - [Shape]
     #[inline(always)]
-    fn fill_from_iter<Iter>(&mut self, iter: Iter)
+    pub fn fill_from_iter<Iter>(&mut self, iter: Iter)
     where
         Iter: Iterator<Item = ArrayImpl::Item>,
     {
@@ -775,9 +771,9 @@ where
     /// - [UnsafeRandom1DAccessMut]
     /// - [Shape]
     #[inline(always)]
-    fn fill_from_resize<ArrayImplOther>(&mut self, other: &Array<ArrayImplOther, NDIM>)
+    pub fn fill_from_resize<ArrayImplOther>(&mut self, other: &Array<ArrayImplOther, NDIM>)
     where
-        ArrayImplOther: Shape<NDIM> + UnsafeRandom1DAccessByValue,
+        ArrayImplOther: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = ArrayImpl::Item>,
     {
         self.resize_in_place(other.shape());
         self.fill_from(other);
@@ -786,7 +782,7 @@ where
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
     /// Fill array with a given value.
     ///
@@ -794,7 +790,7 @@ where
     /// - [UnsafeRandom1DAccessMut]
     /// - [Shape]
     #[inline(always)]
-    fn fill_with_value(&mut self, value: ArrayImpl::Item) {
+    pub fn fill_with_value(&mut self, value: ArrayImpl::Item) {
         for item in self.iter_mut() {
             *item = value;
         }
@@ -803,7 +799,7 @@ where
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
+    ArrayImpl: UnsafeRandomAccessByValue<NDIM> + Shape<NDIM>,
     ArrayImpl::Item: std::iter::Sum,
 {
     /// Compute the sum of the diagonal values of the array.
@@ -811,30 +807,30 @@ where
     /// Note: The Item type must support the trait [std::iter::Sum].
     ///
     /// # Traits
-    /// - [UnsafeRandom1DAccessMut]
+    /// - [UnsafeRandomAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    fn trace(&self) -> ArrayImpl::Item {
-        self.diag_iter_value().sum::<Self::Item>()
+    pub fn trace(&self) -> ArrayImpl::Item {
+        self.diag_iter_value().sum()
     }
 }
 
 impl<Item, ArrayImpl> Array<ArrayImpl, 1>
 where
-    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<1>,
-    ArrayImpl::Item: Conj<Output = Item> + std::iter::Sum,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
+    ArrayImpl::Item: Conj<Output = Item> + std::iter::Sum + std::ops::Mul<Output = ArrayImpl::Item>,
 {
     /// Compute the inner product of two 1d arrays.
     ///
     /// The elements of `other` are taken as conjugate.
     ///
-    /// Note: The Item type must support the traits [Conj] and [std::iter::Sum].
+    /// Note: The Item type must support the traits [Conj], [std::iter::Sum] and [std::ops::Mul].
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    fn inner<ArrayImplOther>(&self, other: &Array<ArrayImplOther, 1>) -> Item
+    pub fn inner<ArrayImplOther>(&self, other: &Array<ArrayImplOther, 1>) -> Item
     where
         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
     {
@@ -849,23 +845,22 @@ impl<Item, ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     Item: Abs,
-    <Item as Abs>::Output: Max,
-    <<Item as Abs>::Output as Max>::Output: Default,
+    <Item as Abs>::Output: Max<Output = <Item as Abs>::Output>,
 {
     /// Compute the maximum absolute value over all elements.
     ///
-    /// Note: The item type must support [Abs]. The output of [Abs]
-    /// must support [Max] and the output of [Max] must support [Default].
+    /// Note: The item type must support [Abs] and the output of [Abs]
+    /// must support [Max].
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    fn max_abs(&self) -> <<Item as Abs>::Output as Max>::Output {
+    pub fn max_abs(&self) -> <Item as Abs>::Output {
         self.iter_value()
-            .fold(<Self::Output as Default>::default(), |acc, elem| {
-                Max::max(acc, elem.abs())
-            })
+            .map(|elem| elem.abs())
+            .reduce(|elem1, elem2| Max::max(elem1, elem2))
+            .unwrap()
     }
 }
 
@@ -873,19 +868,22 @@ impl<Item, ArrayImpl> Array<ArrayImpl, 1>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
     Item: Abs,
-    <Item as Abs>::Output: std::iter::Sum,
+    <Item as Abs>::Output: std::ops::Add<Output = <Item as Abs>::Output>,
 {
     /// Compute the 1-norm of a 1d array.
     ///
-    /// Note: The item type must support [Abs] and the output of [Abs]
-    /// must support [std::iter::Sum].
+    /// Note: The item type must support [Abs] and the output of [Abs] must
+    /// support [std::ops::Add].
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    fn norm_1(&self) -> <Item as Abs>::Output {
-        self.iter_value().map(|elem| elem.abs()).sum()
+    pub fn norm_1(&self) -> <Item as Abs>::Output {
+        self.iter_value()
+            .map(|elem| elem.abs())
+            .reduce(std::ops::Add::add)
+            .unwrap()
     }
 }
 
@@ -893,19 +891,24 @@ impl<Item, ArrayImpl> Array<ArrayImpl, 1>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
     Item: AbsSquare,
-    <Item as AbsSquare>::Output: Sqrt<Output = <Item as AbsSquare>::Output> + std::iter::Sum,
+    <Item as AbsSquare>::Output: Sqrt<Output = <Item as AbsSquare>::Output>
+        + std::ops::Add<Output = <Item as AbsSquare>::Output>,
 {
     /// Compute the 2-norm of a 1d array.
     ///
     /// Note: The item type must support [AbsSquare]. The output of [AbsSquare]
-    /// must support [std::iter::Sum] and [Sqrt].
+    /// must support [std::ops::Add] and [Sqrt].
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    fn norm_2(&self) -> <Item as AbsSquare>::Output {
-        self.iter_value().map(|elem| elem.abs_square()).sum().sqrt()
+    pub fn norm_2(&self) -> <Item as AbsSquare>::Output {
+        self.iter_value()
+            .map(|elem| elem.abs_square())
+            .reduce(std::ops::Add::add)
+            .unwrap()
+            .sqrt()
     }
 }
 
@@ -920,7 +923,7 @@ where
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
-    fn into_type<T>(
+    pub fn into_type<T>(
         self,
     ) -> Array<
         ArrayUnaryOperator<ArrayImpl::Item, T, ArrayImpl, fn(ArrayImpl::Item) -> T, NDIM>,
@@ -942,7 +945,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessByValue]
     /// - [Shape]
-    fn col_iter(&self) -> ColIterator<'_, ArrayImpl, 2> {
+    pub fn col_iter(&self) -> ColIterator<'_, ArrayImpl, 2> {
         ColIterator::new(self)
     }
 }
@@ -956,7 +959,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessMut]
     /// - [Shape]
-    fn col_iter_mut(&mut self) -> ColIteratorMut<'_, ArrayImpl, 2> {
+    pub fn col_iter_mut(&mut self) -> ColIteratorMut<'_, ArrayImpl, 2> {
         ColIteratorMut::new(self)
     }
 }
@@ -970,7 +973,7 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessByValue]
     /// - [Shape]
-    fn row_iter(&self) -> RowIterator<'_, ArrayImpl, 2> {
+    pub fn row_iter(&self) -> RowIterator<'_, ArrayImpl, 2> {
         RowIterator::new(self)
     }
 }
@@ -984,84 +987,110 @@ where
     /// # Traits
     /// - [UnsafeRandomAccessMut]
     /// - [Shape]
-    fn row_iter_mut(&mut self) -> RowIteratorMut<'_, ArrayImpl, 2> {
+    pub fn row_iter_mut(&mut self) -> RowIteratorMut<'_, ArrayImpl, 2> {
         RowIteratorMut::new(self)
     }
 }
 
-impl<ArrayImpl> AijIteratorByValue for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<2>,
 {
-    fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_ {
+    /// Return an iterator of the form `(i, j, data)`.
+    ///
+    /// Here, `i` is the row, `j` is the column, and `data` is the associated element
+    /// returned by value.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessByValue]
+    /// - [Shape]
+    pub fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], ArrayImpl::Item)> + '_ {
         let iter = ArrayDefaultIteratorByValue::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
     }
 }
 
-impl<ArrayImpl> AijIteratorByRef for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessByRef + Shape<2>,
 {
-    fn iter_aij_ref(&self) -> impl Iterator<Item = ([usize; 2], &Self::Item)> + '_ {
+    /// Return an iterator of the form `(i, j, &data)`.
+    ///
+    /// Here, `i` is the row, `j` is the column, and `&data` is the reference to the associated
+    /// element.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessByRef]
+    /// - [Shape]
+    pub fn iter_aij_ref(&self) -> impl Iterator<Item = ([usize; 2], &ArrayImpl::Item)> + '_ {
         let iter = ArrayDefaultIteratorByRef::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), self.shape())
     }
 }
 
-impl<ArrayImpl> AijIteratorMut for Array<ArrayImpl, 2>
+impl<ArrayImpl> Array<ArrayImpl, 2>
 where
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<2>,
 {
-    fn iter_aij_mut(&mut self) -> impl Iterator<Item = ([usize; 2], &mut Self::Item)> + '_ {
+    /// Return an iterator of the form `(i, j, &mut data)`.
+    ///
+    /// Here, `i` is the row, `j` is the column, and `&data` is the mutable reference to the associated
+    /// element.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessByRef]
+    /// - [Shape]
+    pub fn iter_aij_mut(
+        &mut self,
+    ) -> impl Iterator<Item = ([usize; 2], &mut ArrayImpl::Item)> + '_ {
         let shape = self.shape();
         let iter = ArrayDefaultIteratorMut::new(self);
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), shape)
     }
 }
 
-impl<ArrayImpl, ArrayImplOther, const NDIM: usize> AddAssign<Array<ArrayImplOther, NDIM>>
-    for Array<ArrayImpl, NDIM>
-where
-    Array<ArrayImpl, NDIM>: SumFrom<Array<ArrayImplOther, NDIM>>,
-{
-    fn add_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
-        self.sum_from(&rhs)
-    }
-}
+// impl<ArrayImpl, ArrayImplOther, const NDIM: usize> AddAssign<Array<ArrayImplOther, NDIM>>
+//     for Array<ArrayImpl, NDIM>
+// where
+//     Array<ArrayImpl, NDIM>: SumFrom<Array<ArrayImplOther, NDIM>>,
+// {
+//     fn add_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
+//         self.sum_from(&rhs)
+//     }
+// }
 
-impl<Out, ArrayImpl, ArrayImplOther, const NDIM: usize> SubAssign<Array<ArrayImplOther, NDIM>>
-    for Array<ArrayImpl, NDIM>
-where
-    Array<ArrayImplOther, NDIM>: Neg<Output = Out>,
-    Array<ArrayImpl, NDIM>: SumFrom<Out>,
-{
-    fn sub_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
-        self.sum_from(&rhs.neg())
-    }
-}
+// impl<Out, ArrayImpl, ArrayImplOther, const NDIM: usize> SubAssign<Array<ArrayImplOther, NDIM>>
+//     for Array<ArrayImpl, NDIM>
+// where
+//     Array<ArrayImplOther, NDIM>: Neg<Output = Out>,
+//     Array<ArrayImpl, NDIM>: SumFrom<Out>,
+// {
+//     fn sub_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
+//         self.sum_from(&rhs.neg())
+//     }
+// }
 
-impl<Item, ArrayImpl, const NDIM: usize> MulAssign<Item> for Array<ArrayImpl, NDIM>
-where
-    Item: Copy,
-    Self: ArrayIteratorMut<Item = Item>,
-    Item: MulAssign<Item>,
-{
-    fn mul_assign(&mut self, rhs: Item) {
-        for item in self.iter_mut() {
-            *item *= rhs;
-        }
-    }
-}
+// impl<Item, ArrayImpl, const NDIM: usize> MulAssign<Item> for Array<ArrayImpl, NDIM>
+// where
+//     Item: Copy,
+//     Self: ArrayIteratorMut<Item = Item>,
+//     Item: MulAssign<Item>,
+// {
+//     fn mul_assign(&mut self, rhs: Item) {
+//         for item in self.iter_mut() {
+//             *item *= rhs;
+//         }
+//     }
+// }
 
-impl<Item, ArrayImpl, const NDIM: usize> Neg for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: BaseItem<Item = Item>,
-    Item: Neg<Output = Item>,
-{
-    type Output = Array<ArrayNeg<ArrayImpl, NDIM>, NDIM>;
+// impl<Item, ArrayImpl, const NDIM: usize> Neg for Array<ArrayImpl, NDIM>
+// where
+//     ArrayImpl: BaseItem<Item = Item>,
+//     Item: Neg<Output = Item>,
+// {
+//     type Output = Array<ArrayNeg<ArrayImpl, NDIM>, NDIM>;
 
-    fn neg(self) -> Self::Output {
-        Array::new(ArrayNeg::new(self))
-    }
-}
+//     fn neg(self) -> Self::Output {
+//         Array::new(ArrayNeg::new(self))
+//     }
+// }

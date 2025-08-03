@@ -70,7 +70,7 @@ impl<T, I: Iterator<Item = (usize, T)>, const NDIM: usize> AsMultiIndex<T, I, ND
 
 impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorByValue<'a, ArrayImpl, NDIM>
 where
-    ArrayImpl: Shape<NDIM> + Len,
+    ArrayImpl: Shape<NDIM>,
 {
     /// Create a new default iterator for the given array.
     pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
@@ -84,7 +84,7 @@ where
 
 impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorByRef<'a, ArrayImpl, NDIM>
 where
-    ArrayImpl: Shape<NDIM> + Len,
+    ArrayImpl: Shape<NDIM>,
 {
     /// Create a new default iterator for the given array.
     pub fn new(arr: &'a Array<ArrayImpl, NDIM>) -> Self {
@@ -98,7 +98,7 @@ where
 
 impl<'a, ArrayImpl, const NDIM: usize> ArrayDefaultIteratorMut<'a, ArrayImpl, NDIM>
 where
-    ArrayImpl: Shape<NDIM> + Len,
+    ArrayImpl: Shape<NDIM>,
 {
     /// Create a new mutable default iterator for the given array.
     pub fn new(arr: &'a mut Array<ArrayImpl, NDIM>) -> Self {
@@ -119,7 +119,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> std::iter::Itera
         if self.pos >= self.nelements {
             None
         } else {
-            let value = unsafe { Some(self.arr.inner().get_value_1d_unchecked(self.pos)) };
+            let value = unsafe { Some(self.arr.imp().get_value_1d_unchecked(self.pos)) };
             self.pos += 1;
             value
         }
@@ -134,7 +134,7 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> std::iter::Ite
         if self.pos >= self.nelements {
             None
         } else {
-            let value = unsafe { Some(self.arr.inner().get_1d_unchecked(self.pos)) };
+            let value = unsafe { Some(self.arr.imp().get_1d_unchecked(self.pos)) };
             self.pos += 1;
             value
         }
@@ -160,7 +160,7 @@ impl<'a, ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> std::iter::Itera
                 std::mem::transmute::<
                     &mut <ArrayImpl as BaseItem>::Item,
                     &'a mut <ArrayImpl as BaseItem>::Item,
-                >(self.arr.inner_mut().get_1d_unchecked_mut(self.pos))
+                >(self.arr.imp_mut().get_1d_unchecked_mut(self.pos))
             };
             self.pos += 1;
             Some(value)

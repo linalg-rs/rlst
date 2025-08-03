@@ -116,6 +116,6 @@ where
     DynArray<Item, 1>: Inner<DynArray<Item, 1>, Output = Item>,
 {
     fn inner_product(&self, x: &Element<Self>, other: &Element<Self>) -> Self::F {
-        x.imp().inner(other.imp())
+        x.imp().imp(other.imp())
     }
 }
