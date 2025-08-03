@@ -5,15 +5,14 @@ use super::interface::getrf::Getrf;
 use super::interface::getri::Getri;
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
-use crate::traits::accessors::RawAccessMut;
-use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::Shape;
 use crate::traits::linalg::decompositions::Inverse;
+use crate::UnsafeRandom1DAccessByValue;
 
 impl<Item, ArrayImpl> Inverse for Array<ArrayImpl, 2>
 where
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
     Item: Copy + Default + Getri + Getrf,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
 {
     type Output = DynArray<Item, 2>;
 

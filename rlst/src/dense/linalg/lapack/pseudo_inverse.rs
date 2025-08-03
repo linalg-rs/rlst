@@ -7,11 +7,10 @@ use crate::{
     diag, dot,
     traits::{
         base_operations::EvaluateObject,
-        iterators::{ArrayIteratorByValue, ArrayIteratorMut, ColumnIteratorMut},
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
-    AsOwnedRefType,
+    AsOwnedRefType, Shape, UnsafeRandom1DAccessByValue,
 };
 
 /// A structure representing the pseudo-inverse of a matrix.
@@ -49,7 +48,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         let sinv = self
             .s
             .r()
-            .apply_unary_op(|elem| <Item as RlstScalar>::recip(elem));
+            .unary_op(|elem| <Item as RlstScalar>::recip(elem));
 
         dot!(self.v.r(), diag!(sinv), self.ut.r())
     }
@@ -60,18 +59,18 @@ impl<Item: Lapack + Gemm> PInv<Item> {
         arr: &Array<ArrayImpl, NDIM>,
     ) -> DynArray<Item, NDIM>
     where
-        Array<ArrayImpl, NDIM>: EvaluateObject<Output = DynArray<Item, NDIM>>,
+        ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     {
         let sinv = self
             .s
             .r()
-            .apply_unary_op(|elem| <Item as RlstScalar>::recip(elem));
+            .unary_op(|elem| <Item as RlstScalar>::recip(elem));
 
         if NDIM == 2 {
-            let arr = arr.eval().coerce_dim::<2>().unwrap();
+            let arr = DynArray::new_from(arr).coerce_dim::<2>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
             for mut col in tmp.col_iter_mut() {
-                for (elem, si) in izip!(ArrayIteratorMut::iter_mut(&mut col), sinv.iter_value()) {
+                for (elem, si) in izip!(col.iter_mut(), sinv.iter_value()) {
                     // Needed because rust analyzer had trouble identifying the type correctly.
                     let elem: &mut Item = elem;
                     *elem *= si;
@@ -79,7 +78,7 @@ impl<Item: Lapack + Gemm> PInv<Item> {
             }
             dot!(self.v.r(), tmp).coerce_dim::<NDIM>().unwrap().eval()
         } else if NDIM == 1 {
-            let arr = arr.eval().coerce_dim::<1>().unwrap();
+            let arr = DynArray::new_from(arr).coerce_dim::<1>().unwrap();
             let mut tmp = dot!(self.ut.r(), arr);
             for (elem, si) in izip!(tmp.iter_mut(), sinv.iter_value()) {
                 *elem *= si;

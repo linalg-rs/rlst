@@ -5,16 +5,14 @@ use num::One;
 use crate::base_types::{RlstError, RlstResult, TransMode};
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::getrs::GetrsTransMode;
-use crate::traits::accessors::{RawAccess, RawAccessMut, UnsafeRandomAccessMut};
-use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
 use crate::traits::linalg::decompositions::Lu;
 use crate::traits::linalg::lapack::Lapack;
+use crate::{Shape, UnsafeRandom1DAccessByValue};
 
 impl<Item, ArrayImpl> Lu for Array<ArrayImpl, 2>
 where
     Item: Lapack,
-    ArrayImpl: BaseItem<Item = Item>,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
 {
     type Item = Item;
     fn lu(&self) -> RlstResult<LuDecomposition<Item>> {
@@ -50,7 +48,7 @@ where
         b: &Array<ArrayImpl, NDIM>,
     ) -> RlstResult<DynArray<Item, NDIM>>
     where
-        DynArray<Item, NDIM>: FillFromResize<Array<ArrayImpl, NDIM>>,
+        ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     {
         if NDIM > 2 {
             return Err(RlstError::GeneralError(

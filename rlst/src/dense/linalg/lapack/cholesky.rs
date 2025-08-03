@@ -7,20 +7,19 @@ use crate::{
         linalg::lapack::interface::{posv::PosvUplo, potrf::PotrfUplo},
     },
     traits::{
-        accessors::{RawAccessMut, UnsafeRandomAccessMut},
-        base_operations::{BaseItem, FillFromResize, Shape},
+        base_operations::Shape,
         linalg::{
             decompositions::{Cholesky, CholeskySolve},
             lapack::Lapack,
         },
     },
+    UnsafeRandom1DAccessByValue,
 };
 
 impl<Item, ArrayImpl> Cholesky for Array<ArrayImpl, 2>
 where
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
     Item: Lapack,
-    DynArray<<ArrayImpl as BaseItem>::Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
 {
     type Item = Item;
 
@@ -64,11 +63,9 @@ where
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> CholeskySolve<Array<RhsArrayImpl, NDIM>>
     for Array<ArrayImpl, 2>
 where
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
-    RhsArrayImpl: BaseItem<Item = Item> + Shape<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
+    RhsArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
     Item: Lapack,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
-    DynArray<Item, NDIM>: FillFromResize<Array<RhsArrayImpl, NDIM>>,
 {
     type Output = DynArray<Item, NDIM>;
 

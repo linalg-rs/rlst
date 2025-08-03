@@ -2,10 +2,10 @@
 
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
-use crate::traits::accessors::{RawAccessMut, UnsafeRandomAccessByRef, UnsafeRandomAccessMut};
-use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::Shape;
 use crate::traits::linalg::decompositions::Qr;
 use crate::traits::linalg::lapack::Lapack;
+use crate::UnsafeRandom1DAccessByValue;
 
 use super::interface::geqp3::Geqp3;
 use super::interface::geqrf::Geqrf;
@@ -30,8 +30,7 @@ pub enum EnablePivoting {
 impl<Item, ArrayImpl> Qr for Array<ArrayImpl, 2>
 where
     Item: Lapack,
-    ArrayImpl: BaseItem<Item = Item>,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
 {
     type Item = Item;
 
