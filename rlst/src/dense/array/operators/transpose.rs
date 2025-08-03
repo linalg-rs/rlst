@@ -46,7 +46,8 @@ where
     type Type = ArrayImpl::Type;
 }
 
-impl<Item, ArrayImpl, const NDIM: usize> BaseItem for ArrayTranspose<ArrayImpl, NDIM>
+impl<Item: Copy + Default, ArrayImpl, const NDIM: usize> BaseItem
+    for ArrayTranspose<ArrayImpl, NDIM>
 where
     ArrayImpl: BaseItem<Item = Item>,
 {
@@ -121,30 +122,6 @@ where
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape()))
-    }
-}
-
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: Shape<NDIM>,
-{
-    /// Permute axes of an array
-    pub fn permute_axes(
-        self,
-        permutation: [usize; NDIM],
-    ) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArrayTranspose::new(self, permutation))
-    }
-
-    /// Transpose an array
-    pub fn transpose(self) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
-        let mut permutation = [0; NDIM];
-
-        for (ind, p) in (0..NDIM).rev().enumerate() {
-            permutation[ind] = p;
-        }
-
-        self.permute_axes(permutation)
     }
 }
 

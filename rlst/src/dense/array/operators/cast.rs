@@ -31,7 +31,10 @@ where
     type Type = ArrayImpl::Type;
 }
 
-impl<Target, ArrayImpl, const NDIM: usize> BaseItem for ArrayCast<Target, ArrayImpl, NDIM> {
+impl<Target, ArrayImpl, const NDIM: usize> BaseItem for ArrayCast<Target, ArrayImpl, NDIM>
+where
+    Target: Copy + Default,
+{
     type Item = Target;
 }
 
@@ -39,7 +42,7 @@ impl<Target, ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize>
     UnsafeRandomAccessByValue<NDIM> for ArrayCast<Target, ArrayImpl, NDIM>
 where
     ArrayImpl::Item: num::NumCast,
-    Target: num::NumCast,
+    Target: num::NumCast + Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
@@ -55,21 +58,14 @@ impl<Target, ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM>
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Cast array to type `T`.
-    pub fn cast<Target>(self) -> Array<ArrayCast<Target, ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArrayCast::new(self))
-    }
-}
-
 impl<Target, ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAccessByValue
     for ArrayCast<Target, ArrayImpl, NDIM>
 where
     ArrayImpl::Item: num::NumCast,
-    Target: num::NumCast,
+    Target: num::NumCast + Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_1d_unchecked(index)).unwrap()
+        num::cast::<ArrayImpl::Item, Target>(self.arr.imp().get_value_1d_unchecked(index)).unwrap()
     }
 }

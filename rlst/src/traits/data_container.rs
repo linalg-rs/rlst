@@ -14,7 +14,7 @@
 /// and provides a method to return the number of elements.
 pub trait DataContainer {
     /// Item type
-    type Item;
+    type Item: Copy + Default;
 
     /// Return the number of elements in the container.
     fn number_of_elements(&self) -> usize;

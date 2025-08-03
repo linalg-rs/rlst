@@ -52,7 +52,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.get_value_1d_unchecked(index).neg()
+        self.arr.imp().get_value_1d_unchecked(index).neg()
     }
 }
 

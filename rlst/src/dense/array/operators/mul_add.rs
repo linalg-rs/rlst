@@ -58,6 +58,7 @@ impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> BaseItem
 where
     ArrayImpl1: BaseItem<Item = Item>,
     ArrayImpl2: BaseItem<Item = Item>,
+    Item: Copy + Default,
 {
     type Item = Item;
 }
@@ -77,7 +78,7 @@ impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> UnsafeRandomAccessByValue<
 where
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item>,
     ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item>,
-    Item: num::traits::MulAdd<Output = Item> + Copy,
+    Item: num::traits::MulAdd<Output = Item> + Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
@@ -92,37 +93,13 @@ impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> UnsafeRandom1DAccessByValu
 where
     ArrayImpl1: UnsafeRandom1DAccessByValue<Item = Item>,
     ArrayImpl2: UnsafeRandom1DAccessByValue<Item = Item>,
-    Item: num::traits::MulAdd<Output = Item> + Copy,
+    Item: num::traits::MulAdd<Output = Item> + Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         self.arr1
+            .imp()
             .get_value_1d_unchecked(index)
-            .mul_add(self.scalar, self.arr2.get_value_1d_unchecked(index))
-    }
-}
-
-impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> MulAdd<Item, Array<ArrayImpl2, NDIM>>
-    for Array<ArrayImpl1, NDIM>
-where
-    ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
-    ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
-    Item: MulAdd<Output = Item> + Copy,
-{
-    type Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>;
-    /// Compentwie form `self * a + b`, where `a` is a scalar and `b` is another array.
-    /// The implementation depdends on the `MulAdd` trait from the `num` crate for the componets of
-    /// the arrays.
-    fn mul_add(
-        self,
-        a: Item,
-        b: Array<ArrayImpl2, NDIM>,
-    ) -> Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>
-    where
-        ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
-        ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
-        Item: MulAdd<Output = Item> + Copy,
-    {
-        Array::new(MulAddImpl::new(self, b, a))
+            .mul_add(self.scalar, self.arr2.imp().get_value_1d_unchecked(index))
     }
 }

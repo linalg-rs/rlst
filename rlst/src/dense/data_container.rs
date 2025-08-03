@@ -45,7 +45,7 @@ impl<Item> ContainerType for VectorContainer<Item> {
     type Type = Unknown;
 }
 
-impl<Item> DataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> DataContainer for VectorContainer<Item> {
     type Item = Item;
 
     #[inline(always)]
@@ -54,7 +54,7 @@ impl<Item> DataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item: Copy> ValueDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> ValueDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -62,7 +62,7 @@ impl<Item: Copy> ValueDataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item> RefDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> RefDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -70,7 +70,7 @@ impl<Item> RefDataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item> RefDataContainerMut for VectorContainer<Item> {
+impl<Item: Copy + Default> RefDataContainerMut for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -78,7 +78,7 @@ impl<Item> RefDataContainerMut for VectorContainer<Item> {
     }
 }
 
-impl<Item> ModifiableDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> ModifiableDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < self.number_of_elements());
@@ -86,21 +86,21 @@ impl<Item> ModifiableDataContainer for VectorContainer<Item> {
     }
 }
 
-impl<Item: Default> ResizeableDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> ResizeableDataContainer for VectorContainer<Item> {
     #[inline(always)]
     fn resize(&mut self, new_len: usize) {
         self.data.resize_with(new_len, Default::default);
     }
 }
 
-impl<Item> RawAccessDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> RawAccessDataContainer for VectorContainer<Item> {
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.data.as_slice()
     }
 }
 
-impl<Item> MutableRawAccessDataContainer for VectorContainer<Item> {
+impl<Item: Copy + Default> MutableRawAccessDataContainer for VectorContainer<Item> {
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data.as_mut_slice()
@@ -136,7 +136,7 @@ impl<Item: Default + Copy, const N: usize> Default for ArrayContainer<Item, N> {
     }
 }
 
-impl<Item: Copy, const N: usize> DataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> DataContainer for ArrayContainer<Item, N> {
     type Item = Item;
 
     #[inline(always)]
@@ -145,7 +145,7 @@ impl<Item: Copy, const N: usize> DataContainer for ArrayContainer<Item, N> {
     }
 }
 
-impl<Item: Copy, const N: usize> ValueDataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> ValueDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < N);
@@ -153,7 +153,7 @@ impl<Item: Copy, const N: usize> ValueDataContainer for ArrayContainer<Item, N> 
     }
 }
 
-impl<Item: Copy, const N: usize> RefDataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> RefDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < N);
@@ -161,7 +161,7 @@ impl<Item: Copy, const N: usize> RefDataContainer for ArrayContainer<Item, N> {
     }
 }
 
-impl<Item: Copy, const N: usize> RefDataContainerMut for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> RefDataContainerMut for ArrayContainer<Item, N> {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < N);
@@ -169,7 +169,7 @@ impl<Item: Copy, const N: usize> RefDataContainerMut for ArrayContainer<Item, N>
     }
 }
 
-impl<Item: Copy, const N: usize> ModifiableDataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> ModifiableDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < N);
@@ -177,14 +177,16 @@ impl<Item: Copy, const N: usize> ModifiableDataContainer for ArrayContainer<Item
     }
 }
 
-impl<Item: Copy, const N: usize> RawAccessDataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> RawAccessDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         &self.data
     }
 }
 
-impl<Item: Copy, const N: usize> MutableRawAccessDataContainer for ArrayContainer<Item, N> {
+impl<Item: Copy + Default, const N: usize> MutableRawAccessDataContainer
+    for ArrayContainer<Item, N>
+{
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         &mut self.data
@@ -208,7 +210,7 @@ impl<'a, Item> SliceContainer<'a, Item> {
     }
 }
 
-impl<Item> DataContainer for SliceContainer<'_, Item> {
+impl<Item: Copy + Default> DataContainer for SliceContainer<'_, Item> {
     type Item = Item;
 
     #[inline(always)]
@@ -217,7 +219,7 @@ impl<Item> DataContainer for SliceContainer<'_, Item> {
     }
 }
 
-impl<Item: Copy> ValueDataContainer for SliceContainer<'_, Item> {
+impl<Item: Copy + Default> ValueDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -225,7 +227,7 @@ impl<Item: Copy> ValueDataContainer for SliceContainer<'_, Item> {
     }
 }
 
-impl<Item> RefDataContainer for SliceContainer<'_, Item> {
+impl<Item: Copy + Default> RefDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -233,7 +235,7 @@ impl<Item> RefDataContainer for SliceContainer<'_, Item> {
     }
 }
 
-impl<Item> RawAccessDataContainer for SliceContainer<'_, Item> {
+impl<Item: Copy + Default> RawAccessDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.data
@@ -256,7 +258,7 @@ impl<'a, Item> SliceContainerMut<'a, Item> {
     }
 }
 
-impl<Item> DataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> DataContainer for SliceContainerMut<'_, Item> {
     type Item = Item;
 
     #[inline(always)]
@@ -265,7 +267,7 @@ impl<Item> DataContainer for SliceContainerMut<'_, Item> {
     }
 }
 
-impl<Item: Copy> ValueDataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> ValueDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -273,7 +275,7 @@ impl<Item: Copy> ValueDataContainer for SliceContainerMut<'_, Item> {
     }
 }
 
-impl<Item> RefDataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> RefDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -281,7 +283,7 @@ impl<Item> RefDataContainer for SliceContainerMut<'_, Item> {
     }
 }
 
-impl<Item> RefDataContainerMut for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> RefDataContainerMut for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -289,7 +291,7 @@ impl<Item> RefDataContainerMut for SliceContainerMut<'_, Item> {
     }
 }
 
-impl<Item> ModifiableDataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> ModifiableDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < self.number_of_elements());
@@ -297,14 +299,14 @@ impl<Item> ModifiableDataContainer for SliceContainerMut<'_, Item> {
     }
 }
 
-impl<Item> RawAccessDataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> RawAccessDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     fn data(&self) -> &[Self::Item] {
         self.data
     }
 }
 
-impl<Item> MutableRawAccessDataContainer for SliceContainerMut<'_, Item> {
+impl<Item: Copy + Default> MutableRawAccessDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     fn data_mut(&mut self) -> &mut [Self::Item] {
         self.data

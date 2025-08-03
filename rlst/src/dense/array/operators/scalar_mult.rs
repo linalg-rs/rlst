@@ -34,15 +34,17 @@ where
 impl<Scalar, ArrayImpl, const NDIM: usize> BaseItem for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
     ArrayImpl: BaseItem<Item = Scalar>,
+    Scalar: Copy + Default,
 {
     type Item = Scalar;
 }
 
-impl<Scalar: Copy, ArrayImpl, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+impl<Scalar, ArrayImpl, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Scalar>,
     Scalar: Mul<ArrayImpl::Item, Output = Scalar>,
+    Scalar: Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
@@ -50,15 +52,16 @@ where
     }
 }
 
-impl<Scalar: Copy, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByValue
+impl<Scalar, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByValue
     for ArrayScalarMult<Scalar, ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + BaseItem<Item = Scalar>,
     Scalar: Mul<ArrayImpl::Item, Output = Scalar>,
+    Scalar: Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.scalar * self.arr.get_value_1d_unchecked(index)
+        self.scalar * self.arr.imp().get_value_1d_unchecked(index)
     }
 }
 
@@ -70,41 +73,3 @@ impl<Scalar, ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM>
         self.arr.shape()
     }
 }
-
-impl<Item, ArrayImpl, const NDIM: usize> ScalarMul<Item> for Array<ArrayImpl, NDIM>
-where
-    ArrayImpl: BaseItem<Item = Item>,
-{
-    type Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
-
-    /// Create a scalar multiplication of the array
-    fn scalar_mul(self, scalar: Item) -> Self::Output {
-        Array::new(ArrayScalarMult::new(scalar, self))
-    }
-}
-
-macro_rules! impl_scalar_mult {
-    ($ScalarType:ty) => {
-        impl<ArrayImpl, const NDIM: usize> std::ops::Mul<Array<ArrayImpl, NDIM>> for $ScalarType {
-            type Output = Array<ArrayScalarMult<$ScalarType, ArrayImpl, NDIM>, NDIM>;
-
-            fn mul(self, rhs: Array<ArrayImpl, NDIM>) -> Self::Output {
-                Array::new(ArrayScalarMult::new(self, rhs))
-            }
-        }
-    };
-}
-
-impl_scalar_mult!(f64);
-impl_scalar_mult!(f32);
-impl_scalar_mult!(c64);
-impl_scalar_mult!(c32);
-impl_scalar_mult!(usize);
-impl_scalar_mult!(i8);
-impl_scalar_mult!(i16);
-impl_scalar_mult!(i32);
-impl_scalar_mult!(i64);
-impl_scalar_mult!(u8);
-impl_scalar_mult!(u16);
-impl_scalar_mult!(u32);
-impl_scalar_mult!(u64);

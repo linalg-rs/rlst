@@ -21,10 +21,8 @@ where
     ArrayImpl2: ContainerType,
     SelectContainerType: ContainerTypeSelector<ArrayImpl1::Type, ArrayImpl2::Type>,
 {
-    type Type = <SelectContainerType as ContainerTypeSelector<
-        ArrayImpl1::Type,
-        ArrayImpl2::Type,
-    >>::Type;
+    type Type =
+        <SelectContainerType as ContainerTypeSelector<ArrayImpl1::Type, ArrayImpl2::Type>>::Type;
 }
 
 impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>
@@ -53,6 +51,7 @@ impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> BaseItem
 where
     ArrayImpl1: BaseItem<Item = Item>,
     ArrayImpl2: BaseItem<Item = Item>,
+    Item: Copy + Default,
 {
     type Item = Item;
 }
@@ -63,6 +62,7 @@ where
     ArrayImpl1: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Item>,
     ArrayImpl2: UnsafeRandomAccessByValue<NDIM> + BaseItem<Item = Item>,
     ArrayImpl1::Item: Mul<ArrayImpl2::Item, Output = Item>,
+    Item: Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
@@ -77,10 +77,12 @@ where
     ArrayImpl1: UnsafeRandom1DAccessByValue + BaseItem<Item = Item>,
     ArrayImpl2: UnsafeRandom1DAccessByValue + BaseItem<Item = Item>,
     ArrayImpl1::Item: Mul<ArrayImpl2::Item, Output = Item>,
+    Item: Copy + Default,
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.operator1.get_value_1d_unchecked(index) * self.operator2.get_value_1d_unchecked(index)
+        self.operator1.imp().get_value_1d_unchecked(index)
+            * self.operator2.imp().get_value_1d_unchecked(index)
     }
 }
 
@@ -92,18 +94,5 @@ where
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
         self.operator1.shape()
-    }
-}
-
-impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::Mul<Array<ArrayImpl2, NDIM>>
-    for Array<ArrayImpl1, NDIM>
-{
-    type Output = Array<CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
-
-    fn mul(self, rhs: Array<ArrayImpl2, NDIM>) -> Self::Output {
-        Array::new(CmpWiseProduct {
-            operator1: self,
-            operator2: rhs,
-        })
     }
 }

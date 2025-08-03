@@ -6,10 +6,7 @@ use crate::traits::accessors::{
     UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue,
     UnsafeRandomAccessMut,
 };
-use crate::traits::{
-    base_operations::{BaseItem, Len},
-    iterators::AsMultiIndex,
-};
+use crate::traits::{base_operations::BaseItem, iterators::AsMultiIndex};
 use crate::{
     AsOwnedRefType, AsOwnedRefTypeMut, UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef,
 };

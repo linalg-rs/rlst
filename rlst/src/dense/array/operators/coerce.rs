@@ -28,24 +28,6 @@ impl<ArrayImpl, const NDIM: usize, const CDIM: usize> CoerceArray<ArrayImpl, NDI
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Coerce the array to a specific item type and dimension.
-    pub fn coerce_dim<const CDIM: usize>(
-        self,
-    ) -> RlstResult<Array<CoerceArray<ArrayImpl, NDIM, CDIM>, CDIM>> {
-        if CDIM == NDIM {
-            // If the dimensions and item types match return a CoerceArray
-            Ok(Array::new(CoerceArray::new(self)))
-        } else {
-            // Otherwise, we need to coerce the array.
-            Err(RlstError::GeneralError(
-                format!("Cannot coerce array: dimensions do not match {CDIM} != {NDIM}.")
-                    .to_string(),
-            ))
-        }
-    }
-}
-
 impl<ArrayImpl, const NDIM: usize, const CDIM: usize> ContainerType
     for CoerceArray<ArrayImpl, NDIM, CDIM>
 where
@@ -146,7 +128,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.get_value_1d_unchecked(index)
+        self.arr.imp().get_value_1d_unchecked(index)
     }
 }
 
@@ -157,7 +139,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.get_1d_unchecked(index)
+        self.arr.imp().get_1d_unchecked(index)
     }
 }
 
@@ -168,7 +150,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.get_1d_unchecked_mut(index)
+        self.arr.imp_mut().get_1d_unchecked_mut(index)
     }
 }
 

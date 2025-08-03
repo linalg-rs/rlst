@@ -42,6 +42,7 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> BaseItem for ReverseAxis<ArrayImpl, NDIM>
 where
     ArrayImpl: BaseItem<Item = Item>,
+    Item: Copy + Default,
 {
     type Item = Item;
 }
@@ -118,14 +119,6 @@ where
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         let multi_index = convert_1d_nd_from_shape(index, self.arr.shape());
         self.get_unchecked_mut(multi_index)
-    }
-}
-
-impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Reverse a single axis of the array.
-    pub fn reverse_axis(self, axis: usize) -> Array<ReverseAxis<ArrayImpl, NDIM>, NDIM> {
-        assert!(axis < NDIM, "Axis out of bounds");
-        Array::new(ReverseAxis::new(self, axis))
     }
 }
 

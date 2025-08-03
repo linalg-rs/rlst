@@ -10,9 +10,18 @@ use iterators::{
     ColIteratorMut, RowIterator, RowIteratorMut,
 };
 use itertools::izip;
-use operators::unary_op::ArrayUnaryOperator;
+use num::traits::MulAdd;
+use operators::{
+    addition::ArrayAddition, cast::ArrayCast, cmp_wise_division::CmpWiseDivision,
+    cmp_wise_product::CmpWiseProduct, coerce::CoerceArray, mul_add::MulAddImpl, negation::ArrayNeg,
+    reverse_axis::ReverseAxis, scalar_mult::ArrayScalarMult, subtraction::ArraySubtraction,
+    transpose::ArrayTranspose, unary_op::ArrayUnaryOperator,
+};
+
+use paste::paste;
 
 use crate::{
+    base_types::{c32, c64},
     dense::{
         base_array::BaseArray,
         data_container::{SliceContainer, SliceContainerMut, VectorContainer},
@@ -24,12 +33,12 @@ use crate::{
             UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
             UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
         },
-        base_operations::{BaseItem, FillFromResize, ResizeInPlace, Shape, Stride},
+        base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::ContainerType,
     },
-    Abs, AbsSquare, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval,
-    DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Max, RandomAccessByValue, Sqrt,
-    Stack, Unknown,
+    AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval, DispatchEvalRowMajor,
+    EvaluateObject, EvaluateRowMajorArray, Max, RandomAccessByValue, RlstError, RlstResult, Stack,
+    Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -395,14 +404,19 @@ where
 ///
 /// Empty arrays serve as convenient containers for input into functions that
 /// resize an array before filling it with data.
-pub fn empty_array<Item: Copy + Default, const NDIM: usize>(
-) -> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
+pub fn empty_array<Item, const NDIM: usize>() -> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>
+where
+    Item: Copy + Default,
+{
     let shape = [0; NDIM];
     let container = VectorContainer::new(0);
     Array::new(BaseArray::new(container, shape))
 }
 
-impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM>
+where
+    Item: Copy + Default,
+{
     /// Create a new array from `slice` with a given `shape`.
     pub fn from_shape(slice: &'a [Item], shape: [usize; NDIM]) -> Self {
         assert_eq!(
@@ -416,7 +430,10 @@ impl<'a, Item, const NDIM: usize> SliceArray<'a, Item, NDIM> {
     }
 }
 
-impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM>
+where
+    Item: Copy + Default,
+{
     /// Create a new array from mutable `slice` with a given `shape`.
     pub fn from_shape(slice: &'a mut [Item], shape: [usize; NDIM]) -> Self {
         assert_eq!(
@@ -430,7 +447,10 @@ impl<'a, Item, const NDIM: usize> SliceArrayMut<'a, Item, NDIM> {
     }
 }
 
-impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM>
+where
+    Item: Copy + Default,
+{
     /// Create a new array from `slice` with a given `shape` and `stride`.
     pub fn from_shape_and_stride(
         slice: &'a [Item],
@@ -445,7 +465,10 @@ impl<'a, Item, const NDIM: usize> StridedSliceArray<'a, Item, NDIM> {
     }
 }
 
-impl<'a, Item, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM> {
+impl<'a, Item, const NDIM: usize> StridedSliceArrayMut<'a, Item, NDIM>
+where
+    Item: Copy + Default,
+{
     /// Create a new array from `slice` with a given `shape` and `stride`.
     pub fn from_shape_and_stride(
         slice: &'a mut [Item],
@@ -1048,6 +1071,345 @@ where
         AsMultiIndex::multi_index(std::iter::Iterator::enumerate(iter), shape)
     }
 }
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
+    /// Cast array to type `T`.
+    ///
+    /// The cast is done through [num::cast] and source and target types need to
+    /// support casting through that function.
+    pub fn cast<Target>(self) -> Array<ArrayCast<Target, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayCast::new(self))
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
+    /// Coerce the array to a specific dimension.
+    ///
+    /// This is useful to coerce from a generic dimension parameter to
+    /// a specific number of dimensions.
+    pub fn coerce_dim<const CDIM: usize>(
+        self,
+    ) -> RlstResult<Array<CoerceArray<ArrayImpl, NDIM, CDIM>, CDIM>> {
+        if CDIM == NDIM {
+            // If the dimensions and item types match return a CoerceArray
+            Ok(Array::new(CoerceArray::new(self)))
+        } else {
+            // Otherwise, we need to coerce the array.
+            Err(RlstError::GeneralError(
+                format!("Cannot coerce array: dimensions do not match {CDIM} != {NDIM}.")
+                    .to_string(),
+            ))
+        }
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM>,
+{
+    /// Permute axes of an array.
+    ///
+    /// The `permutation` gives the new ordering of the axes.
+    pub fn permute_axes(
+        self,
+        permutation: [usize; NDIM],
+    ) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayTranspose::new(self, permutation))
+    }
+
+    /// Transpose an array.
+    ///
+    /// The transpose of an n-dimensional array reverses the order of the axes.
+    pub fn transpose(self) -> Array<ArrayTranspose<ArrayImpl, NDIM>, NDIM> {
+        let mut permutation = [0; NDIM];
+
+        for (ind, p) in (0..NDIM).rev().enumerate() {
+            permutation[ind] = p;
+        }
+
+        self.permute_axes(permutation)
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
+    /// Reverse a single `axis` of the array.
+    pub fn reverse_axis(self, axis: usize) -> Array<ReverseAxis<ArrayImpl, NDIM>, NDIM> {
+        assert!(axis < NDIM, "Axis out of bounds");
+        Array::new(ReverseAxis::new(self, axis))
+    }
+}
+
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> MulAdd<Item, Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
+    ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
+    Item: MulAdd<Output = Item> + Copy,
+{
+    type Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>;
+    /// Compentwie form `self * a + b`, where `a` is a scalar and `b` is another array.
+    /// The implementation depdends on the `MulAdd` trait from the `num` crate for the componets of
+    /// the arrays.
+    fn mul_add(
+        self,
+        a: Item,
+        b: Array<ArrayImpl2, NDIM>,
+    ) -> Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>
+    where
+        ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
+        ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
+        Item: MulAdd<Output = Item> + Copy,
+    {
+        Array::new(MulAddImpl::new(self, b, a))
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::Add<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM>,
+    ArrayImpl2: Shape<NDIM>,
+{
+    type Output = Array<ArrayAddition<ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
+
+    #[inline(always)]
+    fn add(self, rhs: Array<ArrayImpl2, NDIM>) -> Self::Output {
+        Array::new(ArrayAddition::new(self, rhs))
+    }
+}
+
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::AddAssign<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    ArrayImpl2: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: std::ops::AddAssign,
+{
+    #[inline(always)]
+    fn add_assign(&mut self, rhs: Array<ArrayImpl2, NDIM>) {
+        assert_eq!(self.shape(), rhs.shape());
+        for (item1, item2) in izip!(self.iter_mut(), rhs.iter_value()) {
+            *item1 += item2;
+        }
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::Sub<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM>,
+    ArrayImpl2: Shape<NDIM>,
+{
+    type Output = Array<ArraySubtraction<ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
+
+    fn sub(self, rhs: Array<ArrayImpl2, NDIM>) -> Self::Output {
+        Array::new(ArraySubtraction::new(self, rhs))
+    }
+}
+
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::SubAssign<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    ArrayImpl2: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: std::ops::SubAssign,
+{
+    #[inline(always)]
+    fn sub_assign(&mut self, rhs: Array<ArrayImpl2, NDIM>) {
+        assert_eq!(self.shape(), rhs.shape());
+        for (item1, item2) in izip!(self.iter_mut(), rhs.iter_value()) {
+            *item1 -= item2;
+        }
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> std::ops::Neg for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+    Item: std::ops::Neg<Output = Item>,
+{
+    type Output = Array<ArrayNeg<ArrayImpl, NDIM>, NDIM>;
+
+    fn neg(self) -> Self::Output {
+        Array::new(ArrayNeg::new(self))
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::Div<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM>,
+    ArrayImpl2: Shape<NDIM>,
+{
+    type Output = Array<CmpWiseDivision<ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
+
+    fn div(self, rhs: Array<ArrayImpl2, NDIM>) -> Self::Output {
+        Array::new(CmpWiseDivision::new(self, rhs))
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> std::ops::Div<Item> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM> + BaseItem<Item = Item>,
+    Item: Recip<Output = Item> + std::ops::Div<Output = Item>,
+{
+    type Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
+
+    fn div(self, rhs: Item) -> Self::Output {
+        Array::new(ArrayScalarMult::new(rhs.recip(), self))
+    }
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> std::ops::DivAssign<Item> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    Item: std::ops::DivAssign + Copy,
+{
+    fn div_assign(&mut self, rhs: Item) {
+        for item in self.iter_mut() {
+            *item /= rhs;
+        }
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::Mul<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM>,
+    ArrayImpl2: Shape<NDIM>,
+{
+    type Output = Array<CmpWiseProduct<ArrayImpl1, ArrayImpl2, NDIM>, NDIM>;
+
+    fn mul(self, rhs: Array<ArrayImpl2, NDIM>) -> Self::Output {
+        Array::new(CmpWiseProduct::new(self, rhs))
+    }
+}
+
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::MulAssign<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    ArrayImpl2: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: std::ops::MulAssign,
+{
+    fn mul_assign(&mut self, rhs: Array<ArrayImpl2, NDIM>) {
+        for (item1, item2) in izip!(self.iter_mut(), rhs.iter_value()) {
+            *item1 *= item2;
+        }
+    }
+}
+
+impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> std::ops::DivAssign<Array<ArrayImpl2, NDIM>>
+    for Array<ArrayImpl1, NDIM>
+where
+    ArrayImpl1: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    ArrayImpl2: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: std::ops::DivAssign,
+{
+    fn div_assign(&mut self, rhs: Array<ArrayImpl2, NDIM>) {
+        for (item1, item2) in izip!(self.iter_mut(), rhs.iter_value()) {
+            *item1 /= item2;
+        }
+    }
+}
+
+macro_rules! impl_scalar_mult {
+    ($ScalarType:ty) => {
+        impl<ArrayImpl, const NDIM: usize> std::ops::Mul<Array<ArrayImpl, NDIM>> for $ScalarType {
+            type Output = Array<ArrayScalarMult<$ScalarType, ArrayImpl, NDIM>, NDIM>;
+
+            fn mul(self, rhs: Array<ArrayImpl, NDIM>) -> Self::Output {
+                Array::new(ArrayScalarMult::new(self, rhs))
+            }
+        }
+
+        impl<ArrayImpl, const NDIM: usize> std::ops::Mul<$ScalarType> for Array<ArrayImpl, NDIM>
+        where
+            ArrayImpl: Shape<NDIM> + BaseItem<Item = $ScalarType>,
+        {
+            type Output = Array<ArrayScalarMult<$ScalarType, ArrayImpl, NDIM>, NDIM>;
+
+            fn mul(self, rhs: $ScalarType) -> Self::Output {
+                Array::new(ArrayScalarMult::new(rhs, self))
+            }
+        }
+    };
+}
+
+impl_scalar_mult!(f64);
+impl_scalar_mult!(f32);
+impl_scalar_mult!(c64);
+impl_scalar_mult!(c32);
+impl_scalar_mult!(usize);
+impl_scalar_mult!(i8);
+impl_scalar_mult!(i16);
+impl_scalar_mult!(i32);
+impl_scalar_mult!(i64);
+impl_scalar_mult!(u8);
+impl_scalar_mult!(u16);
+impl_scalar_mult!(u32);
+impl_scalar_mult!(u64);
+
+impl<Item, ArrayImpl, const NDIM: usize> std::ops::MulAssign<Item> for Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessMut<Item = Item>,
+    Item: std::ops::MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: Item) {
+        for item in self.iter_mut() {
+            *item *= rhs;
+        }
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
+    /// Create a new array by applying the unitary operator `op` to each element of `self`.
+    pub fn unary_op<OpItem, OpTarget, Op: Fn(OpItem) -> OpTarget>(
+        self,
+        op: Op,
+    ) -> Array<ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>, NDIM> {
+        Array::new(ArrayUnaryOperator::new(self, op))
+    }
+}
+
+macro_rules! impl_unary_op_trait {
+    ($name:ident, $method_name:ident) => {
+        paste! {
+
+        use crate::traits::number_traits::$name;
+        impl<Item: $name, ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+            where
+                ArrayImpl: BaseItem<Item = Item>,
+            {
+                #[inline(always)]
+                fn $method_name(self) -> Array<ArrayUnaryOperator<Item, <Item as $name>::Output, ArrayImpl, fn(Item) -> <Item as $name>::Output, NDIM>, NDIM> {
+                    self.unary_op(|x| x.$method_name())
+                }
+            }
+        }
+
+    };
+}
+
+impl_unary_op_trait!(Abs, abs);
+impl_unary_op_trait!(Square, square);
+impl_unary_op_trait!(AbsSquare, abs_square);
+impl_unary_op_trait!(Sqrt, sqrt);
+impl_unary_op_trait!(Exp, exp);
+impl_unary_op_trait!(Ln, ln);
+impl_unary_op_trait!(Recip, recip);
+impl_unary_op_trait!(Sin, sin);
+impl_unary_op_trait!(Cos, cos);
+impl_unary_op_trait!(Tan, tan);
+impl_unary_op_trait!(Asin, asin);
+impl_unary_op_trait!(Acos, acos);
+impl_unary_op_trait!(Atan, atan);
+impl_unary_op_trait!(Sinh, sinh);
+impl_unary_op_trait!(Cosh, cosh);
+impl_unary_op_trait!(Tanh, tanh);
+impl_unary_op_trait!(Asinh, asinh);
+impl_unary_op_trait!(Acosh, acosh);
+impl_unary_op_trait!(Atanh, atanh);
 
 // impl<ArrayImpl, ArrayImplOther, const NDIM: usize> AddAssign<Array<ArrayImplOther, NDIM>>
 //     for Array<ArrayImpl, NDIM>
