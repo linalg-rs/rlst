@@ -5,7 +5,6 @@ use crate::{
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
     ContainerType,
 };
-use paste::paste;
 
 /// Application of a unitary Operator
 pub struct ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, const NDIM: usize>

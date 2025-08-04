@@ -3,11 +3,10 @@
 use std::ops::{Add, AddAssign, Mul};
 
 use crate::sparse::tools::normalize_aij;
-use crate::traits::ArrayIteratorByValue;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
 use crate::{
     AijIteratorMut, Array, ArrayIteratorMut, AsMatrixApply, ColumnIterator, ColumnIteratorMut,
-    FromAij, Len, Nonzeros, RandomAccessByRef, RawAccess, RawAccessMut, SparseMatrixType,
+    FromAij, Nonzeros, RandomAccessByRef, SparseMatrixType,
 };
 use itertools::{izip, Itertools};
 use num::One;
@@ -108,7 +107,10 @@ impl<Item> Shape<2> for CsrMatrix<Item> {
     }
 }
 
-impl<Item> BaseItem for CsrMatrix<Item> {
+impl<Item> BaseItem for CsrMatrix<Item>
+where
+    Item: Copy + Default,
+{
     type Item = Item;
 }
 
@@ -126,7 +128,7 @@ impl<Item> SparseMatrixType for CsrMatrix<Item> {
 
 impl<Item> AijIteratorByValue for CsrMatrix<Item>
 where
-    Item: Copy,
+    Item: Copy + Default,
 {
     fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_ {
         self.indptr
@@ -146,7 +148,7 @@ where
 
 impl<Item> AijIteratorMut for CsrMatrix<Item>
 where
-    Item: Copy,
+    Item: Copy + Default,
 {
     fn iter_aij_mut(&mut self) -> impl Iterator<Item = ([usize; 2], &mut Self::Item)> + '_ {
         self.indptr

@@ -24,7 +24,7 @@ use crate::{
     AbsSquare, Array, AsOwnedRefType, AsOwnedRefTypeMut, BaseItem, CmpMulAddFrom, CmpMulFrom,
     ConjObject, EvaluateObject, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len,
     NormSup, NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul,
-    ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType,
+    ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType, UnsafeRandom1DAccessByValue,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -90,23 +90,18 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> GatherToAll for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, RowMajorOutImpl, const NDIM: usize> GatherToAll
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
     ArrayImpl: Shape<NDIM> + BaseItem,
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray,
-    <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
-    <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Copy + Default,
-    StridedDynArray<
-        <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-        NDIM,
-    >: EvaluateObject,
+    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
+    RowMajorOutImpl: RawAccess,
+    <RowMajorOutImpl as BaseItem>::Item: Equivalence + Copy + Default,
+    StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: EvaluateObject,
 {
-    type Output = <StridedDynArray<
-        <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-        NDIM,
-    > as EvaluateObject>::Output;
+    type Output =
+        <StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM> as EvaluateObject>::Output;
     /// Gather `Self` to all processes and store in `arr`.
     fn gather_to_all(&self) -> Self::Output {
         let comm = self.index_layout.comm();
@@ -152,23 +147,18 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> GatherToOne for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, RowMajorOutImpl, const NDIM: usize> GatherToOne
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
     ArrayImpl: Shape<NDIM> + BaseItem,
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray,
-    <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
-    <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Copy + Default,
-    StridedDynArray<
-        <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-        NDIM,
-    >: EvaluateObject,
+    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
+    RowMajorOutImpl: RawAccess,
+    <RowMajorOutImpl as BaseItem>::Item: Equivalence + Copy + Default,
+    StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: EvaluateObject,
 {
-    type Output = <StridedDynArray<
-        <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-        NDIM,
-    > as EvaluateObject>::Output;
+    type Output =
+        <StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM> as EvaluateObject>::Output;
 
     fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
@@ -223,33 +213,23 @@ where
     }
 }
 
-impl<ArrayImpl, const NDIM: usize> ScatterFromOne for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, RowMajorOutImpl, OutItem, const NDIM: usize> ScatterFromOne
+    for Array<ArrayImpl, NDIM>
 where
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray + Shape<NDIM>,
-    <Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output: RawAccess,
-    <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item:
-        Equivalence + Copy + Default,
-    for<'b> DynArray<<<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item, NDIM>:
-        FillFromResize<
-            StridedSliceArray<
-                'b,
-                <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-                NDIM,
-            >,
-        >,
+    ArrayImpl: Shape<NDIM>,
+    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
+    RowMajorOutImpl: UnsafeRandom1DAccessByValue<Item = OutItem> + RawAccess<Item = OutItem>,
+    OutItem: Equivalence + Copy + Default,
+    // for<'b> DynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: FillFromResize<
+    //     StridedSliceArray<
+    //         'b,
+    //         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
+    //         NDIM,
+    //     >,
+    // >,
 {
     type Output<'a, C>
-        = DistributedArray<
-        'a,
-        C,
-        BaseArray<
-            VectorContainer<
-                <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-            >,
-            NDIM,
-        >,
-        NDIM,
-    >
+        = DistributedArray<'a, C, BaseArray<VectorContainer<OutItem>, NDIM>, NDIM>
     where
         C: 'a,
         C: Communicator;
@@ -603,7 +583,7 @@ where
             "DistributedArray::inner: The index layout and shape of the arrays do not match."
         );
         // We can just sum from the local data.
-        let local_inner = self.local.imp(&other.local);
+        let local_inner = self.local.inner(&other.local);
         let mut global_inner = Default::default();
 
         self.index_layout.comm().all_reduce_into(
@@ -964,7 +944,7 @@ where
         op: Op,
     ) -> DistributedArray<'a, C, ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>, NDIM>
     {
-        DistributedArray::new(self.index_layout.clone(), self.local.apply_unary_op(op))
+        DistributedArray::new(self.index_layout.clone(), self.local.unary_op(op))
     }
 }
 

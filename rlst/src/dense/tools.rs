@@ -4,6 +4,7 @@ use rand::prelude::*;
 use rand_distr::Distribution;
 
 use crate::base_types::{c32, c64};
+use crate::dense::array::Array;
 use crate::traits::accessors::RandomAccessByValue;
 use crate::traits::base_operations::Shape;
 use crate::traits::rlst_num::{RandScalar, RlstScalar};
@@ -99,8 +100,6 @@ macro_rules! assert_array_abs_diff_eq {
 macro_rules! assert_array_relative_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_relative_eq;
-        use $crate::traits::base_operations::Shape;
-        use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
         for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {
             assert_relative_eq!(actual, expected, max_relative = $epsilon);
@@ -145,7 +144,9 @@ pub trait PrettyPrint<T: RlstScalar> {
 
 macro_rules! pretty_print_impl {
     ($scalar:ty, $fmtfun:ident) => {
-        impl<Mat: RandomAccessByValue<2, Item = $scalar> + Shape<2>> PrettyPrint<$scalar> for Mat {
+        impl<ArrayImpl: RandomAccessByValue<2, Item = $scalar> + Shape<2>> PrettyPrint<$scalar>
+            for Array<ArrayImpl, 2>
+        {
             fn pretty_print(&self) {
                 self.pretty_print_advanced(10, 10, 11, 3, 2)
             }

@@ -2,7 +2,6 @@
 //! directly
 
 use crate::{
-    base_types::{RlstError, RlstResult},
     dense::array::Array,
     traits::{
         accessors::{

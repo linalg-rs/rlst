@@ -4,7 +4,7 @@ use std::{marker::PhantomData, ops::Neg};
 
 use crate::{
     dense::array::DynArray, operator::element::Element, AsOwnedRefType, EvaluateObject, Inner,
-    InnerProductSpace, LinearSpace, ScalarMul,
+    InnerProductSpace, LinearSpace,
 };
 
 /// Array vector space
@@ -32,6 +32,7 @@ where
         + std::ops::Sub<Output = Item>
         + std::ops::Neg<Output = Item>
         + std::ops::AddAssign<Item>
+        + std::ops::SubAssign<Item>
         + std::ops::Mul<Item, Output = Item>
         + std::ops::MulAssign<Item>,
 {
@@ -64,7 +65,10 @@ where
         scalar: &Self::F,
         x: &crate::operator::element::Element<Self>,
     ) -> crate::operator::element::Element<Self> {
-        Element::new(self, (x.imp().r().scalar_mul(*scalar)).eval())
+        Element::new(
+            self,
+            DynArray::<_, 1>::new_from(&x.imp().r().scalar_mul(*scalar)),
+        )
     }
 
     fn neg(
@@ -111,11 +115,12 @@ where
         + std::ops::Sub<Output = Item>
         + std::ops::Neg<Output = Item>
         + std::ops::AddAssign<Item>
+        + std::ops::SubAssign<Item>
         + std::ops::Mul<Item, Output = Item>
         + std::ops::MulAssign<Item>,
     DynArray<Item, 1>: Inner<DynArray<Item, 1>, Output = Item>,
 {
     fn inner_product(&self, x: &Element<Self>, other: &Element<Self>) -> Self::F {
-        x.imp().imp(other.imp())
+        x.imp().inner(other.imp())
     }
 }

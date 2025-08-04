@@ -35,9 +35,6 @@ macro_rules! diag {
 
     ($d:expr, $ndim:literal) => {{
         use itertools::izip;
-        use $crate::traits::{
-            base_operations::Len, iterators::ArrayIteratorByValue, iterators::GetDiagMut,
-        };
 
         let mut diag_array =
             $crate::dense::array::DynArray::<_, $ndim>::from_shape([$d.len(); $ndim]);

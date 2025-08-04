@@ -16,7 +16,7 @@ use num::Num;
 
 use crate::dense::array::DynArray;
 use crate::sparse::csr_mat::CsrMatrix;
-use crate::{FromAij, Len, MmIdentifier, RawAccessMut, RlstError, RlstResult};
+use crate::{Array, FromAij, MmIdentifier, RlstError, RlstResult, UnsafeRandom1DAccessByValue};
 
 /// Definition of Matrix format types
 #[derive(PartialEq, Clone, Copy)]
@@ -69,7 +69,7 @@ pub struct MatrixMarketInfo {
 /// out with this function.
 pub fn write_coordinate_mm<
     T: MmIdentifier + Display,
-    Mat: crate::traits::iterators::AijIteratorByValue<Item = T> + crate::traits::Shape<2> + Len,
+    Mat: crate::traits::iterators::AijIteratorByValue<Item = T> + crate::traits::Shape<2>,
 >(
     mat: &Mat,
     fname: &str,
@@ -104,9 +104,9 @@ pub fn write_coordinate_mm<
 /// out with this function.
 pub fn write_array_mm<
     T: MmIdentifier + Display,
-    Mat: crate::traits::iterators::ArrayIteratorByValue<Item = T> + crate::traits::Shape<2>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = T> + crate::traits::Shape<2>,
 >(
-    mat: &Mat,
+    mat: &Array<ArrayImpl, 2>,
     fname: &str,
 ) -> RlstResult<()> {
     let output = File::create(fname);

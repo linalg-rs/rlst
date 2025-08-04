@@ -2,13 +2,11 @@
 
 use std::ops::Mul;
 
-use crate::base_types::{c32, c64};
-
+use crate::ContainerType;
 use crate::{
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
 };
-use crate::{ContainerType, ScalarMul};
 
 /// Scalar multiplication of array
 pub struct ArrayScalarMult<Scalar, ArrayImpl, const NDIM: usize> {

@@ -3,10 +3,10 @@
 use crate::base_types::{RlstResult, UpLo};
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::ev::{self, Ev, EvUplo};
-use crate::traits::accessors::RawAccessMut;
-use crate::traits::base_operations::{BaseItem, FillFromResize, Shape};
+use crate::traits::base_operations::Shape;
 use crate::traits::linalg::decompositions::SymmEig;
 use crate::traits::linalg::lapack::Lapack;
+use crate::UnsafeRandom1DAccessByValue;
 
 /// Symmetric eigenvalue decomposition mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,9 +19,8 @@ pub enum SymmEigMode {
 
 impl<Item, ArrayImpl> SymmEig for Array<ArrayImpl, 2>
 where
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
     Item: Lapack,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
 {
     type Item = Item;
 

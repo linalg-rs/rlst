@@ -19,6 +19,9 @@ use operators::{
 };
 
 use paste::paste;
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
+use rand_distr::{Distribution, StandardNormal, StandardUniform};
 
 use crate::{
     base_types::{c32, c64},
@@ -37,8 +40,8 @@ use crate::{
         data_container::ContainerType,
     },
     AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval, DispatchEvalRowMajor,
-    EvaluateObject, EvaluateRowMajorArray, Max, RandomAccessByValue, RlstError, RlstResult, Stack,
-    Unknown,
+    EvaluateObject, EvaluateRowMajorArray, Max, RandScalar, RandomAccessByValue, RlstError,
+    RlstResult, RlstScalar, Stack, Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -48,11 +51,9 @@ pub mod iterators;
 pub mod mult_into;
 pub mod operations;
 pub mod operators;
-pub mod random;
 // pub mod rank1_array;
 pub mod flattened;
 pub mod reference;
-pub mod row_major_view;
 pub mod slice;
 pub mod subview;
 
@@ -288,7 +289,7 @@ where
     /// # Traits
     /// - [RandomAccessByValue](crate::RandomAccessByValue)
     #[inline(always)]
-    pub unsafe fn get_value(&self, multi_index: [usize; NDIM]) -> Option<ArrayImpl::Item> {
+    pub fn get_value(&self, multi_index: [usize; NDIM]) -> Option<ArrayImpl::Item> {
         self.0.get_value(multi_index)
     }
 }
@@ -302,7 +303,7 @@ where
     /// # Traits
     /// - [RandomAccessByRef](crate::RandomAccessByRef)
     #[inline(always)]
-    pub unsafe fn get(&self, multi_index: [usize; NDIM]) -> Option<&ArrayImpl::Item> {
+    pub fn get(&self, multi_index: [usize; NDIM]) -> Option<&ArrayImpl::Item> {
         self.0.get(multi_index)
     }
 }
@@ -316,7 +317,7 @@ where
     /// # Traits
     /// - [RandomAccessMut](crate::RandomAccessMut)
     #[inline(always)]
-    pub unsafe fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut ArrayImpl::Item> {
+    pub fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut ArrayImpl::Item> {
         self.0.get_mut(multi_index)
     }
 }
@@ -1131,6 +1132,64 @@ where
     }
 }
 
+impl<Item, ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    Item: RandScalar + RlstScalar,
+    ArrayImpl: UnsafeRandom1DAccessMut<Item = Item> + Shape<NDIM>,
+    StandardNormal: Distribution<Item::Real>,
+    StandardUniform: Distribution<Item::Real>,
+{
+    /// Fill an array with normally distributed random numbers.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessMut]
+    /// - [Shape]
+    /// - Item: [RandScalar] + [RlstScalar]
+    pub fn fill_from_standard_normal<R: Rng>(&mut self, rng: &mut R) {
+        let dist = StandardNormal;
+        self.iter_mut()
+            .for_each(|val| *val = <Item>::random_scalar(rng, &dist));
+    }
+
+    /// Fill an array with equally distributed random numbers.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessMut]
+    /// - [Shape]
+    /// - Item: [RandScalar] + [RlstScalar]
+    pub fn fill_from_equally_distributed<R: Rng>(&mut self, rng: &mut R) {
+        let dist = StandardUniform;
+        self.iter_mut()
+            .for_each(|val| *val = <Item>::random_scalar(rng, &dist));
+    }
+
+    /// Fill an array with equally distributed random numbers using a given `seed`.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessMut]
+    /// - [Shape]
+    /// - Item: [RandScalar] + [RlstScalar]
+    pub fn fill_from_seed_equally_distributed(&mut self, seed: usize) {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed as u64);
+        let dist = StandardUniform;
+        self.iter_mut()
+            .for_each(|val| *val = <Item>::random_scalar(&mut rng, &dist));
+    }
+
+    /// Fill an array with normally distributed random numbers using a given `seed`.
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessMut]
+    /// - [Shape]
+    /// - Item: [RandScalar] + [RlstScalar]
+    pub fn fill_from_seed_normally_distributed(&mut self, seed: usize) {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed as u64);
+        let dist = StandardNormal;
+        self.iter_mut()
+            .for_each(|val| *val = <Item>::random_scalar(&mut rng, &dist));
+    }
+}
+
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Reverse a single `axis` of the array.
     pub fn reverse_axis(self, axis: usize) -> Array<ReverseAxis<ArrayImpl, NDIM>, NDIM> {
@@ -1369,6 +1428,20 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
         op: Op,
     ) -> Array<ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>, NDIM> {
         Array::new(ArrayUnaryOperator::new(self, op))
+    }
+}
+
+impl<Item: Default + Copy + std::ops::Mul<Output = Item>, ArrayImpl, const NDIM: usize>
+    Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: BaseItem<Item = Item>,
+{
+    /// Multiple the array with a given `scalar`.
+    ///
+    /// Note: The `Item` type must support [std::ops::Mul].
+    ///
+    pub fn scalar_mul(self, scalar: Item) -> Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayScalarMult::new(scalar, self))
     }
 }
 

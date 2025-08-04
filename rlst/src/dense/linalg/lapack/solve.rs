@@ -7,8 +7,8 @@ use crate::{
         linalg::lapack::interface::gels::GelsTransMode,
     },
     traits::{
-        accessors::{RawAccessMut, UnsafeRandom1DAccessByValue},
-        base_operations::{BaseItem, EvaluateObject, FillFrom, FillFromResize, Shape},
+        accessors::UnsafeRandom1DAccessByValue,
+        base_operations::{EvaluateObject, Shape},
         linalg::{
             decompositions::{Lu, Solve},
             lapack::Lapack,
@@ -21,11 +21,8 @@ impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> Solve<Array<RhsArrayImpl,
     for Array<ArrayImpl, 2>
 where
     Item: Lapack,
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
-    RhsArrayImpl: BaseItem<Item = Item> + Shape<NDIM>,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
-    DynArray<Item, NDIM>: FillFromResize<Array<RhsArrayImpl, NDIM>>,
-    RhsArrayImpl: BaseItem<Item = Item> + UnsafeRandom1DAccessByValue<Item = Item>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
+    RhsArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
 {
     type Output = DynArray<Item, NDIM>;
 

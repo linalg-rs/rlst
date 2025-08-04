@@ -7,20 +7,18 @@ use crate::{
         linalg::lapack::interface::trsm::{TrsmDiag, TrsmSide, TrsmTransA, TrsmUplo},
     },
     traits::{
-        accessors::RawAccessMut,
-        base_operations::{BaseItem, FillFromResize, Shape},
+        base_operations::Shape,
         linalg::{decompositions::SolveTriangular, lapack::Lapack},
     },
+    UnsafeRandom1DAccessByValue,
 };
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> SolveTriangular<Array<RhsArrayImpl, NDIM>>
     for Array<ArrayImpl, 2>
 where
     Item: Lapack,
-    ArrayImpl: BaseItem<Item = Item> + Shape<2>,
-    RhsArrayImpl: BaseItem<Item = Item> + Shape<NDIM>,
-    DynArray<Item, 2>: FillFromResize<Array<ArrayImpl, 2>>,
-    DynArray<Item, NDIM>: FillFromResize<Array<RhsArrayImpl, NDIM>>,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
+    RhsArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
 {
     type Output = DynArray<Item, NDIM>;
 
