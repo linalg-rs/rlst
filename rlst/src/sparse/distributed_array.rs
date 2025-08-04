@@ -20,14 +20,11 @@ use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
 use num::traits::MulAdd;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
+use crate::EvaluateRowMajorArray;
 use crate::{
-    AbsSquare, Array, AsOwnedRefType, AsOwnedRefTypeMut, BaseItem, CmpMulAddFrom, CmpMulFrom,
-    ConjObject, EvaluateObject, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len,
-    NormSup, NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul,
-    ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType, UnsafeRandom1DAccessByValue,
-    UnsafeRandom1DAccessMut,
+    Array, AsOwnedRefType, AsOwnedRefTypeMut, BaseItem, Conj, EvaluateObject, Max, RlstResult,
+    Shape, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
 };
-use crate::{EvaluateRowMajorArray, GatherToAll};
 
 use mpi::datatype::PartitionMut;
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
@@ -79,7 +76,7 @@ where
     }
 
     /// Check that index layout and shape is the same as the other array.
-    fn is_compatible_with<ArrayImplOther>(
+    pub fn is_compatible_with<ArrayImplOther>(
         &self,
         other: &DistributedArray<'a, C, ArrayImplOther, NDIM>,
     ) -> bool
@@ -98,7 +95,7 @@ where
     Item: Equivalence + Copy + Default,
 {
     /// Gather `Self` to all processes and store in `arr`.
-    fn gather_to_all(&self) -> DynArray<Item, NDIM> {
+    pub fn gather_to_all(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
 
@@ -145,7 +142,7 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
     Item: Equivalence + Copy + Default,
 {
-    fn gather_to_one(&self, root: usize) {
+    pub fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
         let send_arr = StridedDynArray::row_major_from(&self.local);
         let target_process = comm.process_at_rank(root as Rank);
@@ -153,7 +150,7 @@ where
         target_process.gather_varcount_into(send_arr.data());
     }
 
-    fn gather_to_one_root(&self) -> DynArray<Item, NDIM> {
+    pub fn gather_to_one_root(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
 
@@ -200,7 +197,7 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
     Item: Equivalence + Copy + Default,
 {
-    fn scatter_from_one_root<'a, C: Communicator>(
+    pub fn scatter_from_one_root<'a, C: Communicator>(
         &self,
         index_layout: Rc<IndexLayout<'a, C>>,
     ) -> DistributedArray<'a, C, BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
@@ -245,7 +242,7 @@ where
         }
     }
 
-    fn scatter_from_one<'a, C: Communicator>(
+    pub fn scatter_from_one<'a, C: Communicator>(
         root: usize,
         index_layout: Rc<IndexLayout<'a, C>>,
     ) -> DistributedArray<'a, C, BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
@@ -284,7 +281,7 @@ where
     ArrayImpl: Shape<NDIM>,
 {
     /// Return the shape of the global array.
-    fn shape(&self) -> [usize; NDIM] {
+    pub fn shape(&self) -> [usize; NDIM] {
         let mut shape = self.local.shape();
         shape[0] = self.index_layout.number_of_global_indices();
         shape
@@ -293,8 +290,13 @@ where
     /// Return the length of the global array.
     ///
     /// For n-dimensional array this is the product of all dimensions.
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.shape().iter().product()
+    }
+
+    /// Return true if the array is empty.
+    pub fn is_empty(&self) -> bool {
+        *self.shape().iter().min().unwrap() == 0
     }
 }
 
@@ -312,8 +314,10 @@ where
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
     /// Fill from another distributed array.
-    fn fill_from<ArrayImplOther>(&mut self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>)
-    where
+    pub fn fill_from<ArrayImplOther>(
+        &mut self,
+        other: &DistributedArray<'a, C, ArrayImplOther, NDIM>,
+    ) where
         ArrayImplOther: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = ArrayImpl::Item>,
     {
         assert!(
@@ -332,7 +336,7 @@ where
     Self: BaseItem<Item = ArrayImpl::Item>,
 {
     /// Fill array with `value`.
-    fn fill_with_value(&mut self, value: ArrayImpl::Item) {
+    pub fn fill_with_value(&mut self, value: ArrayImpl::Item) {
         self.local.fill_with_value(value);
     }
 }
@@ -344,18 +348,22 @@ where
     Item: std::ops::Add<Output = Item> + Equivalence + Copy + Default,
 {
     /// Compute the sum of all elements of the global array.
-    fn sum(&self) -> Item {
-        let local_sum = match self.local.iter_value().reduce(std::ops::Add::add) {
-            None => Default::default(),
-            Some(value) => value,
-        };
+    pub fn sum(&self) -> Option<Item> {
+        if self.is_empty() {
+            return None;
+        }
+        let local_sum = self
+            .local
+            .iter_value()
+            .reduce(std::ops::Add::add)
+            .unwrap_or_default();
         let mut global_sum = Default::default();
         self.index_layout.comm().all_reduce_into(
             &local_sum,
             &mut global_sum,
             mpi::collective::SystemOperation::sum(),
         );
-        global_sum
+        Some(global_sum)
     }
 }
 
@@ -395,7 +403,7 @@ where
     /// Convert an array into the new item type T.
     ///
     /// Note: It is required that `ArrayImpl::Item: Into<T>`.
-    fn into_type<T>(
+    pub fn into_type<T>(
         self,
     ) -> DistributedArray<
         'a,
@@ -414,8 +422,9 @@ impl<'a, C, Item, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImp
 where
     C: Communicator,
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: Copy + Default + std::ops::Mul<Output = Item>,
 {
-    fn scalar_mul(
+    pub fn scalar_mul(
         self,
         alpha: Item,
     ) -> DistributedArray<'a, C, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
@@ -423,25 +432,42 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, ArrayImplOther, T, const NDIM: usize>
-    Inner<DistributedArray<'a, C, ArrayImplOther, NDIM>>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, Item> DistributedArray<'a, C, ArrayImpl, 1>
 where
     C: Communicator,
-    T: Equivalence + Default,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImplOther: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: Inner<Array<ArrayImplOther, NDIM>, Output = T>,
+    ArrayImpl: Shape<1> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: Conj<Output = Item>
+        + std::ops::Mul<Output = Item>
+        + std::ops::Add<Output = Item>
+        + Equivalence
+        + Copy
+        + Default,
 {
-    type Output = T;
-
-    fn inner(&self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>) -> Self::Output {
+    /// Compute the inner product of two distributed 1d arrays.
+    ///
+    /// Return `None` if the arrays are empty.
+    ///
+    /// Note: The values of `other` are taken as conjugate.
+    pub fn inner<ArrayImplOther>(
+        &self,
+        other: &DistributedArray<'a, C, ArrayImplOther, 1>,
+    ) -> Option<Item>
+    where
+        ArrayImplOther: Shape<1> + UnsafeRandom1DAccessByValue<Item = Item>,
+    {
         assert!(
             self.is_compatible_with(other),
             "DistributedArray::inner: The index layout and shape of the arrays do not match."
         );
-        // We can just sum from the local data.
-        let local_inner = self.local.inner(&other.local);
+
+        // Return None if the array is empty.
+        if self.is_empty() {
+            return None;
+        }
+
+        // We can just sum from the local data. We know that the array is not empty.
+        // But the local array can still be empty, need to deal with this.
+        let local_inner = self.local.inner(&other.local).unwrap_or_default();
         let mut global_inner = Default::default();
 
         self.index_layout.comm().all_reduce_into(
@@ -450,61 +476,73 @@ where
             mpi::collective::SystemOperation::sum(),
         );
 
-        global_inner
+        Some(global_inner)
     }
 }
 
-impl<'a, C, ArrayImpl, T> NormSup for DistributedArray<'a, C, ArrayImpl, 1>
+impl<'a, C, ArrayImpl, Item, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    T: Equivalence + Default,
-    ArrayImpl: Shape<1>,
-    Array<ArrayImpl, 1>: NormSup<Output = T>,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Abs<Output = Item>,
+    Item: Max<Output = Item> + Copy + Default + Equivalence,
 {
-    type Output = T;
+    /// Compute the maximum element of the distributed array.
+    pub fn max_abs(&self) -> Option<Item> {
+        if self.is_empty() {
+            return None;
+        }
 
-    fn norm_sup(&self) -> Self::Output {
-        let local_norm_sup = self.local.norm_sup();
+        let local_norm_sup = self.local.max_abs().unwrap_or_default();
         let mut global_result = Default::default();
         self.index_layout.comm().all_reduce_into(
             &local_norm_sup,
             &mut global_result,
             mpi::collective::SystemOperation::max(),
         );
-        global_result
+        Some(global_result)
     }
 }
 
-impl<'a, C, ArrayImpl, T> NormTwo for DistributedArray<'a, C, ArrayImpl, 1>
+impl<'a, C, ArrayImpl, Item> DistributedArray<'a, C, ArrayImpl, 1>
 where
     C: Communicator,
-    ArrayImpl: Shape<1>,
-    for<'b> DistributedArray<'a, C, ArrayRef<'b, ArrayImpl, 1>, 1>: AbsSquare,
-    for<'b> <DistributedArray<'a, C, ArrayRef<'b, ArrayImpl, 1>, 1> as AbsSquare>::Output:
-        Sum + BaseItem<Item = T>,
-    T: Sqrt,
+    ArrayImpl: Shape<1> + UnsafeRandom1DAccessByValue,
+    ArrayImpl::Item: Copy + Default + AbsSquare<Output = Item>,
+    Item: std::ops::Add<Output = Item> + Sqrt<Output = Item> + Equivalence + Copy + Default,
 {
-    type Output = <T as Sqrt>::Output;
-
-    fn norm_2(&self) -> Self::Output {
-        Sqrt::sqrt(self.r().abs_square().sum())
+    /// Compute the 2-norm of a distributed vector.
+    ///
+    /// Return `None` if vector is empty.
+    pub fn norm_2(&self) -> Option<Item> {
+        self.r().abs_square().sum().map(|elem| elem.sqrt())
     }
 }
 
 macro_rules! impl_unary_op_trait {
-    ($trait_name:ident, $method_name:ident) => {
-        impl<'a, C, ArrayImpl, ArrayImplOutput, const NDIM: usize>
-            crate::traits::number_traits::$trait_name for DistributedArray<'a, C, ArrayImpl, NDIM>
+    ($name:ident, $method_name:ident) => {
+        use crate::traits::number_traits::$name;
+        impl<'a, C, ArrayImpl, Out, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
         where
             C: Communicator,
-            ArrayImpl: Shape<NDIM>,
-            Array<ArrayImpl, NDIM>:
-                crate::traits::number_traits::$trait_name<Output = Array<ArrayImplOutput, NDIM>>,
-            ArrayImplOutput: Shape<NDIM>,
+            ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue,
+            ArrayImpl::Item: $name<Output = Out>,
+            Out: Copy + Default + Equivalence,
         {
-            type Output = DistributedArray<'a, C, ArrayImplOutput, NDIM>;
-
-            fn $method_name(self) -> Self::Output {
+            pub fn $method_name(
+                self,
+            ) -> DistributedArray<
+                'a,
+                C,
+                ArrayUnaryOperator<
+                    ArrayImpl::Item,
+                    Out,
+                    ArrayImpl,
+                    fn(ArrayImpl::Item) -> Out,
+                    NDIM,
+                >,
+                NDIM,
+            > {
                 DistributedArray::new(self.index_layout.clone(), self.local.$method_name())
             }
         }

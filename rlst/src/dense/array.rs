@@ -863,11 +863,15 @@ where
 impl<Item, ArrayImpl> Array<ArrayImpl, 1>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
-    ArrayImpl::Item: Conj<Output = Item> + std::iter::Sum + std::ops::Mul<Output = ArrayImpl::Item>,
+    ArrayImpl::Item: Conj<Output = Item>
+        + std::ops::Mul<Output = ArrayImpl::Item>
+        + std::ops::Add<Output = Item>,
 {
     /// Compute the inner product of two 1d arrays.
     ///
     /// The elements of `other` are taken as conjugate.
+    ///
+    /// Returns `None` if the arrays are empty.
     ///
     /// Note: The Item type must support the traits [Conj], [std::iter::Sum] and [std::ops::Mul].
     ///
@@ -875,14 +879,14 @@ where
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    pub fn inner<ArrayImplOther>(&self, other: &Array<ArrayImplOther, 1>) -> Item
+    pub fn inner<ArrayImplOther>(&self, other: &Array<ArrayImplOther, 1>) -> Option<Item>
     where
         ArrayImplOther: UnsafeRandom1DAccessByValue<Item = Item> + Shape<1>,
     {
         assert_eq!(self.shape(), other.shape());
         izip!(self.iter_value(), other.iter_value())
             .map(|(x, y)| x * y.conj())
-            .sum()
+            .reduce(std::ops::Add::add)
     }
 }
 
@@ -897,15 +901,16 @@ where
     /// Note: The item type must support [Abs] and the output of [Abs]
     /// must support [Max].
     ///
+    /// The function returns `None` if the array is empty.
+    ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    pub fn max_abs(&self) -> <Item as Abs>::Output {
+    pub fn max_abs(&self) -> Option<<Item as Abs>::Output> {
         self.iter_value()
             .map(|elem| elem.abs())
             .reduce(|elem1, elem2| Max::max(elem1, elem2))
-            .unwrap()
     }
 }
 
@@ -917,18 +922,20 @@ where
 {
     /// Compute the 1-norm of a 1d array.
     ///
+    /// The function returns `None` if the array is empty.
+    ///
     /// Note: The item type must support [Abs] and the output of [Abs] must
     /// support [std::ops::Add].
+    ///
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    pub fn norm_1(&self) -> <Item as Abs>::Output {
+    pub fn norm_1(&self) -> Option<<Item as Abs>::Output> {
         self.iter_value()
             .map(|elem| elem.abs())
             .reduce(std::ops::Add::add)
-            .unwrap()
     }
 }
 
@@ -948,12 +955,11 @@ where
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
     #[inline(always)]
-    pub fn norm_2(&self) -> <Item as AbsSquare>::Output {
+    pub fn norm_2(&self) -> Option<<Item as AbsSquare>::Output> {
         self.iter_value()
             .map(|elem| elem.abs_square())
             .reduce(std::ops::Add::add)
-            .unwrap()
-            .sqrt()
+            .map(|elem| elem.sqrt())
     }
 }
 
@@ -1476,7 +1482,7 @@ macro_rules! impl_unary_op_trait {
                 ArrayImpl: BaseItem<Item = Item>,
             {
                 #[inline(always)]
-                fn $method_name(self) -> Array<ArrayUnaryOperator<Item, <Item as $name>::Output, ArrayImpl, fn(Item) -> <Item as $name>::Output, NDIM>, NDIM> {
+                pub fn $method_name(self) -> Array<ArrayUnaryOperator<Item, <Item as $name>::Output, ArrayImpl, fn(Item) -> <Item as $name>::Output, NDIM>, NDIM> {
                     self.unary_op(|x| x.$method_name())
                 }
             }
