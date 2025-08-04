@@ -170,12 +170,10 @@ impl<Item: Copy + Default> From<Vec<Item>> for DynArray<Item, 1> {
     }
 }
 
-impl<Item: Copy + Default, const NDIM: usize>
-    Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>
-{
+impl<Item: Copy + Default, const NDIM: usize> StridedDynArray<Item, NDIM> {
     /// Create a new heap allocated array from a given `shape` and `stride`.
     #[inline(always)]
-    pub fn from_shape_with_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
+    pub fn from_shape_and_stride(shape: [usize; NDIM], stride: [usize; NDIM]) -> Self {
         let size = shape.iter().product();
         Self::new(StridedBaseArray::new(
             VectorContainer::new(size),
@@ -507,6 +505,29 @@ where
         let mut output = empty_array::<Item, NDIM>();
         output.fill_from_resize(arr);
         output
+    }
+}
+
+impl<Item, const NDIM: usize> StridedDynArray<Item, NDIM>
+where
+    Item: Copy + Default,
+{
+    /// Create a new strided array with `stride` and fill with values from `arr`.
+    pub fn new_from<ArrayImpl>(stride: [usize; NDIM], arr: &Array<ArrayImpl, NDIM>) -> Self
+    where
+        ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+    {
+        let mut output = StridedDynArray::from_shape_and_stride(arr.shape(), stride);
+        output.fill_from(arr);
+        output
+    }
+
+    /// Create a new row-major array from existing array `arr`.
+    pub fn row_major_from<ArrayImpl>(arr: &Array<ArrayImpl, NDIM>) -> Self
+    where
+        ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+    {
+        StridedDynArray::new_from(row_major_stride_from_shape(arr.shape()), arr)
     }
 }
 

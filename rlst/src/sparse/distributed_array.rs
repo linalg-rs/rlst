@@ -25,6 +25,7 @@ use crate::{
     ConjObject, EvaluateObject, FillFrom, FillFromResize, FillWithValue, GatherToOne, Inner, Len,
     NormSup, NormTwo, NumberOfElements, RawAccess, RawAccessMut, RlstResult, ScalarMul,
     ScaleInPlace, ScatterFromOne, Shape, Sqrt, Sum, SumFrom, ToType, UnsafeRandom1DAccessByValue,
+    UnsafeRandom1DAccessMut,
 };
 use crate::{EvaluateRowMajorArray, GatherToAll};
 
@@ -90,25 +91,19 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, RowMajorOutImpl, const NDIM: usize> GatherToAll
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: Shape<NDIM> + BaseItem,
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
-    RowMajorOutImpl: RawAccess,
-    <RowMajorOutImpl as BaseItem>::Item: Equivalence + Copy + Default,
-    StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: EvaluateObject,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: Equivalence + Copy + Default,
 {
-    type Output =
-        <StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM> as EvaluateObject>::Output;
     /// Gather `Self` to all processes and store in `arr`.
-    fn gather_to_all(&self) -> Self::Output {
+    fn gather_to_all(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
 
         // We evaluate into a new array to ensure that we are row-major contiguous.
-        let send_arr = self.local.eval_row_major();
+        let send_arr = StridedDynArray::row_major_from(&self.local);
 
         // The local shape of the array.
         let local_shape = self.local.shape();
@@ -125,10 +120,7 @@ where
         };
         // We create a new row-major array to send data into.
         // This is necessary as we are sending row slices
-        let mut recv_arr = StridedDynArray::<
-            <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-            NDIM,
-        >::row_major(global_shape);
+        let mut recv_arr = StridedDynArray::<Item, NDIM>::row_major(global_shape);
 
         // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
         // We also have to multiply the counts by the number of elements in the second dimension
@@ -147,33 +139,26 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, RowMajorOutImpl, const NDIM: usize> GatherToOne
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, Item, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: Shape<NDIM> + BaseItem,
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
-    RowMajorOutImpl: RawAccess,
-    <RowMajorOutImpl as BaseItem>::Item: Equivalence + Copy + Default,
-    StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: EvaluateObject,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: Equivalence + Copy + Default,
 {
-    type Output =
-        <StridedDynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM> as EvaluateObject>::Output;
-
     fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
-        let send_arr = self.local.eval_row_major();
+        let send_arr = StridedDynArray::row_major_from(&self.local);
         let target_process = comm.process_at_rank(root as Rank);
 
         target_process.gather_varcount_into(send_arr.data());
     }
 
-    fn gather_to_one_root(&self) -> Self::Output {
+    fn gather_to_one_root(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
 
         // We evaluate into a new array to ensure that we are row-major contiguous.
-        let send_arr = self.local.eval_row_major();
+        let send_arr = StridedDynArray::row_major_from(&self.local);
 
         // The local shape of the array.
         let local_shape = self.local.shape();
@@ -190,10 +175,7 @@ where
         };
         // We create a new row-major array to send data into.
         // This is necessary as we are sending row slices
-        let mut recv_arr = StridedDynArray::<
-            <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-            NDIM,
-        >::row_major(global_shape);
+        let mut recv_arr = StridedDynArray::<Item, NDIM>::row_major(global_shape);
 
         // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
         // We also have to multiply the counts by the number of elements in the second dimension
@@ -213,31 +195,15 @@ where
     }
 }
 
-impl<ArrayImpl, RowMajorOutImpl, OutItem, const NDIM: usize> ScatterFromOne
-    for Array<ArrayImpl, NDIM>
+impl<ArrayImpl, Item, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: EvaluateRowMajorArray<Output = Array<RowMajorOutImpl, NDIM>>,
-    RowMajorOutImpl: UnsafeRandom1DAccessByValue<Item = OutItem> + RawAccess<Item = OutItem>,
-    OutItem: Equivalence + Copy + Default,
-    // for<'b> DynArray<<RowMajorOutImpl as BaseItem>::Item, NDIM>: FillFromResize<
-    //     StridedSliceArray<
-    //         'b,
-    //         <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-    //         NDIM,
-    //     >,
-    // >,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: Equivalence + Copy + Default,
 {
-    type Output<'a, C>
-        = DistributedArray<'a, C, BaseArray<VectorContainer<OutItem>, NDIM>, NDIM>
-    where
-        C: 'a,
-        C: Communicator;
-
     fn scatter_from_one_root<'a, C: Communicator>(
         &self,
         index_layout: Rc<IndexLayout<'a, C>>,
-    ) -> Self::Output<'a, C> {
+    ) -> DistributedArray<'a, C, BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
         let comm = index_layout.comm();
         let this_process = comm.this_process();
 
@@ -252,7 +218,7 @@ where
         // data.
 
         // We evaluate into a new array to ensure that we are row-major contiguous.
-        let send_arr = self.eval_row_major();
+        let send_arr = StridedDynArray::row_major_from(self);
 
         // Take the first comm.size elements of the counts. (counts is 1 + comm.size long)
         // We also have to multiply the counts by the number of elements in the second dimension
@@ -282,7 +248,7 @@ where
     fn scatter_from_one<'a, C: Communicator>(
         root: usize,
         index_layout: Rc<IndexLayout<'a, C>>,
-    ) -> Self::Output<'a, C> {
+    ) -> DistributedArray<'a, C, BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
         let comm = index_layout.comm();
 
         let my_shape = {
@@ -295,14 +261,12 @@ where
             my_shape
         };
         // We receive the data from the root process.
-        let my_data = scatterv::<
-            <<Array<ArrayImpl, NDIM> as EvaluateRowMajorArray>::Output as BaseItem>::Item,
-        >(comm, root);
+        let my_data = scatterv::<Item>(comm, root);
 
         // The data comes over in row-major order. We create a row-major view and
         // copy it into a new column major array.
 
-        // We wrap this data into an array view and then transpose it to get a standard column-major array.
+        // We wrap this data into an array view and then copy it over to a column major DynArray.
         {
             let local_arr = DynArray::new_from(&StridedSliceArray::from_shape_and_stride(
                 &my_data,
@@ -314,15 +278,23 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> Shape<NDIM> for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
     ArrayImpl: Shape<NDIM>,
 {
+    /// Return the shape of the global array.
     fn shape(&self) -> [usize; NDIM] {
         let mut shape = self.local.shape();
         shape[0] = self.index_layout.number_of_global_indices();
         shape
+    }
+
+    /// Return the length of the global array.
+    ///
+    /// For n-dimensional array this is the product of all dimensions.
+    fn len(&self) -> usize {
+        self.shape().iter().product()
     }
 }
 
@@ -334,16 +306,16 @@ where
     type Item = ArrayImpl::Item;
 }
 
-impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
-    FillFrom<DistributedArray<'a, C, ArrayImplOther, NDIM>>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    Array<ArrayImpl, NDIM>: FillFrom<Array<ArrayImplOther, NDIM>>,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImplOther: Shape<NDIM>,
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
-    fn fill_from(&mut self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>) {
+    /// Fill from another distributed array.
+    fn fill_from<ArrayImplOther>(&mut self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>)
+    where
+        ArrayImplOther: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = ArrayImpl::Item>,
+    {
         assert!(
             self.is_compatible_with(other),
             "DistributedArray::fill_from: The index layout and shape of the arrays do not match."
@@ -353,115 +325,30 @@ where
     }
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> NumberOfElements
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: NumberOfElements,
-    ArrayImpl: Shape<NDIM>,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessMut,
+    Self: BaseItem<Item = ArrayImpl::Item>,
 {
-    fn number_of_elements(&self) -> usize {
-        self.index_layout.number_of_global_indices()
-            * self.local.shape().iter().skip(1).product::<usize>()
-    }
-}
-
-impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
-    SumFrom<DistributedArray<'a, C, ArrayImplOther, NDIM>>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    Array<ArrayImpl, NDIM>: SumFrom<Array<ArrayImplOther, NDIM>>,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImplOther: Shape<NDIM>,
-{
-    fn sum_from(&mut self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>) {
-        assert!(
-            self.is_compatible_with(other),
-            "DistributedArray::sum_from: The index layout and shape of the arrays do not match."
-        );
-        // We can just sum from the local data.
-        self.local.sum_from(&other.local);
-    }
-}
-
-impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
-    CmpMulFrom<DistributedArray<'a, C, ArrayImplOther, NDIM>>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    Array<ArrayImpl, NDIM>: CmpMulFrom<Array<ArrayImplOther, NDIM>>,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImplOther: Shape<NDIM>,
-{
-    fn cmp_mul_from(&mut self, other: &DistributedArray<'a, C, ArrayImplOther, NDIM>) {
-        assert!(
-            self.is_compatible_with(other),
-            "DistributedArray::sum_from: The index layout and shape of the arrays do not match."
-        );
-        // We can just sum from the local data.
-        self.local.cmp_mul_from(&other.local);
-    }
-}
-
-impl<'a, C, ArrayImpl, ArrayImplOther1, ArrayImplOther2, const NDIM: usize>
-    CmpMulAddFrom<
-        DistributedArray<'a, C, ArrayImplOther1, NDIM>,
-        DistributedArray<'a, C, ArrayImplOther2, NDIM>,
-    > for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    Array<ArrayImpl, NDIM>:
-        CmpMulAddFrom<Array<ArrayImplOther1, NDIM>, Array<ArrayImplOther2, NDIM>>,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImplOther1: Shape<NDIM>,
-    ArrayImplOther2: Shape<NDIM>,
-{
-    fn cmp_mul_add_from(
-        &mut self,
-        other1: &DistributedArray<'a, C, ArrayImplOther1, NDIM>,
-        other2: &DistributedArray<'a, C, ArrayImplOther2, NDIM>,
-    ) {
-        assert!(
-            self.is_compatible_with(other1) && self.is_compatible_with(other2),
-            "DistributedArray::sum_from: The index layout and shape of the arrays do not match."
-        );
-        // We can just sum from the local data.
-        self.local.cmp_mul_add_from(&other1.local, &other2.local);
-    }
-}
-
-impl<'a, C, ArrayImpl, const NDIM: usize> FillWithValue for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    Array<ArrayImpl, NDIM>: FillWithValue,
-    Self: BaseItem<Item = <Array<ArrayImpl, NDIM> as BaseItem>::Item>,
-{
-    fn fill_with_value(&mut self, value: Self::Item) {
+    /// Fill array with `value`.
+    fn fill_with_value(&mut self, value: ArrayImpl::Item) {
         self.local.fill_with_value(value);
     }
 }
 
-impl<'a, C, ArrayImpl, const NDIM: usize> ScaleInPlace for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, Item, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    Self: BaseItem,
-    Array<ArrayImpl, NDIM>: ScaleInPlace<Item = <Self as BaseItem>::Item>,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: std::ops::Add<Output = Item> + Equivalence + Copy + Default,
 {
-    fn scale_inplace(&mut self, alpha: Self::Item) {
-        self.local.scale_inplace(alpha);
-    }
-}
-
-impl<'a, C, ArrayImpl, const NDIM: usize> Sum for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    Self: BaseItem,
-    Self::Item: Equivalence + Default,
-    Array<ArrayImpl, NDIM>: Sum<Item = <Self as BaseItem>::Item>,
-{
-    fn sum(&self) -> Self::Item {
-        let local_sum = self.local.sum();
+    /// Compute the sum of all elements of the global array.
+    fn sum(&self) -> Item {
+        let local_sum = match self.local.iter_value().reduce(std::ops::Add::add) {
+            None => Default::default(),
+            Some(value) => value,
+        };
         let mut global_sum = Default::default();
         self.index_layout.comm().all_reduce_into(
             &local_sum,
@@ -469,32 +356,6 @@ where
             mpi::collective::SystemOperation::sum(),
         );
         global_sum
-    }
-}
-
-impl<'a, C, ArrayImpl, const NDIM: usize> Len for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    ArrayImpl: Len,
-    ArrayImpl: Shape<NDIM>,
-{
-    fn len(&self) -> usize {
-        self.index_layout.number_of_global_indices()
-            * self.local.shape().iter().skip(1).product::<usize>()
-    }
-}
-
-impl<'a, C, ArrayImpl, ArrayImplConj, const NDIM: usize> ConjObject
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
-where
-    C: Communicator,
-    ArrayImplConj: Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: ConjObject<Output = Array<ArrayImplConj, NDIM>>,
-{
-    type Output = DistributedArray<'a, C, ArrayImplConj, NDIM>;
-
-    fn conj(self) -> Self::Output {
-        DistributedArray::new(self.index_layout.clone(), self.local.conj())
     }
 }
 
@@ -526,41 +387,38 @@ where
     }
 }
 
-impl<'a, C, T, Item, ArrayImpl, const NDIM: usize> ToType<T>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: BaseItem<Item = Item> + Shape<NDIM>,
-    Array<ArrayImpl, NDIM>: ToType<
-        T,
-        Item = Item,
-        Output = Array<ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>,
-    >,
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
 {
-    type Item = Item;
-
-    type Output =
-        DistributedArray<'a, C, ArrayUnaryOperator<Item, T, ArrayImpl, fn(Item) -> T, NDIM>, NDIM>;
-
-    fn into_type(self) -> Self::Output
+    /// Convert an array into the new item type T.
+    ///
+    /// Note: It is required that `ArrayImpl::Item: Into<T>`.
+    fn into_type<T>(
+        self,
+    ) -> DistributedArray<
+        'a,
+        C,
+        ArrayUnaryOperator<ArrayImpl::Item, T, ArrayImpl, fn(ArrayImpl::Item) -> T, NDIM>,
+        NDIM,
+    >
     where
-        Self::Item: Into<T>,
+        Item: Into<T>,
     {
         DistributedArray::new(self.index_layout.clone(), self.local.into_type())
     }
 }
 
-impl<'a, C, Item, ArrayImpl, const NDIM: usize> ScalarMul<Item>
-    for DistributedArray<'a, C, ArrayImpl, NDIM>
+impl<'a, C, Item, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: Shape<NDIM> + BaseItem<Item = Item>,
-    Array<ArrayImpl, NDIM>:
-        ScalarMul<Item, Output = Array<ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>>,
+    ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
 {
-    type Output = DistributedArray<'a, C, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM>;
-
-    fn scalar_mul(self, alpha: Item) -> Self::Output {
+    fn scalar_mul(
+        self,
+        alpha: Item,
+    ) -> DistributedArray<'a, C, ArrayScalarMult<Item, ArrayImpl, NDIM>, NDIM> {
         DistributedArray::new(self.index_layout.clone(), self.local.scalar_mul(alpha))
     }
 }
