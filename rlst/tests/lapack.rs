@@ -361,7 +361,7 @@ macro_rules! implement_eigendecomposition_tests {
             // Test the left eigenvectors
 
             // First convert a to a complex matrix
-            let a_complex = ToType::<<$scalar as RlstScalar>::Complex>::into_type(a).eval();
+            let a_complex = a.into_type::<<$scalar as RlstScalar>::Complex>().eval();
 
             // Now create a diagonal matrix from the eigenvalues
 
@@ -418,7 +418,7 @@ macro_rules! implement_svd_tests {
             let actual = ata
                 .eigenvaluesh()
                 .unwrap()
-                .apply_unary_op(|v| <<$scalar as RlstScalar>::Real>::sqrt(v))
+                .unary_op(|v| <<$scalar as RlstScalar>::Real>::sqrt(v))
                 .reverse_axis(0);
 
             rlst::assert_array_relative_eq!(s, actual, $tol);

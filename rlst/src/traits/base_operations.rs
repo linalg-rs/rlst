@@ -1,15 +1,8 @@
 //! Basic traits for elements of vector spaces.
 
-use std::ops::MulAssign;
-
-use num::{One, Zero};
-
 use crate::{base_types::MemoryLayout, Array};
 
-use super::{
-    iterators::{ArrayIteratorMut, GetDiagMut},
-    ArrayIteratorByValue, UnsafeRandom1DAccessByValue,
-};
+use super::UnsafeRandom1DAccessByValue;
 
 /// Define a basic item type associated with an object.
 pub trait BaseItem {
@@ -51,6 +44,14 @@ pub trait Shape<const NDIM: usize> {
     #[inline(always)]
     fn len(&self) -> usize {
         self.shape().iter().product()
+    }
+
+    /// Return true if the array is empty.
+    ///
+    /// An array is empty if at least one dimension is zero.
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -199,57 +200,16 @@ pub trait SetOne {
     fn set_one(&mut self);
 }
 
-impl<T> SetZero for T
-where
-    T: FillWithValue,
-    T::Item: Zero,
-{
-    fn set_zero(&mut self) {
-        self.fill_with_value(Zero::zero());
-    }
-}
-
-impl<T> SetOne for T
-where
-    T: FillWithValue,
-    T::Item: One,
-{
-    fn set_one(&mut self) {
-        self.fill_with_value(One::one());
-    }
-}
-
 /// Set the current object to the identity element.
 pub trait SetIdentity {
     /// Set `self` to be the identity.
     fn set_identity(&mut self);
 }
 
-impl<Item, T> SetIdentity for T
-where
-    T: FillWithValue<Item = Item> + GetDiagMut<Item = Item>,
-    Item: Zero + One,
-{
-    fn set_identity(&mut self) {
-        self.set_zero();
-        self.diag_iter_mut().for_each(|elem| *elem = One::one());
-    }
-}
-
 /// Scale in place.
 pub trait ScaleInPlace: BaseItem {
     /// Scale `self` by `alpha`.
     fn scale_inplace(&mut self, alpha: Self::Item);
-}
-
-impl<T> ScaleInPlace for T
-where
-    T: ArrayIteratorMut,
-    T::Item: MulAssign<T::Item> + Copy,
-{
-    fn scale_inplace(&mut self, alpha: Self::Item) {
-        self.iter_mut().for_each(|elem| *elem *= alpha);
-    }
 }
 
 /// Compute the trace of an object.
@@ -262,16 +222,6 @@ pub trait Trace: BaseItem {
 pub trait Sum: BaseItem {
     /// Compute the sum of all elements of `self`.
     fn sum(&self) -> Self::Item;
-}
-
-impl<T> Sum for T
-where
-    T: ArrayIteratorByValue,
-    T::Item: std::iter::Sum,
-{
-    fn sum(&self) -> Self::Item {
-        self.iter_value().sum()
-    }
 }
 
 /// Compute the length of an object.

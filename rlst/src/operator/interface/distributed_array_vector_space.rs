@@ -14,7 +14,7 @@ use crate::{
     distributed_tools::IndexLayout,
     operator::element::Element,
     sparse::distributed_array::DistributedArray,
-    EvaluateObject, Inner, InnerProductSpace, LinearSpace, ScalarMul,
+    EvaluateObject, Inner, InnerProductSpace, LinearSpace,
 };
 
 /// Array vector space

@@ -5,8 +5,6 @@ use std::rc::Rc;
 use approx::assert_relative_eq;
 use mpi::traits::Communicator;
 use rlst::dense::array::DynArray;
-use rlst::traits::{GatherToAll, NormTwo, ScatterFromOne};
-use rlst::Sin;
 
 pub fn main() {
     let universe = mpi::initialize().unwrap();
@@ -36,10 +34,10 @@ pub fn main() {
     let arr = dist_arr.gather_to_all();
 
     // We can now perform operations on the distributed array.
-    let dist_norm = (5.0 * dist_arr.sin()).norm_2();
+    let dist_norm = (5.0 * dist_arr.sin()).norm_2().unwrap();
 
     // Let's do the same operation on the gathered array for comparison.
-    let expected = NormTwo::norm_2(&(5.0 * arr.sin()));
+    let expected = arr.sin().scalar_mul(5.0).norm_2().unwrap();
 
     assert_relative_eq!(dist_norm, expected, epsilon = 1E-10);
 }

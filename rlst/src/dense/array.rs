@@ -10,7 +10,7 @@ use iterators::{
     ColIteratorMut, RowIterator, RowIteratorMut,
 };
 use itertools::izip;
-use num::traits::MulAdd;
+use num::{traits::MulAdd, One};
 use operators::{
     addition::ArrayAddition, cast::ArrayCast, cmp_wise_division::CmpWiseDivision,
     cmp_wise_product::CmpWiseProduct, coerce::CoerceArray, mul_add::MulAddImpl, negation::ArrayNeg,
@@ -39,7 +39,7 @@ use crate::{
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::ContainerType,
     },
-    AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, Conj, DispatchEval, DispatchEvalRowMajor,
+    AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval, DispatchEvalRowMajor,
     EvaluateObject, EvaluateRowMajorArray, Max, RandScalar, RandomAccessByValue, RlstError,
     RlstResult, RlstScalar, Stack, Unknown,
 };
@@ -224,6 +224,16 @@ where
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    /// Return true if the array is empty.
+    ///
+    /// This is equivalent to at least one dimension being zero.
+    /// # Traits:
+    /// - [Shape](crate::Shape)
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -844,6 +854,30 @@ where
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
+    ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
+{
+    /// Set the elements of the array to zero.
+    pub fn set_zero(&mut self) {
+        for item in self.iter_mut() {
+            *item = Default::default();
+        }
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessMut + UnsafeRandomAccessMut<NDIM> + Shape<NDIM>,
+    ArrayImpl::Item: One,
+{
+    /// Set all off-diagonal elements to zero and the diagonal to one.
+    pub fn set_identity(&mut self) {
+        self.set_zero();
+        self.diag_iter_mut().for_each(|elem| *elem = One::one());
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
     ArrayImpl: UnsafeRandomAccessByValue<NDIM> + Shape<NDIM>,
     ArrayImpl::Item: std::iter::Sum,
 {
@@ -908,9 +942,7 @@ where
     /// - [Shape]
     #[inline(always)]
     pub fn max_abs(&self) -> Option<<Item as Abs>::Output> {
-        self.iter_value()
-            .map(|elem| elem.abs())
-            .reduce(|elem1, elem2| Max::max(elem1, elem2))
+        self.iter_value().map(|elem| elem.abs()).reduce(Max::max)
     }
 }
 
@@ -974,6 +1006,7 @@ where
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
     /// - [Shape]
+    #[allow(clippy::type_complexity)]
     pub fn into_type<T>(
         self,
     ) -> Array<
@@ -1482,6 +1515,7 @@ macro_rules! impl_unary_op_trait {
                 ArrayImpl: BaseItem<Item = Item>,
             {
                 #[inline(always)]
+                #[doc = "Componentwise apply `" $method_name "` to the array."]
                 pub fn $method_name(self) -> Array<ArrayUnaryOperator<Item, <Item as $name>::Output, ArrayImpl, fn(Item) -> <Item as $name>::Output, NDIM>, NDIM> {
                     self.unary_op(|x| x.$method_name())
                 }
@@ -1491,6 +1525,7 @@ macro_rules! impl_unary_op_trait {
     };
 }
 
+impl_unary_op_trait!(Conj, conj);
 impl_unary_op_trait!(Abs, abs);
 impl_unary_op_trait!(Square, square);
 impl_unary_op_trait!(AbsSquare, abs_square);

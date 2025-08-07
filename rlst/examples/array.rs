@@ -1,6 +1,6 @@
 //! Test some array functions.
 
-use rlst::{rlst_dynamic_array, AijIteratorByValue};
+use rlst::rlst_dynamic_array;
 
 fn main() {
     // This is a placeholder for the main function.

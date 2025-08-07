@@ -17,11 +17,7 @@ use crate::{
             symmeig::SymmEigMode,
         },
     },
-    traits::{
-        base_operations::{ConjObject, EvaluateObject, Len, Shape, ToType},
-        iterators::ArrayIteratorByValue,
-        rlst_num::RlstScalar,
-    },
+    traits::{base_operations::EvaluateObject, rlst_num::RlstScalar},
     AsOwnedRefType,
 };
 

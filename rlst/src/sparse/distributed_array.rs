@@ -1,5 +1,5 @@
 //! An Indexable Vector is a container whose elements can be 1d indexed.
-use std::ops::{AddAssign, MulAssign, SubAssign};
+use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use std::rc::Rc;
 
 use crate::base_types::{c32, c64};
@@ -142,6 +142,7 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
     Item: Equivalence + Copy + Default,
 {
+    /// Gather the array to rank `root`.
     pub fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
         let send_arr = StridedDynArray::row_major_from(&self.local);
@@ -150,6 +151,9 @@ where
         target_process.gather_varcount_into(send_arr.data());
     }
 
+    /// Gather the array to a single rank.
+    ///
+    /// Call this on the `root` to which the array is sent.
     pub fn gather_to_one_root(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
@@ -197,6 +201,10 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
     Item: Equivalence + Copy + Default,
 {
+    /// Scatter the array out to all nodes using the given `index_layout`.
+    ///
+    /// The data is always scattered out along the first axis of the array.
+    /// Call this method on root.
     pub fn scatter_from_one_root<'a, C: Communicator>(
         &self,
         index_layout: Rc<IndexLayout<'a, C>>,
@@ -242,6 +250,10 @@ where
         }
     }
 
+    /// Scatter the array out to all nodes using the given `index_layout`.
+    ///
+    /// The data is always scattered out along the first axis of the array.
+    /// Call this method on all ranks that are not `root`.
     pub fn scatter_from_one<'a, C: Communicator>(
         root: usize,
         index_layout: Rc<IndexLayout<'a, C>>,
@@ -403,6 +415,7 @@ where
     /// Convert an array into the new item type T.
     ///
     /// Note: It is required that `ArrayImpl::Item: Into<T>`.
+    #[allow(clippy::type_complexity)]
     pub fn into_type<T>(
         self,
     ) -> DistributedArray<
@@ -424,6 +437,7 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessByValue<Item = Item>,
     Item: Copy + Default + std::ops::Mul<Output = Item>,
 {
+    /// Componentwise multiply the array with `alpha`.
     pub fn scalar_mul(
         self,
         alpha: Item,
@@ -529,6 +543,7 @@ macro_rules! impl_unary_op_trait {
             ArrayImpl::Item: $name<Output = Out>,
             Out: Copy + Default + Equivalence,
         {
+            #[doc = "Componentwise apply the operation to the distributed array."]
             pub fn $method_name(
                 self,
             ) -> DistributedArray<
@@ -762,16 +777,25 @@ where
     }
 }
 
-impl<'a, C, Item, ArrayImpl, const NDIM: usize> MulAssign<Item>
+impl<'a, C, Other, ArrayImpl, const NDIM: usize> MulAssign<Other>
     for DistributedArray<'a, C, ArrayImpl, NDIM>
 where
     C: Communicator,
-    ArrayImpl: Shape<NDIM>,
-    ArrayImpl: BaseItem<Item = Item>,
-    Array<ArrayImpl, NDIM>: MulAssign<Item>,
+    Array<ArrayImpl, NDIM>: MulAssign<Other>,
 {
-    fn mul_assign(&mut self, rhs: Item) {
+    fn mul_assign(&mut self, rhs: Other) {
         self.local *= rhs;
+    }
+}
+
+impl<'a, C, Other, ArrayImpl, const NDIM: usize> DivAssign<Other>
+    for DistributedArray<'a, C, ArrayImpl, NDIM>
+where
+    C: Communicator,
+    Array<ArrayImpl, NDIM>: DivAssign<Other>,
+{
+    fn div_assign(&mut self, rhs: Other) {
+        self.local /= rhs;
     }
 }
 
@@ -835,7 +859,7 @@ where
     ArrayImpl: Shape<NDIM>,
 {
     /// Apply a unary operator to the distributed array.
-    pub fn apply_unary_op<OpItem, OpTarget, Op: Fn(OpItem) -> OpTarget>(
+    pub fn unary_op<OpItem, OpTarget, Op: Fn(OpItem) -> OpTarget>(
         self,
         op: Op,
     ) -> DistributedArray<'a, C, ArrayUnaryOperator<OpItem, OpTarget, ArrayImpl, Op, NDIM>, NDIM>

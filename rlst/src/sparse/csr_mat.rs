@@ -2,11 +2,13 @@
 
 use std::ops::{Add, AddAssign, Mul};
 
+use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
+use crate::dense::array::slice::ArraySlice;
 use crate::sparse::tools::normalize_aij;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
 use crate::{
-    AijIteratorMut, Array, ArrayIteratorMut, AsMatrixApply, ColumnIterator, ColumnIteratorMut,
-    FromAij, Nonzeros, RandomAccessByRef, SparseMatrixType,
+    AijIteratorMut, Array, AsMatrixApply, FromAij, Nonzeros, RandomAccessByRef, SparseMatrixType,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use itertools::{izip, Itertools};
 use num::One;
@@ -55,7 +57,10 @@ impl<Item> CsrMatrix<Item> {
     }
 }
 
-impl<Item: AddAssign + PartialEq + Copy + Default> FromAij for CsrMatrix<Item> {
+impl<Item> FromAij for CsrMatrix<Item>
+where
+    Item: AddAssign + PartialEq + Copy + Default,
+{
     fn from_aij(shape: [usize; 2], rows: &[usize], cols: &[usize], data: &[Item]) -> Self {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
@@ -184,8 +189,7 @@ where
     Item: Default + Mul<Output = Item> + AddAssign<Item> + Add<Output = Item> + Copy + One,
     Self: BaseItem<Item = Item>,
     ArrayImplX: RandomAccessByRef<1, Item = Item>,
-    ArrayImplY: BaseItem<Item = Item>,
-    Array<ArrayImplY, 1>: ArrayIteratorMut<Item = Item>,
+    ArrayImplY: UnsafeRandom1DAccessMut<Item = Item> + Shape<1>,
 {
     fn apply(
         &self,
@@ -216,11 +220,11 @@ impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 2>, Array<Arr
 where
     Item: Copy,
     Self: BaseItem<Item = Item>,
-    Array<ArrayImplX, 2>: ColumnIterator<Item = Array<ArrayImplX, 1>>,
-    Array<ArrayImplY, 2>: ColumnIteratorMut<Item = Array<ArrayImplY, 1>>,
+    ArrayImplX: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>,
+    ArrayImplY: UnsafeRandomAccessMut<2, Item = Item> + Shape<2>,
     for<'b> Self: AsMatrixApply<
-        <Array<ArrayImplX, 2> as ColumnIterator>::Col<'b>,
-        <Array<ArrayImplY, 2> as ColumnIteratorMut>::Col<'b>,
+        Array<ArraySlice<ArrayRef<'b, ArrayImplX, 2>, 2, 1>, 1>,
+        Array<ArraySlice<ArrayRefMut<'b, ArrayImplY, 2>, 2, 1>, 1>,
         1,
     >,
 {

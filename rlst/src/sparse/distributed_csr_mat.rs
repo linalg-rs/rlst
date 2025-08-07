@@ -11,9 +11,8 @@ use mpi::traits::{Communicator, Equivalence};
 use crate::dense::array::DynArray;
 use crate::distributed_tools::{redistribute, sort_to_bins, GhostCommunicator, IndexLayout};
 use crate::{
-    empty_array, AijIteratorByValue, Array, ArrayIteratorByValue, AsMatrixApply, BaseItem,
-    FromAijDistributed, Len, Nonzeros, RandomAccessByValue, Shape, SparseMatrixType,
-    UnsafeRandomAccessByValue,
+    empty_array, AijIteratorByValue, Array, AsMatrixApply, BaseItem, FromAijDistributed, Nonzeros,
+    Shape, SparseMatrixType, UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue,
 };
 
 use super::csr_mat::CsrMatrix;
@@ -40,7 +39,6 @@ impl<'a, Item, C: Communicator> DistributedCsrMatrix<'a, Item, C>
 where
     Item: Copy,
     C: Communicator,
-    DynArray<Item, 1>: ArrayIteratorByValue<Item = Item>,
 {
     /// Create a new distributed CSR matrix.
     pub fn new(
@@ -206,7 +204,9 @@ where
     }
 }
 
-impl<'a, Item, C: Communicator> BaseItem for DistributedCsrMatrix<'a, Item, C> {
+impl<'a, Item: Copy + Default + Equivalence, C: Communicator> BaseItem
+    for DistributedCsrMatrix<'a, Item, C>
+{
     type Item = Item;
 }
 
@@ -228,10 +228,11 @@ impl<'a, Item, C: Communicator> SparseMatrixType for DistributedCsrMatrix<'a, It
     }
 }
 
-impl<'a, Item, C: Communicator> AijIteratorByValue for DistributedCsrMatrix<'a, Item, C>
+impl<'a, Item, C> AijIteratorByValue for DistributedCsrMatrix<'a, Item, C>
 where
-    Item: Copy + Default,
     CsrMatrix<Item>: AijIteratorByValue<Item = Item>,
+    Item: Copy + Default + Equivalence,
+    C: Communicator,
 {
     fn iter_aij_value(&self) -> impl Iterator<Item = ([usize; 2], Self::Item)> + '_ {
         self.local_matrix.iter_aij_value().map(|(index, value)| {
@@ -339,8 +340,9 @@ impl<'a, Item, C, ArrayImplX, ArrayImplY>
 where
     Item: Default + Copy + AddAssign + PartialEq + Equivalence,
     C: Communicator,
-    ArrayImplX: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
-    Array<ArrayImplX, 1>: ArrayIteratorByValue<Item = Item>,
+    ArrayImplX: UnsafeRandom1DAccessByValue<Item = Item>
+        + UnsafeRandomAccessByValue<1, Item = Item>
+        + Shape<1>,
     CsrMatrix<Item>: AsMatrixApply<DynArray<Item, 1>, Array<ArrayImplY, 1>, 1, Item = Item>,
 {
     fn apply(

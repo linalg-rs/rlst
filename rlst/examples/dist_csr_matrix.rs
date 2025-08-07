@@ -8,10 +8,7 @@ use rlst::{
     io::matrix_market::{read_array_mm, read_coordinate_mm},
     Shape,
 };
-use rlst::{
-    assert_array_relative_eq, AijIteratorByValue, AsMatrixApply, FromAijDistributed, GatherToOne,
-    ScatterFromOne,
-};
+use rlst::{assert_array_relative_eq, AijIteratorByValue, AsMatrixApply, FromAijDistributed};
 use std::path::PathBuf;
 use std::rc::Rc;
 
