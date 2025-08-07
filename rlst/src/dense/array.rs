@@ -1574,11 +1574,109 @@ mod tests {
     }
 
     #[test]
+    pub fn test_add_assign() {
+        let mut a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![2.5, 4.3, 7.0].into();
+
+        a += b;
+
+        crate::assert_array_relative_eq!(a, expected, 1E-10);
+    }
+
+    #[test]
     pub fn test_sub() {
         let a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
         let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
         let expected: DynArray<_, 1> = vec![-0.5, -0.3, -1.0].into();
 
         crate::assert_array_relative_eq!((a.r() - b.r()).eval(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_sub_assign() {
+        let mut a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![-0.5, -0.3, -1.0].into();
+
+        a -= b;
+
+        crate::assert_array_relative_eq!(a, expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_cmp_mul() {
+        let a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![1.5, 4.6, 12.0].into();
+
+        crate::assert_array_relative_eq!(a.r() * b.r(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_cmp_mul_assign() {
+        let mut a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![1.5, 4.6, 12.0].into();
+
+        a *= b;
+
+        crate::assert_array_relative_eq!(a, expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_scalar_mul() {
+        let a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let expected: DynArray<_, 1> = vec![2.0, 4.0, 6.0].into();
+
+        crate::assert_array_relative_eq!(2.0_f64 * a.r(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_scalar_mul_assign() {
+        let mut a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let expected: DynArray<_, 1> = vec![2.0, 4.0, 6.0].into();
+
+        a *= 2.0;
+
+        crate::assert_array_relative_eq!(a.r(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_cmp_div() {
+        let a: DynArray<_, 1> = vec![1.5, 4.6, 12.0].into();
+        let b: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let expected: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+
+        crate::assert_array_relative_eq!(a.r() / b.r(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_cmp_div_assign() {
+        let mut a: DynArray<_, 1> = vec![1.5, 4.6, 12.0].into();
+        let b: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let expected: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+
+        a /= b;
+
+        crate::assert_array_relative_eq!(a, expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_scalar_div() {
+        let a: DynArray<_, 1> = vec![2.0, 4.0, 6.0].into();
+        let expected: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+
+        crate::assert_array_relative_eq!(a.r() / 2.0, expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_scalar_div_assign() {
+        let mut a: DynArray<_, 1> = vec![2.0, 4.0, 6.0].into();
+        let expected: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+
+        a /= 2.0;
+
+        crate::assert_array_relative_eq!(a.r(), expected, 1E-10);
     }
 }
