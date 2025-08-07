@@ -14,7 +14,6 @@ use crate::{
             lapack::Lapack,
         },
     },
-    AsOwnedRefType, AsOwnedRefTypeMut,
 };
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> Solve<Array<RhsArrayImpl, NDIM>>

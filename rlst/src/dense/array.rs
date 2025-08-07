@@ -22,6 +22,7 @@ use paste::paste;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, StandardNormal, StandardUniform};
+use reference::{ArrayRef, ArrayRefMut};
 
 use crate::{
     base_types::{c32, c64},
@@ -115,6 +116,18 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     #[inline(always)]
     pub fn into_imp(self) -> ArrayImpl {
         self.0
+    }
+
+    /// Create an owned reference to the array.
+    #[inline(always)]
+    pub fn r(&self) -> Array<ArrayRef<'_, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayRef::new(self))
+    }
+
+    /// Create an owned mutable reference to the array.
+    #[inline(always)]
+    pub fn r_mut(&mut self) -> Array<ArrayRefMut<'_, ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArrayRefMut::new(self))
     }
 }
 
@@ -1546,48 +1559,26 @@ impl_unary_op_trait!(Asinh, asinh);
 impl_unary_op_trait!(Acosh, acosh);
 impl_unary_op_trait!(Atanh, atanh);
 
-// impl<ArrayImpl, ArrayImplOther, const NDIM: usize> AddAssign<Array<ArrayImplOther, NDIM>>
-//     for Array<ArrayImpl, NDIM>
-// where
-//     Array<ArrayImpl, NDIM>: SumFrom<Array<ArrayImplOther, NDIM>>,
-// {
-//     fn add_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
-//         self.sum_from(&rhs)
-//     }
-// }
+#[cfg(test)]
+mod tests {
 
-// impl<Out, ArrayImpl, ArrayImplOther, const NDIM: usize> SubAssign<Array<ArrayImplOther, NDIM>>
-//     for Array<ArrayImpl, NDIM>
-// where
-//     Array<ArrayImplOther, NDIM>: Neg<Output = Out>,
-//     Array<ArrayImpl, NDIM>: SumFrom<Out>,
-// {
-//     fn sub_assign(&mut self, rhs: Array<ArrayImplOther, NDIM>) {
-//         self.sum_from(&rhs.neg())
-//     }
-// }
+    use super::*;
 
-// impl<Item, ArrayImpl, const NDIM: usize> MulAssign<Item> for Array<ArrayImpl, NDIM>
-// where
-//     Item: Copy,
-//     Self: ArrayIteratorMut<Item = Item>,
-//     Item: MulAssign<Item>,
-// {
-//     fn mul_assign(&mut self, rhs: Item) {
-//         for item in self.iter_mut() {
-//             *item *= rhs;
-//         }
-//     }
-// }
+    #[test]
+    pub fn test_add() {
+        let a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![2.5, 4.3, 7.0].into();
 
-// impl<Item, ArrayImpl, const NDIM: usize> Neg for Array<ArrayImpl, NDIM>
-// where
-//     ArrayImpl: BaseItem<Item = Item>,
-//     Item: Neg<Output = Item>,
-// {
-//     type Output = Array<ArrayNeg<ArrayImpl, NDIM>, NDIM>;
+        crate::assert_array_relative_eq!((a.r() + b.r()).eval(), expected, 1E-10);
+    }
 
-//     fn neg(self) -> Self::Output {
-//         Array::new(ArrayNeg::new(self))
-//     }
-// }
+    #[test]
+    pub fn test_sub() {
+        let a: DynArray<_, 1> = vec![1.0, 2.0, 3.0].into();
+        let b: DynArray<_, 1> = vec![1.5, 2.3, 4.0].into();
+        let expected: DynArray<_, 1> = vec![-0.5, -0.3, -1.0].into();
+
+        crate::assert_array_relative_eq!((a.r() - b.r()).eval(), expected, 1E-10);
+    }
+}

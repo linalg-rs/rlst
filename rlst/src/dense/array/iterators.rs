@@ -7,9 +7,7 @@ use crate::traits::accessors::{
     UnsafeRandomAccessMut,
 };
 use crate::traits::{base_operations::BaseItem, iterators::AsMultiIndex};
-use crate::{
-    AsOwnedRefType, AsOwnedRefTypeMut, UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef,
-};
+use crate::{UnsafeRandom1DAccessByRef, UnsafeRandomAccessByRef};
 
 use super::reference::{self, ArrayRefMut};
 use super::slice::ArraySlice;

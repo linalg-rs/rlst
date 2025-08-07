@@ -3,10 +3,7 @@
 use std::rc::Rc;
 
 use mpi::{self, traits::Communicator};
-use rlst::{
-    assert_array_relative_eq, dense::array::DynArray, distributed_tools::IndexLayout,
-    AsOwnedRefType,
-};
+use rlst::{assert_array_relative_eq, dense::array::DynArray, distributed_tools::IndexLayout};
 
 /// Test three dimensional distributed arrays.
 fn test_scatter_dim3<C: Communicator>(comm: &C) {

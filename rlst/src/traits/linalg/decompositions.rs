@@ -18,7 +18,6 @@ use crate::{
         },
     },
     traits::{base_operations::EvaluateObject, rlst_num::RlstScalar},
-    AsOwnedRefType,
 };
 
 use super::{base::Gemm, lapack::Lapack};

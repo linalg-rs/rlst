@@ -22,8 +22,8 @@ use num::traits::MulAdd;
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
 use crate::EvaluateRowMajorArray;
 use crate::{
-    Array, AsOwnedRefType, AsOwnedRefTypeMut, BaseItem, Conj, EvaluateObject, Max, RlstResult,
-    Shape, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    Array, BaseItem, Conj, EvaluateObject, Max, RlstResult, Shape, UnsafeRandom1DAccessByValue,
+    UnsafeRandom1DAccessMut,
 };
 
 use mpi::datatype::PartitionMut;

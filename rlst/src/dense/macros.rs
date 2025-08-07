@@ -50,7 +50,7 @@ mod test {
 
     use rand::SeedableRng;
 
-    use crate::{dense::array::DynArray, empty_array, AsOwnedRefType, MultIntoResize};
+    use crate::{dense::array::DynArray, empty_array, MultIntoResize};
 
     #[test]
     fn test_dot() {

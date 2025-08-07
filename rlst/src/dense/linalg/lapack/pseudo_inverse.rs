@@ -10,7 +10,7 @@ use crate::{
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
-    AsOwnedRefType, Shape, UnsafeRandom1DAccessByValue,
+    Shape, UnsafeRandom1DAccessByValue,
 };
 
 /// A structure representing the pseudo-inverse of a matrix.

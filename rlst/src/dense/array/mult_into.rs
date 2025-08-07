@@ -3,7 +3,6 @@
 use crate::{
     base_types::TransMode,
     traits::linalg::base::{Gemm, MultInto, MultIntoResize},
-    AsOwnedRefType, AsOwnedRefTypeMut,
 };
 
 use super::{

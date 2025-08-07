@@ -13,7 +13,7 @@ use crate::{
         },
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
     },
-    AsOwnedRefType, AsOwnedRefTypeMut, ContainerType,
+    ContainerType,
 };
 
 /// Basic structure for a `View`
@@ -204,27 +204,5 @@ impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
     #[inline(always)]
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.0.resize_in_place(shape)
-    }
-}
-
-impl<ArrayImpl, const NDIM: usize> AsOwnedRefType for Array<ArrayImpl, NDIM> {
-    type RefType<'a>
-        = Array<ArrayRef<'a, ArrayImpl, NDIM>, NDIM>
-    where
-        Self: 'a;
-
-    fn r(&self) -> Self::RefType<'_> {
-        Array::new(ArrayRef::new(self))
-    }
-}
-
-impl<ArrayImpl, const NDIM: usize> AsOwnedRefTypeMut for Array<ArrayImpl, NDIM> {
-    type RefTypeMut<'a>
-        = Array<ArrayRefMut<'a, ArrayImpl, NDIM>, NDIM>
-    where
-        Self: 'a;
-
-    fn r_mut(&mut self) -> Self::RefTypeMut<'_> {
-        Array::new(ArrayRefMut::new(self))
     }
 }
