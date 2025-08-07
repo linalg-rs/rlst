@@ -25,10 +25,10 @@
 pub mod base_types;
 pub mod dense;
 pub mod distributed_tools;
+// pub mod doc;
 pub mod simd;
 pub mod sparse;
 pub mod traits;
-// pub mod doc;
 // pub mod external;
 pub mod io;
 pub mod tracing;
@@ -53,3 +53,10 @@ pub use traits::*;
 
 // Re-export the base types
 pub use base_types::*;
+
+#[cfg(test)]
+mod tests {
+
+    extern crate blas_src;
+    extern crate lapack_src;
+}

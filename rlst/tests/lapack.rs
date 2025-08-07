@@ -13,6 +13,9 @@ use rlst::dot;
 
 use rlst::*;
 
+extern crate blas_src;
+extern crate lapack_src;
+
 macro_rules! impl_inverse_tests {
     ($scalar:ty, $tol:expr) => {
         paste! {
