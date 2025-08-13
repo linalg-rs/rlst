@@ -1790,7 +1790,7 @@ macro_rules! implement_special_qr_real {
                         r12.r_mut()
                             .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
                             .scale_inplace(1.0 / ga_bar);
-                        println!("31");
+                        println!("31, {:?}, {}, {}", ct_bar.shape(), 1, ct_bar_shape[1]);
 
                         let mut tmp1: DynamicArray<$scalar, 2> = empty_array();
                         let mut tmp2: DynamicArray<$scalar, 2> = empty_array();
@@ -1805,6 +1805,7 @@ macro_rules! implement_special_qr_real {
                             num::Zero::zero(),
                         );
 
+                        println!("31.0");
                         tmp2.r_mut().mult_into_resize(
                             TransMode::NoTrans,
                             TransMode::NoTrans,
