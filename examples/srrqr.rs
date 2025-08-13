@@ -5,7 +5,6 @@ use rlst::{
 };
 use rlst::{Side, TransMode, TriangularMatrix, TriangularOperations, TriangularType};
 
-
 fn load_csv_mat_into_rlst(path: &str) -> DynamicArray<f64, 2> {
     let mut rdr = ReaderBuilder::new()
         .has_headers(false)
@@ -36,7 +35,6 @@ fn load_csv_mat_into_rlst(path: &str) -> DynamicArray<f64, 2> {
     mat
 }
 fn main() {
-
     let a = load_csv_mat_into_rlst("examples/A.csv");
     let pa_orig = load_csv_mat_into_rlst("examples/PA.csv");
     let r_orig = load_csv_mat_into_rlst("examples/R.csv");
