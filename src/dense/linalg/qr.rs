@@ -168,6 +168,7 @@ pub struct RankRevealingQrDecomposition<Item: RlstScalar> {
     pub rank: usize,
 }
 
+#[derive(Debug, Clone)]
 /// Define if QR is performed with or without pivoting
 pub enum RankRevealingQrType<Item> {
     /// Rank-Revealing QR
