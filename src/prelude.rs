@@ -62,13 +62,19 @@ pub use crate::dense::data_container::{
 
 pub use crate::dense::array::empty_axis::AxisPosition;
 
-pub use crate::dense::linalg::givens_rotation::{GivensRotations, GivensRotationsData};
+pub use crate::dense::linalg::givens_rotation::{
+    GivensRotation, GivensRotationData, GivensRotations, GivensRotationsOps,
+};
 pub use crate::dense::linalg::interpolative_decomposition::{IdDecomposition, MatrixId};
 pub use crate::dense::linalg::inverse::MatrixInverse;
 pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};
 pub use crate::dense::linalg::null_space::{MatrixNull, NullSpace};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
-pub use crate::dense::linalg::qr::{MatrixQr, MatrixQrDecomposition, QrDecomposition};
+pub use crate::dense::linalg::qr::{
+    MatrixQr, MatrixQrDecomposition, MatrixRankRevealingQr, Pivoting, QrDecomposition, QrTolerance,
+    RankParam, RankRevealingMatrixQrDecomposition, RankRevealingQrDecomposition,
+    RankRevealingQrType,
+};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
 pub use crate::dense::linalg::triangular_arrays::{
     Triangular, TriangularMatrix, TriangularOperations,

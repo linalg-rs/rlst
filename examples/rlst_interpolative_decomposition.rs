@@ -50,7 +50,11 @@ fn test_fat_matrix(slice: usize, n: usize, tol: f64) {
 
     let res: IdDecomposition<f64> = arr
         .r_mut()
-        .into_id_alloc(Accuracy::Tol(tol), TransMode::NoTrans)
+        .into_id_alloc(
+            Accuracy::Tol(tol),
+            RankRevealingQrType::SRRQR(1.01),
+            TransMode::NoTrans,
+        )
         .unwrap();
 
     println!("The skeleton of the matrix is given by");
@@ -86,7 +90,11 @@ fn test_skinny_matrix(slice: usize, n: usize, tol: f64) {
 
     let res: IdDecomposition<f64> = arr_trans
         .r_mut()
-        .into_id_alloc(Accuracy::Tol(tol), TransMode::Trans)
+        .into_id_alloc(
+            Accuracy::Tol(tol),
+            RankRevealingQrType::SRRQR(1.01),
+            TransMode::Trans,
+        )
         .unwrap();
 
     println!("The skeleton of the matrix is given by");

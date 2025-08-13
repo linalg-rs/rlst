@@ -1,5 +1,6 @@
 //! Null space.
 use crate::dense::array::Array;
+use crate::dense::linalg::qr::Pivoting;
 use crate::dense::traits::{
     DefaultIterator, RawAccessMut, Shape, Stride, UnsafeRandomAccessByValue,
 };
@@ -194,7 +195,7 @@ where
 {
     let shape = arr.shape();
     let dim: usize = min(shape).unwrap();
-    let qr = arr.into_qr_alloc().unwrap();
+    let qr = arr.into_qr_alloc(Pivoting::True).unwrap();
     //We compute the QR decomposition to find a linearly independent basis of the space.
     let mut q = rlst_dynamic_array2!(Item, [shape[0], shape[0]]);
     let _ = qr.get_q_alloc(q.r_mut());

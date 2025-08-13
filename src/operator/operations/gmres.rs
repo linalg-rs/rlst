@@ -9,7 +9,7 @@ use crate::ElementContainerMut;
 use crate::IndexableSpace;
 use crate::{
     rlst_dynamic_array2, DefaultIteratorMut, Element, ElementContainer, GivensRotations,
-    GivensRotationsData, LinearSpace, OperatorBase, RawAccess, TransMode, TriangularMatrix,
+    GivensRotationsOps, LinearSpace, OperatorBase, RawAccess, TransMode, TriangularMatrix,
     TriangularOperations, TriangularType, VectorFrame,
 };
 use core::f64;
@@ -122,7 +122,7 @@ where
     Space: LinearSpace,
     TriangularMatrix<<Space as LinearSpace>::F>:
         TriangularOperations<Item = <Space as LinearSpace>::F>,
-    GivensRotationsData<<Space as LinearSpace>::F>: GivensRotations<<Space as LinearSpace>::F>,
+    GivensRotations<<Space as LinearSpace>::F>: GivensRotationsOps<<Space as LinearSpace>::F>,
 {
     /// Create a new GMRES iteration
     pub fn new(op: Operator<OpImpl>, rhs: Element<Container>, dim: usize) -> Self {
@@ -242,7 +242,7 @@ where
 
         for iteration in 0..self.max_iter {
             let mut givens_rotations =
-                <GivensRotationsData<Space::F> as GivensRotations<Space::F>>::new();
+                <GivensRotations<Space::F> as GivensRotationsOps<Space::F>>::new();
             let mut v = VectorFrame::default();
             if iteration == 0 {
                 res = res.r() - self.operator.apply(self.x.r(), crate::TransMode::NoTrans);

@@ -1,14 +1,15 @@
 //! Interpolative decomposition of a matrix.
 use crate::dense::array::Array;
-use crate::dense::linalg::qr::MatrixQrDecomposition;
-use crate::dense::traits::ResizeInPlace;
 use crate::dense::traits::{
-    MultIntoResize, RandomAccessByRef, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
+    MultIntoResize, RawAccessMut, Shape, Stride, UnsafeRandomAccessByRef,
     UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::dense::types::{c32, c64, RlstResult, RlstScalar};
 use crate::dense::types::{Side, TransMode, TriangularType}; // Import TransMode from the appropriate module
 use crate::DynamicArray;
+use crate::QrTolerance;
+use crate::RankParam;
+use crate::RankRevealingQrType;
 use crate::{empty_array, rlst_dynamic_array2, BaseArray, VectorContainer};
 use crate::{TriangularMatrix, TriangularOperations}; // Import TriangularType from the appropriate module
 /// Compute the matrix interpolative decomposition, by providing a rank and an interpolation matrix.
@@ -40,6 +41,7 @@ pub trait MatrixId: RlstScalar {
     >(
         arr: Array<Self, ArrayImpl, 2>,
         rank_param: Accuracy<<Self as RlstScalar>::Real>,
+        qr_type: RankRevealingQrType<<Self as RlstScalar>::Real>,
         trans_mode: TransMode,
     ) -> RlstResult<IdDecomposition<Self>>;
 }
@@ -56,9 +58,10 @@ macro_rules! implement_into_id {
             >(
                 arr: Array<Self, ArrayImpl, 2>,
                 rank_param: Accuracy<<Self as RlstScalar>::Real>,
+                qr_type: RankRevealingQrType<<Self as RlstScalar>::Real>,
                 trans_mode: TransMode,
             ) -> RlstResult<IdDecomposition<Self>> {
-                IdDecomposition::<$scalar>::new(arr, rank_param, trans_mode)
+                IdDecomposition::<$scalar>::new(arr, rank_param, qr_type, trans_mode)
             }
         }
     };
@@ -82,9 +85,10 @@ impl<
     pub fn into_id_alloc(
         self,
         rank_param: Accuracy<<Item as RlstScalar>::Real>,
+        qr_type: RankRevealingQrType<<Item as RlstScalar>::Real>,
         trans_mode: TransMode,
     ) -> RlstResult<IdDecomposition<Item>> {
-        <Item as MatrixId>::into_id_alloc(self, rank_param, trans_mode)
+        <Item as MatrixId>::into_id_alloc(self, rank_param, qr_type, trans_mode)
     }
 }
 
@@ -102,6 +106,7 @@ pub trait MatrixIdDecomposition: Sized {
     >(
         arr: Array<Self::Item, ArrayImpl, 2>,
         rank_param: Accuracy<<Self::Item as RlstScalar>::Real>,
+        qr_type: RankRevealingQrType<<Self::Item as RlstScalar>::Real>,
         trans_mode: TransMode,
     ) -> RlstResult<Self>;
 
@@ -154,11 +159,12 @@ macro_rules! impl_id {
             >(
                 arr: Array<$scalar, ArrayImpl, 2>,
                 rank_param: Accuracy<<$scalar as RlstScalar>::Real>,
+                qr_type: RankRevealingQrType<<$scalar as RlstScalar>::Real>,
                 trans_mode: TransMode,
             ) -> RlstResult<Self> {
                 //We compute the QR decomposition using rlst QR decomposition
                 let mut arr_work = empty_array();
-                let mut u_tri = empty_array();
+                //let mut u_tri = empty_array();
 
                 match trans_mode {
                     TransMode::Trans => arr_work.fill_from_resize(arr.r()),
@@ -167,20 +173,62 @@ macro_rules! impl_id {
                     TransMode::ConjTrans => arr_work.fill_from_resize(arr.r().transpose().conj()),
                 };
 
+                let (mut r, perm, rank) = match qr_type {
+                    RankRevealingQrType::RRQR => match rank_param {
+                        Accuracy::Tol(tol) => {
+                            let rrqr = arr_work.r_mut().into_rrqr_alloc(
+                                RankRevealingQrType::RRQR,
+                                RankParam::Tol(tol, QrTolerance::Rel),
+                            );
+                            (rrqr.r, rrqr.perm, rrqr.rank)
+                        }
+                        Accuracy::FixedRank(k) => {
+                            let rrqr = arr_work
+                                .r_mut()
+                                .into_rrqr_alloc(RankRevealingQrType::RRQR, RankParam::Rank(k));
+                            (rrqr.r, rrqr.perm, rrqr.rank)
+                        }
+                        Accuracy::MaxRank(tol, k) => {
+                            let rrqr = arr_work.r_mut().into_rrqr_alloc(
+                                RankRevealingQrType::RRQR,
+                                RankParam::Tol(tol, QrTolerance::Rel),
+                            );
+                            let rank = std::cmp::max(k, rrqr.rank);
+                            (rrqr.r, rrqr.perm, rank)
+                        }
+                    },
+                    RankRevealingQrType::SRRQR(f) => match rank_param {
+                        Accuracy::Tol(tol) => {
+                            let rrqr = arr_work.r_mut().into_rrqr_alloc(
+                                RankRevealingQrType::SRRQR(f),
+                                RankParam::Tol(tol, QrTolerance::Rel),
+                            );
+                            (rrqr.r, rrqr.perm, rrqr.rank)
+                        }
+                        Accuracy::FixedRank(k) => {
+                            let rrqr = arr_work
+                                .r_mut()
+                                .into_rrqr_alloc(RankRevealingQrType::SRRQR(f), RankParam::Rank(k));
+                            (rrqr.r, rrqr.perm, rrqr.rank)
+                        }
+                        Accuracy::MaxRank(_tol, _k) => panic!("Max Rank nor implemented for SRRQR"),
+                    },
+                };
+
                 let shape = arr_work.shape();
-                u_tri.resize_in_place([shape[1], shape[1]]);
+                //u_tri.resize_in_place([shape[1], shape[1]]);
                 let dim = shape[1];
 
-                let qr = arr_work.r_mut().into_qr_alloc().unwrap();
+                //let qr = arr_work.r_mut().into_qr_alloc(Pivoting::True).unwrap();
                 //We obtain relevant parameters of the decomposition: the permutation induced by the pivoting and the R matrix
-                let perm = qr.get_perm();
-                qr.get_r(u_tri.r_mut());
+                //let perm = qr.get_perm();
+                //qr.get_r(u_tri.r_mut());
 
                 //The maximum rank is given by the number of columns of the transposed matrix
-                let rank: usize;
+                //let rank: usize;
 
                 //The rank can be given a priori, in which case, we do not need to compute the rank using the tolerance parameter.
-                match rank_param {
+                /*match rank_param {
                     Accuracy::Tol(tol) => {
                         rank = rank_from_tolerance(u_tri.r_mut(), tol);
                     }
@@ -188,7 +236,7 @@ macro_rules! impl_id {
                     Accuracy::MaxRank(tol, k) => {
                         rank = std::cmp::max(k, rank_from_tolerance(u_tri.r_mut(), tol));
                     }
-                }
+                }*/
 
                 let mut permutation = rlst_dynamic_array2!($scalar, [shape[1], shape[1]]);
                 permutation.set_zero();
@@ -227,14 +275,12 @@ macro_rules! impl_id {
                     let mut id_mat: DynamicArray<$scalar, 2> =
                         rlst_dynamic_array2!($scalar, [dim - rank, rank]);
                     let r11 = TriangularMatrix::<$scalar>::new(
-                        &u_tri.r_mut().into_subview([0, 0], [rank, rank]),
+                        &r.r_mut().into_subview([0, 0], [rank, rank]),
                         TriangularType::Upper,
                     )
                     .unwrap();
 
-                    let mut r12 = u_tri
-                        .r_mut()
-                        .into_subview([0, rank], [rank, shape[1] - rank]);
+                    let mut r12 = r.r_mut().into_subview([0, rank], [rank, shape[1] - rank]);
                     r11.solve(&mut r12, Side::Left, TransMode::NoTrans);
 
                     id_mat.fill_from(r12.r().conj().transpose().r());
@@ -271,31 +317,3 @@ impl_id!(f64);
 impl_id!(f32);
 impl_id!(c32);
 impl_id!(c64);
-
-/// Compute the rank of the decomposition from a given tolerance
-fn rank_from_tolerance<
-    Item: RlstScalar,
-    ArrayImplMut: UnsafeRandomAccessByValue<2, Item = Item>
-        + Shape<2>
-        + UnsafeRandomAccessMut<2, Item = Item>
-        + UnsafeRandomAccessByRef<2, Item = Item>,
->(
-    ut_mat: Array<Item, ArrayImplMut, 2>,
-    tol: <Item as RlstScalar>::Real,
-) -> usize {
-    let dim = ut_mat.shape()[0];
-    let max = ut_mat.get([0, 0]).unwrap().abs();
-
-    //We compute the rank of the matrix
-    if max.re() > num::Zero::zero() {
-        let mut rank = 0;
-        for i in 0..dim {
-            if ut_mat.get([i, i]).unwrap().abs() > tol * max {
-                rank += 1;
-            }
-        }
-        rank
-    } else {
-        dim
-    }
-}

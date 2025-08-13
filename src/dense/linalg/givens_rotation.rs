@@ -1,5 +1,5 @@
 //! Givens rotations
-use crate::RlstScalar;
+use crate::{rlst_dynamic_array2, DynamicArray, RlstScalar};
 use num::Complex;
 
 #[inline]
@@ -86,18 +86,72 @@ unsafe fn clartg(
     lapack_sys::clartg_(f_ptr, g_ptr, cs_ptr, sn_ptr, r_ptr)
 }
 
-/// This structure stores a set of Givens rotations extracted from matrix
-pub struct GivensRotationsData<Item: RlstScalar> {
+/// Data associated to a Givens Rotation
+pub struct GivensRotationData<Item: RlstScalar> {
     /// Cosine
-    pub c: Vec<<Item as RlstScalar>::Real>,
+    pub c: <Item as RlstScalar>::Real,
     /// Sin
-    pub s: Vec<Item>,
+    pub s: Item,
     /// Magnitude
-    pub r: Vec<Item>,
+    pub r: Item,
 }
 
-/// Implementation of Givens Rotations
-pub trait GivensRotations<Item: RlstScalar> {
+/// Implementation of a Givens Rotation
+pub trait GivensRotation<Item: RlstScalar> {
+    /// Creation of Givens Rotation
+    fn new(f: Item, g: Item) -> Self;
+    /// Extract the givens matrix
+    fn get_givens_matrix(&self) -> DynamicArray<Item, 2>;
+}
+
+macro_rules! givens_rot {
+    ($scalar:ty, $lartg:expr) => {
+        impl GivensRotation<$scalar> for GivensRotationData<$scalar> {
+            fn new(f: $scalar, g: $scalar) -> Self {
+                match f.is_finite() && g.is_finite() {
+                    true => {
+                        let mut c = [num::Zero::zero()];
+                        let mut s = [num::Zero::zero()];
+                        let mut r = [num::Zero::zero()];
+                        let f_arr = [f];
+                        let g_arr = [g];
+                        unsafe {
+                            $lartg(&f_arr, &g_arr, &mut c, &mut s, &mut r);
+                        }
+
+                        Self {
+                            c: c[0],
+                            s: s[0],
+                            r: r[0],
+                        }
+                    }
+                    _ => panic!("At least one value in the Givens rotation is not finite."),
+                }
+            }
+
+            fn get_givens_matrix(&self) -> DynamicArray<$scalar, 2> {
+                let mut mat = rlst_dynamic_array2!($scalar, [2, 2]);
+                mat.r_mut()[[0, 0]] = <$scalar as RlstScalar>::from_real(self.c);
+                mat.r_mut()[[0, 1]] = self.s;
+                mat.r_mut()[[1, 0]] = -self.s.conj();
+                mat.r_mut()[[1, 1]] = <$scalar as RlstScalar>::from_real(self.c);
+
+                mat
+            }
+        }
+    };
+}
+
+givens_rot!(f32, slartgp);
+givens_rot!(f64, dlartgp);
+givens_rot!(Complex<f32>, clartg);
+givens_rot!(Complex<f64>, zlartg);
+
+/// A set of consecutive Givens rotations
+pub type GivensRotations<T> = Vec<GivensRotationData<T>>;
+
+/// Define a trait for GivensRotations operations
+pub trait GivensRotationsOps<Item: RlstScalar> {
     /// Create the Givens Rotations structure
     fn new() -> Self;
     /// Creation of Givens Rotation
@@ -113,62 +167,39 @@ pub trait GivensRotations<Item: RlstScalar> {
     fn get_last(&self) -> (<Item as RlstScalar>::Real, Item, Item);
 }
 
-macro_rules! impl_givens_rot {
-    ($scalar:ty, $lartg:expr) => {
-        impl GivensRotations<$scalar> for GivensRotationsData<$scalar> {
-            fn new() -> Self {
-                let c = Vec::new();
-                let s = Vec::new();
-                let r = Vec::new();
+// Implement the trait for Vec<GivensRotationData<Item>>
+impl<Item: RlstScalar> GivensRotationsOps<Item> for Vec<GivensRotationData<Item>>
+where
+    GivensRotationData<Item>: GivensRotation<Item>,
+{
+    fn new() -> Self {
+        Vec::new()
+    }
+    fn add(&mut self, f: Item, g: Item) {
+        self.push(GivensRotation::new(f, g));
+    }
 
-                Self { c, s, r }
-            }
+    fn apply_rotation(&self, vec: &mut [Item; 2], ind: usize) {
+        let gr = &self[ind];
+        let c = Item::from_real(gr.c);
+        let s = gr.s;
+        let v0 = vec[0];
+        let v1 = vec[1];
 
-            fn add(&mut self, f: $scalar, g: $scalar) {
-                match f.is_finite() && g.is_finite() {
-                    true => {
-                        let mut c = [num::Zero::zero()];
-                        let mut s = [num::Zero::zero()];
-                        let mut r = [num::Zero::zero()];
-                        let f_arr = [f];
-                        let g_arr = [g];
-                        unsafe {
-                            $lartg(&f_arr, &g_arr, &mut c, &mut s, &mut r);
-                        }
+        vec[0] = c * v0 + s * v1;
+        vec[1] = -s.conj() * v0 + c * v1;
+    }
 
-                        self.c.push(c[0]);
-                        self.s.push(s[0]);
-                        self.r.push(r[0]);
-                    }
-                    _ => panic!("At least one value in the Givens rotation is not finite."),
-                }
-            }
+    fn get_rotated_vector(&self, ind: usize) -> [Item; 2] {
+        let gr = &self[ind];
+        [gr.r, num::Zero::zero()]
+    }
 
-            fn apply_rotation(&self, vec: &mut [$scalar; 2], ind: usize) {
-                let v0 = vec[0];
-                let v1 = vec[1];
-
-                vec[0] = self.c[ind] * v0 + self.s[ind] * v1;
-                vec[1] = -self.s[ind].conj() * v0 + self.c[ind] * v1;
-            }
-
-            fn get_rotated_vector(&self, ind: usize) -> [$scalar; 2] {
-                [self.r[ind], num::Zero::zero()]
-            }
-
-            fn get_last(&self) -> (<$scalar as RlstScalar>::Real, $scalar, $scalar) {
-                if let (Some(c), Some(s), Some(r)) = (self.c.last(), self.s.last(), self.r.last()) {
-                    (*c, *s, *r)
-                } else {
-                    panic!("No Givens rotations computed yet")
-                }
-            }
+    fn get_last(&self) -> (<Item as RlstScalar>::Real, Item, Item) {
+        if let Some(gr) = self.last() {
+            (gr.c, gr.s, gr.r)
+        } else {
+            panic!("No Givens rotations computed yet")
         }
-    };
+    }
 }
-
-// Implementations of the trait for different types
-impl_givens_rot!(f32, slartgp);
-impl_givens_rot!(f64, dlartgp);
-impl_givens_rot!(Complex<f32>, clartg);
-impl_givens_rot!(Complex<f64>, zlartg);
