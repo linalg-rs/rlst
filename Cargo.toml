@@ -26,7 +26,7 @@ blas = "0.22"
 lapack = "0.20.0"
 lapack-sys = { git = "https://github.com/ignacia-fp/lapack-sys", rev = "35ac4ab6811252772d28185b5c3dbfef82188c6b" }
 thiserror = "2"
-serde = "1"
+serde = { version = "1.0", features = ["derive"] }
 bempp-distributed-tools = { git = "https://github.com/bempp/distributed_tools.git", optional = true }
 log = { version = "0.4", optional = true}
 
