@@ -1660,7 +1660,7 @@ macro_rules! implement_special_qr_real {
 
                         // Third step : zeroing out the below-diag of k+1 th columns
                         if rank - 1 < r_shape[0] {
-                            println!("18.0, {:?}", r_shape);
+                            println!("18.0, {:?}, {}", r_shape, rank -1);
                             for ind in (rank + 1)..r_shape[0] {
                                 println!("18, {:?}", r_shape);
                                 let vec_r = [r.r()[[rank, rank]], r.r()[[ind, rank]]];
