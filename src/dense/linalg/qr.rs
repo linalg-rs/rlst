@@ -1661,7 +1661,7 @@ macro_rules! implement_special_qr_real {
                         // Third step : zeroing out the below-diag of k+1 th columns
                         if rank - 1 < r_shape[0] {
                             for ind in (rank + 1)..r_shape[0] {
-                                println!("18");
+                                println!("18, {:?}", r_shape);
                                 let vec_r = [r.r()[[rank, rank]], r.r()[[ind, rank]]];
                                 let mut givens_rotation: GivensRotationData<$scalar> =
                                     GivensRotation::<$scalar>::new(vec_r[0], vec_r[1]);
