@@ -1778,10 +1778,17 @@ macro_rules! implement_special_qr_real {
                             r.r_mut()[[rank - 1, rank - 1]] = ga_bar;
                             r.r_mut()[[rank - 1, rank]] = ga * mu / rho;
                             r.r_mut()[[rank, rank]] = ga * nu / rho;
-                            r.r_mut()
-                                .into_subview([rank - 1, rank + 1], [2, r_shape[1] - (rank + 1)])
-                                .fill_from(ct_bar.r());
-                            println!("30");
+
+                            if r_shape[1] - (rank + 1) > 0 {
+                                r.r_mut()
+                                    .into_subview(
+                                        [rank - 1, rank + 1],
+                                        [2, r_shape[1] - (rank + 1)],
+                                    )
+                                    .fill_from(ct_bar.r());
+                                println!("30");
+                            }
+
                             let r11_tmp = TriangularMatrix::<$scalar>::new(
                                 &r.r().into_subview([0, 0], [rank - 1, rank - 1]),
                                 TriangularType::Upper,
@@ -1802,47 +1809,52 @@ macro_rules! implement_special_qr_real {
                             r12.r_mut()
                                 .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
                                 .fill_from(ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]));
-                            r12.r_mut()
-                                .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
-                                .scale_inplace(1.0 / ga_bar);
+
+                            if r_shape[1] - (rank + 1) > 0 {
+                                r12.r_mut()
+                                    .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
+                                    .scale_inplace(1.0 / ga_bar);
+                            }
                             println!("31, {:?}, {}, {}", ct_bar.shape(), 1, ct_bar_shape[1]);
 
                             let mut tmp1: DynamicArray<$scalar, 2> = empty_array();
                             let mut tmp2: DynamicArray<$scalar, 2> = empty_array();
                             let mut tmp3: DynamicArray<$scalar, 2> = empty_array();
 
-                            tmp1.r_mut().mult_into_resize(
-                                TransMode::NoTrans,
-                                TransMode::NoTrans,
-                                nu / ga_bar,
-                                u.r(),
-                                ct_bar.r().into_subview([1, 0], [1, ct_bar_shape[1]]),
-                                num::Zero::zero(),
-                            );
+                            if r_shape[1] - (rank + 1) > 0 {
+                                tmp1.r_mut().mult_into_resize(
+                                    TransMode::NoTrans,
+                                    TransMode::NoTrans,
+                                    nu / ga_bar,
+                                    u.r(),
+                                    ct_bar.r().into_subview([1, 0], [1, ct_bar_shape[1]]),
+                                    num::Zero::zero(),
+                                );
 
-                            println!("31.0");
-                            tmp2.r_mut().mult_into_resize(
-                                TransMode::NoTrans,
-                                TransMode::NoTrans,
-                                -1.0 / ga_bar,
-                                u1.r(),
-                                ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]),
-                                num::Zero::zero(),
-                            );
+                                println!("31.0");
+                                tmp2.r_mut().mult_into_resize(
+                                    TransMode::NoTrans,
+                                    TransMode::NoTrans,
+                                    -1.0 / ga_bar,
+                                    u1.r(),
+                                    ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]),
+                                    num::Zero::zero(),
+                                );
 
-                            println!(
-                                "31.1, {:?}, {}, {}",
-                                r12.r().shape(),
-                                rank - 1,
-                                r12_shape[1] - 1
-                            );
+                                println!(
+                                    "31.1, {:?}, {}, {}",
+                                    r12.r().shape(),
+                                    rank - 1,
+                                    r12_shape[1] - 1
+                                );
 
-                            tmp3.r_mut().fill_from_resize(
-                                r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
-                            );
-                            r12.r_mut()
-                                .into_subview([0, 1], [rank - 1, r12_shape[1] - 1])
-                                .fill_from(tmp1.r() + tmp2.r() + tmp3.r());
+                                tmp3.r_mut().fill_from_resize(
+                                    r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
+                                );
+                                r12.r_mut()
+                                    .into_subview([0, 1], [rank - 1, r12_shape[1] - 1])
+                                    .fill_from(tmp1.r() + tmp2.r() + tmp3.r());
+                            }
                             println!("32");
                             gamma[0] = ga * nu / rho;
 
@@ -1872,7 +1884,7 @@ macro_rules! implement_special_qr_real {
                                 r: 1.0,
                             };
 
-                            if rank - 1 < r_shape[0] {
+                            if rank < r_shape[0] {
                                 let g = givens_rotation.get_givens_matrix();
                                 let q_shape = q.shape();
                                 let mut q_block =
