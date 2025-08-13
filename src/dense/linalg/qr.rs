@@ -1814,6 +1814,8 @@ macro_rules! implement_special_qr_real {
                             num::Zero::zero(),
                         );
 
+                        println!("31.1, {:?}, {}, {}", r12.r().shape(), rank -1, r12_shape[1] - 1 );
+
                         tmp3.r_mut().fill_from_resize(
                             r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
                         );
