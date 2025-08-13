@@ -51,7 +51,8 @@ pub use crate::dense::traits::{
 };
 
 pub use crate::dense::types::{
-    c32, c64, DataChunk, RlstBase, RlstError, RlstNum, RlstResult, RlstScalar, TransMode,
+    c32, c64, DataChunk, RlstBase, RlstError, RlstNum, RlstResult, RlstScalar, Side, TransMode,
+    TriangularType,
 };
 
 pub use crate::dense::base_array::BaseArray;
@@ -61,11 +62,23 @@ pub use crate::dense::data_container::{
 
 pub use crate::dense::array::empty_axis::AxisPosition;
 
+pub use crate::dense::linalg::givens_rotation::{
+    GivensRotation, GivensRotationData, GivensRotations, GivensRotationsOps,
+};
+pub use crate::dense::linalg::interpolative_decomposition::{IdDecomposition, MatrixId};
 pub use crate::dense::linalg::inverse::MatrixInverse;
 pub use crate::dense::linalg::lu::{LuDecomposition, MatrixLuDecomposition};
+pub use crate::dense::linalg::null_space::{MatrixNull, NullSpace};
 pub use crate::dense::linalg::pseudo_inverse::MatrixPseudoInverse;
-pub use crate::dense::linalg::qr::{MatrixQr, QrDecomposition};
+pub use crate::dense::linalg::qr::{
+    MatrixQr, MatrixQrDecomposition, MatrixRankRevealingQr, Pivoting, QrDecomposition, QrTolerance,
+    RankParam, RankRevealingMatrixQrDecomposition, RankRevealingQrDecomposition,
+    RankRevealingQrType,
+};
 pub use crate::dense::linalg::svd::{MatrixSvd, SvdMode};
+pub use crate::dense::linalg::triangular_arrays::{
+    Triangular, TriangularMatrix, TriangularOperations,
+};
 
 pub use crate::dense::array::rank1_array::Rank1Array;
 
@@ -93,6 +106,8 @@ pub use crate::operator::element::{
     Element, ElementContainer, ElementContainerMut, ScalarTimesElement,
 };
 pub use crate::operator::operations::conjugate_gradients::CgIteration;
+pub use crate::operator::operations::eigenvalues::eigs::Eigs;
+pub use crate::operator::operations::gmres::GmresIteration;
 pub use crate::operator::operations::modified_gram_schmidt::ModifiedGramSchmidt;
 pub use crate::operator::space::frame::{Frame, VectorFrame};
 pub use crate::operator::OperatorLeftScalarMul;
