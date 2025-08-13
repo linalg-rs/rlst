@@ -15,6 +15,7 @@ use lapack::{
     cgeqp3, cgeqrf, cunmqr, dgeqp3, dgeqrf, dormqr, sgeqp3, sgeqrf, sormqr, zgeqp3, zgeqrf, zunmqr,
 };
 use num::Zero;
+use serde::Deserialize;
 
 /// Compute a QR decomposition from a given two-dimensional array.
 pub trait MatrixQr: RlstScalar {
@@ -168,7 +169,7 @@ pub struct RankRevealingQrDecomposition<Item: RlstScalar> {
     pub rank: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 /// Define if QR is performed with or without pivoting
 pub enum RankRevealingQrType<Item> {
     /// Rank-Revealing QR
