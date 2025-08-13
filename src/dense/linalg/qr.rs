@@ -1091,11 +1091,11 @@ macro_rules! implement_special_qr_real {
                     f: <$scalar as RlstScalar>::Real,
                 ) -> Option<(usize, usize)> {
                     let shape = id_mat.shape();
-                    let f2 = f.powi(2);
+                    let f2 = f.pow(2.0);
                     for j in 0..shape[1] {
                         for i in 0..shape[0] {
-                            let remaining_blocks_norm = (gamma[j] * (1.0 / omega[i])).abs().powi(2);
-                            let id_mat_norm = id_mat[[i, j]].abs().powi(2);
+                            let remaining_blocks_norm = (gamma[j] * (1.0 / omega[i])).pow(2.0);
+                            let id_mat_norm = id_mat[[i, j]].abs().pow(2.0);
 
                             if id_mat_norm + remaining_blocks_norm > f2 {
                                 return Some((i, j));
@@ -1128,94 +1128,320 @@ macro_rules! implement_special_qr_real {
                     f = 2.0;
                 }
 
-                let (mut q, mut r, mut perm, rank) = Self::rrqr(arr.r_mut(), RankParam::Rank(rank));
+                let (mut q, mut r, mut perm, mut rank) =
+                    Self::rrqr(arr.r_mut(), RankParam::Rank(rank));
                 let [m, n] = arr.shape();
                 let r_shape = r.shape();
                 let q_shape = q.shape();
 
-                let dim = m.min(n);
+                if rank == r_shape[0] {
+                    return (q, r, perm, rank);
+                }
 
-                let (r11, mut r12, r22) = get_r_blocks(&r, dim, rank);
-                let mut r11_inv = rlst_dynamic_array2!($scalar, [rank, rank]);
-                r11_inv.r_mut().set_identity();
-                r11.solve(&mut r11_inv, Side::Left, TransMode::NoTrans);
-                r11.solve(&mut r12, Side::Left, TransMode::NoTrans);
+                if rank > 1 {
+                    let dim = m.min(n);
+                    let (r11, mut r12, r22) = get_r_blocks(&r, dim, rank);
+                    let mut r11_inv = rlst_dynamic_array2!($scalar, [rank, rank]);
+                    r11_inv.r_mut().set_identity();
+                    r11.solve(&mut r11_inv, Side::Left, TransMode::NoTrans);
+                    r11.solve(&mut r12, Side::Left, TransMode::NoTrans);
+                    let mut gamma = (0..dim - rank)
+                        .map(|j| r22.r().slice(1, j).norm_2())
+                        .collect::<Vec<_>>();
 
-                let mut gamma = (0..dim - rank)
-                    .map(|j| Self::Item::from(r22.r().slice(1, j).norm_2()))
-                    .collect::<Vec<$scalar>>();
+                    let mut omega = (0..rank)
+                        .map(|i| 1.0 / r11_inv.r().slice(0, i).norm_2())
+                        .collect::<Vec<_>>();
 
-                let mut omega = (0..rank)
-                    .map(|i| Self::Item::from(1.0 / r11_inv.r().slice(0, i).norm_2()))
-                    .collect::<Vec<$scalar>>();
+                    loop {
+                        let indices = find_indices(&r12, &gamma, &omega, f);
 
-                loop {
-                    let indices = find_indices(&r12, &gamma, &omega, f);
+                        let (i, j) = match indices {
+                            Some(inds) => inds,
+                            None => break,
+                        };
 
-                    let (i, j) = match indices {
-                        Some(inds) => inds,
-                        None => break,
-                    };
-
-                    if j > 0 {
-                        permute_matrix(&mut r12, 0, j, None);
-                        gamma.swap(0, j);
-                        permute_matrix(&mut r, rank, rank + j, None);
-                        perm.swap(rank, rank + j);
-                    }
-
-                    // Second step : interchanging the i and k th columns
-                    if i < rank - 1 {
-                        let mut order: Vec<usize> = (i + 1..rank).collect(); // rank is exclusive here
-                        order.push(i);
-
-                        // Copy the original values before writing back
-                        let original = perm.clone();
-
-                        for (dest, src) in (i..rank).zip(order.iter().copied()) {
-                            perm[dest] = original[src];
-                            omega[dest] = omega[src];
+                        if j > 0 {
+                            permute_matrix(&mut r12, 0, j, None);
+                            gamma.swap(0, j);
+                            permute_matrix(&mut r, rank, rank + j, None);
+                            perm.swap(rank, rank + j);
                         }
 
-                        let mut original_r = empty_array(); // Copy original before modifying
-                        original_r.r_mut().fill_from_resize(r.r());
-                        for row in 0..r_shape[0] {
+                        // Second step : interchanging the i and k th columns
+                        if i < rank - 1 {
+                            let mut order: Vec<usize> = (i + 1..rank).collect(); // rank is exclusive here
+                            order.push(i);
+
+                            // Copy the original values before writing back
+                            let original = perm.clone();
+
                             for (dest, src) in (i..rank).zip(order.iter().copied()) {
-                                r.r_mut()[[row, dest]] = original_r[[row, src]];
+                                perm[dest] = original[src];
+                                omega[dest] = omega[src];
+                            }
+
+                            let mut original_r = empty_array(); // Copy original before modifying
+                            original_r.r_mut().fill_from_resize(r.r());
+                            for row in 0..r_shape[0] {
+                                for (dest, src) in (i..rank).zip(order.iter().copied()) {
+                                    r.r_mut()[[row, dest]] = original_r[[row, src]];
+                                }
+                            }
+
+                            // --- Row permutation for AB(i:k, :) ---
+                            let mut original_r12 = empty_array(); // Copy original before modifying
+                            original_r12.r_mut().fill_from_resize(r12.r());
+                            let r12_shape = r12.shape();
+                            for (dest, src) in (i..rank).zip(order.iter().copied()) {
+                                for col in 0..r12_shape[1] {
+                                    r12.r_mut()[[dest, col]] = original_r12[[src, col]];
+                                }
+                            }
+
+                            // Givens rotation for the triangulation of R(1:k, 1:k)
+                            for ind in i..rank {
+                                let mut r_block = r.r_mut().into_subview([ind, 0], [2, r_shape[1]]);
+                                let vec_r = r_block.r().into_subview([0, ind], [2, 1]);
+                                let mut givens_rotation: GivensRotationData<$scalar> =
+                                    GivensRotation::<$scalar>::new(vec_r[[0, 0]], vec_r[[1, 0]]);
+                                let tmp = givens_rotation.c * vec_r[[0, 0]]
+                                    + givens_rotation.s * vec_r[[1, 0]];
+
+                                if tmp < 0.0 {
+                                    // guarantee r(ind, ind) > 0
+                                    givens_rotation.c = -givens_rotation.c;
+                                    givens_rotation.s = -givens_rotation.s;
+                                    givens_rotation.r = -givens_rotation.r;
+                                }
+
+                                let g = givens_rotation.get_givens_matrix();
+                                let mut rg: DynamicArray<$scalar, 2> = empty_array();
+                                rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
+                                r_block.r_mut().fill_from(rg.r());
+
+                                let mut q_block = q.r_mut().into_subview([0, ind], [q_shape[0], 2]);
+                                let mut gq: DynamicArray<$scalar, 2> = empty_array();
+                                gq.r_mut().mult_into_resize(
+                                    TransMode::NoTrans,
+                                    TransMode::ConjTrans,
+                                    num::One::one(),
+                                    q_block.r(),
+                                    g.r(),
+                                    num::Zero::zero(),
+                                );
+                                q_block.r_mut().fill_from(gq.r());
+                            }
+
+                            if r.r()[[rank - 1, rank - 1]] < 0.0 {
+                                r.r_mut()
+                                    .into_subview([rank - 1, 0], [1, r_shape[1]])
+                                    .scale_inplace(-1.0);
+                                q.r_mut()
+                                    .into_subview([0, rank - 1], [r_shape[0], 1])
+                                    .scale_inplace(-1.0);
                             }
                         }
 
-                        // --- Row permutation for AB(i:k, :) ---
-                        let mut original_r12 = empty_array(); // Copy original before modifying
-                        original_r12.r_mut().fill_from_resize(r12.r());
+                        // Third step : zeroing out the below-diag of k+1 th columns
+                        if rank < r_shape[0] {
+                            for ind in (rank + 1)..r_shape[0] {
+                                let vec_r = [r.r()[[rank, rank]], r.r()[[ind, rank]]];
+                                let mut givens_rotation: GivensRotationData<$scalar> =
+                                    GivensRotation::<$scalar>::new(vec_r[0], vec_r[1]);
+                                let tmp =
+                                    givens_rotation.c * vec_r[0] + givens_rotation.s * vec_r[1];
+                                if tmp < 0.0 {
+                                    givens_rotation.c = -givens_rotation.c;
+                                    givens_rotation.s = -givens_rotation.s;
+                                    givens_rotation.r = -givens_rotation.r;
+                                }
+                                let g = givens_rotation.get_givens_matrix();
+                                let mut r_block = rlst_dynamic_array2!($scalar, [2, r_shape[1]]);
+                                r_block
+                                    .r_mut()
+                                    .into_subview([0, 0], [1, r_shape[1]])
+                                    .fill_from(r.r().into_subview([rank, 0], [1, r_shape[1]]));
+                                r_block
+                                    .r_mut()
+                                    .into_subview([1, 0], [1, r_shape[1]])
+                                    .fill_from(r.r().into_subview([ind, 0], [1, r_shape[1]]));
+
+                                let mut rg: DynamicArray<$scalar, 2> = empty_array();
+                                rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
+                                r.r_mut()
+                                    .into_subview([rank, 0], [1, r_shape[1]])
+                                    .fill_from(rg.r().into_subview([0, 0], [1, r_shape[1]]));
+                                r.r_mut()
+                                    .into_subview([ind, 0], [1, r_shape[1]])
+                                    .fill_from(rg.r().into_subview([1, 0], [1, r_shape[1]]));
+
+                                let mut q_block = rlst_dynamic_array2!($scalar, [q_shape[0], 2]);
+                                q_block
+                                    .r_mut()
+                                    .into_subview([0, 0], [q_shape[0], 1])
+                                    .fill_from(q.r().into_subview([0, rank], [q_shape[0], 1]));
+                                q_block
+                                    .r_mut()
+                                    .into_subview([0, 1], [q_shape[0], 1])
+                                    .fill_from(q.r().into_subview([0, ind], [q_shape[0], 1]));
+
+                                let mut gq: DynamicArray<$scalar, 2> = empty_array();
+                                gq.r_mut().mult_into_resize(
+                                    TransMode::NoTrans,
+                                    TransMode::ConjTrans,
+                                    num::One::one(),
+                                    q_block.r(),
+                                    g.r(),
+                                    num::Zero::zero(),
+                                );
+
+                                q.r_mut()
+                                    .into_subview([0, rank], [q_shape[0], 1])
+                                    .fill_from(gq.r().into_subview([0, 0], [q_shape[0], 1]));
+                                q.r_mut()
+                                    .into_subview([0, ind], [q_shape[0], 1])
+                                    .fill_from(gq.r().into_subview([0, 1], [q_shape[0], 1]));
+                            }
+                        }
+
+                        perm.swap(rank, rank - 1);
+                        // Fourth step : interchaing the k and k+1 th columns
+                        let ga = r.r()[[rank - 1, rank - 1]];
+                        let mu = r.r()[[rank - 1, rank]] / ga;
+                        let nu = if rank < r_shape[0] {
+                            r.r()[[rank, rank]] / ga
+                        } else {
+                            0.0
+                        };
+
+                        let mut p_mat = rlst_dynamic_array2!($scalar, [2, 2]);
+                        p_mat.r_mut()[[0, 0]] = mu;
+                        p_mat.r_mut()[[0, 1]] = nu;
+                        p_mat.r_mut()[[1, 0]] = nu;
+                        p_mat.r_mut()[[1, 1]] = -mu;
+
+                        let rho = (mu * mu + nu * nu).sqrt();
+                        let ga_bar = ga * rho;
+
+                        let mut ct = empty_array();
+                        ct.r_mut().fill_from_resize(
+                            r.r()
+                                .into_subview([rank - 1, rank + 1], [2, r_shape[1] - (rank + 1)]),
+                        );
+
+                        let mut ct_bar = empty_array();
+                        ct_bar.r_mut().simple_mult_into_resize(p_mat.r(), ct.r());
+                        ct_bar.scale_inplace(1.0 / rho);
+                        let ct_bar_shape = ct_bar.shape();
+
+                        let mut u = empty_array();
+                        u.r_mut()
+                            .fill_from_resize(r.r().into_subview([0, rank - 1], [rank - 1, 1]));
+
+                        // Modify R
+                        permute_matrix(&mut r, rank - 1, rank, Some(rank - 1));
+                        r.r_mut()[[rank - 1, rank - 1]] = ga_bar;
+                        r.r_mut()[[rank - 1, rank]] = ga * mu / rho;
+                        r.r_mut()[[rank, rank]] = ga * nu / rho;
+
+                        if r_shape[1] - (rank + 1) > 0 {
+                            r.r_mut()
+                                .into_subview([rank - 1, rank + 1], [2, r_shape[1] - (rank + 1)])
+                                .fill_from(ct_bar.r());
+                        }
+
+                        let r11_tmp = TriangularMatrix::<$scalar>::new(
+                            &r.r().into_subview([0, 0], [rank - 1, rank - 1]),
+                            TriangularType::Upper,
+                        )
+                        .unwrap();
+
+                        let mut u1 = empty_array();
                         let r12_shape = r12.shape();
-                        for (dest, src) in (i..rank).zip(order.iter().copied()) {
-                            for col in 0..r12_shape[1] {
-                                r12.r_mut()[[dest, col]] = original_r12[[src, col]];
-                            }
+
+                        r11_tmp.solve(&mut u, Side::Left, TransMode::NoTrans);
+                        u1.r_mut()
+                            .fill_from_resize(r12.r().into_subview([0, 0], [rank - 1, 1]));
+
+                        r12.r_mut().into_subview([0, 0], [rank - 1, 1]).fill_from(
+                            ((nu * nu) / (rho * rho)) * u.r() - (mu / (rho * rho)) * u1.r(),
+                        );
+                        r12.r_mut()[[rank - 1, 0]] = mu / (rho * rho);
+                        r12.r_mut()
+                            .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
+                            .fill_from(ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]));
+
+                        if r_shape[1] - (rank + 1) > 0 {
+                            r12.r_mut()
+                                .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
+                                .scale_inplace(1.0 / ga_bar);
                         }
-                        // Givens rotation for the triangulation of R(1:k, 1:k)
-                        for ind in i..rank - 1 {
-                            let mut r_block = r.r_mut().into_subview([ind, 0], [2, r_shape[1]]);
-                            let vec_r = r_block.r().into_subview([0, ind], [2, 1]);
-                            let mut givens_rotation: GivensRotationData<$scalar> =
-                                GivensRotation::<$scalar>::new(vec_r[[0, 0]], vec_r[[1, 0]]);
-                            let tmp = givens_rotation.c * vec_r[[0, 0]]
-                                + givens_rotation.s * vec_r[[1, 0]];
 
-                            if tmp < <$scalar as num::Zero>::zero() {
-                                // guarantee r(ind, ind) > 0
-                                givens_rotation.c = -givens_rotation.c;
-                                givens_rotation.s = -givens_rotation.s;
-                                givens_rotation.r = -givens_rotation.r;
-                            }
+                        let mut tmp1: DynamicArray<$scalar, 2> = empty_array();
+                        let mut tmp2: DynamicArray<$scalar, 2> = empty_array();
+                        let mut tmp3: DynamicArray<$scalar, 2> = empty_array();
 
+                        if r_shape[1] - (rank + 1) > 0 {
+                            tmp1.r_mut().mult_into_resize(
+                                TransMode::NoTrans,
+                                TransMode::NoTrans,
+                                nu / ga_bar,
+                                u.r(),
+                                ct_bar.r().into_subview([1, 0], [1, ct_bar_shape[1]]),
+                                num::Zero::zero(),
+                            );
+
+                            tmp2.r_mut().mult_into_resize(
+                                TransMode::NoTrans,
+                                TransMode::NoTrans,
+                                -1.0 / ga_bar,
+                                u1.r(),
+                                ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]),
+                                num::Zero::zero(),
+                            );
+
+                            tmp3.r_mut().fill_from_resize(
+                                r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
+                            );
+                            r12.r_mut()
+                                .into_subview([0, 1], [rank - 1, r12_shape[1] - 1])
+                                .fill_from(tmp1.r() + tmp2.r() + tmp3.r());
+                        }
+
+                        gamma[0] = ga * nu / rho;
+
+                        for i in 1..gamma.len() {
+                            gamma[i] = ((gamma[i].powi(2)
+                                + ct_bar.r().slice(0, 1)[[i - 1]].powi(2)
+                                - ct.r().slice(0, 1)[[i - 1]].powi(2))
+                            .max(0.0))
+                            .sqrt();
+                        }
+
+                        let mut u_bar = empty_array();
+                        u_bar.r_mut().fill_from_resize(u1.r() + mu * u.r());
+
+                        omega[rank - 1] = ga_bar;
+
+                        for i in 0..(rank - 1) {
+                            let val = omega[i].powi(-2)
+                                + u_bar.r().data()[i].powi(2) / (ga_bar * ga_bar)
+                                - u.r().data()[i].powi(2) / (ga * ga);
+                            omega[i] = 1.0 / val.sqrt();
+                        }
+
+                        let givens_rotation = GivensRotationData {
+                            c: -mu / rho,
+                            s: -nu / rho,
+                            r: 1.0,
+                        };
+
+                        if rank < r_shape[0] {
                             let g = givens_rotation.get_givens_matrix();
-                            let mut rg: DynamicArray<$scalar, 2> = empty_array();
-                            rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
-                            r_block.r_mut().fill_from(rg.r());
-
-                            let mut q_block = q.r_mut().into_subview([0, ind], [q_shape[0], 2]);
+                            let q_shape = q.shape();
+                            let mut q_block =
+                                q.r_mut().into_subview([0, rank - 1], [q_shape[0], 2]);
                             let mut gq: DynamicArray<$scalar, 2> = empty_array();
                             gq.r_mut().mult_into_resize(
                                 TransMode::NoTrans,
@@ -1227,227 +1453,21 @@ macro_rules! implement_special_qr_real {
                             );
                             q_block.r_mut().fill_from(gq.r());
                         }
-                        if r.r()[[rank - 1, rank - 1]] < <$scalar as num::Zero>::zero() {
-                            r.r_mut()
-                                .into_subview([rank - 1, 0], [1, r_shape[1]])
-                                .scale_inplace(
-                                    <$scalar as num::Zero>::zero() - <$scalar as num::One>::one(),
-                                );
-                            q.r_mut()
-                                .into_subview([0, rank - 1], [r_shape[0], 1])
-                                .scale_inplace(
-                                    <$scalar as num::Zero>::zero() - <$scalar as num::One>::one(),
-                                );
-                        }
                     }
 
-                    // Third step : zeroing out the below-diag of k+1 th columns
-                    if rank - 1 < r_shape[0] {
-                        for ind in (rank + 1)..r_shape[0] {
-                            let vec_r = [r.r()[[rank, rank]], r.r()[[ind, rank]]];
-                            let mut givens_rotation: GivensRotationData<$scalar> =
-                                GivensRotation::<$scalar>::new(vec_r[0], vec_r[1]);
-                            let tmp = givens_rotation.c * vec_r[0] + givens_rotation.s * vec_r[1];
-                            if tmp < <$scalar as num::Zero>::zero() {
-                                givens_rotation.c = -givens_rotation.c;
-                                givens_rotation.s = -givens_rotation.s;
-                                givens_rotation.r = -givens_rotation.r;
-                            }
-                            let g = givens_rotation.get_givens_matrix();
-                            let mut r_block = rlst_dynamic_array2!($scalar, [2, r_shape[1]]);
-                            r_block
-                                .r_mut()
-                                .into_subview([0, 0], [1, r_shape[1]])
-                                .fill_from(r.r().into_subview([rank, 0], [1, r_shape[1]]));
-                            r_block
-                                .r_mut()
-                                .into_subview([1, 0], [1, r_shape[1]])
-                                .fill_from(r.r().into_subview([ind, 0], [1, r_shape[1]]));
-                            let mut rg: DynamicArray<$scalar, 2> = empty_array();
-                            rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
-                            r.r_mut()
-                                .into_subview([rank, 0], [1, r_shape[1]])
-                                .fill_from(rg.r().into_subview([0, 0], [1, r_shape[1]]));
-                            r.r_mut()
-                                .into_subview([ind, 0], [1, r_shape[1]])
-                                .fill_from(rg.r().into_subview([1, 0], [1, r_shape[1]]));
+                    let mut q_trunc = empty_array();
+                    let mut r_trunc = empty_array();
+                    q_trunc
+                        .r_mut()
+                        .fill_from_resize(q.r().into_subview([0, 0], [q_shape[0], rank]));
+                    r_trunc
+                        .r_mut()
+                        .fill_from_resize(r.r().into_subview([0, 0], [rank, r_shape[1]]));
 
-                            let mut q_block = rlst_dynamic_array2!($scalar, [q_shape[0], 2]);
-                            q_block
-                                .r_mut()
-                                .into_subview([0, 0], [q_shape[0], 1])
-                                .fill_from(q.r().into_subview([0, rank], [q_shape[0], 1]));
-                            q_block
-                                .r_mut()
-                                .into_subview([0, 1], [q_shape[0], 1])
-                                .fill_from(q.r().into_subview([0, ind], [q_shape[0], 1]));
-                            let mut gq: DynamicArray<$scalar, 2> = empty_array();
-                            gq.r_mut().mult_into_resize(
-                                TransMode::NoTrans,
-                                TransMode::ConjTrans,
-                                num::One::one(),
-                                q_block.r(),
-                                g.r(),
-                                num::Zero::zero(),
-                            );
-                            q.r_mut()
-                                .into_subview([0, rank], [q_shape[0], 1])
-                                .fill_from(gq.r().into_subview([0, 0], [q_shape[0], 1]));
-                            q.r_mut()
-                                .into_subview([0, ind], [q_shape[0], 1])
-                                .fill_from(gq.r().into_subview([0, 1], [q_shape[0], 1]));
-                        }
-                    }
-
-                    perm.swap(rank, rank - 1);
-                    // Fourth step : interchaing the k and k+1 th columns
-                    let ga = r.r()[[rank - 1, rank - 1]];
-                    let mu = r.r()[[rank - 1, rank]] / ga;
-                    let nu = if rank < r_shape[0] {
-                        r.r()[[rank, rank]] / ga
-                    } else {
-                        <$scalar as num::Zero>::zero()
-                    };
-
-                    let mut p_mat = rlst_dynamic_array2!($scalar, [2, 2]);
-                    p_mat.r_mut()[[0, 0]] = mu;
-                    p_mat.r_mut()[[0, 1]] = nu;
-                    p_mat.r_mut()[[1, 0]] = nu;
-                    p_mat.r_mut()[[1, 1]] = -mu;
-
-                    let rho = (mu * mu + nu * nu).sqrt();
-                    let ga_bar = ga * rho;
-
-                    let mut ct = empty_array();
-                    ct.r_mut().fill_from_resize(
-                        r.r()
-                            .into_subview([rank - 1, rank + 1], [2, r_shape[1] - (rank + 1)]),
-                    );
-
-                    let mut ct_bar = empty_array();
-                    ct_bar.r_mut().simple_mult_into_resize(p_mat.r(), ct.r());
-                    ct_bar.scale_inplace(1.0 / rho);
-                    let ct_bar_shape = ct_bar.shape();
-
-                    let mut u = empty_array();
-                    u.r_mut()
-                        .fill_from_resize(r.r().into_subview([0, rank - 1], [rank - 1, 1]));
-
-                    // Modify R
-                    permute_matrix(&mut r, rank - 1, rank, Some(rank - 1));
-                    r.r_mut()[[rank - 1, rank - 1]] = ga_bar;
-                    r.r_mut()[[rank - 1, rank]] = ga * mu / rho;
-                    r.r_mut()[[rank, rank]] = ga * nu / rho;
-                    r.r_mut()
-                        .into_subview([rank - 1, rank + 1], [2, r_shape[1] - (rank + 1)])
-                        .fill_from(ct_bar.r());
-
-                    let r11_tmp = TriangularMatrix::<$scalar>::new(
-                        &r.r().into_subview([0, 0], [rank - 1, rank - 1]),
-                        TriangularType::Upper,
-                    )
-                    .unwrap();
-
-                    let mut u1 = empty_array();
-                    let r12_shape = r12.shape();
-
-                    r11_tmp.solve(&mut u, Side::Left, TransMode::NoTrans);
-                    u1.r_mut()
-                        .fill_from_resize(r12.r().into_subview([0, 0], [rank - 1, 1]));
-
-                    r12.r_mut()
-                        .into_subview([0, 0], [rank - 1, 1])
-                        .fill_from(((nu * nu) / (rho * rho)) * u.r() - (mu / (rho * rho)) * u1.r());
-                    r12.r_mut()[[rank - 1, 0]] = mu / (rho * rho);
-                    r12.r_mut()
-                        .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
-                        .fill_from(ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]));
-                    r12.r_mut()
-                        .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
-                        .scale_inplace(1.0 / ga_bar);
-
-                    let mut tmp1: DynamicArray<$scalar, 2> = empty_array();
-                    let mut tmp2: DynamicArray<$scalar, 2> = empty_array();
-                    let mut tmp3: DynamicArray<$scalar, 2> = empty_array();
-
-                    tmp1.r_mut().mult_into_resize(
-                        TransMode::NoTrans,
-                        TransMode::NoTrans,
-                        nu / ga_bar,
-                        u.r(),
-                        ct_bar.r().into_subview([1, 0], [1, ct_bar_shape[1]]),
-                        num::Zero::zero(),
-                    );
-
-                    tmp2.r_mut().mult_into_resize(
-                        TransMode::NoTrans,
-                        TransMode::NoTrans,
-                        -1.0 / ga_bar,
-                        u1.r(),
-                        ct_bar.r().into_subview([0, 0], [1, ct_bar_shape[1]]),
-                        num::Zero::zero(),
-                    );
-
-                    tmp3.r_mut().fill_from_resize(
-                        r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
-                    );
-                    r12.r_mut()
-                        .into_subview([0, 1], [rank - 1, r12_shape[1] - 1])
-                        .fill_from(tmp1.r() + tmp2.r() + tmp3.r());
-
-                    gamma[0] = ga * nu / rho;
-
-                    for i in 1..gamma.len() {
-                        gamma[i] = (gamma[i].powi(2) + ct_bar.r().slice(0, 1)[[i - 1]].powi(2)
-                            - ct.r().slice(0, 1)[[i - 1]].powi(2))
-                        .sqrt();
-                    }
-
-                    let mut u_bar = empty_array();
-                    u_bar.r_mut().fill_from_resize(u1.r() + mu * u.r());
-
-                    omega[rank - 1] = ga_bar;
-
-                    for i in 0..(rank - 1) {
-                        let val = omega[i].powi(-2)
-                            + u_bar.r().data()[i].powi(2) / (ga_bar * ga_bar)
-                            - u.r().data()[i].powi(2) / (ga * ga);
-                        omega[i] = 1.0 / val.sqrt();
-                    }
-
-                    let givens_rotation = GivensRotationData {
-                        c: -mu / rho,
-                        s: -nu / rho,
-                        r: num::One::one(),
-                    };
-
-                    if rank - 1 < r_shape[0] {
-                        let g = givens_rotation.get_givens_matrix();
-                        let q_shape = q.shape();
-                        let mut q_block = q.r_mut().into_subview([0, rank - 1], [q_shape[0], 2]);
-                        let mut gq: DynamicArray<$scalar, 2> = empty_array();
-                        gq.r_mut().mult_into_resize(
-                            TransMode::NoTrans,
-                            TransMode::ConjTrans,
-                            num::One::one(),
-                            q_block.r(),
-                            g.r(),
-                            num::Zero::zero(),
-                        );
-                        q_block.r_mut().fill_from(gq.r());
-                    }
+                    (q_trunc, r_trunc, perm, rank)
+                } else {
+                    (q, r, perm, rank)
                 }
-
-                let mut q_trunc = empty_array();
-                let mut r_trunc = empty_array();
-                q_trunc
-                    .r_mut()
-                    .fill_from_resize(q.r().into_subview([0, 0], [q_shape[0], rank]));
-                r_trunc
-                    .r_mut()
-                    .fill_from_resize(r.r().into_subview([0, 0], [rank, r_shape[1]]));
-
-                (q_trunc, r_trunc, perm, rank)
             }
 
             fn srrqr_tol<
@@ -1532,13 +1552,11 @@ macro_rules! implement_special_qr_real {
                     }
                 }
 
-                println!("1");
-
                 if f < 1.0 {
                     println!("Parameter f given is less than 1. Automatically set f = 2");
                     f = 2.0;
                 }
-                println!("2");
+
                 let (mut q, mut r, mut perm, mut rank) =
                     Self::rrqr(arr.r_mut(), RankParam::Tol(tol, tol_type.clone()));
                 let [m, n] = arr.shape();
@@ -1551,14 +1569,11 @@ macro_rules! implement_special_qr_real {
 
                 if rank > 1 {
                     let dim = m.min(n);
-                    println!("3");
-                    //let mut rank = rank_from_tolerance2(&mut r, &mut q, tol);
                     let (mut r11, mut r12, mut r22) = get_r_blocks(&r, dim, rank);
                     let mut r11_inv = rlst_dynamic_array2!($scalar, [rank, rank]);
                     r11_inv.r_mut().set_identity();
                     r11.solve(&mut r11_inv, Side::Left, TransMode::NoTrans);
                     r11.solve(&mut r12, Side::Left, TransMode::NoTrans);
-                    println!("4");
                     let mut gamma = (0..dim - rank)
                         .map(|j| r22.r().slice(1, j).norm_2())
                         .collect::<Vec<_>>();
@@ -1566,27 +1581,25 @@ macro_rules! implement_special_qr_real {
                     let mut omega = (0..rank)
                         .map(|i| 1.0 / r11_inv.r().slice(0, i).norm_2())
                         .collect::<Vec<_>>();
-                    println!("5");
+
                     loop {
                         loop {
-                            println!("6");
                             let indices = find_indices(&r12, &gamma, &omega, f);
 
                             let (i, j) = match indices {
                                 Some(inds) => inds,
                                 None => break,
                             };
-                            println!("7");
+
                             if j > 0 {
                                 permute_matrix(&mut r12, 0, j, None);
                                 gamma.swap(0, j);
                                 permute_matrix(&mut r, rank, rank + j, None);
                                 perm.swap(rank, rank + j);
                             }
-                            println!("8");
+
                             // Second step : interchanging the i and k th columns
                             if i < rank - 1 {
-                                println!("9");
                                 let mut order: Vec<usize> = (i + 1..rank).collect(); // rank is exclusive here
                                 order.push(i);
 
@@ -1615,10 +1628,9 @@ macro_rules! implement_special_qr_real {
                                         r12.r_mut()[[dest, col]] = original_r12[[src, col]];
                                     }
                                 }
-                                println!("10");
+
                                 // Givens rotation for the triangulation of R(1:k, 1:k)
                                 for ind in i..rank {
-                                    println!("11");
                                     let mut r_block =
                                         r.r_mut().into_subview([ind, 0], [2, r_shape[1]]);
                                     let vec_r = r_block.r().into_subview([0, ind], [2, 1]);
@@ -1629,19 +1641,19 @@ macro_rules! implement_special_qr_real {
                                         );
                                     let tmp = givens_rotation.c * vec_r[[0, 0]]
                                         + givens_rotation.s * vec_r[[1, 0]];
-                                    println!("12");
+
                                     if tmp < 0.0 {
                                         // guarantee r(ind, ind) > 0
                                         givens_rotation.c = -givens_rotation.c;
                                         givens_rotation.s = -givens_rotation.s;
                                         givens_rotation.r = -givens_rotation.r;
                                     }
-                                    println!("13");
+
                                     let g = givens_rotation.get_givens_matrix();
                                     let mut rg: DynamicArray<$scalar, 2> = empty_array();
                                     rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
                                     r_block.r_mut().fill_from(rg.r());
-                                    println!("14");
+
                                     let mut q_block =
                                         q.r_mut().into_subview([0, ind], [q_shape[0], 2]);
                                     let mut gq: DynamicArray<$scalar, 2> = empty_array();
@@ -1654,9 +1666,8 @@ macro_rules! implement_special_qr_real {
                                         num::Zero::zero(),
                                     );
                                     q_block.r_mut().fill_from(gq.r());
-                                    println!("15");
                                 }
-                                println!("16");
+
                                 if r.r()[[rank - 1, rank - 1]] < 0.0 {
                                     r.r_mut()
                                         .into_subview([rank - 1, 0], [1, r_shape[1]])
@@ -1665,14 +1676,11 @@ macro_rules! implement_special_qr_real {
                                         .into_subview([0, rank - 1], [r_shape[0], 1])
                                         .scale_inplace(-1.0);
                                 }
-                                println!("17");
                             }
 
                             // Third step : zeroing out the below-diag of k+1 th columns
                             if rank < r_shape[0] {
-                                println!("18.0, {:?}, {}", r_shape, rank - 1);
                                 for ind in (rank + 1)..r_shape[0] {
-                                    println!("18, {:?}", r_shape);
                                     let vec_r = [r.r()[[rank, rank]], r.r()[[ind, rank]]];
                                     let mut givens_rotation: GivensRotationData<$scalar> =
                                         GivensRotation::<$scalar>::new(vec_r[0], vec_r[1]);
@@ -1683,7 +1691,6 @@ macro_rules! implement_special_qr_real {
                                         givens_rotation.s = -givens_rotation.s;
                                         givens_rotation.r = -givens_rotation.r;
                                     }
-                                    println!("19");
                                     let g = givens_rotation.get_givens_matrix();
                                     let mut r_block =
                                         rlst_dynamic_array2!($scalar, [2, r_shape[1]]);
@@ -1695,7 +1702,7 @@ macro_rules! implement_special_qr_real {
                                         .r_mut()
                                         .into_subview([1, 0], [1, r_shape[1]])
                                         .fill_from(r.r().into_subview([ind, 0], [1, r_shape[1]]));
-                                    println!("20");
+
                                     let mut rg: DynamicArray<$scalar, 2> = empty_array();
                                     rg.r_mut().simple_mult_into_resize(g.r(), r_block.r());
                                     r.r_mut()
@@ -1704,7 +1711,7 @@ macro_rules! implement_special_qr_real {
                                     r.r_mut()
                                         .into_subview([ind, 0], [1, r_shape[1]])
                                         .fill_from(rg.r().into_subview([1, 0], [1, r_shape[1]]));
-                                    println!("21");
+
                                     let mut q_block =
                                         rlst_dynamic_array2!($scalar, [q_shape[0], 2]);
                                     q_block
@@ -1715,7 +1722,7 @@ macro_rules! implement_special_qr_real {
                                         .r_mut()
                                         .into_subview([0, 1], [q_shape[0], 1])
                                         .fill_from(q.r().into_subview([0, ind], [q_shape[0], 1]));
-                                    println!("22");
+
                                     let mut gq: DynamicArray<$scalar, 2> = empty_array();
                                     gq.r_mut().mult_into_resize(
                                         TransMode::NoTrans,
@@ -1725,18 +1732,16 @@ macro_rules! implement_special_qr_real {
                                         g.r(),
                                         num::Zero::zero(),
                                     );
-                                    println!("23");
+
                                     q.r_mut()
                                         .into_subview([0, rank], [q_shape[0], 1])
                                         .fill_from(gq.r().into_subview([0, 0], [q_shape[0], 1]));
                                     q.r_mut()
                                         .into_subview([0, ind], [q_shape[0], 1])
                                         .fill_from(gq.r().into_subview([0, 1], [q_shape[0], 1]));
-                                    println!("24");
                                 }
                             }
 
-                            println!("25");
                             perm.swap(rank, rank - 1);
                             // Fourth step : interchaing the k and k+1 th columns
                             let ga = r.r()[[rank - 1, rank - 1]];
@@ -1746,13 +1751,13 @@ macro_rules! implement_special_qr_real {
                             } else {
                                 0.0
                             };
-                            println!("26");
+
                             let mut p_mat = rlst_dynamic_array2!($scalar, [2, 2]);
                             p_mat.r_mut()[[0, 0]] = mu;
                             p_mat.r_mut()[[0, 1]] = nu;
                             p_mat.r_mut()[[1, 0]] = nu;
                             p_mat.r_mut()[[1, 1]] = -mu;
-                            println!("27, {:?}, {}", r_shape, rank);
+
                             let rho = (mu * mu + nu * nu).sqrt();
                             let ga_bar = ga * rho;
 
@@ -1763,7 +1768,7 @@ macro_rules! implement_special_qr_real {
                                     [2, r_shape[1] - (rank + 1)],
                                 ),
                             );
-                            println!("28");
+
                             let mut ct_bar = empty_array();
                             ct_bar.r_mut().simple_mult_into_resize(p_mat.r(), ct.r());
                             ct_bar.scale_inplace(1.0 / rho);
@@ -1772,7 +1777,7 @@ macro_rules! implement_special_qr_real {
                             let mut u = empty_array();
                             u.r_mut()
                                 .fill_from_resize(r.r().into_subview([0, rank - 1], [rank - 1, 1]));
-                            println!("29");
+
                             // Modify R
                             permute_matrix(&mut r, rank - 1, rank, Some(rank - 1));
                             r.r_mut()[[rank - 1, rank - 1]] = ga_bar;
@@ -1786,7 +1791,6 @@ macro_rules! implement_special_qr_real {
                                         [2, r_shape[1] - (rank + 1)],
                                     )
                                     .fill_from(ct_bar.r());
-                                println!("30");
                             }
 
                             let r11_tmp = TriangularMatrix::<$scalar>::new(
@@ -1815,7 +1819,6 @@ macro_rules! implement_special_qr_real {
                                     .into_subview([rank - 1, 1], [1, r12_shape[1] - 1])
                                     .scale_inplace(1.0 / ga_bar);
                             }
-                            println!("31, {:?}, {}, {}", ct_bar.shape(), 1, ct_bar_shape[1]);
 
                             let mut tmp1: DynamicArray<$scalar, 2> = empty_array();
                             let mut tmp2: DynamicArray<$scalar, 2> = empty_array();
@@ -1831,7 +1834,6 @@ macro_rules! implement_special_qr_real {
                                     num::Zero::zero(),
                                 );
 
-                                println!("31.0");
                                 tmp2.r_mut().mult_into_resize(
                                     TransMode::NoTrans,
                                     TransMode::NoTrans,
@@ -1841,13 +1843,6 @@ macro_rules! implement_special_qr_real {
                                     num::Zero::zero(),
                                 );
 
-                                println!(
-                                    "31.1, {:?}, {}, {}",
-                                    r12.r().shape(),
-                                    rank - 1,
-                                    r12_shape[1] - 1
-                                );
-
                                 tmp3.r_mut().fill_from_resize(
                                     r12.r().into_subview([0, 1], [rank - 1, r12_shape[1] - 1]),
                                 );
@@ -1855,7 +1850,7 @@ macro_rules! implement_special_qr_real {
                                     .into_subview([0, 1], [rank - 1, r12_shape[1] - 1])
                                     .fill_from(tmp1.r() + tmp2.r() + tmp3.r());
                             }
-                            println!("32");
+
                             gamma[0] = ga * nu / rho;
 
                             for i in 1..gamma.len() {
@@ -1877,7 +1872,7 @@ macro_rules! implement_special_qr_real {
                                     - u.r().data()[i].powi(2) / (ga * ga);
                                 omega[i] = 1.0 / val.sqrt();
                             }
-                            println!("33");
+
                             let givens_rotation = GivensRotationData {
                                 c: -mu / rho,
                                 s: -nu / rho,
@@ -1900,7 +1895,6 @@ macro_rules! implement_special_qr_real {
                                 );
                                 q_block.r_mut().fill_from(gq.r());
                             }
-                            println!("34");
                         }
 
                         let (i, &min_tmp) = omega
@@ -1908,7 +1902,7 @@ macro_rules! implement_special_qr_real {
                             .enumerate()
                             .min_by(|a, b| a.1.partial_cmp(b.1).unwrap())
                             .unwrap();
-                        println!("35");
+
                         match tol_type {
                             QrTolerance::Abs => {
                                 if min_tmp > tol {
@@ -1925,7 +1919,7 @@ macro_rules! implement_special_qr_real {
                                 }
                             }
                         }
-                        println!("36");
+
                         if i < rank - 1 {
                             let mut order: Vec<usize> = (i + 1..=rank - 1).collect();
                             order.push(i);
@@ -1983,7 +1977,7 @@ macro_rules! implement_special_qr_real {
                                 }
                             }
                         }
-                        println!("37");
+
                         rank -= 1;
 
                         //Update A^{-1}B, omega, gamma
@@ -2004,9 +1998,8 @@ macro_rules! implement_special_qr_real {
                         omega = (0..rank)
                             .map(|i| 1.0 / r11_inv.r().slice(0, i).norm_2())
                             .collect::<Vec<_>>();
-                        println!("38");
                     }
-                    println!("39");
+
                     let mut q_trunc = empty_array();
                     let mut r_trunc = empty_array();
                     q_trunc
@@ -2015,7 +2008,7 @@ macro_rules! implement_special_qr_real {
                     r_trunc
                         .r_mut()
                         .fill_from_resize(r.r().into_subview([0, 0], [rank, r_shape[1]]));
-                    println!("40");
+
                     (q_trunc, r_trunc, perm, rank)
                 } else {
                     (q, r, perm, rank)
