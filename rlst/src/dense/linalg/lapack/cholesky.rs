@@ -113,3 +113,54 @@ where
         Ok(b)
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::traits::base_operations::*;
+    use paste::paste;
+
+    macro_rules! implement_cholesky_test {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+            #[test]
+            fn [<test_cholesky_$scalar>]() {
+                let n = 10;
+                let mut a = DynArray::<$scalar, 2>::from_shape([n, n]);
+                a.fill_from_seed_normally_distributed(0);
+
+                // Make it symmetric positive definite
+                a = dot!(a.r().conj().transpose().eval(), a.r());
+
+                let z = a.cholesky(UpLo::Upper).unwrap();
+
+                let actual = dot!(z.r().conj().transpose().eval(), z.r());
+
+                crate::assert_array_relative_eq!(actual, a, $tol);
+
+                // Now solve a linear system with Cholesky
+
+                let mut x_expected = DynArray::<$scalar, 2>::from_shape([n, 2]);
+                x_expected.fill_from_seed_equally_distributed(1);
+
+                let b = dot!(a.r(), x_expected.r());
+
+                let x_actual = a.cholesky_solve(UpLo::Upper, &b).unwrap();
+
+                crate::assert_array_relative_eq!(x_actual, x_expected, $tol);
+            }
+
+                    }
+        };
+    }
+
+    implement_cholesky_test!(f32, 1E-3);
+    implement_cholesky_test!(f64, 1E-10);
+    implement_cholesky_test!(c32, 1E-3);
+    implement_cholesky_test!(c64, 1E-10);
+}

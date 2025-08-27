@@ -629,46 +629,6 @@ implement_triangular_solve_test!(f64, 1E-10);
 implement_triangular_solve_test!(c32, 5E-3);
 implement_triangular_solve_test!(c64, 1E-10);
 
-macro_rules! implement_cholesky_test {
-    ($scalar:ty, $tol:expr) => {
-        paste! {
-
-        #[test]
-        fn [<test_cholesky_$scalar>]() {
-            let n = 10;
-            let mut a = rlst_dynamic_array!($scalar, [n, n]);
-            a.fill_from_seed_normally_distributed(0);
-
-            // Make it symmetric positive definite
-            a = dot!(a.r().conj().transpose().eval(), a.r());
-
-            let z = a.cholesky(UpLo::Upper).unwrap();
-
-            let actual = dot!(z.r().conj().transpose().eval(), z.r());
-
-            rlst::assert_array_relative_eq!(actual, a, $tol);
-
-            // Now solve a linear system with Cholesky
-
-            let mut x_expected = rlst_dynamic_array!($scalar, [n, 2]);
-            x_expected.fill_from_seed_equally_distributed(1);
-
-            let b = dot!(a.r(), x_expected.r());
-
-            let x_actual = a.cholesky_solve(UpLo::Upper, &b).unwrap();
-
-            rlst::assert_array_relative_eq!(x_actual, x_expected, $tol);
-        }
-
-                }
-    };
-}
-
-implement_cholesky_test!(f32, 1E-3);
-implement_cholesky_test!(f64, 1E-10);
-implement_cholesky_test!(c32, 1E-3);
-implement_cholesky_test!(c64, 1E-10);
-
 macro_rules! implement_pinv_tests {
     ($scalar:ty, $tol:expr) => {
         paste! {

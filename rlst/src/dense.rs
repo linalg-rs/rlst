@@ -7,7 +7,6 @@ pub mod strided_base_array;
 pub mod tools;
 
 pub mod array;
-// // pub mod batched_gemm;
 pub mod gemm;
 pub mod layout;
 pub mod macros;

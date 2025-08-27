@@ -144,3 +144,161 @@ where
             .collect()
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::TransMode;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::empty_array;
+    use crate::MultIntoResize;
+    use paste::paste;
+
+    macro_rules! implement_qr_tests {
+    ($scalar:ty, $tol:expr) => {
+        paste! {
+
+        #[test]
+        pub fn [<test_thin_qr_$scalar>]() {
+            let mut mat = DynArray::<$scalar, 2>::from_shape([8, 5]);
+
+            mat.fill_from_seed_equally_distributed(0);
+
+            let mut ident = DynArray::<$scalar, 2>::from_shape([5, 5]);
+            ident.set_identity();
+
+            let qr = mat.qr(EnablePivoting::No).unwrap();
+
+            let q_mat = qr.q_mat(QMode::Compact).unwrap();
+            let r_mat = qr.r_mat().unwrap();
+            let p_t_mat = DynArray::new_from(&qr.p_mat().unwrap().transpose());
+
+            let actual = crate::empty_array().simple_mult_into_resize(empty_array().simple_mult_into_resize(q_mat.r(), r_mat.r()), p_t_mat.r());
+
+            crate::assert_array_relative_eq!(actual, mat, $tol);
+
+            let qtq = crate::empty_array().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
+
+            crate::assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
+
+
+        #[test]
+        pub fn [<test_thick_qr_$scalar>]() {
+            let mut mat = DynArray::<$scalar, 2>::from_shape([5, 8]);
+
+            mat.fill_from_seed_equally_distributed(0);
+
+            let mut ident = DynArray::<$scalar, 2>::from_shape([5, 5]);
+            ident.set_identity();
+
+            let qr = mat.qr(EnablePivoting::No).unwrap();
+
+            let q_mat = qr.q_mat(QMode::Compact).unwrap();
+            let r_mat = qr.r_mat().unwrap();
+            let p_t_mat = DynArray::new_from(&qr.p_mat().unwrap().transpose());
+
+            let actual = empty_array()
+                .simple_mult_into_resize(empty_array().simple_mult_into_resize(q_mat.r(), r_mat.r()), p_t_mat.r());
+
+            crate::assert_array_relative_eq!(actual, mat, $tol);
+
+            let qtq = empty_array().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
+
+            crate::assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
+
+
+        #[test]
+        pub fn [<test_thin_qr_pivoted_$scalar>]() {
+            let mut mat = DynArray::<$scalar, 2>::from_shape([8, 5]);
+
+            mat.fill_from_seed_equally_distributed(0);
+
+            let mut ident = DynArray::<$scalar, 2>::from_shape([5, 5]);
+            ident.set_identity();
+
+            let qr = mat.qr(EnablePivoting::Yes).unwrap();
+
+            let q_mat = qr.q_mat(QMode::Compact).unwrap();
+            let r_mat = qr.r_mat().unwrap();
+            let p_t_mat = DynArray::new_from(&qr.p_mat().unwrap().transpose());
+
+            let actual = empty_array()
+                .simple_mult_into_resize(empty_array().simple_mult_into_resize(q_mat.r(), r_mat.r()), p_t_mat.r());
+
+            crate::assert_array_relative_eq!(actual, mat, $tol);
+
+            let qtq = empty_array().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
+
+            crate::assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
+
+
+        #[test]
+        pub fn [<test_thick_qr_pivoted_$scalar>]() {
+            let mut mat = DynArray::<$scalar, 2>::from_shape([5, 8]);
+
+            mat.fill_from_seed_equally_distributed(0);
+
+            let mut ident = DynArray::<$scalar, 2>::from_shape([5, 5]);
+            ident.set_identity();
+
+            let qr = mat.qr(EnablePivoting::Yes).unwrap();
+
+            let q_mat = qr.q_mat(QMode::Compact).unwrap();
+            let r_mat = qr.r_mat().unwrap();
+            let p_t_mat = DynArray::new_from(&qr.p_mat().unwrap().transpose());
+
+            let actual = empty_array()
+                .simple_mult_into_resize(empty_array().simple_mult_into_resize(q_mat.r(), r_mat.r()), p_t_mat.r());
+
+            crate::assert_array_relative_eq!(actual, mat, $tol);
+
+            let qtq = empty_array().mult_into_resize(
+                TransMode::ConjTrans,
+                TransMode::NoTrans,
+                1.0.into(),
+                q_mat.r(),
+                q_mat.r(),
+                1.0.into(),
+            );
+
+            crate::assert_array_abs_diff_eq!(qtq, ident, $tol);
+        }
+
+
+
+
+                }
+    };
+}
+
+    implement_qr_tests!(f32, 1E-5);
+    implement_qr_tests!(f64, 1E-10);
+    implement_qr_tests!(c32, 1E-4);
+    implement_qr_tests!(c64, 1E-10);
+}

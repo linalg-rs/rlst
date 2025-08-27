@@ -182,3 +182,118 @@ where
         det
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::empty_array;
+    use crate::traits::base_operations::*;
+    use crate::MultIntoResize;
+    use crate::RlstScalar;
+    use paste::paste;
+
+    macro_rules! impl_lu_tests {
+
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+                #[test]
+                fn [<test_lu_thick_$scalar>]() {
+                    let mut arr = DynArray::<$scalar, 2>::from_shape([8, 20]);
+
+                    arr.fill_from_seed_normally_distributed(0);
+
+                    let lu = DynArray::new_from(&arr).lu().unwrap();
+
+
+                    let l_mat = lu.l_mat().unwrap();
+                    let u_mat = lu.u_mat().unwrap();
+                    let p_mat = lu.p_mat().unwrap();
+
+                    let res =
+                        crate::empty_array().simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    crate::assert_array_relative_eq!(res, arr, $tol)
+                }
+
+                #[test]
+                fn [<test_lu_square_$scalar>]() {
+                    let mut arr = DynArray::<$scalar, 2>::from_shape([12, 12]);
+
+                    arr.fill_from_seed_normally_distributed(0);
+                    let arr2 = DynArray::new_from(&arr);
+
+                    let lu = arr2.lu().unwrap();
+
+                    let l_mat = lu.l_mat().unwrap();
+                    let u_mat = lu.u_mat().unwrap();
+                    let p_mat = lu.p_mat().unwrap();
+
+                    let res =
+                        empty_array().simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    crate::assert_array_relative_eq!(res, arr, $tol)
+                }
+
+                #[test]
+                fn [<test_lu_solve_$scalar>]() {
+                    let dim = [12, 12];
+                    let mut arr = DynArray::<$scalar, 2>::from_shape([12, 12]);
+                    arr.fill_from_seed_equally_distributed(0);
+                    let mut x_expected = DynArray::<$scalar, 1>::from_shape([dim[0]]);
+                    x_expected.fill_from_seed_equally_distributed(1);
+                    let rhs = empty_array().simple_mult_into_resize(arr.r(), x_expected.r());
+
+                    let x_actual = arr.lu().unwrap().solve(TransMode::NoTrans, &rhs).unwrap();
+
+                    crate::assert_array_relative_eq!(x_actual, x_expected, $tol)
+                }
+
+
+
+                #[test]
+                fn [<test_lu_thin_$scalar>]() {
+                    let mut arr = DynArray::<$scalar, 2>::from_shape([12, 8]);
+
+                    arr.fill_from_seed_normally_distributed(0);
+                    let arr2 = DynArray::new_from(&arr);
+
+                    let lu = arr2.lu().unwrap();
+
+                    let l_mat = lu.l_mat().unwrap();
+                    let u_mat = lu.u_mat().unwrap();
+                    let p_mat = lu.p_mat().unwrap();
+
+                    let res = empty_array::<$scalar, 2>();
+
+                    let res =
+                        res.simple_mult_into_resize(empty_array().simple_mult_into_resize(p_mat, l_mat), u_mat);
+
+                    crate::assert_array_relative_eq!(res, arr, $tol)
+                }
+
+                #[test]
+                fn [<test_det_$scalar>]() {
+                    let mut arr = DynArray::<$scalar, 2>::from_shape([2, 2]);
+                    arr[[0, 1]] = $scalar::from_real(3.0);
+                    arr[[1, 0]] = $scalar::from_real(2.0);
+
+                    let det = arr.lu().unwrap().det();
+
+                    approx::assert_relative_eq!(det, $scalar::from_real(-6.0), epsilon=$tol);
+                }
+
+
+
+            }
+        };
+    }
+
+    impl_lu_tests!(f64, 1E-12);
+    impl_lu_tests!(f32, 1E-4);
+    impl_lu_tests!(c64, 1E-12);
+    impl_lu_tests!(c32, 1E-4);
+}

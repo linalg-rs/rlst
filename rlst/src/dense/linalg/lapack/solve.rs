@@ -86,3 +86,88 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::empty_array;
+    use crate::traits::base_operations::*;
+    use crate::Max;
+    use crate::MultIntoResize;
+    use crate::RlstScalar;
+    use paste::paste;
+
+    macro_rules! implement_test_solve {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+            #[test]
+            pub fn [<test_solve_square_$scalar>]() {
+                let m = 5;
+                let n = 5;
+                let nrhs = 4;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let mut x_expected = DynArray::<$scalar, 2>::from_shape([n, nrhs]);
+                x_expected.fill_from_seed_equally_distributed(1);
+
+                let rhs = dot!(a.r(), x_expected.r());
+
+                let x_actual = a.solve(&rhs).unwrap();
+
+                crate::assert_array_relative_eq!(x_actual, x_expected, $tol);
+            }
+
+            #[test]
+            pub fn [<test_solve_thin_$scalar>]() {
+                let m = 10;
+                let n = 5;
+                let nrhs = 4;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let mut x_expected = DynArray::<$scalar, 2>::from_shape([n, nrhs]);
+                x_expected.fill_from_seed_equally_distributed(1);
+
+                let rhs = dot!(a.r(), x_expected.r());
+
+                let x_actual = a.solve(&rhs).unwrap();
+
+                crate::assert_array_relative_eq!(x_actual, x_expected, $tol);
+            }
+
+            #[test]
+            pub fn [<test_solve_thick_$scalar>]() {
+                let m = 5;
+                let n = 10;
+                let nrhs = 4;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let mut rhs = DynArray::<$scalar, 2>::from_shape([m, nrhs]);
+                rhs.fill_from_seed_equally_distributed(1);
+
+                let x_actual = a.solve(&rhs).unwrap();
+
+                let max_res = (dot!(a.r(), x_actual.r()) - rhs.r())
+                    .iter_value()
+                    .map(|v| crate::RlstScalar::abs(v))
+                    .fold(0.0, |acc, v| Max::max(acc, v));
+
+                assert!(max_res < $tol);
+            }
+
+                    }
+        };
+    }
+
+    implement_test_solve!(f32, 1E-4);
+    implement_test_solve!(f64, 1E-10);
+    implement_test_solve!(c32, 1E-4);
+    implement_test_solve!(c64, 1E-10);
+}

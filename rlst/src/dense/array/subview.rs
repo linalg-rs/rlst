@@ -138,39 +138,3 @@ fn offset_multi_index<const NDIM: usize>(
     }
     output
 }
-
-// fn compute_raw_range<const NDIM: usize>(
-//     offset: [usize; NDIM],
-//     stride: [usize; NDIM],
-//     shape: [usize; NDIM],
-// ) -> (usize, usize) {
-//     let start_multi_index = offset;
-//     if *shape.iter().min().unwrap() == 0 {
-//         // If there is a zero dimension, the start and end raw indices are the same
-//         // as the subview is empty.
-//         let start_raw = convert_nd_raw(start_multi_index, stride);
-//         (start_raw, start_raw)
-//     } else {
-//         let mut end_multi_index = [0; NDIM];
-//         for (index, value) in end_multi_index.iter_mut().enumerate() {
-//             *value = start_multi_index[index] + shape[index] - 1;
-//         }
-
-//         let start_raw = convert_nd_raw(start_multi_index, stride);
-//         let end_raw = convert_nd_raw(end_multi_index, stride);
-//         // Need 1 + end_raw since `end_multi_index` is the last computed element and
-//         // the range bound is one further than the last element.
-//         (start_raw, 1 + end_raw)
-//     }
-// }
-
-impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
-    /// Move the array into a subview specified by an offset and shape of the subview.
-    pub fn into_subview(
-        self,
-        offset: [usize; NDIM],
-        shape: [usize; NDIM],
-    ) -> Array<ArraySubView<ArrayImpl, NDIM>, NDIM> {
-        Array::new(ArraySubView::new(self, offset, shape))
-    }
-}

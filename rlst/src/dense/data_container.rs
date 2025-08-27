@@ -129,6 +129,12 @@ impl<Item: Default + Copy, const N: usize> ArrayContainer<Item, N> {
     }
 }
 
+impl<Item: Default + Copy, const N: usize> From<[Item; N]> for ArrayContainer<Item, N> {
+    fn from(value: [Item; N]) -> Self {
+        ArrayContainer { data: value }
+    }
+}
+
 impl<Item: Default + Copy, const N: usize> Default for ArrayContainer<Item, N> {
     #[inline(always)]
     fn default() -> Self {

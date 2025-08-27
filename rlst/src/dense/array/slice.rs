@@ -148,34 +148,6 @@ where
     }
 }
 
-impl<ArrayImpl, const ADIM: usize> Array<ArrayImpl, ADIM>
-where
-    ArrayImpl: Shape<ADIM>,
-{
-    /// Create a slice from a given array.
-    ///
-    /// Consider an array `arr` with shape `[a0, a1, a2, a3, ...]`. The function call
-    /// `arr.slice(2, 3)` returns a one dimension smaller array indexed by `[a0, a1, 3, a3, ...]`.
-    /// Hence, the dimension `2` has been fixed to always have the value `3.`
-    ///
-    /// # Examples
-    ///
-    /// If `arr` is a matrix then the first column of the matrix is obtained from
-    /// `arr.slice(1, 0)`, while the third row of the matrix is obtained from
-    /// `arr.slice(0, 2)`.
-    pub fn slice<const NDIM: usize>(
-        self,
-        axis: usize,
-        index: usize,
-    ) -> Array<ArraySlice<ArrayImpl, ADIM, NDIM>, NDIM>
-    where
-        NumberType<ADIM>: IsGreaterByOne<NDIM>,
-        NumberType<NDIM>: IsGreaterZero,
-    {
-        Array::new(ArraySlice::new(self, [axis, index]))
-    }
-}
-
 impl<ArrayImpl: UnsafeRandomAccessMut<ADIM>, const ADIM: usize, const NDIM: usize>
     UnsafeRandomAccessMut<NDIM> for ArraySlice<ArrayImpl, ADIM, NDIM>
 where

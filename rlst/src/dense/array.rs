@@ -23,6 +23,8 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, StandardNormal, StandardUniform};
 use reference::{ArrayRef, ArrayRefMut};
+use slice::ArraySlice;
+use subview::ArraySubView;
 
 use crate::{
     base_types::{c32, c64},
@@ -41,8 +43,8 @@ use crate::{
         data_container::ContainerType,
     },
     AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval, DispatchEvalRowMajor,
-    EvaluateObject, EvaluateRowMajorArray, Max, RandScalar, RandomAccessByValue, RlstError,
-    RlstResult, RlstScalar, Stack, Unknown,
+    EvaluateObject, EvaluateRowMajorArray, IsGreaterByOne, IsGreaterZero, Max, NumberType,
+    RandScalar, RandomAccessByValue, RlstError, RlstResult, RlstScalar, Stack, Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -64,6 +66,13 @@ pub type DynArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Ite
 /// A basic dynamically allocated array with a given stride.
 pub type StridedDynArray<Item, const NDIM: usize> =
     Array<StridedBaseArray<VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A statically allocated array.
+///
+/// `N` is the number of elements to be reserved in the static
+/// container.
+pub type StaticArray<Item, const NDIM: usize, const N: usize> =
+    Array<BaseArray<ArrayContainer<Item, N>, NDIM>, NDIM>;
 
 /// A dynamically allocated array from a data slice.
 pub type SliceArray<'a, Item, const NDIM: usize> =
@@ -174,6 +183,12 @@ impl<Item: Copy + Default, const NDIM: usize> Array<BaseArray<VectorContainer<It
 impl<Item: Copy + Default> From<&[Item]> for DynArray<Item, 1> {
     fn from(value: &[Item]) -> Self {
         DynArray::<Item, 1>::from_shape_and_vec([value.len()], value.to_vec())
+    }
+}
+
+impl<Item: Copy + Default, const N: usize> From<[Item; N]> for StaticArray<Item, 1, N> {
+    fn from(value: [Item; N]) -> Self {
+        StaticArray::new(BaseArray::new(value.into(), [N]))
     }
 }
 
@@ -1271,6 +1286,48 @@ impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     }
 }
 
+impl<ArrayImpl, const ADIM: usize> Array<ArrayImpl, ADIM>
+where
+    ArrayImpl: Shape<ADIM>,
+{
+    /// Create a slice from a given array.
+    ///
+    /// Consider an array `arr` with shape `[a0, a1, a2, a3, ...]`. The function call
+    /// `arr.slice(2, 3)` returns a one dimension smaller array indexed by `[a0, a1, 3, a3, ...]`.
+    /// Hence, the dimension `2` has been fixed to always have the value `3.`
+    ///
+    /// # Examples
+    ///
+    /// If `arr` is a matrix then the first column of the matrix is obtained from
+    /// `arr.slice(1, 0)`, while the third row of the matrix is obtained from
+    /// `arr.slice(0, 2)`.
+    pub fn slice<const NDIM: usize>(
+        self,
+        axis: usize,
+        index: usize,
+    ) -> Array<ArraySlice<ArrayImpl, ADIM, NDIM>, NDIM>
+    where
+        NumberType<ADIM>: IsGreaterByOne<NDIM>,
+        NumberType<NDIM>: IsGreaterZero,
+    {
+        Array::new(ArraySlice::new(self, [axis, index]))
+    }
+}
+
+impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
+    /// Move the array into a subview specified by an `offset` and `shape` of the subview.
+    ///
+    /// The `offset` is the starting index of the subview and the `shape` is the number of indices
+    /// in each dimension of the subview.
+    pub fn into_subview(
+        self,
+        offset: [usize; NDIM],
+        shape: [usize; NDIM],
+    ) -> Array<ArraySubView<ArrayImpl, NDIM>, NDIM> {
+        Array::new(ArraySubView::new(self, offset, shape))
+    }
+}
+
 impl<Item, ArrayImpl1, ArrayImpl2, const NDIM: usize> MulAdd<Item, Array<ArrayImpl2, NDIM>>
     for Array<ArrayImpl1, NDIM>
 where
@@ -1560,7 +1617,7 @@ impl_unary_op_trait!(Acosh, acosh);
 impl_unary_op_trait!(Atanh, atanh);
 
 #[cfg(test)]
-mod tests {
+mod test {
 
     use super::*;
 
@@ -1678,5 +1735,16 @@ mod tests {
         a /= 2.0;
 
         crate::assert_array_relative_eq!(a.r(), expected, 1E-10);
+    }
+
+    #[test]
+    pub fn test_into_subview() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+        let mut a = DynArray::<f64, 3>::from_shape([7, 5, 9]);
+        a.fill_from_equally_distributed(&mut rng);
+
+        let view = a.r().into_subview([1, 0, 3], [2, 3, 4]);
+
+        assert_eq!(view[[1, 2, 3]], a[[2, 2, 6]])
     }
 }

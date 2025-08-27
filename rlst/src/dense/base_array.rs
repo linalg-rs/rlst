@@ -163,18 +163,3 @@ fn compute_col_major_index<const NDIM: usize>(
     }
     acc
 }
-
-// impl<Item: RlstBase, Data: DataContainer<Item = Item>, const NDIM: usize> ArrayIterator
-//     for BaseArray<Item, Data, NDIM>
-// {
-//     type Item = Item;
-
-//     type Iter<'a>
-//         = Copied<std::slice::Iter<'a, Item>>
-//     where
-//         Self: 'a;
-
-//     fn iter(&self) -> Self::Iter<'_> {
-//         self.data().iter().copied()
-//     }
-// }
