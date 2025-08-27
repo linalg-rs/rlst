@@ -95,3 +95,205 @@ where
         Ok((s, u, vt))
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::traits::base_operations::*;
+    use crate::traits::linalg::SymmEig;
+    use itertools::izip;
+    use num::Zero;
+    use paste::paste;
+
+    macro_rules! implement_svd_tests {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+
+            #[test]
+            fn [<test_singular_values_$scalar>]() {
+                let m = 10;
+                let n = 5;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let ata = dot!(a.r().conj().transpose().eval(), a.r());
+
+                let s = a.singularvalues().unwrap();
+
+                let actual = ata
+                    .eigenvaluesh()
+                    .unwrap()
+                    .unary_op(|v| <<$scalar as RlstScalar>::Real>::sqrt(v))
+                    .reverse_axis(0);
+
+                crate::assert_array_relative_eq!(s, actual, $tol);
+            }
+
+            #[test]
+            fn [<test_svd_thin_compact_$scalar>]() {
+                let m = 10;
+                let n = 5;
+                let k = std::cmp::min(m, n);
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let (s, u, vt) = a.svd(SvdMode::Compact).unwrap();
+
+                let s = {
+                    let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
+                    izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
+                        *v_elem = RlstScalar::from_real(w_elem);
+                    });
+                    s_mat
+                };
+
+                let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+                crate::assert_array_relative_eq!(actual, a, $tol);
+            }
+
+            #[test]
+            fn [<test_svd_thin_full_$scalar>]() {
+                let m = 10;
+                let n = 5;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let (s, u, vt) = a.svd(SvdMode::Full).unwrap();
+
+                let s = {
+                    let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
+                    izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
+                        *v_elem = RlstScalar::from_real(w_elem);
+                    });
+                    s_mat
+                };
+
+                let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+                crate::assert_array_relative_eq!(actual, a, $tol);
+            }
+
+            #[test]
+            fn [<test_svd_thick_compact_$scalar>]() {
+                let m = 5;
+                let n = 10;
+                let k = std::cmp::min(m, n);
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let (s, u, vt) = a.svd(SvdMode::Compact).unwrap();
+
+                let s = {
+                    let mut s_mat = DynArray::<$scalar, 2>::from_shape([k, k]);
+                    izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
+                        *v_elem = RlstScalar::from_real(w_elem);
+                    });
+                    s_mat
+                };
+
+                let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+                crate::assert_array_relative_eq!(actual, a, $tol);
+            }
+
+            #[test]
+            fn [<test_svd_thick_full_$scalar>]() {
+                let m = 5;
+                let n = 10;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let (s, u, vt) = a.svd(SvdMode::Full).unwrap();
+
+                let s = {
+                    let mut s_mat = DynArray::<$scalar, 2>::from_shape([m, n]);
+                    izip!(s_mat.diag_iter_mut(), s.iter_value()).for_each(|(v_elem, w_elem)| {
+                        *v_elem = RlstScalar::from_real(w_elem);
+                    });
+                    s_mat
+                };
+
+                let actual = dot!(u.r(), dot!(s.r(), vt.r()));
+                crate::assert_array_relative_eq!(actual, a, $tol);
+            }
+
+
+                    }
+        };
+    }
+
+    implement_svd_tests!(f32, 1E-4);
+    implement_svd_tests!(f64, 1E-10);
+    implement_svd_tests!(c32, 1E-4);
+    implement_svd_tests!(c64, 1E-10);
+
+    macro_rules! implement_pinv_tests {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+            #[test]
+            fn [<test_pseudo_inverse_thin_$scalar>]() {
+                let m = 20;
+                let n = 10;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_normally_distributed(0);
+
+                let pinv = a.pseudo_inverse(None, None).unwrap();
+
+                let pinv_mat = pinv.as_matrix();
+
+                assert_eq!(pinv_mat.shape(), [n, m]);
+
+                let mut ident = DynArray::<$scalar, 2>::from_shape([n, n]);
+                ident.set_identity();
+
+                let actual = dot!(pinv_mat.r(), a.r());
+
+                crate::assert_array_abs_diff_eq!(actual, ident, $tol);
+
+                let mut x = DynArray::<$scalar, 2>::from_shape([m, 2]);
+
+                x.fill_from_seed_equally_distributed(1);
+
+                crate::assert_array_relative_eq!(dot!(pinv_mat.r(), x.r()), pinv.apply(&x), $tol);
+            }
+
+            #[test]
+            fn [<test_pseudo_inverse_thick_$scalar>]() {
+                let m = 10;
+                let n = 20;
+                let mut a = DynArray::<$scalar, 2>::from_shape([m, n]);
+                a.fill_from_seed_normally_distributed(0);
+
+                let pinv = a.pseudo_inverse(None, None).unwrap();
+
+                let pinv_mat = pinv.as_matrix();
+
+                assert_eq!(pinv_mat.shape(), [n, m]);
+
+                let mut ident = DynArray::<$scalar, 2>::from_shape([m, m]);
+                ident.set_identity();
+
+                let actual = dot!(a.r(), pinv_mat.r());
+
+                crate::assert_array_abs_diff_eq!(actual, ident, $tol);
+
+                let mut x = DynArray::<$scalar, 2>::from_shape([m, 2]);
+
+                x.fill_from_seed_equally_distributed(1);
+
+                crate::assert_array_relative_eq!(dot!(pinv_mat.r(), x.r()), pinv.apply(&x), $tol);
+            }
+
+                    }
+        };
+    }
+
+    implement_pinv_tests!(f32, 1E-4);
+    implement_pinv_tests!(f64, 1E-10);
+    implement_pinv_tests!(c32, 1E-4);
+    implement_pinv_tests!(c64, 1E-10);
+}

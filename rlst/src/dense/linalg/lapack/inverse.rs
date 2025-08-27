@@ -29,3 +29,44 @@ where
         Ok(out)
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::empty_array;
+    use crate::traits::base_operations::*;
+    use crate::Max;
+    use crate::MultIntoResize;
+    use crate::RlstScalar;
+    use paste::paste;
+
+    macro_rules! impl_inverse_tests {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+            #[test]
+            fn [<test_inverse_$scalar>]() {
+                let n = 10;
+
+                let mut a = DynArray::<$scalar, 2>::from_shape([n, n]);
+                a.fill_from_seed_equally_distributed(0);
+                let inv = a.inverse().unwrap();
+
+                let mut ident = DynArray::<$scalar, 2>::from_shape([n, n]);
+                ident.set_identity();
+
+                let actual = empty_array::<$scalar, 2>().simple_mult_into_resize(inv.r(), a.r());
+                crate::assert_array_abs_diff_eq!(actual, ident, $tol);
+            }
+            }
+        };
+    }
+
+    impl_inverse_tests!(f32, 1E-5);
+    impl_inverse_tests!(f64, 1E-10);
+    impl_inverse_tests!(c32, 1E-4);
+    impl_inverse_tests!(c64, 1E-10);
+}

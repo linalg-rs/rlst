@@ -69,3 +69,51 @@ where
         Ok(b)
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::traits::base_operations::*;
+    use num::Zero;
+    use paste::paste;
+
+    macro_rules! implement_triangular_solve_test {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+            #[test]
+            fn [<test_solve_triangular_$scalar>]() {
+                let n = 10;
+                let mut a = DynArray::<$scalar, 2>::from_shape([n, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                for row in 0..n {
+                    for col in 1 + row..n {
+                        a[[row, col]] = <$scalar>::zero(); // Make it lower triangular
+                    }
+                }
+
+                let mut x_actual = DynArray::<$scalar, 2>::from_shape([n, 1]);
+                x_actual.fill_from_seed_equally_distributed(1);
+
+                let b = dot!(a.r(), x_actual.r());
+
+                let x = a.solve_triangular(UpLo::Lower, &b).unwrap();
+
+                crate::assert_array_relative_eq!(x_actual, x, $tol);
+            }
+
+
+                    }
+        };
+    }
+
+    implement_triangular_solve_test!(f32, 5E-3);
+    implement_triangular_solve_test!(f64, 1E-10);
+    implement_triangular_solve_test!(c32, 5E-3);
+    implement_triangular_solve_test!(c64, 1E-10);
+}

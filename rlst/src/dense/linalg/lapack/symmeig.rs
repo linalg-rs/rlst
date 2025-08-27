@@ -58,3 +58,67 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use crate::base_types::{c32, c64};
+    use crate::dense::array::DynArray;
+    use crate::dot;
+    use crate::empty_array;
+    use crate::traits::base_operations::*;
+    use crate::Max;
+    use crate::MultIntoResize;
+    use crate::RlstScalar;
+    use itertools::izip;
+    use paste::paste;
+
+    macro_rules! implement_symm_eig_test {
+        ($scalar:ty, $tol:expr) => {
+            paste! {
+
+            #[test]
+            fn [<symm_eig_test_$scalar>]() {
+                let n = 10;
+                let mut a = DynArray::<$scalar, 2>::from_shape([n, n]);
+                a.fill_from_seed_equally_distributed(0);
+
+                let a = DynArray::new_from(&(a.r() + a.r().conj().transpose()));
+
+                let (w1, _) = a
+                    .eigh(UpLo::Upper, SymmEigMode::EigenvaluesOnly)
+                    .unwrap();
+
+                let (w2, v) = a
+                    .eigh(UpLo::Upper, SymmEigMode::EigenvaluesAndEigenvectors)
+                    .unwrap();
+
+                let v = v.unwrap();
+
+                crate::assert_array_relative_eq!(w1, w2, $tol);
+
+                let mut lambda = DynArray::<$scalar, 2>::from_shape([n, n]);
+
+                izip!(lambda.diag_iter_mut(), w1.iter_value()).for_each(|(v_elem, w_elem)| {
+                    *v_elem = RlstScalar::from_real(w_elem);
+                });
+
+                let vt = DynArray::new_from(
+                    &v.r().conj().transpose(),
+                );
+
+                let actual = dot!(v.r(), dot!(lambda.r(), vt.r()));
+
+                crate::assert_array_relative_eq!(actual, a, $tol);
+            }
+
+                    }
+        };
+    }
+
+    implement_symm_eig_test!(f32, 1E-4);
+    implement_symm_eig_test!(f64, 1E-10);
+    implement_symm_eig_test!(c32, 1E-4);
+    implement_symm_eig_test!(c64, 1E-10);
+}
