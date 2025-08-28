@@ -1,4 +1,10 @@
 //! Definition of CSR matrices.
+//!
+//! A CSR matrix consists of three arrays.
+//! - `data` - Stores all entries of the CSR matrix.
+//! - `indices` - The column indices associated with each entry in `data`.
+//! - `indptr` - An arry of pointers. The data entries for row `i` are contained in `data[indptr[i]]..data[indptr[i + 1]]`.
+//! The last entry of `indptr` is the number of nonzero elements of the sparse matrix.
 
 use std::ops::{Add, AddAssign, Mul};
 
@@ -17,10 +23,15 @@ use super::mat_operations::SparseMatOpIterator;
 
 /// A CSR matrix
 pub struct CsrMatrix<Item> {
+    /// The `mat_type` denotes the storage type for the sparse matrix.
     mat_type: SparseMatType,
+    /// The shape of the sparse matrix.
     shape: [usize; 2],
+    /// The array of column indices.
     indices: DynArray<usize, 1>,
+    /// The array of index pointers.
     indptr: DynArray<usize, 1>,
+    /// The entries of the sparse matrix.
     data: DynArray<Item, 1>,
 }
 
@@ -61,6 +72,8 @@ impl<Item> FromAij for CsrMatrix<Item>
 where
     Item: AddAssign + PartialEq + Copy + Default,
 {
+    /// Create a new CSR matrix from arrays `row`, `cols` and `data` that store for
+    /// each nonzero entry the associated row, column, and value.
     fn from_aij(shape: [usize; 2], rows: &[usize], cols: &[usize], data: &[Item]) -> Self {
         let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
 
@@ -183,7 +196,7 @@ impl<Item: Copy + Default> CsrMatrix<Item> {
     }
 }
 
-impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 1>, Array<ArrayImplY, 1>, 1>
+impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 1>, Array<ArrayImplY, 1>>
     for CsrMatrix<Item>
 where
     Item: Default + Mul<Output = Item> + AddAssign<Item> + Add<Output = Item> + Copy + One,
@@ -215,7 +228,7 @@ where
     }
 }
 
-impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 2>, Array<ArrayImplY, 2>, 2>
+impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 2>, Array<ArrayImplY, 2>>
     for CsrMatrix<Item>
 where
     Item: Copy,
@@ -225,7 +238,6 @@ where
     for<'b> Self: AsMatrixApply<
         Array<ArraySlice<ArrayRef<'b, ArrayImplX, 2>, 2, 1>, 1>,
         Array<ArraySlice<ArrayRefMut<'b, ArrayImplY, 2>, 2, 1>, 1>,
-        1,
     >,
 {
     fn apply(
@@ -241,64 +253,26 @@ where
     }
 }
 
-// /// Convert to CSC matrix
-// pub fn into_csc(self) -> CscMatrix<Item> {
-//     let mut rows = Vec::<usize>::with_capacity(self.nelems());
-//     let mut cols = Vec::<usize>::with_capacity(self.nelems());
-//     let mut data = Vec::<Item>::with_capacity(self.nelems());
-//
-//     for (row, col, elem) in self.iter_aij() {
-//         rows.push(row);
-//         cols.push(col);
-//         data.push(elem);
-//     }
-//
-//     CscMatrix::from_aij(self.shape(), &rows, &cols, &data).unwrap()
-// }
-//
-// /// Create CSR matrix from rows, columns and data
-// pub fn from_aij(
-//     shape: [usize; 2],
-//     rows: &[usize],
-//     cols: &[usize],
-//     data: &[Item],
-// ) -> RlstResult<Self> {
-//     let (rows, cols, data) = normalize_aij(rows, cols, data, SparseMatType::Csr);
-//
-//     let max_col = if let Some(col) = cols.iter().max() {
-//         *col
-//     } else {
-//         0
-//     };
-//     let max_row = if let Some(row) = rows.last() { *row } else { 0 };
-//
-//     assert!(
-//         max_col < shape[1],
-//         "Maximum column {} must be smaller than `shape.1` {}",
-//         max_col,
-//         shape[1]
-//     );
-//
-//     assert!(
-//         max_row < shape[0],
-//         "Maximum row {} must be smaller than `shape.0` {}",
-//         max_row,
-//         shape[0]
-//     );
-//
-//     let nelems = data.len();
-//
-//     let mut indptr = Vec::<usize>::with_capacity(1 + shape[0]);
-//
-//     let mut count: usize = 0;
-//     for row in 0..(shape[0]) {
-//         indptr.push(count);
-//         while count < nelems && row == rows[count] {
-//             count += 1;
-//         }
-//     }
-//     indptr.push(count);
-//
-//     Ok(Self::new(shape, cols, indptr, data))
-// }
-// }
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_csr() {
+        // We create a simple CSR matrix.
+        let rows: Vec<usize> = vec![1, 4, 4];
+        let cols: Vec<usize> = vec![2, 5, 6];
+        let data: Vec<f64> = vec![1.0, 2.0, 3.0];
+
+        let shape = [8, 13];
+
+        let sparse_mat = CsrMatrix::from_aij(shape, &rows, &cols, &data);
+
+        let mut x = DynArray::<f64, 1>::from_shape([shape[1]]);
+
+        x.fill_from_seed_equally_distributed(0);
+
+        // let y = crate::dot!(sparse_mat, x);
+    }
+}

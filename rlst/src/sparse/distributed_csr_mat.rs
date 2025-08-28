@@ -335,7 +335,7 @@ where
 }
 
 impl<'a, Item, C, ArrayImplX, ArrayImplY>
-    AsMatrixApply<DistributedArray<'a, C, ArrayImplX, 1>, DistributedArray<'a, C, ArrayImplY, 1>, 1>
+    AsMatrixApply<DistributedArray<'a, C, ArrayImplX, 1>, DistributedArray<'a, C, ArrayImplY, 1>>
     for DistributedCsrMatrix<'a, Item, C>
 where
     Item: Default + Copy + AddAssign + PartialEq + Equivalence,
@@ -343,7 +343,7 @@ where
     ArrayImplX: UnsafeRandom1DAccessByValue<Item = Item>
         + UnsafeRandomAccessByValue<1, Item = Item>
         + Shape<1>,
-    CsrMatrix<Item>: AsMatrixApply<DynArray<Item, 1>, Array<ArrayImplY, 1>, 1, Item = Item>,
+    CsrMatrix<Item>: AsMatrixApply<DynArray<Item, 1>, Array<ArrayImplY, 1>, Item = Item>,
 {
     fn apply(
         &self,

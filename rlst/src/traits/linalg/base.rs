@@ -93,7 +93,7 @@ pub trait MultIntoResize<First, Second>: BaseItem {
 }
 
 /// A helper trait to implement generic operators over matrices.
-pub trait AsMatrixApply<OtherX, OtherY, const NDIM: usize>: BaseItem {
+pub trait AsMatrixApply<OtherX, OtherY>: BaseItem {
     ///  Compute the matvec `y -> alpha * self * x  + beta * y` with `self` a matrix.
     fn apply(&self, alpha: Self::Item, x: &OtherX, beta: Self::Item, y: &mut OtherY);
 }
