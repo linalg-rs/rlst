@@ -4,6 +4,7 @@
 //! `Array<ArrayImpl, NDIM>` represents a tensor with `NDIM` axes implemented through
 //! the implementeation type `ArrayImpl`.
 
+use empty_axis::AxisPosition;
 use iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
     ArrayDiagIteratorByRef, ArrayDiagIteratorByValue, ArrayDiagIteratorMut, ColIterator,
@@ -42,9 +43,10 @@ use crate::{
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::ContainerType,
     },
-    AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval, DispatchEvalRowMajor,
-    EvaluateObject, EvaluateRowMajorArray, IsGreaterByOne, IsGreaterZero, Max, NumberType,
-    RandScalar, RandomAccessByValue, RlstError, RlstResult, RlstScalar, Stack, Unknown,
+    AsMatrixApply, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval,
+    DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Gemm, IsGreaterByOne,
+    IsGreaterZero, Max, NumberType, RandScalar, RandomAccessByValue, RlstError, RlstResult,
+    RlstScalar, Stack, TransMode, Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -195,6 +197,34 @@ impl<Item: Copy + Default, const N: usize> From<[Item; N]> for StaticArray<Item,
 impl<Item: Copy + Default> From<Vec<Item>> for DynArray<Item, 1> {
     fn from(value: Vec<Item>) -> Self {
         DynArray::<Item, 1>::from_shape_and_vec([value.len()], value)
+    }
+}
+
+impl<Item: Copy + Default> From<Vec<Vec<Item>>> for DynArray<Item, 2> {
+    fn from(value: Vec<Vec<Item>>) -> Self {
+        let nrows = value.len();
+        if nrows == 0 {
+            empty_array()
+        } else {
+            let ncols = value.first().unwrap().len();
+            // Check that all columns have identical length
+
+            for row in value.iter() {
+                assert_eq!(ncols, row.len(), "All rows must have equal length.");
+            }
+
+            // Now create the matrix and fill with values.
+
+            let mut out = DynArray::<Item, 2>::from_shape([nrows, ncols]);
+
+            for (row_index, row) in value.iter().enumerate() {
+                for (col_index, &elem) in row.iter().enumerate() {
+                    out[[row_index, col_index]] = elem;
+                }
+            }
+
+            out
+        }
     }
 }
 
@@ -1616,8 +1646,97 @@ impl_unary_op_trait!(Asinh, asinh);
 impl_unary_op_trait!(Acosh, acosh);
 impl_unary_op_trait!(Atanh, atanh);
 
+impl<Item, ArrayImplX, ArrayImplY, ArrayImpl>
+    AsMatrixApply<Array<ArrayImplX, 2>, Array<ArrayImplY, 2>> for Array<ArrayImpl, 2>
+where
+    Item: Gemm + Copy,
+    ArrayImplX: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+    ArrayImplY: RawAccessMut<Item = Item> + Stride<2> + Shape<2>,
+    ArrayImpl: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+{
+    fn apply(
+        &self,
+        alpha: Self::Item,
+        x: &Array<ArrayImplX, 2>,
+        beta: Self::Item,
+        y: &mut Array<ArrayImplY, 2>,
+    ) {
+        let stride_a = self.stride();
+        let stride_x = x.stride();
+        let stride_y = y.stride();
+
+        let shape_a = self.shape();
+        let shape_x = x.shape();
+        let shape_y = y.shape();
+
+        assert_eq!(
+            shape_a[0], shape_y[0],
+            "`y` has incompatible shape {shape_y:#?} with `self` {shape_a:#?}."
+        );
+
+        assert_eq!(
+            shape_a[1], shape_x[0],
+            "`x` has incompatible shape {shape_x:#?} with `self` {shape_a:#?}."
+        );
+
+        assert_eq!(
+            shape_y[1], shape_x[1],
+            "`x` has incompatible shape {shape_x:#?} with `y` {shape_y:#?}."
+        );
+
+        let m = shape_a[0];
+        let n = shape_x[1];
+        let k = shape_a[1];
+
+        <Item as Gemm>::gemm(
+            TransMode::NoTrans,
+            TransMode::NoTrans,
+            m,
+            n,
+            k,
+            alpha,
+            self.data(),
+            stride_a[0],
+            stride_a[1],
+            x.data(),
+            stride_x[0],
+            stride_x[1],
+            beta,
+            y.data_mut(),
+            stride_y[0],
+            stride_y[1],
+        );
+    }
+}
+
+impl<Item, ArrayImplX, ArrayImplY, ArrayImpl>
+    AsMatrixApply<Array<ArrayImplX, 1>, Array<ArrayImplY, 1>> for Array<ArrayImpl, 2>
+where
+    Item: Gemm + Copy,
+    ArrayImplX: RawAccess<Item = Item> + Stride<1> + Shape<1>,
+    ArrayImplY: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
+    ArrayImpl: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+{
+    fn apply(
+        &self,
+        alpha: Self::Item,
+        x: &Array<ArrayImplX, 1>,
+        beta: Self::Item,
+        y: &mut Array<ArrayImplY, 1>,
+    ) {
+        self.apply(
+            alpha,
+            &x.r().insert_empty_axis::<2>(AxisPosition::Back),
+            beta,
+            &mut y.r_mut().insert_empty_axis::<2>(AxisPosition::Back),
+        );
+    }
+}
+
 #[cfg(test)]
 mod test {
+
+    use approx::assert_relative_eq;
 
     use super::*;
 
@@ -1746,5 +1865,50 @@ mod test {
         let view = a.r().into_subview([1, 0, 3], [2, 3, 4]);
 
         assert_eq!(view[[1, 2, 3]], a[[2, 2, 6]])
+    }
+
+    #[test]
+    pub fn test_apply() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+
+        let alpha = 1.5;
+        let beta = 3.6;
+
+        let mut a = DynArray::<f64, 2>::from_shape([3, 2]);
+        a.fill_from_equally_distributed(&mut rng);
+
+        let mut x = DynArray::<f64, 1>::from_shape([2]);
+        x.fill_from_equally_distributed(&mut rng);
+
+        let mut y = DynArray::<f64, 1>::from_shape([3]);
+        let y2 = y.eval();
+
+        a.apply(alpha, &x, beta, &mut y);
+
+        for (row_index, row) in a.row_iter().enumerate() {
+            assert_relative_eq!(
+                alpha * row.inner(&x).unwrap() + beta * y2[[row_index]],
+                y[[row_index]],
+                epsilon = 1E-10
+            );
+        }
+
+        let mut x = DynArray::<f64, 2>::from_shape([2, 5]);
+        x.fill_from_equally_distributed(&mut rng);
+
+        let mut y = DynArray::<f64, 2>::from_shape([3, 5]);
+        let y2 = y.eval();
+
+        a.apply(alpha, &x, beta, &mut y);
+
+        for (row_index, row) in a.row_iter().enumerate() {
+            for (col_index, col) in x.col_iter().enumerate() {
+                assert_relative_eq!(
+                    alpha * row.inner(&col).unwrap() + beta * y2[[row_index, col_index]],
+                    y[[row_index, col_index]],
+                    epsilon = 1E-10
+                );
+            }
+        }
     }
 }
