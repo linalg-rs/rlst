@@ -66,10 +66,7 @@ mod test {
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::dot;
-    use crate::empty_array;
-    use crate::traits::base_operations::*;
-    use crate::Max;
-    use crate::MultIntoResize;
+
     use crate::RlstScalar;
     use itertools::izip;
     use paste::paste;

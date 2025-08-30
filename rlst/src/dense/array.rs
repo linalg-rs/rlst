@@ -11,7 +11,7 @@ use iterators::{
     ColIteratorMut, RowIterator, RowIteratorMut,
 };
 use itertools::izip;
-use num::{traits::MulAdd, One};
+use num::{traits::MulAdd, One, Zero};
 use operators::{
     addition::ArrayAddition, cast::ArrayCast, cmp_wise_division::CmpWiseDivision,
     cmp_wise_product::CmpWiseProduct, coerce::CoerceArray, mul_add::MulAddImpl, negation::ArrayNeg,
@@ -1733,6 +1733,52 @@ where
     }
 }
 
+impl<Item, ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+    Item: Gemm + Copy + Default + One + Zero,
+{
+    /// Compute the matrix-matrix product of `self` with `other`.
+    pub fn dot<ArrayImplOther, const NDIM: usize>(
+        &self,
+        other: &Array<ArrayImplOther, NDIM>,
+    ) -> DynArray<Item, NDIM>
+    where
+        ArrayImplOther: RawAccess<Item = Item> + Shape<NDIM> + Stride<NDIM>,
+    {
+        let a_shape = self.shape();
+        let x_shape = other.shape();
+
+        let mut out = empty_array::<Item, NDIM>();
+
+        if NDIM == 1 {
+            let mut out = out.r_mut().coerce_dim::<1>().unwrap();
+            out.resize_in_place([a_shape[0]]);
+
+            self.apply(
+                Item::one(),
+                &other.r().coerce_dim::<1>().unwrap(),
+                Item::zero(),
+                &mut out,
+            );
+        } else if NDIM == 2 {
+            let mut out = out.r_mut().coerce_dim::<2>().unwrap();
+            out.resize_in_place([a_shape[0], x_shape[1]]);
+
+            self.apply(
+                Item::one(),
+                &other.r().coerce_dim::<2>().unwrap(),
+                Item::zero(),
+                &mut out,
+            )
+        } else {
+            panic!("NDIM = {NDIM} not supported.");
+        }
+
+        out
+    }
+}
+
 #[cfg(test)]
 mod test {
 
@@ -1910,5 +1956,31 @@ mod test {
                 );
             }
         }
+    }
+
+    #[test]
+    pub fn test_dot() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+
+        let mut a = DynArray::<f64, 2>::from_shape([3, 2]);
+        a.fill_from_equally_distributed(&mut rng);
+
+        let mut x = DynArray::<f64, 1>::from_shape([2]);
+        x.fill_from_equally_distributed(&mut rng);
+
+        let mut y = DynArray::<f64, 1>::from_shape([3]);
+
+        a.apply(1.0, &x, 0.0, &mut y);
+
+        crate::assert_array_relative_eq!(y, a.dot(&x), 1E-10);
+
+        let mut x = DynArray::<f64, 2>::from_shape([2, 5]);
+        x.fill_from_equally_distributed(&mut rng);
+
+        let mut y = DynArray::<f64, 2>::from_shape([3, 5]);
+
+        a.apply(1.0, &x, 0.0, &mut y);
+
+        crate::assert_array_relative_eq!(y, a.dot(&x), 1E-10);
     }
 }

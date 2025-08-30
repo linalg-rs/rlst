@@ -77,7 +77,6 @@ mod test {
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::dot;
-    use crate::traits::base_operations::*;
     use num::Zero;
     use paste::paste;
 

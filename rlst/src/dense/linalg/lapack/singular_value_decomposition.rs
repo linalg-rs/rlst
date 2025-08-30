@@ -106,7 +106,7 @@ mod test {
     use crate::traits::base_operations::*;
     use crate::traits::linalg::SymmEig;
     use itertools::izip;
-    use num::Zero;
+
     use paste::paste;
 
     macro_rules! implement_svd_tests {

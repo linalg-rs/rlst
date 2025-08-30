@@ -93,14 +93,11 @@ impl<Item: Lapack + Gemm> PInv<Item> {
 #[cfg(test)]
 mod test {
 
-    use super::*;
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::dot;
-    use crate::traits::base_operations::*;
     use crate::traits::linalg::SingularvalueDecomposition;
-    use itertools::izip;
-    use num::Zero;
+
     use paste::paste;
 
     macro_rules! implement_pinv_tests {

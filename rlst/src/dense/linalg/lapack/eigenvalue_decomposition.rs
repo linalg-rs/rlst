@@ -139,9 +139,7 @@ mod test {
     use crate::dot;
     use crate::traits::base_operations::*;
     use crate::traits::linalg::Inverse;
-    use crate::traits::linalg::SymmEig;
     use itertools::izip;
-    use num::Zero;
     use paste::paste;
 
     macro_rules! implement_eigendecomposition_tests {

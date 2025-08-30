@@ -4,6 +4,7 @@
 //! - `data` - Stores all entries of the CSR matrix.
 //! - `indices` - The column indices associated with each entry in `data`.
 //! - `indptr` - An arry of pointers. The data entries for row `i` are contained in `data[indptr[i]]..data[indptr[i + 1]]`.
+//!
 //! The last entry of `indptr` is the number of nonzero elements of the sparse matrix.
 
 use std::ops::{Add, AddAssign, Mul};

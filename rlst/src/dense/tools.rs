@@ -86,8 +86,6 @@ macro_rules! assert_matrix_relative_eq {
 macro_rules! assert_array_abs_diff_eq {
     ($expected_array:expr, $actual_array:expr, $epsilon:expr) => {{
         use approx::assert_abs_diff_eq;
-        use $crate::traits::base_operations::Shape;
-        use $crate::traits::iterators::ArrayIteratorByValue;
         assert_eq!($expected_array.shape(), $actual_array.shape());
         for (actual, expected) in $actual_array.iter_value().zip($expected_array.iter_value()) {
             assert_abs_diff_eq!(actual, expected, epsilon = $epsilon);

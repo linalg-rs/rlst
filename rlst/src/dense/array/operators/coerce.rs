@@ -11,7 +11,7 @@ use crate::{
         },
         base_operations::{BaseItem, Shape, Stride},
     },
-    ContainerType,
+    ContainerType, ResizeInPlace,
 };
 
 /// A wrapper around an array that coerces its dimension.
@@ -150,6 +150,16 @@ where
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         self.arr.imp_mut().get_1d_unchecked_mut(index)
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize, const CDIM: usize> ResizeInPlace<CDIM>
+    for CoerceArray<ArrayImpl, NDIM, CDIM>
+where
+    ArrayImpl: ResizeInPlace<NDIM>,
+{
+    fn resize_in_place(&mut self, shape: [usize; CDIM]) {
+        self.arr.resize_in_place(coerce_index(shape));
     }
 }
 
