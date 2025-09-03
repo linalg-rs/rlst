@@ -182,6 +182,22 @@ impl<Item: Copy + Default, const NDIM: usize> Array<BaseArray<VectorContainer<It
     }
 }
 
+impl<Item: Copy + Default> DynArray<Item, 2> {
+    /// Create a new dense matrix with shape `shape` filled with values from the iterator `iter`.
+    pub fn from_iter_aij<Iter: Iterator<Item = ([usize; 2], Item)>>(
+        shape: [usize; 2],
+        iter: Iter,
+    ) -> DynArray<Item, 2> {
+        let mut out = DynArray::<Item, 2>::from_shape(shape);
+
+        for (index, item) in iter {
+            out[index] = item;
+        }
+
+        out
+    }
+}
+
 impl<Item: Copy + Default> From<&[Item]> for DynArray<Item, 1> {
     fn from(value: &[Item]) -> Self {
         DynArray::<Item, 1>::from_shape_and_vec([value.len()], value.to_vec())

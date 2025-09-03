@@ -1,4 +1,8 @@
-//! An Indexable Vector is a container whose elements can be 1d indexed.
+//! MPI Distributed arrays.
+//!
+//! A distributed array is distributed across the ranks along the first axis.
+//! The data distribution is defined through an [IndexLayout].
+
 use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use std::rc::Rc;
 
@@ -33,13 +37,17 @@ use mpi::Rank;
 /// Distributed Array.
 ///
 /// A distributed array is a an array that is distributed along the first dimension with
-/// respect to a given index layout.
+/// respect to a given [IndexLayout]. On each process the `local` data is just a standard [Array]
+/// and supports all operations on standard arrays.
 pub struct DistributedArray<'a, C: Communicator, ArrayImpl, const NDIM: usize> {
     /// The index layout of the vector.
+    ///
+    /// The index layout is stored via an [Rc] since we often need to a reference to the MPI Communicator
+    /// in the [IndexLayout] at the same time as a mutable reference to the `local` data. But this would
+    /// be disallowed by Rust's static borrow checker. Hence, runtime borrow checking through an [Rc].
     pub index_layout: Rc<IndexLayout<'a, C>>,
     /// The local data of the vector
-    pub local: Array<ArrayImpl, NDIM>, // A RefCell is necessary as we often need a reference to the communicator and mutable ref to local at the same time.
-                                       // But this would be disallowed by Rust's static borrow checker.
+    pub local: Array<ArrayImpl, NDIM>,
 }
 
 impl<'a, C, ArrayImpl, const NDIM: usize> DistributedArray<'a, C, ArrayImpl, NDIM>
@@ -47,7 +55,13 @@ where
     C: Communicator,
     ArrayImpl: Shape<NDIM>,
 {
-    /// Crate new
+    /// Create a new distributed array.
+    ///
+    /// It is expected that `arr` has first dimension compatibute with `index_layout` and
+    /// that the other dimensions are identical across processes. This is not checked by
+    /// `new`. Generally, it is advisable not to use this method to instantiate a new
+    /// distributed array but either the [dist_vec] or the [dist_mat] macro that create
+    /// distributed vectors or matrices.
     pub fn new(index_layout: Rc<IndexLayout<'a, C>>, arr: Array<ArrayImpl, NDIM>) -> Self {
         let number_of_local_indices = index_layout.number_of_local_indices();
         assert_eq!(
@@ -95,6 +109,9 @@ where
     Item: Equivalence + Copy + Default,
 {
     /// Gather `Self` to all processes and store in `arr`.
+    ///
+    /// This method collects the distributed array into local arrays on all processes.
+    /// The output is a local array on each process that has all the data of the original distributed array.
     pub fn gather_to_all(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
@@ -143,6 +160,8 @@ where
     Item: Equivalence + Copy + Default,
 {
     /// Gather the array to rank `root`.
+    ///
+    /// This method needs to be called on all ranks that are not root. On root call [DistributedArray::gather_to_one_root].
     pub fn gather_to_one(&self, root: usize) {
         let comm = self.index_layout.comm();
         let send_arr = StridedDynArray::row_major_from(&self.local);
@@ -153,7 +172,7 @@ where
 
     /// Gather the array to a single rank.
     ///
-    /// Call this on the `root` to which the array is sent.
+    /// Call this on the `root` to which the array is sent. On other ranks call [DistributedArray::gather_to_one].
     pub fn gather_to_one_root(&self) -> DynArray<Item, NDIM> {
         let comm = self.index_layout.comm();
         let this_process = comm.this_process();
@@ -204,7 +223,7 @@ where
     /// Scatter the array out to all nodes using the given `index_layout`.
     ///
     /// The data is always scattered out along the first axis of the array.
-    /// Call this method on root.
+    /// Call this method on root. On other ranks call [DistributedArray::scatter_from_one].
     pub fn scatter_from_one_root<'a, C: Communicator>(
         &self,
         index_layout: Rc<IndexLayout<'a, C>>,
@@ -325,7 +344,7 @@ where
     C: Communicator,
     ArrayImpl: UnsafeRandom1DAccessMut + Shape<NDIM>,
 {
-    /// Fill from another distributed array.
+    /// Fill from an other distributed array.
     pub fn fill_from<ArrayImplOther>(
         &mut self,
         other: &DistributedArray<'a, C, ArrayImplOther, NDIM>,
@@ -347,7 +366,7 @@ where
     ArrayImpl: Shape<NDIM> + UnsafeRandom1DAccessMut,
     Self: BaseItem<Item = ArrayImpl::Item>,
 {
-    /// Fill array with `value`.
+    /// Fill global array with `value`.
     pub fn fill_with_value(&mut self, value: ArrayImpl::Item) {
         self.local.fill_with_value(value);
     }
@@ -402,6 +421,7 @@ where
 {
     type Output = DistributedArray<'a, C, ArrayImplEval, NDIM>;
 
+    /// Evaluate the global array into a row major global array.
     fn eval_row_major(&self) -> Self::Output {
         DistributedArray::new(self.index_layout.clone(), self.local.eval_row_major())
     }
@@ -501,7 +521,9 @@ where
     ArrayImpl::Item: Abs<Output = Item>,
     Item: Max<Output = Item> + Copy + Default + Equivalence,
 {
-    /// Compute the maximum element of the distributed array.
+    /// Compute the maximum absolute value over all elements of the distributed array.
+    ///
+    /// Return `None` if the array is empty.
     pub fn max_abs(&self) -> Option<Item> {
         if self.is_empty() {
             return None;

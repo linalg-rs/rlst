@@ -1,8 +1,13 @@
-//! Binary operations on sparse matrices.
+//! Componentwise binary operations on sparse matrices.
 
 use std::iter::Peekable;
 
 /// A binary operator that takes two iterators over sparse matrix entries and applies a function to them.
+///
+/// The `BinaryAijOperator` is itself an iterator of the form (`[usize; 2]`, `result`), where `result` is
+/// the componentwise output of applying `F` to the left and right input pairs. The output data only contains
+/// entries for which `result` is not zero. Zero entries are filtered out by the iterator as they are not
+/// required for a sparse matrix.
 pub struct BinaryAijOperator<Item1, Item2, Iter1, Iter2, Out, F>
 where
     Item1: Copy,
@@ -27,7 +32,7 @@ where
     Iter1: Iterator<Item = ([usize; 2], Item1)>,
     Iter2: Iterator<Item = ([usize; 2], Item2)>,
 {
-    /// Create a new binary operator.
+    /// Create a new binary operator from two iterators and a function to be applied.
     pub fn new(iter1: Iter1, iter2: Iter2, func: F) -> Self {
         Self {
             iter1: iter1.peekable(),

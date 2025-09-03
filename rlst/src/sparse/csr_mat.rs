@@ -14,7 +14,7 @@ use crate::dense::array::slice::ArraySlice;
 use crate::sparse::tools::normalize_aij;
 use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
 use crate::{
-    AijIteratorMut, Array, AsMatrixApply, FromAij, Nonzeros, RandomAccessByRef, SparseMatrixType,
+    empty_array, AijIteratorMut, Array, AsMatrixApply, FromAij, Nonzeros, SparseMatrixType,
     UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use itertools::{izip, Itertools};
@@ -197,12 +197,51 @@ impl<Item: Copy + Default> CsrMatrix<Item> {
     }
 }
 
+impl<Item: Copy + Default> CsrMatrix<Item> {
+    /// Convert to a dense matrix.
+    pub fn todense(&self) -> DynArray<Item, 2> {
+        DynArray::from_iter_aij(self.shape(), self.iter_aij_value())
+    }
+}
+
+impl<Item: Default + Mul<Output = Item> + AddAssign<Item> + Add<Output = Item> + Copy + One>
+    CsrMatrix<Item>
+{
+    /// Apply the matrix to a vector or dense matrix.
+    pub fn dot<ArrayImpl, const NDIM: usize>(
+        &self,
+        other: &Array<ArrayImpl, NDIM>,
+    ) -> DynArray<Item, NDIM>
+    where
+        ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item> + Shape<NDIM>,
+    {
+        let mut out = empty_array::<Item, NDIM>();
+
+        if NDIM == 1 {
+            let mut out = out.r_mut().coerce_dim::<1>().unwrap();
+            let other = other.r().coerce_dim::<1>().unwrap();
+            out.resize_in_place([self.shape()[0]]);
+            self.apply(One::one(), &other, Default::default(), &mut out);
+        } else if NDIM == 2 {
+            let mut out = out.r_mut().coerce_dim::<2>().unwrap();
+            let other = other.r().coerce_dim::<2>().unwrap();
+            out.resize_in_place([self.shape()[0], other.shape()[1]]);
+            self.apply(One::one(), &other, Default::default(), &mut out);
+        } else {
+            panic!(
+                "Unsupported number of dimensions NDIM = {NDIM}. Only NDIM=1 or NDIM=2 supported."
+            );
+        }
+
+        out
+    }
+}
+
 impl<Item, ArrayImplX, ArrayImplY> AsMatrixApply<Array<ArrayImplX, 1>, Array<ArrayImplY, 1>>
     for CsrMatrix<Item>
 where
     Item: Default + Mul<Output = Item> + AddAssign<Item> + Add<Output = Item> + Copy + One,
-    Self: BaseItem<Item = Item>,
-    ArrayImplX: RandomAccessByRef<1, Item = Item>,
+    ArrayImplX: UnsafeRandomAccessByValue<1, Item = Item> + Shape<1>,
     ArrayImplY: UnsafeRandom1DAccessMut<Item = Item> + Shape<1>,
 {
     fn apply(
@@ -212,16 +251,20 @@ where
         beta: Self::Item,
         y: &mut crate::Array<ArrayImplY, 1>,
     ) {
+        assert_eq!(y.len(), self.shape()[0]);
+        assert_eq!(x.len(), self.shape()[1]);
         for (row, out) in y.iter_mut().enumerate() {
             *out = beta * *out
                 + alpha * {
-                    let c1 = self.indptr[[row]];
-                    let c2 = self.indptr[[1 + row]];
+                    let c1 = unsafe { self.indptr.get_value_unchecked([row]) };
+                    let c2 = unsafe { self.indptr.get_value_unchecked([1 + row]) };
                     let mut acc = Item::default();
 
                     for index in c1..c2 {
-                        let col = self.indices[[index]];
-                        acc += self.data[[index]] * x[[col]];
+                        let col = unsafe { self.indices.get_value_unchecked([index]) };
+                        acc += unsafe {
+                            self.data.get_value_unchecked([index]) * x.get_value_unchecked([col])
+                        };
                     }
                     acc
                 }
@@ -267,13 +310,14 @@ mod test {
         let data: Vec<f64> = vec![1.0, 2.0, 3.0];
 
         let shape = [8, 13];
-
         let sparse_mat = CsrMatrix::from_aij(shape, &rows, &cols, &data);
 
         let mut x = DynArray::<f64, 1>::from_shape([shape[1]]);
-
         x.fill_from_seed_equally_distributed(0);
 
-        // let y = crate::dot!(sparse_mat, x);
+        let y = crate::dot!(sparse_mat, x);
+        let expected = crate::dot!(sparse_mat.todense(), x);
+
+        crate::assert_array_relative_eq!(y, expected, 1E-10);
     }
 }

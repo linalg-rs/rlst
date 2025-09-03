@@ -5,16 +5,13 @@
 /// It always allocates a new array for the result.
 /// Call as `res = dot!(a, b, c)` to multiply the matrices
 /// `a`, `b,`, and `c`. The product of arbitrary numbers of matrices
-/// is supported.
+/// is supported. For more than two arguments the product is evaluated
+/// from back to front.
 #[macro_export]
 macro_rules! dot {
-    ($a:expr, $b:expr) => {{
-        $crate::traits::linalg::base::MultIntoResize::simple_mult_into_resize(
-            $crate::dense::array::empty_array(),
-            $a,
-            $b,
-        )
-    }};
+    ($a:expr, $b:expr) => {
+        $a.dot(&$b)
+    };
 
     ($a:expr, $b:expr, $($c:expr),+) => {{
         dot!($a, dot!($b, $($c),+))
