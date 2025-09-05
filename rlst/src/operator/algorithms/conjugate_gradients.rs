@@ -1,4 +1,7 @@
-//! Arnoldi Iteration
+//! The Conjugate Gradient Method.
+//!
+//! The Conjugate Gradient Method (CG) solves operator equations `Ax=b`, where
+//! `A` is a symmetric positive definite operator.
 
 use std::ops::Mul;
 
@@ -36,7 +39,11 @@ impl<
 where
     Space: NormedSpace<Output = Scalar::Real>,
 {
-    /// Create a new CG iteration
+    /// Create a new CG iteration.
+    ///
+    /// This function takes an operator `op`, a right-hand side `rhs`, and an element `x` of the
+    /// function space as starting approximation. Typically, `x` can be chosen to be the zero
+    /// element of the space.
     pub fn new(
         op: &'a Operator<OpImpl>,
         rhs: &'a Element<'a, Space>,
@@ -53,19 +60,30 @@ where
         }
     }
 
-    /// Set tolerance
+    /// Set the relative tolerance for convergence.
+    ///
+    /// The convergence criterion is `||b - Ax|| <= tol`. The default
+    /// relative tolerance is 1E-6.
     pub fn set_tol(mut self, tol: Scalar::Real) -> Self {
         self.tol = tol;
         self
     }
 
-    /// Set maximum number of iterations
+    /// Set maximum number of iterations.
+    ///
+    /// The default maximum number of iterations is 1000.
     pub fn set_max_iter(mut self, max_iter: usize) -> Self {
         self.max_iter = max_iter;
         self
     }
 
-    /// Set the callable
+    /// Define a callable.
+    ///
+    /// A callable is a function `FnMut(&Element, &Element)` that is
+    /// executed in each step of the iteration. The first parameter is
+    /// the current approximation `x` and the second parameter is the
+    /// current residual `b - Ax`. This callable can be used to obtain
+    /// information about each step of the iteration.
     pub fn set_callable(
         mut self,
         callable: impl FnMut(&Element<Space>, &Element<Space>) + 'a,
@@ -75,12 +93,16 @@ where
     }
 
     /// Enable debug printing
+    ///
+    /// Print debug information on `stdout`.
     pub fn print_debug(mut self) -> Self {
         self.print_debug = true;
         self
     }
 
-    /// Run CG
+    /// Run the CG iteration.
+    ///
+    /// The output parameter is the relative residual at the end of the iteration.
     pub fn run(mut self) -> Scalar::Real {
         fn print_success<T: RlstScalar>(it_count: usize, rel_res: T) {
             println!("CG converged in {it_count} iterations with relative residual {rel_res:+E}.");

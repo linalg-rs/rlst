@@ -1,4 +1,9 @@
 //! Implementation of operator concepts for dense arrays.
+//!
+//! This module defines an [ArrayVectorSpace], a concrete implementation of [Space] based on
+//! vectors represented through a 1d [Array](crate::dense::array::Array). A [ArrayVectorspace] is also
+//! an [InnerProductSpace] and a [NormedSpace](crate::NormedSpace). For the inner product the second vector
+//! is taken as complex conjugate.
 
 use std::{marker::PhantomData, ops::Neg};
 

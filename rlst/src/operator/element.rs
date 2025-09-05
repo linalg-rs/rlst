@@ -1,16 +1,18 @@
 //! Elements of linear spaces
-// use std::rc::Rc;
-
-// use crate::{
-//     ElementContainer, ElementContainerMut, ElementImpl, InnerProductSpace, LinearSpace,
-//     NormedSpace, RlstScalar,
-// };
+//!
+//! An [Element] of a linear space is an abstract generalization of a vector. An element
+//! is always associated with an underlying [Space] and through the space provides
+//! interface to operations on elements, a norm if it is a normed space, inner products,
+//! and other operations associated with the underlying space.
 
 use crate::{Inner, InnerProductSpace, LinearSpace, Norm, NormedSpace};
 
 use crate::base_types::{c32, c64};
 
 /// Define a generic element type for a given implementation.
+///
+/// An element stores a reference to the underlying space
+/// and a concrete implementation.
 pub struct Element<'a, Space: LinearSpace> {
     space: &'a Space,
     imp: Space::Impl,

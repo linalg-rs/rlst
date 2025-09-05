@@ -44,6 +44,25 @@ impl<Item> CsrMatrix<Item> {
         indptr: DynArray<usize, 1>,
         data: DynArray<Item, 1>,
     ) -> Self {
+        // Check that the indices cannot be out of bounds.
+        // This is because `apply` uses unsafe access to the entries.
+
+        assert_eq!(indptr.len(), 1 + shape[0]);
+        assert_eq!(data.len(), indices.len());
+        assert_eq!(*indptr.data().last().unwrap(), data.len());
+
+        // Check that the indices in indptr are smaller than the length of the `indices` array.
+        // We filter out the last element as that is identical to the length of the `indices` array.
+        if let Some(&max_index) = indptr.data().iter().take(shape[0]).max() {
+            assert!(max_index < indices.len());
+        }
+
+        // Check that the column indices in `indices` are smaller than `shape[1]`.
+
+        if let Some(&max_col_index) = indices.data().iter().max() {
+            assert!(max_col_index < shape[1]);
+        }
+
         Self {
             mat_type: SparseMatType::Csr,
             shape,

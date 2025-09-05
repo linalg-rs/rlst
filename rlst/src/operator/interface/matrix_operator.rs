@@ -1,220 +1,201 @@
-//! Dense matrix operator
-use std::rc::Rc;
+//! Matrix interface.
+//!
+//! This module defines interfaces to the Rlst dense and sparse matrix types
+//! to be used as abstract operators.
 
-use crate::dense::types::RlstScalar;
-use crate::dense::{
-    array::Array,
-    traits::{AsOperatorApply, MultInto, RawAccess, Shape, Stride, UnsafeRandomAccessByValue},
-};
-use crate::operator::Operator;
+use mpi::traits::{Communicator, Equivalence};
+
 use crate::{
-    operator::space::{ElementImpl, LinearSpace},
-    operator::AsApply,
-    operator::OperatorBase,
+    abstract_operator::OperatorBase,
+    dense::{array::DynArray, base_array::BaseArray, data_container::VectorContainer},
+    sparse::{
+        csr_mat::CsrMatrix, distributed_array::DistributedArray,
+        distributed_csr_mat::DistributedCsrMatrix,
+    },
+    Array, AsMatrixApply, BaseItem, LinearSpace, Shape,
 };
-use crate::{
-    rlst_array_from_slice1, rlst_array_from_slice_mut1, CscMatrix, CsrMatrix, RawAccessMut,
+
+use super::{
+    array_vector_space::ArrayVectorSpace,
+    distributed_array_vector_space::DistributedArrayVectorSpace,
 };
 
-use super::array_vector_space::ArrayVectorSpace;
-
-/// Matrix operator
-pub struct MatrixOperator<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> {
-    op: Op,
-    domain: Rc<ArrayVectorSpace<Item>>,
-    range: Rc<ArrayVectorSpace<Item>>,
-}
-
-/// Matrix operator reference
-pub struct MatrixOperatorRef<'a, Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> {
-    op: &'a Op,
-    domain: Rc<ArrayVectorSpace<Item>>,
-    range: Rc<ArrayVectorSpace<Item>>,
-}
-
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> std::fmt::Debug
-    for MatrixOperator<Item, Op>
+/// An [ArrayOperator] is defined by a two-dimensional array representing a matrix.
+pub struct ArrayOperator<'a, ArrayImpl>
+where
+    ArrayImpl: BaseItem,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "MatrixOperator: [{}x{}]",
-            self.op.shape()[0],
-            self.op.shape()[1]
-        )
-        .unwrap();
-        Ok(())
-    }
+    op: &'a Array<ArrayImpl, 2>,
+    domain: ArrayVectorSpace<ArrayImpl::Item>,
+    range: ArrayVectorSpace<ArrayImpl::Item>,
 }
 
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> std::fmt::Debug
-    for MatrixOperatorRef<'_, Item, Op>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "MatrixOperator: [{}x{}]",
-            self.op.shape()[0],
-            self.op.shape()[1]
-        )
-        .unwrap();
-        Ok(())
-    }
-}
-
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> From<Op>
-    for Operator<MatrixOperator<Item, Op>>
-{
-    fn from(op: Op) -> Self {
+impl<'a, ArrayImpl: BaseItem> ArrayOperator<'a, ArrayImpl> {
+    /// Create a new `ArrayOperator` from a given 2-dimensional array.
+    pub fn new(op: &'a Array<ArrayImpl, 2>) -> Self
+    where
+        ArrayImpl: Shape<2>,
+    {
         let shape = op.shape();
-        let domain = ArrayVectorSpace::from_dimension(shape[1]);
-        let range = ArrayVectorSpace::from_dimension(shape[0]);
-        Operator::new(MatrixOperator { op, domain, range })
+        Self {
+            op,
+            domain: ArrayVectorSpace::new(shape[1]),
+            range: ArrayVectorSpace::new(shape[0]),
+        }
     }
 }
 
-impl<'a, Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> From<&'a Op>
-    for Operator<MatrixOperatorRef<'a, Item, Op>>
+impl<'a, ArrayImpl: BaseItem + Shape<2>> From<&'a Array<ArrayImpl, 2>>
+    for ArrayOperator<'a, ArrayImpl>
 {
-    fn from(op: &'a Op) -> Self {
-        let shape = op.shape();
-        let domain = ArrayVectorSpace::from_dimension(shape[1]);
-        let range = ArrayVectorSpace::from_dimension(shape[0]);
-        Self::new(MatrixOperatorRef { op, domain, range })
+    fn from(value: &'a Array<ArrayImpl, 2>) -> Self {
+        ArrayOperator::new(value)
     }
 }
 
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
-    for MatrixOperator<Item, Op>
+impl<'a, ArrayImpl> OperatorBase for ArrayOperator<'a, ArrayImpl>
+where
+    ArrayImpl: BaseItem,
+    ArrayVectorSpace<ArrayImpl::Item>:
+        LinearSpace<F = ArrayImpl::Item, Impl = DynArray<ArrayImpl::Item, 1>>,
+    Array<ArrayImpl, 2>: AsMatrixApply<DynArray<ArrayImpl::Item, 1>, DynArray<ArrayImpl::Item, 1>>
+        + BaseItem<Item = ArrayImpl::Item>,
+{
+    type Domain = ArrayVectorSpace<ArrayImpl::Item>;
+
+    type Range = ArrayVectorSpace<ArrayImpl::Item>;
+
+    fn domain(&self) -> &Self::Domain {
+        &self.domain
+    }
+
+    fn range(&self) -> &Self::Range {
+        &self.range
+    }
+
+    #[inline(always)]
+    fn apply(
+        &self,
+        alpha: <Self::Range as crate::LinearSpace>::F,
+        x: &crate::operator::element::Element<Self::Domain>,
+        beta: <Self::Range as crate::LinearSpace>::F,
+        y: &mut crate::operator::element::Element<Self::Range>,
+    ) {
+        self.op.apply(alpha, x.imp(), beta, y.imp_mut());
+    }
+}
+
+/// A [CsrOperator] is defined by a sparse CSR matrix.
+pub struct CsrOperator<'a, Item> {
+    arr: &'a CsrMatrix<Item>,
+    domain: ArrayVectorSpace<Item>,
+    range: ArrayVectorSpace<Item>,
+}
+
+impl<'a, Item> CsrOperator<'a, Item> {
+    /// Create a new `CsrOperator` from a given CsrMatrix.
+    pub fn new(arr: &'a CsrMatrix<Item>) -> Self {
+        let shape = arr.shape();
+        Self {
+            arr,
+            domain: ArrayVectorSpace::new(shape[1]),
+            range: ArrayVectorSpace::new(shape[0]),
+        }
+    }
+}
+
+impl<'a, Item> From<&'a CsrMatrix<Item>> for CsrOperator<'a, Item> {
+    fn from(value: &'a CsrMatrix<Item>) -> Self {
+        CsrOperator::new(value)
+    }
+}
+
+impl<'a, Item> OperatorBase for CsrOperator<'a, Item>
+where
+    ArrayVectorSpace<Item>: LinearSpace<F = Item, Impl = DynArray<Item, 1>>,
+    CsrMatrix<Item>: AsMatrixApply<DynArray<Item, 1>, DynArray<Item, 1>> + BaseItem<Item = Item>,
 {
     type Domain = ArrayVectorSpace<Item>;
+
     type Range = ArrayVectorSpace<Item>;
 
-    fn domain(&self) -> Rc<Self::Domain> {
-        self.domain.clone()
+    fn domain(&self) -> &Self::Domain {
+        &self.domain
     }
 
-    fn range(&self) -> Rc<Self::Range> {
-        self.range.clone()
+    fn range(&self) -> &Self::Range {
+        &self.range
     }
-}
 
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
-    for MatrixOperator<Item, Op>
-{
-    fn apply_extended<
-        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
-        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
-    >(
+    #[inline(always)]
+    fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: crate::Element<ContainerIn>,
+        x: &crate::operator::element::Element<Self::Domain>,
         beta: <Self::Range as LinearSpace>::F,
-        mut y: crate::Element<ContainerOut>,
+        y: &mut crate::operator::element::Element<Self::Range>,
     ) {
-        self.op.apply_extended(
-            alpha,
-            x.imp().view().data(),
-            beta,
-            y.imp_mut().view_mut().data_mut(),
-        );
+        self.arr.apply(alpha, x.imp(), beta, y.imp_mut());
     }
 }
 
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> OperatorBase
-    for MatrixOperatorRef<'_, Item, Op>
-{
-    type Domain = ArrayVectorSpace<Item>;
-    type Range = ArrayVectorSpace<Item>;
+/// A [DistributedCsrOperator] is defined by a distributed sparse CSR matrix.
+pub struct DistributedCsrOperator<'a, Item: Equivalence, C: Communicator> {
+    op: &'a DistributedCsrMatrix<'a, Item, C>,
+    domain: DistributedArrayVectorSpace<'a, C, Item>,
+    range: DistributedArrayVectorSpace<'a, C, Item>,
+}
 
-    fn domain(&self) -> Rc<Self::Domain> {
-        self.domain.clone()
-    }
-
-    fn range(&self) -> Rc<Self::Range> {
-        self.range.clone()
+impl<'a, Item: Copy + Equivalence, C: Communicator> DistributedCsrOperator<'a, Item, C> {
+    /// Create a new `DistributedCsrOperator` from a given CsrMatrix.
+    pub fn new(op: &'a DistributedCsrMatrix<'a, Item, C>) -> Self {
+        Self {
+            op,
+            domain: DistributedArrayVectorSpace::new(op.domain_layout().clone()),
+            range: DistributedArrayVectorSpace::new(op.range_layout().clone()),
+        }
     }
 }
 
-impl<Item: RlstScalar, Op: AsOperatorApply<Item = Item> + Shape<2>> AsApply
-    for MatrixOperatorRef<'_, Item, Op>
+impl<'a, Item: Copy + Equivalence, C: Communicator> From<&'a DistributedCsrMatrix<'a, Item, C>>
+    for DistributedCsrOperator<'a, Item, C>
 {
-    fn apply_extended<
-        ContainerIn: crate::ElementContainer<E = <Self::Domain as LinearSpace>::E>,
-        ContainerOut: crate::ElementContainerMut<E = <Self::Range as LinearSpace>::E>,
-    >(
+    fn from(value: &'a DistributedCsrMatrix<'a, Item, C>) -> Self {
+        DistributedCsrOperator::new(value)
+    }
+}
+
+impl<'a, Item: Equivalence, C: Communicator> OperatorBase for DistributedCsrOperator<'a, Item, C>
+where
+    DistributedArrayVectorSpace<'a, C, Item>: LinearSpace<
+        F = Item,
+        Impl = DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
+    >,
+    DistributedCsrMatrix<'a, Item, C>: AsMatrixApply<
+            DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
+            DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
+        > + BaseItem<Item = Item>,
+{
+    type Domain = DistributedArrayVectorSpace<'a, C, Item>;
+
+    type Range = DistributedArrayVectorSpace<'a, C, Item>;
+
+    fn domain(&self) -> &Self::Domain {
+        &self.domain
+    }
+
+    fn range(&self) -> &Self::Range {
+        &self.range
+    }
+
+    #[inline(always)]
+    fn apply(
         &self,
         alpha: <Self::Range as LinearSpace>::F,
-        x: crate::Element<ContainerIn>,
+        x: &crate::operator::element::Element<Self::Domain>,
         beta: <Self::Range as LinearSpace>::F,
-        mut y: crate::Element<ContainerOut>,
+        y: &mut crate::operator::element::Element<Self::Range>,
     ) {
-        self.op.apply_extended(
-            alpha,
-            x.imp().view().data(),
-            beta,
-            y.imp_mut().view_mut().data_mut(),
-        );
-    }
-}
-
-// Matrix operator trait for dense matrices
-
-        Item: RlstScalar,
-        ArrayImpl: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2> + RawAccess<Item = Item> + Stride<2>,
-    > AsOperatorApply for Array<Item, ArrayImpl, 2>
-{
-    type Item = Item;
-
-    fn apply_extended(
-        &self,
-        alpha: Self::Item,
-        x: &[Self::Item],
-        beta: Self::Item,
-        y: &mut [Self::Item],
-    ) {
-        assert_eq!(self.shape()[1], x.len());
-        assert_eq!(self.shape()[0], y.len());
-        let x_arr = rlst_array_from_slice1!(x, [x.len()]);
-        let mut y_arr = rlst_array_from_slice_mut1!(y, [y.len()]);
-
-        y_arr.r_mut().mult_into(
-            crate::TransMode::NoTrans,
-            crate::TransMode::NoTrans,
-            alpha,
-            self.r(),
-            x_arr.r(),
-            beta,
-        );
-    }
-}
-
-// Matrix operator trait for CSR matrices
-impl<Item: RlstScalar> AsOperatorApply for CsrMatrix<Item> {
-    type Item = Item;
-
-    fn apply_extended(
-        &self,
-        alpha: Self::Item,
-        x: &[Self::Item],
-        beta: Self::Item,
-        y: &mut [Self::Item],
-    ) {
-        self.matmul(alpha, x, beta, y);
-    }
-}
-
-// Matrix operator trait for CSC matrices
-impl<Item: RlstScalar> AsOperatorApply for CscMatrix<Item> {
-    type Item = Item;
-
-    fn apply_extended(
-        &self,
-        alpha: Self::Item,
-        x: &[Self::Item],
-        beta: Self::Item,
-        y: &mut [Self::Item],
-    ) {
-        self.matmul(alpha, x, beta, y);
+        self.op.apply(alpha, x.imp(), beta, y.imp_mut());
     }
 }

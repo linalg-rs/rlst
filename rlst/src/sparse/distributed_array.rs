@@ -16,7 +16,8 @@ use crate::dense::array::operators::mul_add::MulAddImpl;
 use crate::dense::array::operators::scalar_mult::ArrayScalarMult;
 use crate::dense::array::operators::subtraction::ArraySubtraction;
 use crate::dense::array::operators::unary_op::ArrayUnaryOperator;
-use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
+use crate::dense::array::reference::{self, ArrayRef, ArrayRefMut};
+use crate::dense::array::slice::ArraySlice;
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::layout::row_major_stride_from_shape;
@@ -24,11 +25,11 @@ use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
 use num::traits::MulAdd;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
-use crate::EvaluateRowMajorArray;
 use crate::{
     Array, BaseItem, Conj, EvaluateObject, Max, RlstResult, Shape, UnsafeRandom1DAccessByValue,
-    UnsafeRandom1DAccessMut,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessMut,
 };
+use crate::{EvaluateRowMajorArray, UnsafeRandomAccessByValue};
 
 use mpi::datatype::PartitionMut;
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
@@ -890,7 +891,125 @@ where
     }
 }
 
+impl<C: Communicator, ArrayImpl> DistributedArray<'_, C, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessByValue<2>,
+{
+    /// Return a column iterator for a distributed 2d array.
+    pub fn col_iter(&self) -> DistributedColIterator<'_, C, ArrayImpl> {
+        DistributedColIterator::new(self)
+    }
+}
+
+impl<'it, 'a, C: Communicator, ArrayImpl> DistributedArray<'a, C, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + UnsafeRandomAccessMut<2>,
+{
+    /// Return a mutable column iterator for a distributed 2d array.
+    pub fn col_iter_mut(&'it mut self) -> DistributedColIteratorMut<'it, 'a, C, ArrayImpl, 2> {
+        DistributedColIteratorMut::new(self)
+    }
+}
+
+/// Distributed Column iterator
+pub struct DistributedColIterator<'a, C, ArrayImpl>
+where
+    C: Communicator,
+{
+    arr: &'a DistributedArray<'a, C, ArrayImpl, 2>,
+    ncols: usize,
+    current_col: usize,
+}
+
+impl<'a, C, ArrayImpl> DistributedColIterator<'a, C, ArrayImpl>
+where
+    C: Communicator,
+    ArrayImpl: Shape<2>,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'a DistributedArray<'a, C, ArrayImpl, 2>) -> Self {
+        let ncols = arr.shape()[1];
+        DistributedColIterator {
+            arr,
+            ncols,
+            current_col: 0,
+        }
+    }
+}
+
+/// Mutable distributed column iterator
+pub struct DistributedColIteratorMut<'it, 'a, C, ArrayImpl, const NDIM: usize>
+where
+    C: Communicator,
+    'a: 'it,
+{
+    arr: &'it mut DistributedArray<'a, C, ArrayImpl, NDIM>,
+    ncols: usize,
+    current_col: usize,
+}
+
+impl<'it, 'a, C, ArrayImpl> DistributedColIteratorMut<'it, 'a, C, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+    C: Communicator,
+    'a: 'it,
+{
+    /// Create a new column iterator for the given array.
+    pub fn new(arr: &'it mut DistributedArray<'a, C, ArrayImpl, 2>) -> Self {
+        let ncols = arr.shape()[1];
+        DistributedColIteratorMut {
+            arr,
+            ncols,
+            current_col: 0,
+        }
+    }
+}
+
+impl<'a, C: Communicator, ArrayImpl: Shape<2>> std::iter::Iterator
+    for DistributedColIterator<'a, C, ArrayImpl>
+{
+    type Item = DistributedArray<'a, C, ArraySlice<reference::ArrayRef<'a, ArrayImpl, 2>, 2, 1>, 1>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_col >= self.ncols {
+            return None;
+        }
+        let slice = DistributedArray::new(
+            self.arr.index_layout.clone(),
+            self.arr.local.r().slice(1, self.current_col),
+        );
+        self.current_col += 1;
+        Some(slice)
+    }
+}
+
+impl<'it, 'a, C: Communicator, ArrayImpl> std::iter::Iterator
+    for DistributedColIteratorMut<'it, 'a, C, ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2> + 'a,
+    'a: 'it,
+{
+    type Item = DistributedArray<'a, C, ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_col >= self.ncols {
+            return None;
+        }
+        let slice = DistributedArray::new(
+            self.arr.index_layout.clone(),
+            self.arr.local.r_mut().slice(1, self.current_col),
+        );
+        self.current_col += 1;
+        unsafe {
+            Some(std::mem::transmute::<
+                DistributedArray<'_, C, ArraySlice<ArrayRefMut<'_, ArrayImpl, 2>, 2, 1>, 1>,
+                DistributedArray<'a, C, ArraySlice<ArrayRefMut<'a, ArrayImpl, 2>, 2, 1>, 1>,
+            >(slice))
+        }
+    }
+}
+
 /// Create a new distributed vector with the given scalar type and index layout.
+///
+/// The index layout must be provided as `RefCell`, that is as [Rc<IndexLayout>].
 #[macro_export]
 macro_rules! dist_vec {
     ($scalar:ty, $index_layout:expr) => {
@@ -907,6 +1026,8 @@ macro_rules! dist_vec {
 ///
 /// The number of rows is determined by the index layout, while the number of columns is
 /// determined by `ncols`.
+///
+/// The index layout must be provided as `RefCell`, that is as [Rc<IndexLayout>].
 #[macro_export]
 macro_rules! dist_mat {
     ($scalar:ty, $index_layout:expr, ncols:expr) => {

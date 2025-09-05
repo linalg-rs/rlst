@@ -65,6 +65,7 @@ where
         Element::new(self, dist_vec!(Item, self.index_layout.clone()))
     }
 
+    /// Compute `x + y`.
     fn add(
         &self,
         x: &crate::operator::element::Element<Self>,
@@ -73,6 +74,7 @@ where
         Element::new(self, (x.imp().r() + y.imp().r()).eval())
     }
 
+    /// Compute `x - y`.
     fn sub(
         &self,
         x: &crate::operator::element::Element<Self>,
@@ -81,6 +83,7 @@ where
         Element::new(self, (x.imp().r() - y.imp().r()).eval())
     }
 
+    /// Compute `scalar * x`.
     fn scalar_mul(
         &self,
         scalar: &Self::F,
@@ -89,6 +92,7 @@ where
         Element::new(self, x.imp().r().scalar_mul(*scalar).eval())
     }
 
+    /// Compute `-x`.
     fn neg(
         &self,
         x: &crate::operator::element::Element<Self>,
@@ -96,6 +100,7 @@ where
         Element::new(self, x.imp().r().neg().eval())
     }
 
+    /// Compute `x += y`.
     fn sum_inplace(
         &self,
         x: &mut crate::operator::element::Element<Self>,
@@ -104,6 +109,7 @@ where
         x.imp_mut().r_mut().add_assign(y.imp().r());
     }
 
+    /// Compute `x -= y`.
     fn sub_inplace(
         &self,
         x: &mut crate::operator::element::Element<Self>,
@@ -112,10 +118,12 @@ where
         x.imp_mut().r_mut().sub_assign(y.imp().r());
     }
 
+    /// Compute `x *= scalar`.
     fn scale_inplace(&self, scalar: &Self::F, x: &mut crate::operator::element::Element<Self>) {
         x.imp_mut().r_mut().mul_assign(*scalar);
     }
 
+    /// Create a new element by copying `x`.
     fn copy_from(
         &self,
         x: &crate::operator::element::Element<Self>,

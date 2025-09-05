@@ -1,4 +1,4 @@
-//! Linear spaces and their elements.
+//! Additional implementations for spaces.
 
 use crate::{Inner, InnerProductSpace, LinearSpace, NormedSpace, RlstScalar};
 
