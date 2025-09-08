@@ -25,15 +25,13 @@
 pub mod base_types;
 pub mod dense;
 pub mod distributed_tools;
-// pub mod doc;
+pub mod doc;
+pub mod io;
 pub mod simd;
 pub mod sparse;
-pub mod traits;
-// pub mod external;
-pub mod io;
 pub mod tracing;
+pub mod traits;
 
-//pub mod prelude;
 pub mod threading;
 
 pub mod operator;
@@ -44,14 +42,16 @@ pub use rlst_proc_macro::rlst_dynamic_array;
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;
 
-pub use crate::dense::array::empty_array;
 pub use crate::dense::array::Array;
+pub use crate::dense::array::empty_array;
 
 // Re-export the traits
 pub use traits::*;
 
 // Re-export the base types
 pub use base_types::*;
+
+pub use dense::array::DynArray;
 
 #[cfg(test)]
 mod tests {
