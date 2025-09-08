@@ -71,8 +71,10 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
-        self.arr
-            .get_value_unchecked(offset_multi_index(multi_index, self.offset))
+        unsafe {
+            self.arr
+                .get_value_unchecked(offset_multi_index(multi_index, self.offset))
+        }
     }
 }
 
@@ -82,8 +84,10 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAc
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
-        self.arr
-            .get_unchecked(offset_multi_index(multi_index, self.offset))
+        unsafe {
+            self.arr
+                .get_unchecked(offset_multi_index(multi_index, self.offset))
+        }
     }
 }
 
@@ -92,7 +96,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -101,7 +105,7 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandom1D
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_unchecked(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -110,7 +114,7 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandom1DAc
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -123,8 +127,10 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAcce
             multi_index,
             self.shape()
         ));
-        self.arr
-            .get_unchecked_mut(offset_multi_index(multi_index, self.offset))
+        unsafe {
+            self.arr
+                .get_unchecked_mut(offset_multi_index(multi_index, self.offset))
+        }
     }
 }
 

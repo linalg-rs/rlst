@@ -58,7 +58,7 @@ impl<Item: Copy + Default> ValueDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
-        *self.data.get_unchecked(index)
+        unsafe { *self.data.get_unchecked(index) }
     }
 }
 
@@ -66,7 +66,7 @@ impl<Item: Copy + Default> RefDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 }
 
@@ -74,7 +74,7 @@ impl<Item: Copy + Default> RefDataContainerMut for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
-        self.data.get_unchecked_mut(index)
+        unsafe { self.data.get_unchecked_mut(index) }
     }
 }
 
@@ -82,7 +82,9 @@ impl<Item: Copy + Default> ModifiableDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < self.number_of_elements());
-        *self.data.get_unchecked_mut(index) = value;
+        unsafe {
+            *self.data.get_unchecked_mut(index) = value;
+        }
     }
 }
 
@@ -155,7 +157,7 @@ impl<Item: Copy + Default, const N: usize> ValueDataContainer for ArrayContainer
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < N);
-        *self.data.get_unchecked(index)
+        unsafe { *self.data.get_unchecked(index) }
     }
 }
 
@@ -163,7 +165,7 @@ impl<Item: Copy + Default, const N: usize> RefDataContainer for ArrayContainer<I
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < N);
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 }
 
@@ -171,7 +173,7 @@ impl<Item: Copy + Default, const N: usize> RefDataContainerMut for ArrayContaine
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < N);
-        self.data.get_unchecked_mut(index)
+        unsafe { self.data.get_unchecked_mut(index) }
     }
 }
 
@@ -179,7 +181,9 @@ impl<Item: Copy + Default, const N: usize> ModifiableDataContainer for ArrayCont
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < N);
-        *self.get_unchecked_mut(index) = value;
+        unsafe {
+            *self.get_unchecked_mut(index) = value;
+        }
     }
 }
 
@@ -229,7 +233,7 @@ impl<Item: Copy + Default> ValueDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
-        *self.data.get_unchecked(index)
+        unsafe { *self.data.get_unchecked(index) }
     }
 }
 
@@ -237,7 +241,7 @@ impl<Item: Copy + Default> RefDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 }
 
@@ -277,7 +281,7 @@ impl<Item: Copy + Default> ValueDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
         debug_assert!(index < self.number_of_elements());
-        *self.data.get_unchecked(index)
+        unsafe { *self.data.get_unchecked(index) }
     }
 }
 
@@ -285,7 +289,7 @@ impl<Item: Copy + Default> RefDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
         debug_assert!(index < self.number_of_elements());
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 }
 
@@ -293,7 +297,7 @@ impl<Item: Copy + Default> RefDataContainerMut for SliceContainerMut<'_, Item> {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
-        self.data.get_unchecked_mut(index)
+        unsafe { self.data.get_unchecked_mut(index) }
     }
 }
 
@@ -301,7 +305,9 @@ impl<Item: Copy + Default> ModifiableDataContainer for SliceContainerMut<'_, Ite
     #[inline(always)]
     unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
         debug_assert!(index < self.number_of_elements());
-        *self.data.get_unchecked_mut(index) = value;
+        unsafe {
+            *self.data.get_unchecked_mut(index) = value;
+        }
     }
 }
 

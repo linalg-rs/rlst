@@ -1,6 +1,7 @@
 //! Extend an array by an empty axis either at the front or back.
 
 use crate::{
+    ContainerType,
     base_types::NumberType,
     traits::{
         accessors::{
@@ -9,7 +10,6 @@ use crate::{
         base_operations::BaseItem,
         number_relations::IsSmallerByOne,
     },
-    ContainerType,
 };
 
 use super::{
@@ -71,8 +71,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr
-            .get_value_unchecked(multi_index_to_orig(multi_index, self.axis_position))
+        unsafe {
+            self.arr
+                .get_value_unchecked(multi_index_to_orig(multi_index, self.axis_position))
+        }
     }
 }
 
@@ -84,7 +86,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.imp().get_value_1d_unchecked(index)
+        unsafe { self.arr.imp().get_value_1d_unchecked(index) }
     }
 }
 
@@ -96,7 +98,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.imp().get_1d_unchecked(index)
+        unsafe { self.arr.imp().get_1d_unchecked(index) }
     }
 }
 
@@ -108,7 +110,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.imp_mut().get_1d_unchecked_mut(index)
+        unsafe { self.arr.imp_mut().get_1d_unchecked_mut(index) }
     }
 }
 
@@ -120,8 +122,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.arr
-            .get_unchecked(multi_index_to_orig(multi_index, self.axis_position))
+        unsafe {
+            self.arr
+                .get_unchecked(multi_index_to_orig(multi_index, self.axis_position))
+        }
     }
 }
 
@@ -133,8 +137,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.arr
-            .get_unchecked_mut(multi_index_to_orig(multi_index, self.axis_position))
+        unsafe {
+            self.arr
+                .get_unchecked_mut(multi_index_to_orig(multi_index, self.axis_position))
+        }
     }
 }
 

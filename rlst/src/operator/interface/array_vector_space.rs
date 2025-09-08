@@ -8,8 +8,8 @@
 use std::{marker::PhantomData, ops::Neg};
 
 use crate::{
-    dense::array::DynArray, operator::element::Element, EvaluateObject, Inner, InnerProductSpace,
-    LinearSpace, RlstScalar,
+    EvaluateObject, InnerProductSpace, LinearSpace, RlstScalar, dense::array::DynArray,
+    operator::element::Element,
 };
 
 /// Array vector space

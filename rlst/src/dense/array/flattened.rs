@@ -1,6 +1,7 @@
 //! Flattened view onto an array
 
 use crate::{
+    ContainerType,
     dense::array::Array,
     traits::{
         accessors::{
@@ -10,7 +11,6 @@ use crate::{
         },
         base_operations::{BaseItem, Shape},
     },
-    ContainerType,
 };
 
 /// A flattened view onto an array.
@@ -51,7 +51,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandomAcce
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; 1]) -> Self::Item {
-        self.0.imp().get_value_1d_unchecked(multi_index[0])
+        unsafe { self.0.imp().get_value_1d_unchecked(multi_index[0]) }
     }
 }
 
@@ -60,7 +60,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandomAccess
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; 1]) -> &Self::Item {
-        self.0.imp().get_1d_unchecked(multi_index[0])
+        unsafe { self.0.imp().get_1d_unchecked(multi_index[0]) }
     }
 }
 
@@ -69,7 +69,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandomAccessMu
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; 1]) -> &mut Self::Item {
-        self.0.imp_mut().get_1d_unchecked_mut(multi_index[0])
+        unsafe { self.0.imp_mut().get_1d_unchecked_mut(multi_index[0]) }
     }
 }
 
@@ -78,7 +78,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAc
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.0.imp().get_value_1d_unchecked(index)
+        unsafe { self.0.imp().get_value_1d_unchecked(index) }
     }
 }
 
@@ -87,7 +87,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAcce
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.0.imp().get_1d_unchecked(index)
+        unsafe { self.0.imp().get_1d_unchecked(index) }
     }
 }
 
@@ -96,7 +96,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccess
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.0.imp_mut().get_1d_unchecked_mut(index)
+        unsafe { self.0.imp_mut().get_1d_unchecked_mut(index) }
     }
 }
 

@@ -46,7 +46,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.scalar * self.arr.get_value_unchecked(multi_index)
+        unsafe { self.scalar * self.arr.get_value_unchecked(multi_index) }
     }
 }
 
@@ -59,7 +59,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.scalar * self.arr.imp().get_value_1d_unchecked(index)
+        unsafe { self.scalar * self.arr.imp().get_value_1d_unchecked(index) }
     }
 }
 

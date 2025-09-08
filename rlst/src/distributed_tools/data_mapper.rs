@@ -7,7 +7,7 @@
 
 use std::{collections::HashMap, rc::Rc};
 
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 use mpi::traits::{Communicator, Equivalence};
 
 use super::IndexLayout;
@@ -124,7 +124,7 @@ impl<'a, C: Communicator> Global2LocalDataMapper<'a, C> {
         // We have the receive data from the other processes. We now need to setup the output vector
         // and collect the data from what is already on the process and from the ghosts.
 
-        let output_data = {
+        {
             let total_number_of_dofs = self.required_dofs.len();
             let mut output_data = Vec::<T>::with_capacity(total_number_of_dofs * chunk_size);
 
@@ -156,9 +156,7 @@ impl<'a, C: Communicator> Global2LocalDataMapper<'a, C> {
 
             unsafe { output_data.set_len(total_number_of_dofs * chunk_size) };
             output_data
-        };
-
-        output_data
+        }
     }
 
     /// Return the index layout

@@ -3,9 +3,9 @@
 use std::marker::PhantomData;
 
 use crate::{
+    ContainerType,
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
-    ContainerType,
 };
 
 /// Array to complex
@@ -46,7 +46,9 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_unchecked(multi_index)).unwrap()
+        unsafe {
+            num::cast::<ArrayImpl::Item, Target>(self.arr.get_value_unchecked(multi_index)).unwrap()
+        }
     }
 }
 
@@ -66,6 +68,9 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        num::cast::<ArrayImpl::Item, Target>(self.arr.imp().get_value_1d_unchecked(index)).unwrap()
+        unsafe {
+            num::cast::<ArrayImpl::Item, Target>(self.arr.imp().get_value_1d_unchecked(index))
+                .unwrap()
+        }
     }
 }

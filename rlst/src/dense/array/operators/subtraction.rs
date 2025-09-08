@@ -3,12 +3,12 @@
 use std::ops::Sub;
 
 use crate::{
+    ContainerType, ContainerTypeSelector, SelectContainerType,
     dense::array::Array,
     traits::{
         accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
         base_operations::{BaseItem, Shape},
     },
-    ContainerType, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Subtraction
@@ -68,8 +68,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.operator1.get_value_unchecked(multi_index)
-            - self.operator2.get_value_unchecked(multi_index)
+        unsafe {
+            self.operator1.get_value_unchecked(multi_index)
+                - self.operator2.get_value_unchecked(multi_index)
+        }
     }
 }
 
@@ -83,8 +85,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.operator1.imp().get_value_1d_unchecked(index)
-            - self.operator2.imp().get_value_1d_unchecked(index)
+        unsafe {
+            self.operator1.imp().get_value_1d_unchecked(index)
+                - self.operator2.imp().get_value_1d_unchecked(index)
+        }
     }
 }
 

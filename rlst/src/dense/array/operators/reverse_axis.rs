@@ -1,5 +1,6 @@
 //! Reverse a single axis of an array.
 
+use crate::ContainerType;
 use crate::dense::array::Array;
 use crate::dense::layout::convert_1d_nd_from_shape;
 use crate::traits::accessors::{
@@ -7,7 +8,6 @@ use crate::traits::accessors::{
     UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
 };
 use crate::traits::base_operations::{BaseItem, Shape};
-use crate::ContainerType;
 
 /// This struct represents an array implementation with a single axis reversed.
 pub struct ReverseAxis<ArrayImpl, const NDIM: usize> {
@@ -53,11 +53,13 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr.get_value_unchecked(reverse_multi_index(
-            multi_index,
-            self.axis,
-            self.arr.shape(),
-        ))
+        unsafe {
+            self.arr.get_value_unchecked(reverse_multi_index(
+                multi_index,
+                self.axis,
+                self.arr.shape(),
+            ))
+        }
     }
 }
 
@@ -67,11 +69,13 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.arr.get_unchecked(reverse_multi_index(
-            multi_index,
-            self.axis,
-            self.arr.shape(),
-        ))
+        unsafe {
+            self.arr.get_unchecked(reverse_multi_index(
+                multi_index,
+                self.axis,
+                self.arr.shape(),
+            ))
+        }
     }
 }
 
@@ -81,11 +85,13 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.arr.get_unchecked_mut(reverse_multi_index(
-            multi_index,
-            self.axis,
-            self.arr.shape(),
-        ))
+        unsafe {
+            self.arr.get_unchecked_mut(reverse_multi_index(
+                multi_index,
+                self.axis,
+                self.arr.shape(),
+            ))
+        }
     }
 }
 
@@ -96,7 +102,7 @@ where
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
         let multi_index = convert_1d_nd_from_shape(index, self.arr.shape());
-        self.get_value_unchecked(multi_index)
+        unsafe { self.get_value_unchecked(multi_index) }
     }
 }
 
@@ -107,7 +113,7 @@ where
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
         let multi_index = convert_1d_nd_from_shape(index, self.arr.shape());
-        self.get_unchecked(multi_index)
+        unsafe { self.get_unchecked(multi_index) }
     }
 }
 
@@ -118,7 +124,7 @@ where
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         let multi_index = convert_1d_nd_from_shape(index, self.arr.shape());
-        self.get_unchecked_mut(multi_index)
+        unsafe { self.get_unchecked_mut(multi_index) }
     }
 }
 

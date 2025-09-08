@@ -1,9 +1,9 @@
 //! Container representing application of a unary operator
 
 use crate::{
+    ContainerType,
     dense::array::{Array, Shape, UnsafeRandomAccessByValue},
     traits::{accessors::UnsafeRandom1DAccessByValue, base_operations::BaseItem},
-    ContainerType,
 };
 
 /// Application of a unitary Operator
@@ -56,7 +56,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        (self.op)(self.arr.get_value_unchecked(multi_index))
+        unsafe { (self.op)(self.arr.get_value_unchecked(multi_index)) }
     }
 }
 
@@ -69,7 +69,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        (self.op)(self.arr.imp().get_value_1d_unchecked(index))
+        unsafe { (self.op)(self.arr.imp().get_value_1d_unchecked(index)) }
     }
 }
 

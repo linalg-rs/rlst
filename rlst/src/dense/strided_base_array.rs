@@ -67,8 +67,10 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
-        self.data
-            .get_unchecked(convert_nd_raw(multi_index, self.stride))
+        unsafe {
+            self.data
+                .get_unchecked(convert_nd_raw(multi_index, self.stride))
+        }
     }
 }
 
@@ -78,8 +80,10 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandomAccessByValue<NDIM
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
-        self.data
-            .get_unchecked_value(convert_nd_raw(multi_index, self.stride))
+        unsafe {
+            self.data
+                .get_unchecked_value(convert_nd_raw(multi_index, self.stride))
+        }
     }
 }
 
@@ -88,7 +92,7 @@ impl<Data: ValueDataContainer, const NDIM: usize> UnsafeRandom1DAccessByValue
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -97,7 +101,7 @@ impl<Data: RefDataContainer, const NDIM: usize> UnsafeRandom1DAccessByRef
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_unchecked(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -106,7 +110,7 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandom1DAccessMut
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape))
+        unsafe { self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape)) }
     }
 }
 
@@ -116,8 +120,10 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         debug_assert!(check_multi_index_in_bounds(multi_index, self.shape()));
-        self.data
-            .get_unchecked_mut(convert_nd_raw(multi_index, self.stride))
+        unsafe {
+            self.data
+                .get_unchecked_mut(convert_nd_raw(multi_index, self.stride))
+        }
     }
 }
 

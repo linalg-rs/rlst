@@ -1,6 +1,7 @@
 //! Array slicing.
 
 use crate::{
+    ContainerType, Unknown,
     base_types::NumberType,
     dense::layout::convert_1d_nd_from_shape,
     traits::{
@@ -10,7 +11,6 @@ use crate::{
         base_operations::BaseItem,
         number_relations::{IsGreaterByOne, IsGreaterZero},
     },
-    ContainerType, Unknown,
 };
 
 use super::{
@@ -90,7 +90,7 @@ where
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
         let mut orig_index = multi_index_to_orig(multi_index, self.mask);
         orig_index[self.slice[0]] = self.slice[1];
-        self.arr.get_value_unchecked(orig_index)
+        unsafe { self.arr.get_value_unchecked(orig_index) }
     }
 }
 
@@ -104,7 +104,7 @@ where
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
         let mut orig_index = multi_index_to_orig(multi_index, self.mask);
         orig_index[self.slice[0]] = self.slice[1];
-        self.arr.get_unchecked(orig_index)
+        unsafe { self.arr.get_unchecked(orig_index) }
     }
 }
 
@@ -158,52 +158,43 @@ where
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
         let mut orig_index = multi_index_to_orig(multi_index, self.mask);
         orig_index[self.slice[0]] = self.slice[1];
-        self.arr.get_unchecked_mut(orig_index)
+        unsafe { self.arr.get_unchecked_mut(orig_index) }
     }
 }
 
-impl<
-        ArrayImpl: UnsafeRandomAccessByValue<ADIM> + Shape<ADIM>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByValue for ArraySlice<ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByValue<ADIM> + Shape<ADIM>, const ADIM: usize, const NDIM: usize>
+    UnsafeRandom1DAccessByValue for ArraySlice<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 
-impl<
-        ArrayImpl: UnsafeRandomAccessByRef<ADIM> + Shape<ADIM>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessByRef for ArraySlice<ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessByRef<ADIM> + Shape<ADIM>, const ADIM: usize, const NDIM: usize>
+    UnsafeRandom1DAccessByRef for ArraySlice<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_unchecked(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 
-impl<
-        ArrayImpl: UnsafeRandomAccessMut<ADIM> + Shape<ADIM>,
-        const ADIM: usize,
-        const NDIM: usize,
-    > UnsafeRandom1DAccessMut for ArraySlice<ArrayImpl, ADIM, NDIM>
+impl<ArrayImpl: UnsafeRandomAccessMut<ADIM> + Shape<ADIM>, const ADIM: usize, const NDIM: usize>
+    UnsafeRandom1DAccessMut for ArraySlice<ArrayImpl, ADIM, NDIM>
 where
     NumberType<ADIM>: IsGreaterByOne<NDIM>,
     NumberType<NDIM>: IsGreaterZero,
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 

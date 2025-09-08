@@ -6,12 +6,12 @@
 use num::traits::MulAdd;
 
 use crate::{
+    ContainerType, ContainerTypeSelector, SelectContainerType,
     dense::array::Array,
     traits::{
         accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
         base_operations::{BaseItem, Shape},
     },
-    ContainerType, ContainerTypeSelector, SelectContainerType,
 };
 
 /// Struct that represents the `mul_add` operation on two arrays.
@@ -82,9 +82,11 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr1
-            .get_value_unchecked(multi_index)
-            .mul_add(self.scalar, self.arr2.get_value_unchecked(multi_index))
+        unsafe {
+            self.arr1
+                .get_value_unchecked(multi_index)
+                .mul_add(self.scalar, self.arr2.get_value_unchecked(multi_index))
+        }
     }
 }
 
@@ -97,9 +99,11 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr1
-            .imp()
-            .get_value_1d_unchecked(index)
-            .mul_add(self.scalar, self.arr2.imp().get_value_1d_unchecked(index))
+        unsafe {
+            self.arr1
+                .imp()
+                .get_value_1d_unchecked(index)
+                .mul_add(self.scalar, self.arr2.imp().get_value_1d_unchecked(index))
+        }
     }
 }

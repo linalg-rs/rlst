@@ -1,6 +1,7 @@
 //! Container representing multiplication with a scalar
 
 use crate::{
+    ContainerType,
     dense::{array::Array, layout::convert_1d_nd_from_shape},
     traits::{
         accessors::{
@@ -9,7 +10,6 @@ use crate::{
         },
         base_operations::{BaseItem, Shape},
     },
-    ContainerType,
 };
 
 /// Transpose array
@@ -61,8 +61,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.arr
-            .get_value_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
+        unsafe {
+            self.arr
+                .get_value_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
+        }
     }
 }
 
@@ -72,8 +74,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.arr
-            .get_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
+        unsafe {
+            self.arr
+                .get_unchecked(inverse_permute_multi_index(multi_index, self.permutation))
+        }
     }
 }
 
@@ -83,8 +87,10 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.arr
-            .get_unchecked_mut(inverse_permute_multi_index(multi_index, self.permutation))
+        unsafe {
+            self.arr
+                .get_unchecked_mut(inverse_permute_multi_index(multi_index, self.permutation))
+        }
     }
 }
 
@@ -101,7 +107,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_value_unchecked(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 
@@ -111,7 +117,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.get_unchecked(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_unchecked(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 
@@ -121,7 +127,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape()))
+        unsafe { self.get_unchecked_mut(convert_1d_nd_from_shape(index, self.shape())) }
     }
 }
 

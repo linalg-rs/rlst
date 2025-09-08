@@ -5,11 +5,11 @@ use std::ffi::c_char;
 use lapack::{cgels, sgels, zgels};
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// Transposition modes for `?gels`.
 pub enum GelsTransMode {
@@ -164,7 +164,7 @@ macro_rules! implement_gels {
     };
 }
 
-extern "C" {
+unsafe extern "C" {
 
     /// FFI bindings for the LAPACK `dgels` function.
     ///
@@ -200,19 +200,21 @@ unsafe fn dgels(
     lwork: i32,
     info: &mut i32,
 ) {
-    dgels_(
-        &(trans as c_char),
-        &m,
-        &n,
-        &nrhs,
-        a.as_mut_ptr(),
-        &lda,
-        b.as_mut_ptr(),
-        &ldb,
-        work.as_mut_ptr(),
-        &lwork,
-        info,
-    )
+    unsafe {
+        dgels_(
+            &(trans as c_char),
+            &m,
+            &n,
+            &nrhs,
+            a.as_mut_ptr(),
+            &lda,
+            b.as_mut_ptr(),
+            &ldb,
+            work.as_mut_ptr(),
+            &lwork,
+            info,
+        )
+    }
 }
 
 implement_gels!(f32, sgels);

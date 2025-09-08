@@ -11,7 +11,7 @@ use iterators::{
     ColIteratorMut, RowIterator, RowIteratorMut,
 };
 use itertools::izip;
-use num::{traits::MulAdd, One, Zero};
+use num::{One, Zero, traits::MulAdd};
 use operators::{
     addition::ArrayAddition, cast::ArrayCast, cmp_wise_division::CmpWiseDivision,
     cmp_wise_product::CmpWiseProduct, coerce::CoerceArray, mul_add::MulAddImpl, negation::ArrayNeg,
@@ -28,6 +28,10 @@ use slice::ArraySlice;
 use subview::ArraySubView;
 
 use crate::{
+    AsMatrixApply, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval,
+    DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Gemm, IsGreaterByOne,
+    IsGreaterZero, Max, NumberType, RandScalar, RandomAccessByValue, RlstError, RlstResult,
+    RlstScalar, Stack, TransMode, Unknown,
     base_types::{c32, c64},
     dense::{
         base_array::BaseArray,
@@ -43,10 +47,6 @@ use crate::{
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
         data_container::ContainerType,
     },
-    AsMatrixApply, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval,
-    DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Gemm, IsGreaterByOne,
-    IsGreaterZero, Max, NumberType, RandScalar, RandomAccessByValue, RlstError, RlstResult,
-    RlstScalar, Stack, TransMode, Unknown,
 };
 
 use super::{data_container::ArrayContainer, layout::row_major_stride_from_shape};
@@ -324,7 +324,7 @@ where
     /// - [UnsafeRandomAccessByValue](crate::UnsafeRandomAccessByValue)
     #[inline(always)]
     pub unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> ArrayImpl::Item {
-        self.0.get_value_unchecked(multi_index)
+        unsafe { self.0.get_value_unchecked(multi_index) }
     }
 }
 
@@ -341,7 +341,7 @@ where
     /// - [UnsafeRandomAccessByRef](crate::UnsafeRandomAccessByRef)
     #[inline(always)]
     pub unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &ArrayImpl::Item {
-        self.0.get_unchecked(multi_index)
+        unsafe { self.0.get_unchecked(multi_index) }
     }
 }
 
@@ -358,7 +358,7 @@ where
     /// - [UnsafeRandomAccessMut](crate::UnsafeRandomAccessMut)
     #[inline(always)]
     pub unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut ArrayImpl::Item {
-        self.0.get_unchecked_mut(multi_index)
+        unsafe { self.0.get_unchecked_mut(multi_index) }
     }
 }
 

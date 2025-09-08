@@ -1,5 +1,6 @@
 //! BLAS threading control. This module provides interfaces to threading control functions in BLAS libraries that support it.
 
+#[allow(unused_imports)]
 use std::ffi::c_int;
 
 /// Return the number of physical CPU cores.
@@ -27,6 +28,7 @@ extern "C" {
 }
 
 /// Set the number of threads for BLAS threading.
+#[allow(unused_variables)]
 pub fn set_blas_threads(nthreads: usize) {
     #[cfg(feature = "blis_threading")]
     bli_thread_set_num_threads(nthreads as c_int);

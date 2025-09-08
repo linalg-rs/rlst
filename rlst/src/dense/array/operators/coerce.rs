@@ -2,6 +2,7 @@
 //! directly
 
 use crate::{
+    ContainerType, ResizeInPlace,
     dense::array::Array,
     traits::{
         accessors::{
@@ -11,7 +12,6 @@ use crate::{
         },
         base_operations::{BaseItem, Shape, Stride},
     },
-    ContainerType, ResizeInPlace,
 };
 
 /// A wrapper around an array that coerces its dimension.
@@ -94,7 +94,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, index: [usize; CDIM]) -> Self::Item {
-        self.arr.get_value_unchecked(coerce_index(index))
+        unsafe { self.arr.get_value_unchecked(coerce_index(index)) }
     }
 }
 
@@ -105,7 +105,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: [usize; CDIM]) -> &Self::Item {
-        self.arr.get_unchecked(coerce_index(index))
+        unsafe { self.arr.get_unchecked(coerce_index(index)) }
     }
 }
 
@@ -116,7 +116,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: [usize; CDIM]) -> &mut Self::Item {
-        self.arr.get_unchecked_mut(coerce_index(index))
+        unsafe { self.arr.get_unchecked_mut(coerce_index(index)) }
     }
 }
 
@@ -127,7 +127,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.arr.imp().get_value_1d_unchecked(index)
+        unsafe { self.arr.imp().get_value_1d_unchecked(index) }
     }
 }
 
@@ -138,7 +138,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.arr.imp().get_1d_unchecked(index)
+        unsafe { self.arr.imp().get_1d_unchecked(index) }
     }
 }
 
@@ -149,7 +149,7 @@ where
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.arr.imp_mut().get_1d_unchecked_mut(index)
+        unsafe { self.arr.imp_mut().get_1d_unchecked_mut(index) }
     }
 }
 

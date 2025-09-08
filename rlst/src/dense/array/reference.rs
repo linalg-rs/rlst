@@ -4,6 +4,7 @@
 //! pass arrays to functions without transferring ownership.
 
 use crate::{
+    ContainerType,
     dense::array::Array,
     traits::{
         accessors::{
@@ -13,7 +14,6 @@ use crate::{
         },
         base_operations::{BaseItem, ResizeInPlace, Shape, Stride},
     },
-    ContainerType,
 };
 
 /// Basic structure for a `View`
@@ -66,7 +66,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.0.get_value_unchecked(multi_index)
+        unsafe { self.0.get_value_unchecked(multi_index) }
     }
 }
 
@@ -75,7 +75,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAc
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.0.imp().get_value_1d_unchecked(index)
+        unsafe { self.0.imp().get_value_1d_unchecked(index) }
     }
 }
 
@@ -84,7 +84,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAcce
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.0.imp().get_1d_unchecked(index)
+        unsafe { self.0.imp().get_1d_unchecked(index) }
     }
 }
 
@@ -93,7 +93,7 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAc
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.0.get_unchecked(multi_index)
+        unsafe { self.0.get_unchecked(multi_index) }
     }
 }
 
@@ -149,7 +149,7 @@ impl<ArrayImpl: UnsafeRandomAccessByValue<NDIM>, const NDIM: usize> UnsafeRandom
 {
     #[inline(always)]
     unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
-        self.0.get_value_unchecked(multi_index)
+        unsafe { self.0.get_value_unchecked(multi_index) }
     }
 }
 
@@ -158,7 +158,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByValue, const NDIM: usize> UnsafeRandom1DAc
 {
     #[inline(always)]
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
-        self.0.imp().get_value_1d_unchecked(index)
+        unsafe { self.0.imp().get_value_1d_unchecked(index) }
     }
 }
 
@@ -167,7 +167,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessByRef, const NDIM: usize> UnsafeRandom1DAcce
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked(&self, index: usize) -> &Self::Item {
-        self.0.imp().get_1d_unchecked(index)
+        unsafe { self.0.imp().get_1d_unchecked(index) }
     }
 }
 
@@ -176,7 +176,7 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccess
 {
     #[inline(always)]
     unsafe fn get_1d_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
-        self.0.imp_mut().get_1d_unchecked_mut(index)
+        unsafe { self.0.imp_mut().get_1d_unchecked_mut(index) }
     }
 }
 
@@ -185,7 +185,7 @@ impl<ArrayImpl: UnsafeRandomAccessByRef<NDIM>, const NDIM: usize> UnsafeRandomAc
 {
     #[inline(always)]
     unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &Self::Item {
-        self.0.get_unchecked(multi_index)
+        unsafe { self.0.get_unchecked(multi_index) }
     }
 }
 
@@ -194,7 +194,7 @@ impl<ArrayImpl: UnsafeRandomAccessMut<NDIM>, const NDIM: usize> UnsafeRandomAcce
 {
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut Self::Item {
-        self.0.get_unchecked_mut(multi_index)
+        unsafe { self.0.get_unchecked_mut(multi_index) }
     }
 }
 
