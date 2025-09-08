@@ -1,8 +1,8 @@
 [package]
 name = "rlst"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["The linalg-rs contributors"]
-edition = "2021"
+edition = "2024"
 description = "A Rust native linear algebra library."
 license = "MIT / Apache-2.0"
 homepage = "https://github.com/linalg-rs"
@@ -10,7 +10,6 @@ repository = "https://github.com/linalg-rs/rlst"
 readme = "README.md"
 keywords = ["numerics"]
 categories = ["mathematics", "science"]
-exclude = ["suitesparse-src", "netlib-lapack-src", "blis-src"]
 
 [lib]
 name = "rlst"
@@ -33,6 +32,7 @@ paste = "1"
 coe-rs = "0.1.2"
 pulp = { version = "0.21" }
 bytemuck = "1.16.0"
+num_cpus = "1"
 
 mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
@@ -61,12 +61,10 @@ git2 = "0.20"
 strict = []
 default = ["mpi"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
-suitesparse = []
-disable_system_blas_lapack = []
-sleef = []
 nightly = []
-internal_blis = []
-openblas = []
+blis_threading = []
+openblas_threading = []
+mkl_threading = []
 enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 
 [lints.clippy]

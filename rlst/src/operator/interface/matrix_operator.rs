@@ -8,6 +8,7 @@ use mpi::traits::{Communicator, Equivalence};
 use crate::{
     abstract_operator::OperatorBase,
     dense::{array::DynArray, base_array::BaseArray, data_container::VectorContainer},
+    operator::abstract_operator::Operator,
     sparse::{
         csr_mat::CsrMatrix, distributed_array::DistributedArray,
         distributed_csr_mat::DistributedCsrMatrix,
@@ -46,10 +47,12 @@ impl<'a, ArrayImpl: BaseItem> ArrayOperator<'a, ArrayImpl> {
 }
 
 impl<'a, ArrayImpl: BaseItem + Shape<2>> From<&'a Array<ArrayImpl, 2>>
-    for ArrayOperator<'a, ArrayImpl>
+    for Operator<ArrayOperator<'a, ArrayImpl>>
+where
+    ArrayOperator<'a, ArrayImpl>: OperatorBase,
 {
     fn from(value: &'a Array<ArrayImpl, 2>) -> Self {
-        ArrayOperator::new(value)
+        Operator::new(ArrayOperator::new(value))
     }
 }
 
@@ -104,9 +107,12 @@ impl<'a, Item> CsrOperator<'a, Item> {
     }
 }
 
-impl<'a, Item> From<&'a CsrMatrix<Item>> for CsrOperator<'a, Item> {
+impl<'a, Item> From<&'a CsrMatrix<Item>> for Operator<CsrOperator<'a, Item>>
+where
+    CsrOperator<'a, Item>: OperatorBase,
+{
     fn from(value: &'a CsrMatrix<Item>) -> Self {
-        CsrOperator::new(value)
+        Operator::new(CsrOperator::new(value))
     }
 }
 
@@ -158,10 +164,12 @@ impl<'a, Item: Copy + Equivalence, C: Communicator> DistributedCsrOperator<'a, I
 }
 
 impl<'a, Item: Copy + Equivalence, C: Communicator> From<&'a DistributedCsrMatrix<'a, Item, C>>
-    for DistributedCsrOperator<'a, Item, C>
+    for Operator<DistributedCsrOperator<'a, Item, C>>
+where
+    DistributedCsrOperator<'a, Item, C>: OperatorBase,
 {
     fn from(value: &'a DistributedCsrMatrix<'a, Item, C>) -> Self {
-        DistributedCsrOperator::new(value)
+        Operator::new(DistributedCsrOperator::new(value))
     }
 }
 

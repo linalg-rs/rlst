@@ -165,3 +165,52 @@ where
         rel_res
     }
 }
+
+#[cfg(test)]
+mod test {
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
+
+    use crate::{
+        abstract_operator::OperatorBase,
+        dense::array::DynArray,
+        operator::{
+            abstract_operator::Operator, algorithms::conjugate_gradients::CgIteration,
+            space::zero_element,
+        },
+        Norm,
+    };
+
+    #[test]
+    fn test_cg() {
+        let dim = 10;
+        let tol = 1E-5;
+
+        let mut residuals = Vec::<f64>::new();
+
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+
+        let mut mat = DynArray::<f64, 2>::from_shape([dim, dim]);
+
+        for index in 0..dim {
+            mat[[index, index]] = rng.random_range(1.0..=2.0);
+        }
+
+        let op = Operator::from(&mat);
+
+        let mut rhs = zero_element(op.range());
+        rhs.imp_mut().fill_from_equally_distributed(&mut rng);
+        let mut x = zero_element(op.domain());
+
+        let cg = (CgIteration::new(&op, &rhs, &mut x))
+            .set_callable(|_, res| {
+                let res_norm = res.norm();
+                residuals.push(res_norm);
+            })
+            .set_tol(tol)
+            .print_debug();
+
+        let res = cg.run();
+        assert!(res < tol);
+    }
+}

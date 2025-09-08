@@ -1,35 +1,39 @@
-//! Control BLAS threading if possible
+//! BLAS threading control. This module provides interfaces to threading control functions in BLAS libraries that support it.
 
-#[cfg(feature = "internal_blis")]
+use std::ffi::c_int;
+
+/// Return the number of physical CPU cores.
+///
+/// Note that physical CPU core information is only
+/// support on Linux, Mac OS or Windows. On other systems
+/// the logical number of cores is returned, which may be higher.
+pub fn get_num_cores() -> usize {
+    num_cpus::get()
+}
+
+#[cfg(feature = "blis_threading")]
 extern "C" {
-    fn bli_thread_set_num_threads(n_threads: i64);
-    fn bli_thread_get_num_threads() -> i64;
+    fn bli_thread_set_num_threads(nthreads: c_int);
 }
 
-#[cfg(feature = "internal_blis")]
-/// Get the current number of threads used by Blis.
-pub fn get_num_threads() -> usize {
-    let threads = unsafe { bli_thread_get_num_threads() };
-
-    threads as usize
+#[cfg(feature = "mkl_threading")]
+extern "C" {
+    fn mkl_set_num_threads(nthreads: c_int);
 }
 
-#[cfg(feature = "internal_blis")]
-/// Set threads to a given number of threads.
-pub fn set_num_threads(nthreads: usize) {
-    unsafe { bli_thread_set_num_threads(nthreads as i64) };
+#[cfg(feature = "mkl_threading")]
+extern "C" {
+    fn openblas_set_num_threads(nthreads: c_int);
 }
 
-#[cfg(feature = "internal_blis")]
-/// Set threads to the number of logical cpus.
-pub fn enable_threading() {
-    let num_cpus = num_cpus::get();
+/// Set the number of threads for BLAS threading.
+pub fn set_blas_threads(nthreads: usize) {
+    #[cfg(feature = "blis_threading")]
+    bli_thread_set_num_threads(nthreads as c_int);
 
-    unsafe { bli_thread_set_num_threads(num_cpus as i64) };
-}
+    #[cfg(feature = "mkl_threading")]
+    mkl_set_num_threads(nthreads as c_int);
 
-#[cfg(feature = "internal_blis")]
-/// Set number of threads to 1.
-pub fn disable_threading() {
-    unsafe { bli_thread_set_num_threads(1) };
+    #[cfg(feature = "openblas_threading")]
+    openblas_set_num_threads(nthreads as c_int);
 }

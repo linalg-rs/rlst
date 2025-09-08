@@ -34,13 +34,12 @@ pub mod io;
 pub mod tracing;
 
 //pub mod prelude;
-// pub mod threading;
+pub mod threading;
 
 pub mod operator;
 
-//pub use prelude::*;
-
 // Re-exports
+pub use rlst_proc_macro::measure_duration;
 pub use rlst_proc_macro::rlst_dynamic_array;
 pub use rlst_proc_macro::rlst_static_array;
 pub use rlst_proc_macro::rlst_static_type;

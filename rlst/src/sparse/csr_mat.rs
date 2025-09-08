@@ -51,11 +51,18 @@ impl<Item> CsrMatrix<Item> {
         assert_eq!(data.len(), indices.len());
         assert_eq!(*indptr.data().last().unwrap(), data.len());
 
-        // Check that the indices in indptr are smaller than the length of the `indices` array.
-        // We filter out the last element as that is identical to the length of the `indices` array.
-        if let Some(&max_index) = indptr.data().iter().take(shape[0]).max() {
-            assert!(max_index < indices.len());
+        // Check that the indices in indptr are monotonically increasing and
+        // are smaller or equal to the overall length of `indices`. This
+        // guarantees that there cannot be a memory error in the unsafe
+        // access in `apply`.
+        for (first, second) in indptr.iter_value().tuple_windows() {
+            assert!(
+                first <= second,
+                "Elements of indptr not in increasing order {first} > {second}."
+            );
         }
+        // Check that the last element in indptr is the length of the `indices` array.
+        assert_eq!(*indptr.data().last().unwrap(), indices.len());
 
         // Check that the column indices in `indices` are smaller than `shape[1]`.
 
