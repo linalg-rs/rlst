@@ -52,6 +52,9 @@ pub use traits::*;
 pub use base_types::*;
 
 pub use dense::array::DynArray;
+pub use dense::array::SliceArray;
+pub use dense::array::SliceArrayMut;
+pub use dense::array::StridedDynArray;
 
 #[cfg(test)]
 mod tests {

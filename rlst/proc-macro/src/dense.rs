@@ -18,7 +18,6 @@ pub(crate) fn rlst_static_array_impl(items: TokenStream) -> TokenStream {
     };
 
     let elems = dims.elems;
-    let ndim: usize = elems.len();
     let dims = elems
         .iter()
         .map(|elem| {
@@ -35,9 +34,12 @@ pub(crate) fn rlst_static_array_impl(items: TokenStream) -> TokenStream {
         })
         .collect::<Vec<usize>>();
 
+    let ndim = dims.len();
+    let nelements: usize = dims.iter().product();
+
     let output = quote! { {
-        let data = rlst::dense::data_container::ArrayContainer::<#ty, #ndim>::new();
-        rlst::dense::array::Array::new(rlst::dense::base_array::BaseArray::new(data, [#(#dims),*]))
+        let data = rlst::dense::data_container::ArrayContainer::<#ty, #nelements>::new();
+        rlst::dense::array::Array::<_, #ndim>::new(rlst::dense::base_array::BaseArray::new(data, [#(#dims),*]))
     }
     };
 

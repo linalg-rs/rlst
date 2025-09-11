@@ -2,12 +2,10 @@
 //!
 //! - [Basic concepts](#basic-concepts)
 //! - [Element access](#element-access)
-//! - [Array allocations](#array-allocations)
-//!    - [Heap based array allocations](#heap-based-array-allocations)
-//!    - [Stack based array allocations](#stack-based-array-allocations)
-//!    - [Arrays from memory slices](#arrays-from-memory-slices)
+//! - [Stack based array allocations](#stack-based-array-allocations)
+//! - [Arrays from memory slices](#arrays-from-memory-slices)
 //! - [Strides](#strides)
-//! - [Views and mutable views](#views-and-mutable-views)
+//! - [References and ownership](#references-and-ownership)
 //! - [Array slicing](#array-slicing)
 //! - [Array iterators](#array-iterators)
 //! - [Operations on arrays](#operations-on-arrays)
@@ -108,362 +106,207 @@
 //!
 //! # Element access
 //!
-//! To get the value of an element of an array at an arbitrary position the method [get_value](crate::RandomAccessByValue::get_value)
-// ! is provided. [get_value](crate::RandomAccessByValue::get_value) does not return a reference but an actual value. It can therefore always be used
-// ! even when the array represents a complicated expression. If it is possible to have a reference to an element (i.e. the array is associated
-// ! with elements in memory) then direct index notation is also possible. Both are shown below.
-// !
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = rlst_dynamic_array3!(f64, [3, 4, 2]);
-// ! arr.fill_from_seed_equally_distributed(0);
-// ! assert_eq!(arr.get_value([2, 3, 1]).unwrap(), arr[[2, 3, 1]]);
-// ! ```
-// ! To get a reference to an element use the method [get](crate::RandomAccessByRef::get). A mutable variant is available as [get_mut](crate::RandomAccessMut::get_mut).
-// ! These methods by default perform bounds checking. Unsafe variants without bounds checking are available in the traits [UnsafeRandomAccessByRef](crate::UnsafeRandomAccessByRef),
-// ! [UnsafeRandomAccessByValue](crate::UnsafeRandomAccessByValue), and [UnsafeRandomAccessMut](crate::UnsafeRandomAccessMut).
-// !
-// ! # Array allocations
-// !
-// ! RLST arrays can be allocated either on the heap or on the stack. Heap based allocations can be done dynamically at runtime.
-// ! Stack based allocations happens at compile time and the exact size of the array must be known. Stack based arrays are of advantage
-// ! for small fixed sizes when the overhead of allocating memory at runtime can impact performance.
-// !
-// ! ## Heap based array allocations
-// !
-// ! A heap based allocation is done by the macro `rlst_dynamic_arrayX`, where `X` is between 1 and 5 and denotes the number of axes of the
-// ! array. Higher axes numbers are possible. But we do not provide convenience macros for these cases. To allocate an array with two axes
-// ! that can hold double precision numbers we use
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = rlst_dynamic_array2!(f64, [5, 4]);
-// ! ```
-// ! This is a short form for the following longer initialisation.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = DynamicArray::<f64, 2>::from_shape([5, 4]);
-// ! ````
-// !
-// ! ## Stack based array allocations.
-// !
-// ! Allocating an array on the stack works quite similarly.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = rlst_static_array!(f64, 5, 4);
-// ! ```
-// ! Internally, a heap based RLST array uses a Rust [Vec] while a Stack based array uses a Rust [array] type to store data.
-// ! Both, heap based and stack based arrays implement the same traits to provide the same functionality. However, stack based
-// ! arrays cannot be resized.
-// !
-// ! ## Arrays from memory slices
-// !
-// ! One can create an array from a given memory slice. The following example shows how to do this.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let myvec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-// ! let arr = rlst_array_from_slice2!(myvec.as_slice(), [2, 3]);
-// ! ```
-// ! To initialise the array from the slice with a non-standard slice one can provide a slice array explicitly. The following creates
-// ! an array from the slice using a row-major memory ordering.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let myvec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-// ! let stride = [3, 1];
-// ! let arr = rlst_array_from_slice2!(myvec.as_slice(), [2, 3], stride);
-// ! ```
-// !
-// ! # Strides
-// !
-// !
-// ! # Views and mutable views
-// !
-// ! Most operations in RLST take ownership of their arguments. If we want to avoid this we can create `view` objects. A borrowed view is
-// ! created as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = rlst_dynamic_array2!(f64, [5, 4]);
-// ! let view = arr.r();
-// ! ```
-// ! To create a mutable view use instead `arr.r_mut()`. Views are just contianer that hold references to the original array. They implement
-// ! all traits that also arrays implement and can be used interchangeably. Hence, of a RLST function takes ownership of an array one can provide
-// ! instead a `view` object and the function takes ownership of the view and not of the original array.
-// !
-// ! # Array slicing
-// !
-// ! RLST allows the slicing of arrays across a given dimension. Given the following array.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let arr = rlst_dynamic_array3!(f64, [5, 3, 2]);
-// ! ```
-// ! we can slice at the first index of the second dimension as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr = rlst_dynamic_array3!(f64, [5, 3, 2]);
-// ! let slice = arr.r().slice(1, 0);
-// ! ```
-// ! This creates a two dimensional array of dimension `(5, 2)`. Any index `[a, b]` into this array
-// ! is mapped to an index `[a, 0, b]` of the original array. A slice is mutable if the original array or view was mutable.
-// ! A frequent example is access to a single column or row in a given matrix.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let arr = rlst_dynamic_array2!(f64, [4, 6]);
-// ! // This gives the third column
-// ! let slice = arr.r().slice(1, 2);
-// ! // This gives the fourth row
-// ! let slice = arr.r().slice(0, 3);
-// ! ```
-// !
-// ! # Array iterators
-// !
-// ! The default iterator returns elements of an array in column-major order independent of the underlying stride.
-// ! The following example demonstrates the default iterator.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! for elem in arr.iter_mut() {
-// !     *elem = 2.0;
-// ! }
-// ! ```
-// ! This fills all elements of an array with the value `2.0`. It is often useful to get the multi index of an element together
-// ! with the element itself. This can be achieved as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! # arr.fill_from_seed_equally_distributed(0);
-// ! let shape = arr.shape();
-// ! for (multi_index, elem) in arr.iter().enumerate().multi_index(shape) {
-// !     assert_eq!(elem, arr[multi_index]);
-// ! }
-// ! ```
-// ! The following iterators are provided by default.
-// ! - [iter](crate::DefaultIterator): Default column-major iterator.
-// ! - [iter_mut](crate::DefaultIteratorMut::iter_mut): Default mutable column-major iterator.
-// ! - [row_iter](crate::Array::row_iter): Iterator over rows of a two-dimensional array.
-// ! - [row_iter_mut](crate::Array::row_iter_mut): Mutable iterator over rows of a two-dimensional array.
-// ! - [col_iter](crate::Array::col_iter): Iterator over columns of a two-dimensional array.
-// ! - [col_iter_mut](crate::Array::col_iter_mut): Mutable iterator over columns of a two-dimensional array.
-// !
-// !
-// ! ## Operations on arrays
-// ! ### Static lazy evaluation
-// ! RLST uses a system of static lazy evaluation for array operations. Consider the following example.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let mut rng = rand::thread_rng();
-// ! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! arr.fill_from_equally_distributed(&mut rng);
-// ! let res = 5.0 * arr.r();
-// ! ```
-// ! The array `res` is not connected with a memory region. It internally takes ownership of a view into `arr` and every random access to that
-// ! view is multipltakes ownership of a view into `arr` and every random access to that
-// ! view is multiplied by `5.0`. The `res` array implements also all traits that other arrays implement and can be used like any other array.
-// ! The only exception is raw access to its memory. Since it does not have its own memory it does not implement the [RawAccess](crate::RawAccess) trait.
-// ! To evaluate the operation `5.0 * arr.r()` one creates a new array and fills this array with values as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let mut rng = rand::thread_rng();
-// ! let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let mut res = rlst_dynamic_array2!(f64, [2, 3]);
-// ! arr.fill_from_equally_distributed(&mut rng);
-// ! res.fill_from(5.0 * arr.r());
-// ! ```
-// ! The [fill_from](crate::dense::array::Array::fill_from) method iterates through `5.0 * arr.r()` and fills the array `res` with the returned values.
-// ! The advantage of this approach is that more complex operations such as `res.fill_from(5.0 * arr1.r() + 3.0 * arr2.r())` only require a single
-// ! loop through the data and create no temporary objects. RLST provides [various different methods](#evaluating-arrays-into-other-arrays) to evaluate an
-// ! array into another array.
-// !
-// ! ## Multiplication with a scalar
-// !
-// ! The following options are available to multiply an array with a scalar.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! arr.scale_inplace(5.0);
-// ! let res1 = 5.0 * arr.r();
-// ! let res2 = arr.r().scalar_mul(5.0);
-// ! ```
-// ! The method [scale_in_place](crate::Array::scale_inplace) immediately scales in place all elements of the array by the given scalar. The commands
-// ! `5.0 * arr` and `arr.r().scalar_mul(5.0)` are identical. They both return a new lazy evaluation object without performing the scalar multiplication.
-// !
-// ! ## Negation of an array
-// !
-// ! To negate the elements of an array use one of
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let mut arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res1 = arr.r().neg();
-// ! let res2 = -1.0 * arr.r();
-// ! ```
-// ! Both operations are identical and return a lazy evaluation object.
-// !
-// ! ## Addition and subtraction of arrays
-// !
-// ! To add/subtract arrays use one of
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res1 = arr1.r() + arr2.r();
-// ! let res2 = arr1.r().add(arr2.r());
-// ! let res3 = arr1.r() - arr2.r();
-// ! let res4 = arr1.r().sub(arr2.r());
-// ! ```
-// ! The add, respectively subtraction operations, are implemented in the same way and return a lazy evaluation object that
-// ! represents addition/subtraction of the arrays.
-// !
-// ! ## Componentwise multiplication and division
-// !
-// ! Componentwise multiplication and division of two arrays is performed as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! # let arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res1 = arr1.r() * arr2.r();
-// ! let res2 = arr1.r() / arr2.r();
-// ! ```
-// ! Both operations use lazy evaluation.
-// !
-// ! ## Transposition of arrays
-// !
-// ! Lazy transposition of an array is performed as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res = arr.r().transpose();
-// ! ```
-// ! For general n-dimensional arrays transposition reverses the order of axes. More general axes permutations are available
-// ! through the [permute_axes](crate::Array::permute_axes) method. Note that this method only performs transposition. To take the
-// ! complex conjugate transpose use
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res = arr.r().conj().transpose();
-// ! ```
-// !
-// ! ## Conversion to complex type
-// !
-// ! Sometimes it is useful to convert the type of an array to the corresponding complex type. This is done lazily as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res = arr.r().to_complex();
-// ! ```
-// !
-// ! ## Conjugation of an array
-// !
-// ! Lazy complex conjugation of an array is done as below.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let res = arr.r().conj();
-// ! ```
-// !
-// ! # Evaluating arrays into other arrays
-// !
-// ! To simply fill an array with the values of an other array the method [fill_from](crate::dense::array::Array::fill_from) is provided. See the following example.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! arr2.fill_from(arr1.r());
-// ! ```
-// ! The [fill_from](crate::dense::array::Array::fill_from) method takes ownership of its arguments. If this is not desired a `view` should passed into the method as
-// ! in the example above. The [fill_from](crate::dense::array::Array::fill_from) method assumes that both arrays have the same shape and type. However, they need not
-// ! have the same stride. A variant that allows resizing of the target array is given by [fill_from_resize](crate::dense::array::Array::fill_from_resize). With this method
-// ! a simple heap allocated copy of an array can be created through
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let arr2 = empty_array().fill_from_resize(arr1.r());
-// ! ```
-// ! Instead of `fill_from` the method [sum_into](crate::dense::array::Array::sum_into) can be used to sum the values of one array into another array. This method has no `resize` variant.
-// !
-// ! Both `fill_from` and `sum_into` may not be automatically SIMD vectorized by the compiler. The compiler has no assumptions on how the elements of the two arrays are accessed in memory.
-// ! To solve this problem a chunked evaluation is possible. Consider the following example.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let arr1 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! let mut arr2 = rlst_dynamic_array2!(f64, [2, 3]);
-// ! arr2.fill_from_chunked::<_, 16>(5.0 * arr1.r());
-// ! ```
-// ! The chunked evaluation passes through `arr1.r()` in chunks of 16, copying 16 elements at a time into a buffer and then multiplying each element in the buffer by `5.0`. This allows effective
-// ! SIMD evaluation but comes at a price of an additional copy operation. The buffer is not heap allocated but lives on the stack and its size is determined as const generic parameter at compile time.
-// ! Good sizes are multiples of the SIMD vector length of a CPU. The number of elements in an array does not need to be an exact multiple of the chunk size. This case is handled correctly in RLST.
-// ! In summary, the following methods provide evaluation of an array into another array.
-// ! - [fill_from](crate::dense::array::Array::fill_from)
-// ! - [fill_from_chunked](crate::dense::array::Array::fill_from_chunked)
-// ! - [fill_from_resize](crate::dense::array::Array::fill_from_resize)
-// ! - [fill_from_chunked_resize](crate::dense::array::Array::fill_from_chunked_resize)
-// ! - [sum_into](crate::dense::array::Array::sum_into)
-// ! - [sum_into_chunked](crate::dense::array::Array::sum_into_chunked)
-// !
-// ! # Matrix multiplication
-// !
-// ! RLST uses its BLAS interface to perform matrix multiplication.
-// ! To use matrix products make sure to have a BLAS/Lapack provider as explained [here](crate::doc::initialise_rlst). Furthermore,
-// ! because of BLAS only column-major order is supported for matrix products. To convert a matrix to column-major order simply initialise
-// ! a new matrix with column-major order (default stride) and evaluate the existing matrix into the new matrix.
-// !
-// ! The following operation is the most simple way of multiplying two matrices into a new matrix.
-// !
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
-// ! # let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
-// ! let res = empty_array().simple_mult_into_resize(arr1.r(), arr2.r());
-// ! ```
-// ! This multiplies the matrices `arr1` and `arr2` into a new matrix `res`. The method [simple_mult_into_resize](crate::dense::traits::MultIntoResize::simple_mult_into_resize)
-// ! resizes the result array if necessary. To multiply multiple arrays one can chain the `simple_mult_into_resize` method.
-// !
-// ! ```
-// ! # use rlst::prelude::*;
-// ! # let arr1 = rlst_dynamic_array2!(f64, [2, 2]);
-// ! # let arr2 = rlst_dynamic_array2!(f64, [2, 2]);
-// ! # let arr3 = rlst_dynamic_array2!(f64, [2, 2]);
-// ! let res = empty_array().simple_mult_into_resize(
-// !             empty_array().simple_mult_into_resize(arr1.r(), arr2.r()),
-// !             arr3.r()
-// !           );
-// ! ```
-// ! The rationale behind this interface is that the user may want to store results of the multiplication in stack allocated arrays.
-// ! Hence, the matrix multiplication cannot implicitly allocate a new matrix on the heap. For multiplication into matrices
-// ! that cannot be resied (e.g. stack allocate matrices) the method [simple_mult_into](crate::dense::traits::MultInto::simple_mult_into)
-// ! should be used. This method does not rely on being able to resize an array. However, it panics if the result matrix does not have
-// ! correct dimensions.
-// !
-// ! A more complete BLAS like interface is provided by the method [mult_into](crate::dense::traits::MultInto::mult_into), which performs
-// ! `C = alpha * op(A) * op(B) + beta * C`, for matrices `A`, `B`, and `C`, where `op` is the identity, transpose, or conjugate transpose.
-// !
-// ! # LU Decomposition and solving linear systems of equations
-// !
-// ! Through its Lapack interface RLST can solve dense linear systems of equations. A linear system of equations is solved as follows.
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut rand = rand::thread_rng();
-// ! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
-// ! let mut rhs = rlst_dynamic_array1!(f64, [4]);
-// ! arr.fill_from_equally_distributed(&mut rand);
-// ! let lu = LuDecomposition::<f64, _ >::new(arr).expect("LU Decomposition failed.");
-// ! lu.solve_vec(TransMode::NoTrans, rhs.r_mut()).expect("LU solve failed.");
-// ! ```
-// ! The variable `rhs` is overwritten with the solution to the linear system of equations. For solving with multiple right-hand sides use the
-// ! [solve_mat](crate::dense::linalg::lu::MatrixLuDecomposition::solve_mat). Note that the structure [LuDecomposition](crate::dense::linalg::lu::LuDecomposition)
-// ! takes ownership of `arr` and overwrites the content of its memory with the LU Decomposition. To obtain the individual factors of the LU decomposition see
-// ! the documentation of [MatrixLuDecomposition](crate::dense::linalg::lu::MatrixLuDecomposition).
-// !
-// ! If only a single solve is required and the LU factors need not be stored a shorter version is available as
-// ! ```
-// ! # use rlst::prelude::*;
-// ! let mut rand = rand::thread_rng();
-// ! let mut arr = rlst_dynamic_array2!(f64, [4, 4]);
-// ! let mut rhs = rlst_dynamic_array1!(f64, [4]);
-// ! arr.fill_from_equally_distributed(&mut rand);
-// ! let sol = arr.into_solve_vec(TransMode::NoTrans, rhs).expect("LU solve failed.");
-// ! ```
-// ! The method [into_solve_vec](crate::dense::array::Array::into_solve_vec) takes ownership of `rhs` and the array `arr`. It returns ownership of `rhs` and
-// ! overwrites it with the solution. For convenience `rhs` is then returned again as `sol`. The array `arr` is also overwritten with the LU factors.
-// ! A corresponding routine [into_solve_mat](crate::dense::array::Array::into_solve_mat) is available.
-// !
+//! To get the value of an element of an array at an arbitrary position the
+//! method [get_value](crate::RandomAccessByValue::get_value)
+//! is provided. [get_value](crate::RandomAccessByValue::get_value) does not return a reference but an actual value. It can //
+//! therefore always be used even when the array represents an expression rather than values in memory. If it is possible
+//! to have a reference to an element (i.e. the array is associated
+//! with elements in memory) then direct index notation is also possible. Both are shown below.
+//!
+//! ```
+//! let mut arr = rlst::rlst_dynamic_array!(f64, [3, 4, 2]);
+//! arr.fill_from_seed_equally_distributed(0);
+//! assert_eq!(arr.get_value([2, 3, 1]).unwrap(), arr[[2, 3, 1]]);
+//! ```
+//! The index notation `arr[[2, 3, 1]]` is just short for `arr.get([2, 3, 1]).unwrap()` and returns a reference.
+//! The index notation `arr[[2, 3, 1]]` can also be used for a mutable reference, or equivalently use
+//! `arr.get_mut([2, 3, 1]).unwrap()`. If the index does not exist the index notation returns an assertion error
+//! while `get` and `get_mut` return `None`.
+//!
+//! # Stack based Array allocations
+//!
+//! RLST arrays can be allocated either on the heap or on the stack. Heap based allocations can be done dynamically at runtime.
+//! Stack based allocations happens at compile time and the exact size of the array must be known. Stack based
+//! arrays are of advantage for small fixed sizes when the overhead of allocating memory at runtime can impact performance.
+//!
+//! For heap-based allocation we have already seen the macro [rlst_dynamic_array](crate::rlst_dynamic_array) and the corresponding method [DynArray::from_shape](crate::DynArray::from_shape).
+//! For stack based allocation the number of elements needs to be known at compile time. To make the allocation straight
+//! forward the macro [rlst_static_array](crate::rlst_static_array). is provided. This works in the same way as
+//! `rlst_dynamic_array`. However, the dimensions must be given explicitly as compile-time integers. The proc macro
+//! then multiplies the dimensions and instantiates a compile time fixed size Rust array to hold the data. The following
+//! shows an example.
+//!
+//! ```
+//! # use rlst::EvaluateObject;
+//! # let mut rng = rand::thread_rng();
+//! let mut arr1 = rlst::rlst_static_array!(f64, [1, 3, 2]);
+//! let mut arr2 = rlst::rlst_static_array!(f64, [1, 3, 2]);
+//! arr1.fill_from_equally_distributed(&mut rng);
+//! arr2.fill_from_equally_distributed(&mut rng);
+//! let output = (arr1 + arr2).eval();
+//! ```
+//! What is interesting about this code is that all the required memory is allocated at compile time, including
+//! the array `output`. The `eval` method sees that all arrays of the expression are stack allocated and
+//! hence uses a compile time allocation on the stack for the output array. The decision about whether a
+//! runtime or compile time allocation is performed, is decided as follows:
+//! - If all arrays in the expression are heap based runtime allocated arrays, then `eval` creates a runtime
+//!   array.
+//! - If at least one of the arrays is a stack allocated compile time array then a stack-based allocation for
+//!   `output` at compile time is performed.
+//!
+//! The rationale is that if at least one array in the expression is stack allocated, size information is
+//! available at compile time so can be used to create the output. If every array in the expression is generated
+//! at runtime then no compile time size information is available.
+//!
+//! The mechanism that makes this selection possible is fully implemented through traits and type mechanics.
+//! So there is no runtime overhead.
+//!
+//! ## Arrays from memory slices
+//!
+//! One can create an array from a given memory slice. The following example shows how to do this.
+//! ```
+//! let myvec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+//! let arr = rlst::SliceArray::<f64, 2>::from_shape(myvec.as_slice(), [2, 3]);
+//! ```
+//! For mutable slices the method [SliceArrayMut::from_shape](crate::SliceArrayMut::from_shape) exists.
+//!
+//! # Strides
+//!
+//! By default RLST uses a column major ordering, that is the left-most dimension is contiguous in memory.
+//! This holds for memory storage order and also iterators over arrays. Any newly allocated array is automatically
+//! using column-major order. However, other strides are possible. An array with a different stride can be initialized
+//! with  [StridedDynArray::from_shape_and_stride](crate::StridedDynArray::from_shape_and_stride) or [StridedDynArray::row_major](crate::StridedDynArray::row_major).
+//! to specifically crate an array in row-major format. Sometimes one needs to convert an array from colum-major to row-major format.
+//! This can be done with [EvaluateRowMajorArray::eval_row_major](crate::EvaluateRowMajorArray::eval_row_major), which is implemented for all array types.
+//!
+//! All arrays with custom strides still iterate through in column-major order. This is to ensure that componentwise binary operations on two arrays are
+//! possible for arbitrary stride arrays. The consequence is that iteration is a bit slower if an array has a custom stride. Also, the memory index calculation
+//! is more involved, creating additional overhead. Where performance is crucial column-major arrays should always be preferred.
+//!
+//!
+//!
+//!
+//! # References and ownership
+//!
+//! Many operations in RLST take ownership of their arguments, e.g. in the expression `let out = a + b` for arrays `a` and `b` the object
+//! `out` takes ownership of `a` and `b`. To avoid this one can instead say `let out = a.r() + b.r()`. The method [r](crate::dense::array::Array::r)
+//! returns an array that is implemented through an [ArrayRef](crate::dense::array::reference::ArrayRef) struct. An `ArrayRef` is a simple container
+//! that holds a Rust reference to an actual array. This allows us to hand over references to arrays to functions that expect to take ownership.
+//! For mutable arrays a corresponding function exists in the form of [r_mut](crate::dense::array::Array::r_mut). These reference
+//! arrays behave exactly like the original arrays and implement the same traits. They can be transparantly used instead of
+//! the original arrays.
+//!
+//! # Array slicing
+//!
+//! RLST allows the slicing of arrays across a given dimension. Given the following array.
+//! ```
+//! let arr = rlst::rlst_dynamic_array!(f64, [5, 3, 2]);
+//! ```
+//! we can slice at the first index of the second dimension as follows.
+//! ```
+//! # let arr = rlst::rlst_dynamic_array!(f64, [5, 3, 2]);
+//! let slice = arr.r().slice::<2>(1, 0);
+//! ```
+//! This creates a two dimensional array of dimension `(5, 2)`. Any index `[a, b]` into this array
+//! is mapped to an index `[a, 0, b]` of the original array. A slice is mutable if the original array was mutable.
+//! A frequent example is access to a single column or row in a given matrix.
+//! ```
+//! let arr = rlst::rlst_dynamic_array!(f64, [4, 6]);
+//! // This gives the third column
+//! let slice = arr.r().slice::<1>(1, 2);
+//! // This gives the fourth row
+//! let slice = arr.r().slice::<1>(0, 3);
+//! ```
+//! The annotation with the dimension parameter is necessary if the compiler cannot automatically infer from
+//! subsequent operations what the correct number of dimensions after slicing is.
+//!
+//! # Array iterators
+//!
+//! The default iterator returns elements of an array in column-major order independent of the underlying stride.
+//! The following example demonstrates the default iterator.
+//! ```
+//! let mut arr = rlst::rlst_dynamic_array!(f64, [2, 3]);
+//! for elem in arr.iter_mut() {
+//!     *elem = 2.0;
+//! }
+//!
+//! ```
+//! The possible iterators are `iter_value` for an iterator that returns array values, `iter_ref` for an iterator
+//! that returns references, and `iter_mut` for a mutable iterator. For example, the array `out = a + b` as the result
+//! of the sum of the arrays `a` and `b` only supports `iter_value` with the componentwise addition of the elements
+//! of `a` and `b` are performed as part of the iteration.
+//!
+//! It is possible to obtain the multi-index together with the iterator as is shown in the following example.
+//! ```
+//! # let mut arr = rlst::rlst_dynamic_array!(f64, [2, 3]);
+//! # arr.fill_from_seed_equally_distributed(0);
+//! use rlst::AsMultiIndex;
+//! let shape = arr.shape();
+//! for (multi_index, elem) in arr.iter_value().enumerate().multi_index(shape) {
+//!     assert_eq!(elem, arr[multi_index]);
+//! }
+//! ```
+//! In addition to the above iterators the following special iterators are defined.
+//! - [col_iter](crate::dense::array::Array::col_iter) - for 2-dimensional arrays to iterate through the columns.
+//! - [row_iter](crate::dense::array::Array::row_iter) - for 2-dimensional arrays to iterate through the rows.
+//! - [diag_iter_value](crate::dense::array::Array::diag_iter_value) - for n-dimensional arrays to iterate through the diagonal by value.
+//! - [diag_iter_ref](crate::dense::array::Array::diag_iter_ref) - for n-dimensional arrays to iterate through the diagonal by reference.
+//! - [diag_iter_mut](crate::dense::array::Array::diag_iter_mut) - for n-dimensional arrays to iterate through the diagonal mutably.
+//!
+//!
+//! # Operations on arrays
+//!
+//! RLST uses a system of static lazy evaluation for array operations. Consider the following example.
+//! ```
+//! # let mut rng = rand::thread_rng();
+//! let mut arr = rlst::rlst_dynamic_array!(f64, [2, 3]);
+//! arr.fill_from_equally_distributed(&mut rng);
+//! let res = 5.0 * arr.r();
+//! ```
+//! The array `res` is not connected with a memory region. It internally takes ownership
+//! of a reference into `arr`. The scalar multiplication with `5.0` is performed whenever an element if `res` is requested,
+//! either by an iterator or by direct random access. Hence, the operation `let res = 5.0 * arr.r()` has no cost itself.
+//! But calling `res.get_value([0, 0])` would multiply the first element of `arr` by `5.0` and return the result of that
+//! operation. To get a new array in which every element was multiplied by `5.0` simply call `let out = res.eval()`.
+//!
+//! RLST supports all the usual algebraic unary and binary operations on arrays. Results are stored as expressions and only evaluated
+//! on element access or evaluation into a new array. In addition to standard algebraic operations the following special functions are
+//! implemented: `conj, abs, square, abs_square, sqrt, exp, ln, recip, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh`.
+//!
+//! Hence, we can form an expression of the form `let out = (5.0 * a.sqrt() + b.exp()).eval()`. To evaluate the expression only a single iteration through
+//! the arrays `a` and `b` is performed.
+//!
+//! Below is a list of further operations supported through the expression system in RLST.
+//! - [cast](crate::dense::array::Array::cast): Cast from one type to another using [num::cast].
+//! - [coerce_dim](crate::dense::array::Array::coerce_dim): Coerce the dimension of an array from a generic parameter to a concrete integer.
+//! - [mul_add](crate::dense::array::Array::mul_add): Multiply an array with a scalar and add to another array. This uses a componentwise `mul_add` that
+//!   is usually converted into a single `mul_add` cpu instruction instead of a separate multiplication and addition.
+//! - [reverse_axis](crate::dense::array::Array::reverse_axis): Reverse the elements in an array along a single axis.
+//! - [transpose](crate::dense::array::Array::transpose): Reverse the order of the axes of an array.
+//! - [with_eval_type](crate::dense::array::Array::with_container_type): Force the use of either a dynamic or static container for array evaluation.
+//! - [unary_op](crate::dense::array::Array::unary_op): Apply an arbitrary unary function componentwise to an array.
+//! - [into_type](crate::dense::array::Array::into_type): Use [std::convert::Into] to convert into another type.
+//!
+//! # Matrix multiplication
+//!
+//! RLST uses its BLAS interface to perform matrix multiplication.
+//! To use matrix products make sure to have a BLAS/Lapack provider as explained [here](crate::doc::getting_started). Furthermore,
+//! BLAS requires the data stored in memory using column-major order. Hence, array expressions are not supported and need to first be
+//! evaluated.
+//!
+//! ```
+//! let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
+//! let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
+//! let res = rlst::dot!(arr1.r(), arr2.r());
+//! ```
+//! This multiplies the matrices `arr1` and `arr2` into a new matrix `res`. The macro [crate::dot] initializes a new array and multiplies
+//! `arr1` and `arr2` into it. `dot` supports the multiplication of multiple arrays. Hence, an expression of the form `dot!(a1, a2, a3, a4)`
+//! is possible. Arrays are multiplied with `dot` from right to left. For combined array multiplication/addition of the form `Y -> alpha * A B + beta * Y`
+//! the [apply](crate::AsMatrixApply::apply) is implemented for all array types that support BLAS operations.
+//!
+//
+//
+//
 // ! # Pivoted QR Decomposition
 // !
 // ! The pivted QR decomposition of a matrix `A` is given as `AP=QR`, where `P` is a permutation matrix, `R` is upper triangular, and
