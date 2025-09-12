@@ -9,21 +9,7 @@
 //! - [Array slicing](#array-slicing)
 //! - [Array iterators](#array-iterators)
 //! - [Operations on arrays](#operations-on-arrays)
-//!    - [Static lazy evaluation](#static-lazy-evaluation)
-//!    - [Multiplication with a scalar](#multiplication-with-a-scalar)
-//!    - [Negation of an array](#negation-of-an-array)
-//!    - [Addition and subtraction of arrays](#addition-and-subtraction-of-arrays)
-//!    - [Componentwise multiplication and division](#componentwise-multiplication-and-division)
-//!    - [Transposition of arrays](#transposition-of-arrays)
-//!    - [Conversion to complex type](#conversion-to-complex-type)
-//!    - [Conjugation of an array](#conjugation-of-an-array)
-//! - [Evaluating arrays into other arrays](#evaluating-arrays-into-other-arrays)
 //! - [Matrix multiplication](#matrix-multiplication)
-//! - [LU Decomposition and solving linear systems of equations](#lu-decomposition-and-solving-linear-systems-of-equations)
-//! - [Pivoted QR Decomposition](#pivoted-qr-decomposition)
-//! - [Singular value decomposition](#singular-value-decomposition)
-//! - [Other vector functions](#other-vector-functions)
-//! - [Other matrix functions](#other-matrix-functions)
 //!
 //! # Basic concepts
 //!
@@ -295,8 +281,9 @@
 //! evaluated.
 //!
 //! ```
-//! let arr1 = rlst_dynamic_array2!(f64, [4, 5]);
-//! let arr2 = rlst_dynamic_array2!(f64, [5, 3]);
+//! # extern crate blas_src;
+//! let arr1 = rlst::rlst_dynamic_array!(f64, [4, 5]);
+//! let arr2 = rlst::rlst_dynamic_array!(f64, [5, 3]);
 //! let res = rlst::dot!(arr1.r(), arr2.r());
 //! ```
 //! This multiplies the matrices `arr1` and `arr2` into a new matrix `res`. The macro [crate::dot] initializes a new array and multiplies

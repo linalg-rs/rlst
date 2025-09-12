@@ -33,11 +33,12 @@ pub trait Inverse {
 
 /// Compute the LU decomposition of a matrix.
 ///
-/// The LU decomposition is defined as `A = P * L * U`, where:
+/// The LU decomposition of an `m times n` matrix `A` is defined as `A = P * L * U`, where:
 /// - `A` is the original matrix,
-/// - `P` is a permutation matrix,
-/// - `L` is a lower triangular matrix with unit diagonal,
-/// - `U` is an upper triangular matrix.
+/// - `P` is a permutation matrix of dimension `m x m`,
+/// - `L` is a lower triangular matrix of dimension `m x k` with unit diagonal,
+/// - `U` is an upper triangular matrix of dimension `k x n`.
+/// Here, `k = min(m, n)`.
 pub trait Lu {
     /// Item type of the LU decomposition.
     type Item: Lapack;
