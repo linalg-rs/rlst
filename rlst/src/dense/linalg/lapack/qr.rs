@@ -1,11 +1,11 @@
 //! Implementation of the QR decomposition.
 
+use crate::UnsafeRandom1DAccessByValue;
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::traits::base_operations::Shape;
 use crate::traits::linalg::decompositions::Qr;
 use crate::traits::linalg::lapack::Lapack;
-use crate::UnsafeRandom1DAccessByValue;
 
 use super::interface::geqp3::Geqp3;
 use super::interface::geqrf::Geqrf;
@@ -21,9 +21,9 @@ pub struct QrDecomposition<Item> {
 /// The pivoting strategy for the QR decomposition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnablePivoting {
-    /// No pivoting,
+    /// Column pivoting,
     Yes,
-    /// Column pivoting.
+    /// No pivoting.
     No,
 }
 
@@ -149,11 +149,11 @@ where
 mod test {
 
     use super::*;
+    use crate::MultIntoResize;
     use crate::base_types::TransMode;
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::empty_array;
-    use crate::MultIntoResize;
     use paste::paste;
 
     macro_rules! implement_qr_tests {

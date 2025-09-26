@@ -3,6 +3,7 @@
 use itertools::izip;
 
 use crate::{
+    Shape, UnsafeRandom1DAccessByValue,
     dense::array::{Array, DynArray},
     diag, dot,
     traits::{
@@ -10,7 +11,6 @@ use crate::{
         linalg::{base::Gemm, lapack::Lapack},
         rlst_num::RlstScalar,
     },
-    Shape, UnsafeRandom1DAccessByValue,
 };
 
 /// A structure representing the pseudo-inverse of a matrix.
@@ -96,7 +96,7 @@ mod test {
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::dot;
-    use crate::traits::linalg::SingularvalueDecomposition;
+    use crate::traits::linalg::SingularValueDecomposition;
 
     use paste::paste;
 

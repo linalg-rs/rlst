@@ -28,12 +28,255 @@
 //! # extern crate blas_src;
 //! # use rand::SeedableRng;
 //! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::dot;
 //! # let mut rng = ChaCha8Rng::seed_from_u64(0);
 //! # use rlst::Lu;
 //! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 3]);
 //! # a.fill_from_standard_normal(&mut rng);
 //! # let lu = a.lu().unwrap();
-//! let p = lu.p_mat();
-//! let l = lu.l_mat();
-//! let r = lu.u_mat();
+//! let p = lu.p_mat().unwrap();
+//! let l = lu.l_mat().unwrap();
+//! let u = lu.u_mat().unwrap();
+//! rlst::assert_array_relative_eq!(dot!(p, l, u), a, 1E-10);
+//! ```
+//! To solve a linear system of equations we use the `solve` method.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::Lu;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let lu = a.lu().unwrap();
+//! let mut b = rlst::rlst_dynamic_array!(f64, [5]);
+//! b.fill_from_standard_normal(&mut rng);
+//! let x = lu.solve(TransMode::NoTrans, &b).unwrap();
+//! ```
+//!
+//! # QR Decomposition
+//!
+//! The QR Decomposition of a `m x n` matrix `A` is defined as the decomposition
+//! of the form `A * P = Q * R`. Here,
+//! - `P` is a permutation matrix of dimension `n x n`. If pivoting is disabled then `P`
+//!   is just the identity matrix.
+//! - `Q` is a `m x k` matrix (`k = min(m, n)`) with orthogonal unit length columns.
+//! - `R` is a upper triangular `k x n` matrix (`k = min(m, n)`). If pivoting is enabled
+//!   the diagonal elements of `R` are ordered by magnitude in descending order.
+//!
+//! The following gives an example of using the QR decomposition.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! use rlst::Qr;
+//! use rlst::dense::linalg::lapack::qr::EnablePivoting;
+//! use rlst::dense::linalg::lapack::qr::QMode;
+//! let mut a= rlst::rlst_dynamic_array!(f64, [5, 3]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let qr = a.qr(EnablePivoting::Yes).unwrap();
+//! let p = qr.p_mat().unwrap();
+//! let q = qr.q_mat(QMode::Compact).unwrap();
+//! let r = qr.r_mat().unwrap();
+//! rlst::assert_array_relative_eq!(dot!(q, r, p.r().transpose().eval()), a, 1E-10);
+//! ```
+//! For the matrix `Q` we have used the paramter [QMode::Compact](crate::dense::linalg::lapack::qr::QMode::Compact).
+//! This returns a `Q` matrix of dimension `m x k`. One can also return a full `m x m` matrix by
+//! providing the parameter [QMode::Full](crate::dense::linalg::lapack::qr::QMode::Full) instead.
+//!
+//! # Singular Value Decomposition
+//!
+//! The singluar value decomposition of a `m x n` matrix `A` is a decomposition of the form
+//! `A = U * S * Vt`, where
+//! - `U` is an `m x m` matrix with orthogonal columns of unit length.
+//! - `S` is a diagonal `m x n` matrix with `min(m, n)` singular values `s1 >= s2 >= ... >= 0` on its diagonal.
+//! - `Vt` is a `n x n` matrix with orthogonal columns of unit length.
+//!
+//! In the following example we compute only the singular values of a matrix.
+//!
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::SingularValueDecomposition;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 3]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let singular_values = a.singular_values().unwrap();
+//! assert_eq!(singular_values.len(), 3);
+//! ```
+//! We can also compute the full SVD as follows.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::SingularValueDecomposition;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 3]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! use itertools::izip;
+//! use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
+//! let (s, u, vt) = a.svd(SvdMode::Full).unwrap();
+//! let mut s_mat = rlst::DynArray::<f64, 2>::from_shape([5, 3]);
+//! for (d, s_val) in izip!(s_mat.diag_iter_mut(), s.iter_value()) {
+//!     *d = s_val;
+//! }
+//! rlst::assert_array_relative_eq!(dot!(u, s_mat, vt), a, 1E-10);
+//! ```
+//! The parameter [SvdMode::Full](crate::dense::linalg::lapack::singular_value_decomposition::SvdMode::Full) returns the full SVD as
+//! defined above. To instead compute a compact representation with `m x k` matrix `U` and `k x n` matrix `Vt` use the
+//! parameter [SvdMode::Compact](crate::dense::linalg::lapack::singular_value_decomposition::SvdMode::Compact).
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::SingularValueDecomposition;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 3]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! # use rlst::dense::linalg::lapack::singular_value_decomposition::SvdMode;
+//! use itertools::izip;
+//! let (s, u, vt) = a.svd(SvdMode::Compact).unwrap();
+//! let mut s_mat = rlst::DynArray::<f64, 2>::from_shape([3, 3]);
+//! for (d, s_val) in izip!(s_mat.diag_iter_mut(), s.iter_value()) {
+//!     *d = s_val;
+//! }
+//! rlst::assert_array_relative_eq!(dot!(u, s_mat, vt), a, 1E-10);
+//! ```
+//! # Symmetric Eigenvalue Decomposition
+//!
+//! For a real symmetric or complex Hermitian `n x n` matrix `A` the eigenvalue
+//! decomposition is given as `A = Q * L * Q^H` with `Q` a matrix with orthogonal
+//! columns of unit length, and `Q^H` the complex conjugate transpose of `Q`. An important
+//! property of this eigenvalue problem is that all eigenvalues are real. We can compute the
+//! eigenvalues as follows.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
+//! use rlst::SymmEig;
+//! use rlst::base_types::UpLo;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let a = (a.r() + a.r().transpose()).eval();
+//! let (eig, _) = a.eigh(UpLo::Upper, SymmEigMode::EigenvaluesOnly).unwrap();
+//! ```
+//! To compute the eigenvalues and the eigenvector matrix `Q` use the following.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::{diag, dot};
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::dense::linalg::lapack::symmeig::SymmEigMode;
+//! # use rlst::SymmEig;
+//! # use rlst::base_types::UpLo;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! # use rlst::EvaluateObject;
+//! a.fill_from_standard_normal(&mut rng);
+//! let a = (a.r() + a.r().transpose()).eval();
+//! let (eig, Q) = a.eigh(UpLo::Upper, SymmEigMode::EigenvaluesAndEigenvectors).unwrap();
+//! let Q = Q.unwrap();
+//! let eig_mat = diag!(eig);
+//! rlst::assert_array_relative_eq!(a, dot!(Q.r(), eig_mat, Q.r().transpose().eval()), 1E-10);
+//! ```
+//! # General Eigenvalue Decomposition
+//!
+//! The general eigenvalue decomposition for a `n x n` matrix `A` is of the form
+//! `A * Vr = Vr * L` for a diagonal matrix `L` containing the eigenvalues
+//! and a matrix `Vr` whose columns are the right eigenvectors. Alternatively,
+//! one may be interested in the left eigenvectors given as the columns of the matrix `Vl`
+//! satisfying `Vl^H * A = L * Vl^H` with `Vl^H` being the complex conjugate transpose of `A`.
+//!
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::{dot, diag};
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! use rlst::base_types::c64;
+//! use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
+//! use rlst::EigenvalueDecomposition;
+//! use rlst::Inverse;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let (lam, vr, vl) = a.eig(EigMode::BothEigenvectors).unwrap();
+//! let vr = vr.unwrap();
+//! let vlh = vl.unwrap().conj().transpose().eval();
+//! let lam_mat = diag!(lam);
+//! rlst::assert_array_abs_diff_eq!(dot!(vr, lam_mat, vr.inverse().unwrap()), a.r().into_type::<c64>(), 1E-10);
+//! rlst::assert_array_abs_diff_eq!(dot!(vlh.inverse().unwrap(), lam_mat, vlh), a.r().into_type::<c64>(), 1E-10);
+//! ```
+//! Note that for the assertion at the end we convert the matrix `a` to the complex type [c64](crate::base_types::c64).
+//! The reason is that eigenvalues and eigenvectors are complex in general. Hence, even for a real matrix `a` the eigenvalues
+//! and eigenvectors returned are of the corresponding complex type.
+//!
+//! To just compute the eigenvalues of the matrix `a` we can use the following instead.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::{dot, diag};
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! # use rlst::base_types::c64;
+//! # use rlst::dense::linalg::lapack::eigenvalue_decomposition::EigMode;
+//! # use rlst::EigenvalueDecomposition;
+//! # use rlst::Inverse;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! # let (lam2, _, _) = a.eig(EigMode::BothEigenvectors).unwrap();
+//! let lam = a.eigenvalues().unwrap();
+//! # rlst::assert_array_relative_eq!(lam, lam2, 1E-10);
+//! ```
+//!
+//! # Schur Decomposition
+//!
+//! The Schur decomposition for a `n x n` matrix `A` is defined as `A = Q * R * Q^H`
+//! with `Q` having orthogonal columns of unit length and `R` upper triangular. The diagonal
+//! values of `R` contain the eigenvalues of `A`. The following example computes the Schur
+//! decomposition. The Schur decomposition is contained in the same trait [EigenvalueDecomposition](crate::EigenvalueDecomposition)
+//! as the eigenvalue decomposition.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::{diag, dot};
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! use rlst::EigenvalueDecomposition;
+//! a.fill_from_standard_normal(&mut rng);
+//!
+//! rlst::assert_array_relative_eq!(a, dot!(Q.r(), eig_mat, Q.r().transpose().eval()), 1E-10);
 //! ```

@@ -112,12 +112,12 @@ pub trait EigenvalueDecomposition {
 }
 
 /// Compute the singular value decomposition of a matrix.
-pub trait SingularvalueDecomposition {
+pub trait SingularValueDecomposition {
     /// The item type of the matrix.
     type Item: Lapack + Gemm;
 
     /// Compute the singular values of a matrix.
-    fn singularvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>>;
+    fn singular_values(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>>;
 
     /// Compute the singular value decomposition of a matrix.
     ///

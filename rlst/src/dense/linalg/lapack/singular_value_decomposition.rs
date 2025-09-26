@@ -1,14 +1,14 @@
 //! Implementation of the singular value decomposition using LAPACK.
 
+use crate::UnsafeRandom1DAccessByValue;
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::dense::linalg::lapack::interface::gesdd::JobZ;
 use crate::traits::base_operations::Shape;
 use crate::traits::linalg::base::Gemm;
-use crate::traits::linalg::decompositions::SingularvalueDecomposition;
+use crate::traits::linalg::decompositions::SingularValueDecomposition;
 use crate::traits::linalg::lapack::Lapack;
 use crate::traits::rlst_num::RlstScalar;
-use crate::UnsafeRandom1DAccessByValue;
 
 /// Symmetric eigenvalue decomposition mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,14 +19,14 @@ pub enum SvdMode {
     Compact,
 }
 
-impl<Item, ArrayImpl> SingularvalueDecomposition for Array<ArrayImpl, 2>
+impl<Item, ArrayImpl> SingularValueDecomposition for Array<ArrayImpl, 2>
 where
     Item: Lapack + Gemm,
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<2>,
 {
     type Item = Item;
 
-    fn singularvalues(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>> {
+    fn singular_values(&self) -> RlstResult<DynArray<<Self::Item as RlstScalar>::Real, 1>> {
         let mut a = DynArray::new_from(self);
         let [m, n] = a.shape();
         let k = std::cmp::min(m, n);
@@ -123,7 +123,7 @@ mod test {
 
                 let ata = dot!(a.r().conj().transpose().eval(), a.r());
 
-                let s = a.singularvalues().unwrap();
+                let s = a.singular_values().unwrap();
 
                 let actual = ata
                     .eigenvaluesh()
