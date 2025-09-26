@@ -1,6 +1,7 @@
 //! Implement the triangular solver trait.
 
 use crate::{
+    UnsafeRandom1DAccessByValue,
     base_types::{RlstResult, UpLo},
     dense::{
         array::{Array, DynArray},
@@ -10,7 +11,6 @@ use crate::{
         base_operations::Shape,
         linalg::{decompositions::SolveTriangular, lapack::Lapack},
     },
-    UnsafeRandom1DAccessByValue,
 };
 
 impl<Item, ArrayImpl, RhsArrayImpl, const NDIM: usize> SolveTriangular<Array<RhsArrayImpl, NDIM>>
@@ -42,7 +42,13 @@ where
             rhs.shape()[0]
         );
 
-        let nrhs = rhs.shape()[1];
+        let nrhs = if NDIM == 1 {
+            1
+        } else if NDIM == 2 {
+            rhs.shape()[1]
+        } else {
+            panic!("The right-hand side must be one or two dimensional: NDIM = {NDIM}");
+        };
 
         let mut a = DynArray::new_from(self);
         let mut b = DynArray::new_from(rhs);

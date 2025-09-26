@@ -190,6 +190,12 @@ pub trait SingularValueDecomposition {
     }
 
     /// Compute the pseudo-inverse of a matrix.
+    ///
+    /// If an integer for `max_singular_values` is provided no more than that number of
+    /// singular values is contained in the pseudo-inverse. The optional parameter `tol` specifies a relative
+    /// cut-off tolerance for the smallest singular value contained in the pseudo-inverse. The parameter `max_singular_values`
+    /// takes precedence in the sense that if it is specified the number of singular values can never exceed the given value
+    /// irrespective of `tol`.
     fn pseudo_inverse(
         &self,
         max_singular_values: Option<usize>,

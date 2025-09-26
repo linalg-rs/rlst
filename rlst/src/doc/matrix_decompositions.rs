@@ -56,6 +56,110 @@
 //! b.fill_from_standard_normal(&mut rng);
 //! let x = lu.solve(TransMode::NoTrans, &b).unwrap();
 //! ```
+//! # Computing the Determinant
+//!
+//! We can compute the determinant of a matrix `a` from its LU decomposition.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::Lu;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let det = a.lu().unwrap().det();
+//! ````
+//! # Solvers for linear systems and least-squares problems
+//!
+//! We can directly solve linear systems and least-squares problems with the [solve](crate::Solve) trait
+//! implemented for dense matrices. Depending on whether the system is square or rectangular LU decomposition
+//! or a least-squares solver is used. The following gives an example of a least-squares solve.
+//!
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::Solve;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 3]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let mut b = rlst::rlst_dynamic_array!(f64, [5]);
+//! b.fill_from_standard_normal(&mut rng);
+//! let x = a.solve(&b).unwrap();
+//! ```
+//!
+//! # Triangular linear systems
+//!
+//! We can solve linear systems with triangular matrices as follows.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::base_types::UpLo;
+//! use rlst::SolveTriangular;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let mut b = rlst::rlst_dynamic_array!(f64, [5]);
+//! b.fill_from_standard_normal(&mut rng);
+//! let x = a.solve_triangular(UpLo::Upper, &b).unwrap();
+//! ```
+//! The triangular solver uses the parameter [UpLo](crate::base_types::UpLo) to determine whether to use the upper or
+//! lower triangular part of `a`.
+//!
+//! # Cholesky decomposition and linear system solves
+//!
+//! If a matrix `A` is Hermitian and positve definite the Cholesky Decomposition exists as `A = C^H * C`
+//! with `C` upper triangular. The following gives an example on how to compute the Cholesky decomposition.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::EvaluateObject;
+//! use rlst::Cholesky;
+//! use rlst::base_types::UpLo;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let a = dot!(a.r().conj().transpose().eval(), a.r());
+//! let cholesky = a.cholesky(UpLo::Upper).unwrap();
+//! rlst::assert_array_relative_eq!(dot!(cholesky.r().conj().transpose().eval(), cholesky.r()), a, 1E-10);
+//! ```
+//! The parameter [UpLo](crate::base_types::UpLo) determines whether the Cholesky decomposition uses the upper or lower
+//! triangular part of the matrix. Correspondingly, the upper or lower triangular Cholesky factor is returned.
+//!
+//! To solve a linear system using the Cholesky decomposition use the following.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::EvaluateObject;
+//! # use rlst::CholeskySolve;
+//! # use rlst::base_types::UpLo;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! # let a = dot!(a.r().conj().transpose().eval(), a.r());
+//! let mut b = rlst::rlst_dynamic_array!(f64, [5]);
+//! b.fill_from_standard_normal(&mut rng);
+//! let x = a.cholesky_solve(UpLo::Upper, &b).unwrap();
+//! rlst::assert_array_relative_eq!(dot!(a, x), b, 1E-10);
+//! ```
 //!
 //! # QR Decomposition
 //!
@@ -160,6 +264,32 @@
 //! }
 //! rlst::assert_array_relative_eq!(dot!(u, s_mat, vt), a, 1E-10);
 //! ```
+//!
+//! # Pseudo-Inverse of a matrix
+//!
+//! The pseudo-inverse for an `m x n` matrix with `m >= n` is given as `P = (A^H* A )^{-1} * A^H`.
+//! If `m < n` then the pseudo-inverse is `P = A^H * (A * A^H)`. The pseudo-inverse can be computed
+//! with the singular value decomposition. In practice the pseudo-inverse is usually regularized in the
+//! sense that only a certain number of the largest singular values are used, either specified through a
+//! tolerance or through a maximum number of singular values.
+//!
+//! The following computes the pseudo-inverse of a given matrix using a singular-value cut-off of `1E-10`
+//! and no maximum number of singular values.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::SingularValueDecomposition;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [10, 5]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! let p_inv = a.pseudo_inverse(None, Some(1E-10));
+//! ```
+//!
+//!
 //! # Symmetric Eigenvalue Decomposition
 //!
 //! For a real symmetric or complex Hermitian `n x n` matrix `A` the eigenvalue
@@ -257,6 +387,8 @@
 //! let lam = a.eigenvalues().unwrap();
 //! # rlst::assert_array_relative_eq!(lam, lam2, 1E-10);
 //! ```
+//! With the parameter enum [EigMode](crate::dense::linalg::lapack::eigenvalue_decomposition::EigMode) one can control whether
+//! to compute only eigenvalues, only the left eigenvectors, only the right eigenvectors, or all eigenvectors.
 //!
 //! # Schur Decomposition
 //!
@@ -277,6 +409,6 @@
 //! # let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
 //! use rlst::EigenvalueDecomposition;
 //! a.fill_from_standard_normal(&mut rng);
-//!
-//! rlst::assert_array_relative_eq!(a, dot!(Q.r(), eig_mat, Q.r().transpose().eval()), 1E-10);
+//! let (r, q) = a.schur().unwrap();
+//! rlst::assert_array_relative_eq!(dot!(q.r(), r, q.r().conj().transpose().eval()), a, 1E-10);
 //! ```
