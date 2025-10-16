@@ -3,6 +3,19 @@
 //! RLST uses Lapack to provide matrix decompositions and some other advanced linear algebra
 //! operations.
 //!
+//! - [LU Decomposition and linear systems of equations](#lu-decomposition-and-linear-systems-of-equations)
+//! - [Computing the determinant](#computing-the-determinant)
+//! - [Matrix inverses](#matrix-inverses)
+//! - [Solvers for linear systems and least-squares problems](#solvers-for-linear-systems-and-least-squares-problems)
+//! - [Triangular linear systems](#triangular-linear-systems)
+//! - [Cholesky decomposition and linear system solves](#cholesky-decomposition-and-linear-system-solves)
+//! - [QR Decomposition](#qr-decomposition)
+//! - [Singular Value Decomposition](#singular-value-decomposition)
+//! - [Pseudo-Inverse of a matrix](#pseudo-inverse-of-a-matrix)
+//! - [Symmetric Eigenvalue Decomposition](#symmetric-eigenvalue-decomposition)
+//! - [General Eigenvalue Decomposition](#general-eigenvalue-decomposition)
+//! - [Schur decomposition](#schur-decomposition)
+//!
 //! # LU Decomposition and linear systems of equations
 //!
 //! The LU decomposition computes a decomposition of an `m x n` matrix `A` of the form
@@ -72,6 +85,24 @@
 //! a.fill_from_standard_normal(&mut rng);
 //! let det = a.lu().unwrap().det();
 //! ````
+//! # Matrix inverses
+//!
+//! To compute the inverse of a `n x n` matrix `A` simply use the following.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! # use rlst::Lu;
+//! use rlst::Inverse;
+//! let mut a = rlst::rlst_dynamic_array!(f64, [5, 5]);
+//! a.fill_from_standard_normal(&mut rng);
+//! let inv = a.inverse().unwrap();
+//! ```
+//!
 //! # Solvers for linear systems and least-squares problems
 //!
 //! We can directly solve linear systems and least-squares problems with the [solve](crate::Solve) trait
@@ -286,7 +317,25 @@
 //! use rlst::SingularValueDecomposition;
 //! # let mut a = rlst::rlst_dynamic_array!(f64, [10, 5]);
 //! # a.fill_from_standard_normal(&mut rng);
-//! let p_inv = a.pseudo_inverse(None, Some(1E-10));
+//! let p_inv = a.pseudo_inverse(None, Some(1E-10)).unwrap();
+//! ```
+//! For numerical stability reasons the pseudo-inverse is not stored as a single matrix in `p_inv` but
+//! in a disassembled structure. To apply the pseudo-inverse to a vector or matrix use the following.
+//! ```
+//! # extern crate lapack_src;
+//! # extern crate blas_src;
+//! # use rand::SeedableRng;
+//! # use rand_chacha::ChaCha8Rng;
+//! # use rlst::base_types::TransMode;
+//! # use rlst::dot;
+//! # let mut rng = ChaCha8Rng::seed_from_u64(0);
+//! use rlst::SingularValueDecomposition;
+//! # let mut a = rlst::rlst_dynamic_array!(f64, [10, 5]);
+//! # a.fill_from_standard_normal(&mut rng);
+//! # let p_inv = a.pseudo_inverse(None, Some(1E-10)).unwrap();
+//! let mut b = rlst::rlst_dynamic_array!(f64, [10]);
+//! b.fill_from_standard_normal(&mut rng);
+//! let out = p_inv.apply(&b);
 //! ```
 //!
 //!
