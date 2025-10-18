@@ -21,7 +21,7 @@ use crate::dense::array::slice::ArraySlice;
 use crate::dense::base_array::BaseArray;
 use crate::dense::data_container::VectorContainer;
 use crate::dense::layout::row_major_stride_from_shape;
-use crate::distributed_tools::{scatterv, scatterv_root, IndexLayout};
+use crate::distributed_tools::{IndexLayout, scatterv, scatterv_root};
 use num::traits::MulAdd;
 
 use crate::dense::array::{DynArray, StridedDynArray, StridedSliceArray};
@@ -31,9 +31,9 @@ use crate::{
 };
 use crate::{EvaluateRowMajorArray, UnsafeRandomAccessByValue};
 
+use mpi::Rank;
 use mpi::datatype::PartitionMut;
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
-use mpi::Rank;
 
 /// Distributed Array.
 ///
@@ -224,7 +224,7 @@ where
     /// Scatter the array out to all nodes using the given `index_layout`.
     ///
     /// The data is always scattered out along the first axis of the array.
-    /// Call this method on root. On other ranks call [DistributedArray::scatter_from_one].
+    /// Call this method on root. On other ranks call [Array::scatter_from_one].
     pub fn scatter_from_one_root<'a, C: Communicator>(
         &self,
         index_layout: Rc<IndexLayout<'a, C>>,
@@ -614,9 +614,9 @@ impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
 where
     C: Communicator,
     Array<ArrayImpl, NDIM>: std::ops::Add<
-        Array<ArrayImplOther, NDIM>,
-        Output = Array<ArrayAddition<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
-    >,
+            Array<ArrayImplOther, NDIM>,
+            Output = Array<ArrayAddition<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+        >,
     ArrayImpl: Shape<NDIM>,
     ArrayImplOther: Shape<NDIM>,
 {
@@ -637,9 +637,9 @@ impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
 where
     C: Communicator,
     Array<ArrayImpl, NDIM>: std::ops::Sub<
-        Array<ArrayImplOther, NDIM>,
-        Output = Array<ArraySubtraction<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
-    >,
+            Array<ArrayImplOther, NDIM>,
+            Output = Array<ArraySubtraction<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+        >,
     ArrayImpl: Shape<NDIM>,
     ArrayImplOther: Shape<NDIM>,
 {
@@ -660,9 +660,9 @@ impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
 where
     C: Communicator,
     Array<ArrayImpl, NDIM>: std::ops::Mul<
-        Array<ArrayImplOther, NDIM>,
-        Output = Array<CmpWiseProduct<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
-    >,
+            Array<ArrayImplOther, NDIM>,
+            Output = Array<CmpWiseProduct<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+        >,
     ArrayImpl: Shape<NDIM>,
     ArrayImplOther: Shape<NDIM>,
 {
@@ -683,9 +683,9 @@ impl<'a, C, ArrayImpl, ArrayImplOther, const NDIM: usize>
 where
     C: Communicator,
     Array<ArrayImpl, NDIM>: std::ops::Div<
-        Array<ArrayImplOther, NDIM>,
-        Output = Array<CmpWiseDivision<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
-    >,
+            Array<ArrayImplOther, NDIM>,
+            Output = Array<CmpWiseDivision<ArrayImpl, ArrayImplOther, NDIM>, NDIM>,
+        >,
     ArrayImpl: Shape<NDIM>,
     ArrayImplOther: Shape<NDIM>,
 {
@@ -708,9 +708,9 @@ macro_rules! impl_scalar_mult {
             C: Communicator,
             ArrayImpl: Shape<NDIM> + BaseItem<Item = $scalar>,
             $scalar: std::ops::Mul<
-                Array<ArrayImpl, NDIM>,
-                Output = Array<ArrayScalarMult<$scalar, ArrayImpl, NDIM>, NDIM>,
-            >,
+                    Array<ArrayImpl, NDIM>,
+                    Output = Array<ArrayScalarMult<$scalar, ArrayImpl, NDIM>, NDIM>,
+                >,
         {
             type Output = DistributedArray<'a, C, ArrayScalarMult<$scalar, ArrayImpl, NDIM>, NDIM>;
 
@@ -857,10 +857,10 @@ where
     ArrayImpl1: Shape<NDIM>,
     ArrayImpl2: Shape<NDIM>,
     Array<ArrayImpl1, NDIM>: MulAdd<
-        Item,
-        Array<ArrayImpl2, NDIM>,
-        Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>,
-    >,
+            Item,
+            Array<ArrayImpl2, NDIM>,
+            Output = Array<MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>,
+        >,
 {
     type Output = DistributedArray<'a, C, MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>, NDIM>;
 

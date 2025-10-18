@@ -2,7 +2,7 @@
 //!
 //! This module contains tools for working with distributed arrays.
 
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 use mpi::{
     datatype::{Partition, PartitionMut},
     traits::{Communicator, CommunicatorCollectives, Equivalence, Root},
@@ -78,8 +78,15 @@ pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     bin_counts
 }
 
-/// Redistribute an array via an all_to_all_varcount operation.
-pub fn redistribute<T: Equivalence, C: CommunicatorCollectives>(
+/// Global all to all communication with variable counts.
+///
+/// This is a simplified version of the MPI all to all with variable counts.
+///
+/// - `arr` is the local part of the distributed array.
+/// - `counts` has the same length as there are MPI ranks. It specifies how many elements
+///   each process receives.
+/// - `comm` is the communicator.
+pub fn all_to_all_varcount<T: Equivalence, C: CommunicatorCollectives>(
     arr: &[T],
     counts: &[i32],
     comm: &C,

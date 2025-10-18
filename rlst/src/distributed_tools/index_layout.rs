@@ -3,7 +3,7 @@
 //! An [IndexLayout] specified how degrees of freedom are distributed among processes.
 //! We always assume that a process has a contiguous set of degrees of freedom.
 
-use super::array_tools::redistribute;
+use super::array_tools::all_to_all_varcount;
 use itertools::Itertools;
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence};
 
@@ -234,7 +234,7 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
             .map(|&key| key as i32)
             .collect_vec();
 
-        redistribute(data, &scan, other.comm())
+        all_to_all_varcount(data, &scan, other.comm())
     }
 
     /// Return the communicator.

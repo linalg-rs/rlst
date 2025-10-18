@@ -8,7 +8,7 @@ pub mod index_layout;
 pub mod permutation;
 
 pub use array_tools::{
-    all_to_allv, displacements, redistribute, scatterv, scatterv_root, sort_to_bins,
+    all_to_all_varcount, all_to_allv, displacements, scatterv, scatterv_root, sort_to_bins,
 };
 pub use data_mapper::Global2LocalDataMapper;
 pub use ghost_communicator::GhostCommunicator;
