@@ -360,6 +360,8 @@ where
             }
             h_t.solve(&mut g_solve, crate::Side::Left, crate::TransMode::Trans);
 
+            println!("G-Solve: {:?}", g_solve.r().data());
+
             for index in 0..inner + 1 {
                 let elem = v.get(index).unwrap();
                 self.x.axpy_inplace(g_solve.r().data()[index], elem.r());
