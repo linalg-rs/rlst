@@ -3,6 +3,7 @@
 use paste::paste;
 use rlst::assert_array_abs_diff_eq;
 use rlst::assert_array_relative_eq;
+use rlst::dense::linalg::qr::Pivoting;
 use rlst::prelude::*;
 
 macro_rules! impl_inverse_tests {
@@ -251,7 +252,7 @@ macro_rules! implement_qr_tests {
             let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
             ident.set_identity();
 
-            let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
+            let qr = QrDecomposition::<$scalar,_>::new(mat, Pivoting::True).unwrap();
 
             let _ = qr.get_r(r_mat.r_mut());
             let _ = qr.get_q_alloc(q_mat.r_mut());
@@ -293,7 +294,7 @@ macro_rules! implement_qr_tests {
             let mut ident = rlst_dynamic_array2!($scalar, [5, 5]);
             ident.set_identity();
 
-            let qr = QrDecomposition::<$scalar, _>::new(mat).unwrap();
+            let qr = QrDecomposition::<$scalar, _>::new(mat, Pivoting::True).unwrap();
 
             let _ = qr.get_r(r_mat.r_mut());
             let _ = qr.get_q_alloc(q_mat.r_mut());
@@ -352,7 +353,7 @@ macro_rules! impl_tests {
                     let mut sigma = rlst_dynamic_array2!($scalar, [m, n]);
 
                     mat.fill_from_seed_equally_distributed(0);
-                    let qr = QrDecomposition::<$scalar,_>::new(mat).unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat, Pivoting::True).unwrap();
                     qr.get_q_alloc(q.r_mut()).unwrap();
 
                     for index in 0..k {
@@ -399,10 +400,10 @@ macro_rules! impl_tests {
                     mat_u.fill_from_seed_equally_distributed(0);
                     mat_vt.fill_from_seed_equally_distributed(1);
 
-                    let qr = QrDecomposition::<$scalar,_>::new(mat_u).unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat_u, Pivoting::True).unwrap();
                     qr.get_q_alloc(u.r_mut()).unwrap();
 
-                    let qr = QrDecomposition::<$scalar,_>::new(mat_vt).unwrap();
+                    let qr = QrDecomposition::<$scalar,_>::new(mat_vt, Pivoting::True).unwrap();
                     qr.get_q_alloc(vt.r_mut()).unwrap();
 
                     for index in 0..k {

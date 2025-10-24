@@ -34,6 +34,11 @@ impl<Item: RlstScalar> ArrayVectorSpaceElement<Item> {
             space,
         }
     }
+
+    /// Create a new element from an existing array
+    pub fn new_from_array(space: Rc<ArrayVectorSpace<Item>>, elem: DynamicArray<Item, 1>) -> Self {
+        Self { elem, space }
+    }
 }
 
 impl<Item: RlstScalar> Clone for ArrayVectorSpaceElement<Item> {
@@ -123,5 +128,13 @@ impl<Item: RlstScalar> ElementImpl for ArrayVectorSpaceElement<Item> {
 
     fn sub_inplace(&mut self, other: &Self) {
         self.elem.sub_into(other.view());
+    }
+
+    fn fill_inplace_raw(&mut self, other: &[Self::F]) {
+        self.elem.fill_from_raw_data(other);
+    }
+
+    fn fill_raw_data(&mut self, other: &mut [Self::F]) {
+        self.elem.fill_raw_data(other);
     }
 }

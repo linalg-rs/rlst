@@ -1,5 +1,6 @@
 //! Elements of linear spaces
 use std::rc::Rc;
+//use std::usize;
 
 use crate::dense::types::{c32, c64};
 
@@ -45,6 +46,12 @@ pub trait ElementImpl {
 
     /// self = other.
     fn fill_inplace(&mut self, other: &Self);
+
+    /// self = other.
+    fn fill_inplace_raw(&mut self, other: &[Self::F]);
+
+    /// other = self
+    fn fill_raw_data(&mut self, other: &mut [Self::F]);
 
     /// self *= alpha.
     fn scale_inplace(&mut self, alpha: Self::F);

@@ -22,6 +22,8 @@ pub trait Frame {
     fn get(&self, index: usize) -> Option<&ElementType<Self::E>>;
     /// Get a mutable element
     fn get_mut(&mut self, index: usize) -> Option<&mut ElementType<Self::E>>;
+    /// Modify an element
+    // fn set(&mut self, axis_0: usize, axis_1: usize, val: <Self::E as ElementImpl>::F);
     /// Number of elements
     fn len(&self) -> usize;
     /// Is empty
@@ -40,6 +42,7 @@ pub trait Frame {
         coeffs: &[<Self::E as ElementImpl>::F],
         mut result: Element<impl ElementContainerMut<E = Self::E>>,
     ) {
+        println!("coeffs: {:?}, {:?}", coeffs.len(), self.len());
         assert_eq!(coeffs.len(), self.len());
         for (elem, coeff) in self.iter().zip(coeffs.iter().copied()) {
             result.axpy_inplace(coeff, elem.r());

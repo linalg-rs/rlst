@@ -90,9 +90,20 @@ impl<Item: RlstScalar + Equivalence, C: Communicator> AsApply
         x: crate::Element<ContainerIn>,
         beta: <Self::Range as LinearSpace>::F,
         mut y: crate::Element<ContainerOut>,
+        trans_mode: crate::TransMode,
     ) {
-        self.csr_mat
-            .matmul(alpha, x.imp().view(), beta, y.imp_mut().view_mut());
+        match trans_mode {
+            crate::TransMode::NoTrans => {
+                self.csr_mat
+                    .matmul(alpha, x.imp().view(), beta, y.imp_mut().view_mut())
+            }
+            crate::TransMode::Trans => {
+                self.csr_mat
+                    .matmul_transpose(alpha, x.imp().view(), beta, y.imp_mut().view_mut())
+            }
+            crate::TransMode::ConjNoTrans => panic!("TransMode::ConjNoTrans not supported yet."),
+            crate::TransMode::ConjTrans => panic!("TransMode::ConjTrans not supported yet."),
+        }
     }
 }
 

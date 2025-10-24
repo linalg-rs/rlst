@@ -431,3 +431,21 @@ pub enum TransMode {
     /// Conjugate transpose of matrix.
     ConjTrans,
 }
+
+/// Defines if the matrix is lower or upper triangular
+#[derive(Clone, Copy, PartialEq)]
+pub enum TriangularType {
+    /// The matrix is upper-triangular
+    Upper,
+    /// The matrix is lower-triangular
+    Lower,
+}
+
+/// Defines the side through which the upper or lower triangular matrix acts
+#[derive(Clone, Copy, PartialEq)]
+pub enum Side {
+    /// Left side
+    Left,
+    /// Right side
+    Right,
+}
