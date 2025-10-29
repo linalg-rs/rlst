@@ -19,23 +19,23 @@ use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Mul};
 use std::rc::Rc;
 
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 use mpi::collective::CommunicatorCollectives;
 use mpi::traits::{Communicator, Equivalence};
 use num::One;
 
 use crate::dense::array::DynArray;
-use crate::distributed_tools::{redistribute, sort_to_bins, GhostCommunicator, IndexLayout};
+use crate::distributed_tools::{GhostCommunicator, IndexLayout, all_to_allv, sort_to_bins};
 use crate::{
-    empty_array, AijIteratorByValue, AsMatrixApply, BaseItem, FromAijDistributed, Nonzeros, Shape,
+    AijIteratorByValue, AsMatrixApply, BaseItem, FromAijDistributed, Nonzeros, Shape,
     SparseMatrixType, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut, empty_array,
 };
 
+use super::SparseMatType;
 use super::csr_mat::CsrMatrix;
 use super::distributed_array::DistributedArray;
 use super::tools::normalize_aij;
-use super::SparseMatType;
 
 /// Distributed CSR matrix
 pub struct DistributedCsrMatrix<'a, Item, C>
@@ -295,14 +295,11 @@ where
             .collect_vec();
 
         // Now we compute how many entries each process gets.
-        let counts = sort_to_bins(&rows, &index_bounds)
-            .iter()
-            .map(|&x| x as i32)
-            .collect_vec();
+        let counts = sort_to_bins(&rows, &index_bounds);
 
-        let rows = redistribute(&rows, &counts, comm);
-        let cols = redistribute(&cols, &counts, comm);
-        let data = redistribute(&data, &counts, comm);
+        let rows = all_to_allv(comm, &counts, &rows).1;
+        let cols = all_to_allv(comm, &counts, &cols).1;
+        let data = all_to_allv(comm, &counts, &data).1;
 
         // We now need to normalize again since processes could now again have elements at the same matrix positions being
         // sent over from different ranks.

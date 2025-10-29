@@ -1,5 +1,6 @@
 //! The RLST documentation.
 
+pub mod abstract_linear_algebra;
 pub mod dense_linear_algebra;
 pub mod distributed_computations;
 pub mod getting_started;

@@ -7,17 +7,16 @@
 //! - n-dimensional array structures that can be allocated on the stack or heap.
 //! - Support for BLAS matrix-matrix multiplication and a subset of Lapack operations (incl. LU, SVD, QR).
 //! - CSR sparse matrices on a single node or via MPI on multiple nodes.
-//! - An interface to UMFPACK for the solution of sparse linear systems.
 //! - Import and export into Matrix-Market format.
 //! - A general `operator` interface that can abstract linear operators, and iterative solvers
 //!   acting on linear operators.
 //!
 //! To learn about the features of RLST please have a look at the following documents.
-//! - [Initialising RLST.](crate::doc::initialise_rlst)
-//! - [An introduction to dense linear algebra with RLST](crate::doc::dense_linear_algebra).
-//! - Sparse matrix operations.
-//! - Using the operator interface for iterative solvers.
-//! - Import and export of matrices.
+//! - [Getting started with RLST](crate::doc::getting_started)
+//! - [An introduction to dense linear algebra with RLST](crate::doc::dense_linear_algebra)
+//! - [Sparse matrix operations](crate::doc::sparse_matrices)
+//! - [Abstract linear algebra and iterative solvers](crate::doc::abstract_linear_algebra)
+//! - [MPI distributed computations](crate::doc::distributed_computations)
 
 #![cfg_attr(feature = "strict", deny(warnings), deny(unused_crate_dependencies))]
 #![warn(missing_docs)]

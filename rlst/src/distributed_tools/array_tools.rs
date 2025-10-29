@@ -3,10 +3,7 @@
 //! This module contains tools for working with distributed arrays.
 
 use itertools::{Itertools, izip};
-use mpi::{
-    datatype::{Partition, PartitionMut},
-    traits::{Communicator, CommunicatorCollectives, Equivalence, Root},
-};
+use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 
 ///
 /// Distribute a sorted sequence into bins.
@@ -78,45 +75,6 @@ pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     bin_counts
 }
 
-/// Global all to all communication with variable counts.
-///
-/// This is a simplified version of the MPI all to all with variable counts.
-///
-/// - `arr` is the local part of the distributed array.
-/// - `counts` has the same length as there are MPI ranks. It specifies how many elements
-///   each process receives.
-/// - `comm` is the communicator.
-pub fn all_to_all_varcount<T: Equivalence, C: CommunicatorCollectives>(
-    arr: &[T],
-    counts: &[i32],
-    comm: &C,
-) -> Vec<T> {
-    assert_eq!(counts.len(), comm.size() as usize);
-
-    // First send the counts around via an alltoall operation.
-
-    let mut recv_counts = vec![0; counts.len()];
-
-    comm.all_to_all_into(counts, &mut recv_counts);
-
-    // We have the recv_counts. Allocate space and setup the partitions.
-
-    let nelems = recv_counts.iter().sum::<i32>() as usize;
-
-    let mut output = Vec::<T>::with_capacity(nelems);
-    let out_buf: &mut [T] = unsafe { std::mem::transmute(output.spare_capacity_mut()) };
-
-    let send_partition = Partition::new(arr, counts, displacements(counts));
-    let mut recv_partition =
-        PartitionMut::new(out_buf, &recv_counts[..], displacements(&recv_counts));
-
-    comm.all_to_all_varcount_into(&send_partition, &mut recv_partition);
-
-    unsafe { output.set_len(nelems) };
-
-    output
-}
-
 /// Compute displacements on n processes from a vector of n counts of local indices.
 ///
 /// This is useful for global MPI varcount operations. Let
@@ -146,7 +104,7 @@ pub fn displacements(counts: &[i32]) -> Vec<i32> {
 pub fn all_to_allv<T: Equivalence>(
     comm: &impl Communicator,
     counts: &[usize],
-    out_data: &[T],
+    data: &[T],
 ) -> (Vec<usize>, Vec<T>) {
     // We need the counts as i32 types.
     assert_eq!(counts.len(), comm.size() as usize);
@@ -168,7 +126,7 @@ pub fn all_to_allv<T: Equivalence>(
 
     let receive_displacements = displacements(&recv_counts);
 
-    let send_partition = mpi::datatype::Partition::new(out_data, counts, send_displacements);
+    let send_partition = mpi::datatype::Partition::new(data, counts, send_displacements);
     let mut receive_partition =
         mpi::datatype::PartitionMut::new(receive_buf, &recv_counts[..], receive_displacements);
 
@@ -226,7 +184,7 @@ pub fn scatterv_root<T: Equivalence>(
     recvbuf
 }
 
-/// Receiev the scattered data from `root`.
+/// Receive the scattered data from `root`.
 pub fn scatterv<T: Equivalence + Copy>(comm: &impl Communicator, root: usize) -> Vec<T> {
     let mut recv_count: i32 = 0;
 

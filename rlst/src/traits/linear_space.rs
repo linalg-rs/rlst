@@ -59,7 +59,10 @@ pub trait IndexableSpace: LinearSpace {
 /// Inner product space
 pub trait InnerProductSpace: LinearSpace {
     /// Inner product
-    fn inner_product(&self, x: &Element<Self>, other: &Element<Self>) -> Self::F;
+    ///
+    /// In spaces over complex numbers it is assumed that the complex conjugate
+    /// is taken with respect to the second argument.
+    fn inner_product(&self, x: &Element<Self>, y: &Element<Self>) -> Self::F;
 }
 
 /// Normed space

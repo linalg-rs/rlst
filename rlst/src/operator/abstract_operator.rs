@@ -3,7 +3,7 @@
 use num::{One, Zero};
 
 use crate::base_types::{c32, c64};
-use crate::{abstract_operator::OperatorBase, LinearSpace};
+use crate::{LinearSpace, abstract_operator::OperatorBase};
 
 /// A concrete operator.
 pub struct Operator<OpImpl>(OpImpl);
@@ -16,20 +16,20 @@ where
     pub fn new(op_impl: OpImpl) -> Self {
         Self(op_impl)
     }
+
+    /// Create a reference to the current operator.
+    pub fn r(&self) -> Operator<RlstOperatorReference<'_, OpImpl>> {
+        Operator::new(RlstOperatorReference::new(self))
+    }
 }
 
 /// Operator reference
-pub struct RlstOperatorReference<'a, Op>(&'a Op);
+pub struct RlstOperatorReference<'a, OpImpl>(&'a Operator<OpImpl>);
 
-impl<'a, Op: OperatorBase> RlstOperatorReference<'a, Op> {
+impl<'a, OpImpl: OperatorBase> RlstOperatorReference<'a, OpImpl> {
     /// Create a new operator reference.
-    pub fn new(op: &'a Op) -> Self {
+    pub fn new(op: &'a Operator<OpImpl>) -> Self {
         Self(op)
-    }
-
-    /// Return an operator reference
-    pub fn r(&self) -> Operator<RlstOperatorReference<'_, Self>> {
-        Operator::new(RlstOperatorReference::new(self))
     }
 }
 
@@ -60,10 +60,10 @@ impl<OpImpl: OperatorBase> OperatorBase for Operator<OpImpl> {
     }
 }
 
-impl<Op: OperatorBase> OperatorBase for RlstOperatorReference<'_, Op> {
-    type Domain = Op::Domain;
+impl<OpImpl: OperatorBase> OperatorBase for RlstOperatorReference<'_, OpImpl> {
+    type Domain = OpImpl::Domain;
 
-    type Range = Op::Range;
+    type Range = OpImpl::Range;
 
     fn domain(&self) -> &Self::Domain {
         self.0.domain()

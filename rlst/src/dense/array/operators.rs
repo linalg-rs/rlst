@@ -14,14 +14,18 @@ pub mod transpose;
 pub mod unary_op;
 pub mod with_type_hint;
 
-// pub fn simd_operator() {
-//     let mut a = DynArray::<f32, 2>::from_shape([5, 100]);
-//     let mut b = DynArray::<f32, 2>::from_shape([5, 100]);
-//
-//     a.fill_from_seed_normally_distributed(1);
-//     b.fill_from_seed_normally_distributed(2);
-//
-//     let c = a.mul_add(5.0f32, 2.0f32 * b.sin()).eval();
-//
-//     println!("c: {:?}", RandomAccessByValue::get_value(&c, [0, 0]));
-// }
+pub fn simd_operator() {
+    use crate::DynArray;
+    use crate::traits::EvaluateObject;
+    use crate::traits::MulAdd;
+
+    let mut a = DynArray::<f32, 2>::from_shape([5, 100]);
+    let mut b = DynArray::<f32, 2>::from_shape([5, 100]);
+
+    a.fill_from_seed_equally_distributed(1);
+    b.fill_from_seed_equally_distributed(2);
+
+    let c = (5.0f32 * a + 2.0f32 * b.sqrt()).eval();
+
+    println!("c: {:?}", c.get_value([0, 0]).unwrap());
+}

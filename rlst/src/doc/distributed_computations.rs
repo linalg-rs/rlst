@@ -54,4 +54,52 @@
 //! are not associated with the current rank. The constructor routines ensures that elements are communicated to the correct process. Multiple elements associated
 //! with the same global row and column are summed up on creation.
 //!
-//! 
+//! # Distributed communication patterns
+//!
+//! RLST has support routines for a number of distributed communication patterns.
+//!
+//! ## Tools for distributed arrays
+//!
+//! - [sort_to_bins](crate::distributed_tools::array_tools::sort_to_bins): Take a sorted sequence and distribute it into half-open bins. This is useful
+//!   for redistributing data across MPI ranks when the data distribution changes.
+//! - [all_to_allv](crate::distributed_tools::array_tools::all_to_allv): A simplified MPI all_to_all communication routine.
+//! - [scatterv](crate::distributed_tools::array_tools::scatterv): A simplified MPI scatter communication routine.
+//! - [scatterv_root](crate::distributed_tools::array_tools::scatterv_root): A simplified MPI scatter communication routine. Call from root.
+//!
+//! ## Ghost communicators
+//!
+//! We are often in situations where we need data associated with indices on other processes. These indices are called ghost indices.
+//! Underlying this is the pattern of a communication graph in which a process `j` receives data from all processes that are original owners of
+//! ghost indices that `j` requires and in which `j` sends out data to all processes who have ghost indices from process `j`. A ghost communicator
+//! is instantiated by calling [GhostCommunicator::new](crate::distributed_tools::ghost_communicator::GhostCommunicator::new) with the global indices
+//! of the ghosts that the process needs and the owners of those indices. Once instantiated ghost data can be communicated with the following methods.
+//!
+//! - [GhostCommunicator::forward_send_values](crate::distributed_tools::ghost_communicator::GhostCommunicator::forward_send_values):
+//!   Each process forward sends data to the processes that require them.
+//! - [GhostCommunicator::forward_send_values_by_chunks](crate::distributed_tools::ghost_communicator::GhostCommunicator::forward_send_values_by_chunks):
+//!   Forward send values by chunks. Use this if more than one data item is associated with an index.
+//! - [GhostCommunicator::backward_send_values](crate::distributed_tools::ghost_communicator::GhostCommunicator::backward_send_values):
+//!   Send data from the ghost processes backwards to the owners.
+//! - [GhostCommunicator::backward_send_values_by_chunks](crate::distributed_tools::ghost_communicator::GhostCommunicator::backward_send_values_by_chunks):
+//!   Send data from the ghost processes backwards to the owners by chunks. Use this if more than one data item is associated with an index.
+//!
+//! A complete worked out example for the use of the ghost communicator can be found in `examples/ghost_communicator.rs`.
+//!
+//! ## Mapping global to local data
+//!
+//! Imagine a global index set with indices from 0 to 9.  The first process may need the indices `0, 1, 2, 3, 4, 5, 6`, and the second process
+//! may need the indices `5, 6, 7, 8, 9`. Notice that 5 and 6 are repeated for both processes.
+//! The [Global2LocalDataMapper](crate::distributed_tools::data_mapper::Global2LocalDataMapper) manages this communication
+//! pattern. It is instantiated with [Global2LocalDataMapper::new](crate::distributed_tools::data_mapper::Global2LocalDataMapper) which takes the
+//! index layout and the required global dofs.
+//! The method [Global2LocalDataMapper::map_data](crate::distributed_tools::data_mapper::Global2LocalDataMapper::map_data) then maps a vector of global data
+//! to the required local data. A chunk size can be given if each index is associated with multiple elements in the data vector.
+//!
+//! ## Data permutations
+//!
+//! Consider an index layout in which the first process owns indices `0, 1, 2, 3, 4` and the second process owns the indices `5, 6, 7, 8, 9`.
+//! We want to create a new index layout in which the first process owns `0, 2, 4, 6, 8` and the second process owns `1, 3, 5, 7, 9`. Notice that this is
+//! a permutation of the original layout. Each index still occurs exactly once. The [DataPermutation](crate::distributed_tools::permutation::DataPermutation)
+//! type provides [forward_permute](crate::distributed_tools::permutation::DataPermutation::forward_permute) and a
+//! [backward_permute](crate::distributed_tools::permutation::DataPermutation::backward_permute) method to map data from a given index layout to a custom
+//! permutation and back.

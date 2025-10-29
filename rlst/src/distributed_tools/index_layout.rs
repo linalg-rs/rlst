@@ -3,7 +3,8 @@
 //! An [IndexLayout] specified how degrees of freedom are distributed among processes.
 //! We always assume that a process has a contiguous set of degrees of freedom.
 
-use super::array_tools::all_to_all_varcount;
+use crate::distributed_tools::all_to_allv;
+
 use itertools::Itertools;
 use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence};
 
@@ -229,12 +230,9 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
 
         let sorted_keys = (my_range.0..my_range.1).collect_vec();
 
-        let scan = super::array_tools::sort_to_bins(&sorted_keys, &other_bins)
-            .iter()
-            .map(|&key| key as i32)
-            .collect_vec();
+        let counts = super::array_tools::sort_to_bins(&sorted_keys, &other_bins);
 
-        all_to_all_varcount(data, &scan, other.comm())
+        all_to_allv(other.comm(), &counts, data).1
     }
 
     /// Return the communicator.
