@@ -1,5 +1,8 @@
 //! In this example we demonstrate how to use the LU decomposition.
 
+extern crate blas_src;
+extern crate lapack_src;
+
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rlst::{DynArray, Lu};

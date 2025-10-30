@@ -27,7 +27,7 @@ macro_rules! dot {
 #[macro_export]
 macro_rules! diag {
     ($d:expr) => {
-        diag!($d, 2)
+        $crate::diag!($d, 2)
     };
 
     ($d:expr, $ndim:literal) => {{
@@ -47,7 +47,7 @@ mod test {
 
     use rand::SeedableRng;
 
-    use crate::{dense::array::DynArray, empty_array, MultIntoResize};
+    use crate::{MultIntoResize, dense::array::DynArray, empty_array};
 
     #[test]
     fn test_dot() {
