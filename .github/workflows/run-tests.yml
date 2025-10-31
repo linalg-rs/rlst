@@ -46,7 +46,6 @@ jobs:
       - name: Style checks
         run: |
           cargo fmt -- --check
-          cargo fmt --features "mpi" -- --check
           cargo clippy --features "mpi" -- -D warnings
           cargo clippy -- -D warnings
           cargo clippy --tests --features "mpi" -- -D warnings
