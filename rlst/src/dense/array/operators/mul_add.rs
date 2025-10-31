@@ -1,0 +1,109 @@
+//! MulAdd operation on two arrays.
+//!
+//! This module provides the `MulAdd` trait, which allows for efficient multiplication and addition
+//! of two arrays with a scalar.
+
+use num::traits::MulAdd;
+
+use crate::{
+    ContainerType, ContainerTypeSelector, SelectContainerType,
+    dense::array::Array,
+    traits::{
+        accessors::{UnsafeRandom1DAccessByValue, UnsafeRandomAccessByValue},
+        base_operations::{BaseItem, Shape},
+    },
+};
+
+/// Struct that represents the `mul_add` operation on two arrays.
+pub struct MulAddImpl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> {
+    // The first array
+    arr1: Array<ArrayImpl1, NDIM>,
+    arr2: Array<ArrayImpl2, NDIM>,
+    scalar: Item,
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize>
+    MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+{
+    /// Create a new `MulAdd` instance.
+    pub fn new(arr1: Array<ArrayImpl1, NDIM>, arr2: Array<ArrayImpl2, NDIM>, scalar: Item) -> Self
+    where
+        ArrayImpl1: BaseItem<Item = Item> + Shape<NDIM>,
+        ArrayImpl2: BaseItem<Item = Item> + Shape<NDIM>,
+        Item: MulAdd<Output = Item> + Copy,
+    {
+        // Ensure that both arrays have the same shape
+        assert_eq!(
+            arr1.shape(),
+            arr2.shape(),
+            "Arrays must have the same shape"
+        );
+
+        Self { arr1, arr2, scalar }
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> ContainerType
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: ContainerType,
+    ArrayImpl2: ContainerType,
+    SelectContainerType: ContainerTypeSelector<ArrayImpl1::Type, ArrayImpl2::Type>,
+{
+    type Type = <ArrayImpl1 as ContainerType>::Type;
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> BaseItem
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: BaseItem<Item = Item>,
+    ArrayImpl2: BaseItem<Item = Item>,
+    Item: Copy + Default,
+{
+    type Item = Item;
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> Shape<NDIM>
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: Shape<NDIM>,
+{
+    fn shape(&self) -> [usize; NDIM] {
+        self.arr1.shape()
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: UnsafeRandomAccessByValue<NDIM, Item = Item>,
+    ArrayImpl2: UnsafeRandomAccessByValue<NDIM, Item = Item>,
+    Item: num::traits::MulAdd<Output = Item> + Copy + Default,
+{
+    #[inline(always)]
+    unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> Self::Item {
+        unsafe {
+            self.arr1
+                .get_value_unchecked(multi_index)
+                .mul_add(self.scalar, self.arr2.get_value_unchecked(multi_index))
+        }
+    }
+}
+
+impl<ArrayImpl1, ArrayImpl2, Item, const NDIM: usize> UnsafeRandom1DAccessByValue
+    for MulAddImpl<ArrayImpl1, ArrayImpl2, Item, NDIM>
+where
+    ArrayImpl1: UnsafeRandom1DAccessByValue<Item = Item>,
+    ArrayImpl2: UnsafeRandom1DAccessByValue<Item = Item>,
+    Item: num::traits::MulAdd<Output = Item> + Copy + Default,
+{
+    #[inline(always)]
+    unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item {
+        unsafe {
+            self.arr1
+                .imp()
+                .get_value_1d_unchecked(index)
+                .mul_add(self.scalar, self.arr2.imp().get_value_1d_unchecked(index))
+        }
+    }
+}
