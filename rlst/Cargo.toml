@@ -47,6 +47,7 @@ blas-src = { version = "0.14", features = ["accelerate"]}
 lapack-src = { version = "0.13", features = ["accelerate"]}
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
+lapack-src = { version = "0.13", features = ["netlib"]}
 blas-src = { version = "0.14", features = ["blis"] }
 
 
