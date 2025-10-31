@@ -5,10 +5,10 @@ use lapack::{cheev, dsyev, ssyev, zheev};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use crate::base_types::{c32, c64, LapackError, LapackResult};
+use crate::base_types::{LapackError, LapackResult, c32, c64};
 use crate::traits::rlst_num::RlstScalar;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// The job options for the eigenvectors.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

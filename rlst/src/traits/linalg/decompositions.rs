@@ -38,6 +38,7 @@ pub trait Inverse {
 /// - `P` is a permutation matrix of dimension `m x m`,
 /// - `L` is a lower triangular matrix of dimension `m x k` with unit diagonal,
 /// - `U` is an upper triangular matrix of dimension `k x n`.
+///
 /// Here, `k = min(m, n)`.
 pub trait Lu {
     /// Item type of the LU decomposition.

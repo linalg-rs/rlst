@@ -1,12 +1,18 @@
 //! Demonstrate operations on a distributed array.
 
-use std::rc::Rc;
+#[cfg(not(feature = "mpi"))]
+fn main() {
+    println!("WARNING: MPI not enabled.");
+}
 
-use approx::assert_relative_eq;
-use mpi::traits::Communicator;
-use rlst::dense::array::DynArray;
-
+#[cfg(feature = "mpi")]
 pub fn main() {
+    use std::rc::Rc;
+
+    use approx::assert_relative_eq;
+    use mpi::traits::Communicator;
+    use rlst::dense::array::DynArray;
+
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
 

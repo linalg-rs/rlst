@@ -824,7 +824,7 @@ mod tests {
 
     use super::*;
     use approx::assert_relative_eq;
-    use coe::{coerce_static, Coerce};
+    use coe::{Coerce, coerce_static};
     use paste;
     use rand::prelude::*;
 

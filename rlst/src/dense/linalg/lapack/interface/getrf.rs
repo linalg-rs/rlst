@@ -3,7 +3,7 @@
 use lapack::{cgetrf, dgetrf, sgetrf, zgetrf};
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
 /// ?getrf - LU factorization with partial pivoting.
 ///

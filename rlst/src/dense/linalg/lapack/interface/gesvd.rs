@@ -2,12 +2,12 @@
 
 use lapack::{cgesvd, dgesvd, sgesvd, zgesvd};
 
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 use crate::{base_types::LapackResult, traits::rlst_num::RlstScalar};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// JobU specifies the computation of the left singular vectors.
 #[derive(Clone, Copy)]

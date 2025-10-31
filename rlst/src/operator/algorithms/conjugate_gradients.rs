@@ -8,9 +8,9 @@ use std::ops::Mul;
 use num::One;
 
 use crate::{
+    Inner, InnerProductSpace, Norm, NormedSpace, RlstScalar, Sqrt,
     abstract_operator::OperatorBase,
     operator::{abstract_operator::Operator, element::Element},
-    Inner, InnerProductSpace, Norm, NormedSpace, RlstScalar, Sqrt,
 };
 
 /// Iteration for CG
@@ -31,11 +31,11 @@ pub struct CgIteration<
 }
 
 impl<
-        'a,
-        Scalar: RlstScalar,
-        Space: InnerProductSpace<F = Scalar>,
-        OpImpl: OperatorBase<Domain = Space, Range = Space>,
-    > CgIteration<'a, Scalar, Space, OpImpl>
+    'a,
+    Scalar: RlstScalar,
+    Space: InnerProductSpace<F = Scalar>,
+    OpImpl: OperatorBase<Domain = Space, Range = Space>,
+> CgIteration<'a, Scalar, Space, OpImpl>
 where
     Space: NormedSpace<Output = Scalar::Real>,
 {
@@ -172,13 +172,13 @@ mod test {
     use rand_chacha::ChaCha8Rng;
 
     use crate::{
+        Norm,
         abstract_operator::OperatorBase,
         dense::array::DynArray,
         operator::{
             abstract_operator::Operator, algorithms::conjugate_gradients::CgIteration,
             space::zero_element,
         },
-        Norm,
     };
 
     #[test]

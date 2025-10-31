@@ -13,7 +13,7 @@ impl<Item: RlstScalar, S: InnerProductSpace<F = Item>> NormedSpace for S {
 }
 
 /// Return the zero element of a given space.
-pub fn zero_element<Space: LinearSpace>(space: &Space) -> Element<Space> {
+pub fn zero_element<Space: LinearSpace>(space: &Space) -> Element<'_, Space> {
     space.zero()
 }
 

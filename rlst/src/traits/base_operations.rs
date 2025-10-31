@@ -1,6 +1,6 @@
 //! Basic traits for elements of vector spaces.
 
-use crate::{base_types::MemoryLayout, Array};
+use crate::{Array, base_types::MemoryLayout};
 
 use super::UnsafeRandom1DAccessByValue;
 

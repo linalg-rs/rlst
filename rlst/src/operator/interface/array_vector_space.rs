@@ -45,7 +45,7 @@ where
 
     type Impl = DynArray<Item, 1>;
 
-    fn zero(&self) -> crate::operator::element::Element<Self> {
+    fn zero(&self) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, DynArray::<Item, 1>::from_shape([self.dimension]))
     }
 
@@ -53,7 +53,7 @@ where
         &self,
         x: &crate::operator::element::Element<Self>,
         y: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, (x.imp().r() + y.imp().r()).eval())
     }
 
@@ -61,7 +61,7 @@ where
         &self,
         x: &crate::operator::element::Element<Self>,
         y: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, (x.imp().r() - y.imp().r()).eval())
     }
 
@@ -69,7 +69,7 @@ where
         &self,
         scalar: &Self::F,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(
             self,
             DynArray::<_, 1>::new_from(&x.imp().r().scalar_mul(*scalar)),
@@ -79,7 +79,7 @@ where
     fn neg(
         &self,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, x.imp().r().neg().eval())
     }
 
@@ -106,7 +106,7 @@ where
     fn copy_from(
         &self,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, x.imp().eval())
     }
 }

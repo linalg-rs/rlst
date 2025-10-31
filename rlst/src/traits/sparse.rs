@@ -1,10 +1,15 @@
 //! Sparse matrix traits
 
+#[cfg(feature = "mpi")]
 use std::rc::Rc;
 
+#[cfg(feature = "mpi")]
 use mpi::traits::Communicator;
 
-use crate::{distributed_tools::IndexLayout, sparse::SparseMatType};
+#[cfg(feature = "mpi")]
+use crate::distributed_tools::IndexLayout;
+
+use crate::sparse::SparseMatType;
 
 use super::{BaseItem, Shape};
 
@@ -56,6 +61,7 @@ where
     }
 }
 
+#[cfg(feature = "mpi")]
 /// Construct a sparse matrix from Aij style slices for  distributed matrices.
 pub trait FromAijDistributed<'a>
 where

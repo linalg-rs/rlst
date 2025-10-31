@@ -46,8 +46,12 @@ jobs:
       - name: Style checks
         run: |
           cargo fmt -- --check
+          cargo fmt --features "mpi" -- --check
+          cargo clippy --features "mpi" -- -D warnings
           cargo clippy -- -D warnings
+          cargo clippy --tests --features "mpi" -- -D warnings
           cargo clippy --tests -- -D warnings
+          cargo clippy --examples --features "mpi" -- -D warnings
           cargo clippy --examples -- -D warnings
 
       - name: Run unit tests (debug)
@@ -56,8 +60,6 @@ jobs:
         run: RUST_MIN_STACK=8388608 cargo test --examples --release --features "mpi,strict"
       - name: Run examples
         run: cargo templated-examples NPROCESSES 2,4
-      # - name: Check benchmarks compile
-      #   run: cargo bench --no-run
 
       - name: Build docs
         run: cargo doc --features "mpi,strict"

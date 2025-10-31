@@ -3,11 +3,11 @@
 use lapack::{cgetri, dgetri, sgetri, zgetri};
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// ?getri - Matrix inversion using LU factorization.
 ///

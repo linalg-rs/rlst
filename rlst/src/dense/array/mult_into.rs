@@ -6,15 +6,15 @@ use crate::{
 };
 
 use super::{
-    empty_axis::AxisPosition, Array, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride,
+    Array, RawAccess, RawAccessMut, ResizeInPlace, Shape, Stride, empty_axis::AxisPosition,
 };
 
 impl<
-        Item: Gemm,
-        ArrayImpl: RawAccessMut<Item = Item> + Stride<2> + Shape<2>,
-        ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
-        ArrayImplSecond: RawAccess<Item = Item> + Stride<2> + Shape<2>,
-    > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
+    Item: Gemm,
+    ArrayImpl: RawAccessMut<Item = Item> + Stride<2> + Shape<2>,
+    ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+    ArrayImplSecond: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+> MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
     fn mult_into(
         mut self,
@@ -39,11 +39,11 @@ impl<
 }
 
 impl<
-        Item: Gemm,
-        ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
-        ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
-        ArrayImplSecond: RawAccess<Item = Item> + Stride<1> + Shape<1>,
-    > MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
+    Item: Gemm,
+    ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
+    ArrayImplFirst: RawAccess<Item = Item> + Stride<2> + Shape<2>,
+    ArrayImplSecond: RawAccess<Item = Item> + Stride<1> + Shape<1>,
+> MultInto<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
     fn mult_into(
         mut self,
@@ -71,11 +71,11 @@ impl<
 }
 
 impl<
-        Item: Gemm,
-        ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
-        ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
-        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultInto<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
+    Item: Gemm,
+    ArrayImpl: RawAccessMut<Item = Item> + Stride<1> + Shape<1>,
+    ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+    ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+> MultInto<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
     fn mult_into(
         mut self,
@@ -105,11 +105,11 @@ impl<
 // MultIntoResize
 
 impl<
-        Item: Gemm,
-        ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Item> + ResizeInPlace<2>,
-        ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
+    Item: Gemm,
+    ArrayImpl: Shape<2> + Stride<2> + RawAccessMut<Item = Item> + ResizeInPlace<2>,
+    ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+> MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 2>
 {
     fn mult_into_resize(
         mut self,
@@ -143,11 +143,11 @@ impl<
 }
 
 impl<
-        Item: Gemm,
-        ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
-        ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
-        ArrayImplSecond: Shape<1> + Stride<1> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
+    Item: Gemm,
+    ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
+    ArrayImplFirst: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+    ArrayImplSecond: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+> MultIntoResize<Array<ArrayImplFirst, 2>, Array<ArrayImplSecond, 1>> for Array<ArrayImpl, 1>
 {
     fn mult_into_resize(
         mut self,
@@ -183,11 +183,11 @@ impl<
 }
 
 impl<
-        Item: Gemm,
-        ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
-        ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
-        ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
-    > MultIntoResize<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
+    Item: Gemm,
+    ArrayImpl: Shape<1> + Stride<1> + RawAccessMut<Item = Item> + ResizeInPlace<1>,
+    ArrayImplFirst: Shape<1> + Stride<1> + RawAccess<Item = Item>,
+    ArrayImplSecond: Shape<2> + Stride<2> + RawAccess<Item = Item>,
+> MultIntoResize<Array<ArrayImplFirst, 1>, Array<ArrayImplSecond, 2>> for Array<ArrayImpl, 1>
 {
     fn mult_into_resize(
         mut self,

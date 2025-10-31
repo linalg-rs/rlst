@@ -243,7 +243,7 @@ fn fmt_complex<T: RlstScalar>(num: T, width: usize, precision: usize, exp_pad: u
         fmt_real::<T::Real>(num.im().abs(), width, precision, exp_pad),
     );
     let num_blanks = width - precision - exp_pad - 4;
-    if num_blanks % 2 == 0 {
+    if num_blanks.is_multiple_of(2) {
         printstr = format!(
             "{} {}𝑖",
             fmt_real::<T::Real>(num.re(), width, precision, exp_pad),

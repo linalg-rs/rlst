@@ -3,23 +3,23 @@
 //! This module defines interfaces to the Rlst dense and sparse matrix types
 //! to be used as abstract operators.
 
+#[cfg(feature = "mpi")]
 use mpi::traits::{Communicator, Equivalence};
 
 use crate::{
-    abstract_operator::OperatorBase,
-    dense::{array::DynArray, base_array::BaseArray, data_container::VectorContainer},
-    operator::abstract_operator::Operator,
-    sparse::{
-        csr_mat::CsrMatrix, distributed_array::DistributedArray,
-        distributed_csr_mat::DistributedCsrMatrix,
-    },
-    Array, AsMatrixApply, BaseItem, LinearSpace, Shape,
+    Array, AsMatrixApply, BaseItem, LinearSpace, Shape, abstract_operator::OperatorBase,
+    dense::array::DynArray, operator::abstract_operator::Operator, sparse::csr_mat::CsrMatrix,
 };
 
-use super::{
-    array_vector_space::ArrayVectorSpace,
-    distributed_array_vector_space::DistributedArrayVectorSpace,
+#[cfg(feature = "mpi")]
+use crate::{
+    dense::{base_array::BaseArray, data_container::VectorContainer},
+    operator::interface::distributed_array_vector_space::DistributedArrayVectorSpace,
+    sparse::distributed_array::DistributedArray,
+    sparse::distributed_csr_mat::DistributedCsrMatrix,
 };
+
+use super::array_vector_space::ArrayVectorSpace;
 
 /// An [ArrayOperator] is defined by a two-dimensional array representing a matrix.
 pub struct ArrayOperator<'a, ArrayImpl>
@@ -145,6 +145,7 @@ where
     }
 }
 
+#[cfg(feature = "mpi")]
 /// A [DistributedCsrOperator] is defined by a distributed sparse CSR matrix.
 pub struct DistributedCsrOperator<'a, Item: Equivalence, C: Communicator> {
     op: &'a DistributedCsrMatrix<'a, Item, C>,
@@ -152,6 +153,7 @@ pub struct DistributedCsrOperator<'a, Item: Equivalence, C: Communicator> {
     range: DistributedArrayVectorSpace<'a, C, Item>,
 }
 
+#[cfg(feature = "mpi")]
 impl<'a, Item: Copy + Equivalence, C: Communicator> DistributedCsrOperator<'a, Item, C> {
     /// Create a new `DistributedCsrOperator` from a given CsrMatrix.
     pub fn new(op: &'a DistributedCsrMatrix<'a, Item, C>) -> Self {
@@ -163,6 +165,7 @@ impl<'a, Item: Copy + Equivalence, C: Communicator> DistributedCsrOperator<'a, I
     }
 }
 
+#[cfg(feature = "mpi")]
 impl<'a, Item: Copy + Equivalence, C: Communicator> From<&'a DistributedCsrMatrix<'a, Item, C>>
     for Operator<DistributedCsrOperator<'a, Item, C>>
 where
@@ -173,12 +176,13 @@ where
     }
 }
 
+#[cfg(feature = "mpi")]
 impl<'a, Item: Equivalence, C: Communicator> OperatorBase for DistributedCsrOperator<'a, Item, C>
 where
     DistributedArrayVectorSpace<'a, C, Item>: LinearSpace<
-        F = Item,
-        Impl = DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
-    >,
+            F = Item,
+            Impl = DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
+        >,
     DistributedCsrMatrix<'a, Item, C>: AsMatrixApply<
             DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,
             DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>,

@@ -23,6 +23,7 @@
 
 pub mod base_types;
 pub mod dense;
+#[cfg(feature = "mpi")]
 pub mod distributed_tools;
 pub mod doc;
 pub mod io;

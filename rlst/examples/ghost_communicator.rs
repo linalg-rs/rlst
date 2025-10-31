@@ -10,10 +10,16 @@
 //! The second process requires index 4 from the third process as ghost index.
 //! The third process requires indices 0, 1, 2 from the first process as ghost.
 
-use mpi::traits::Communicator;
-use rlst::distributed_tools::GhostCommunicator;
+#[cfg(not(feature = "mpi"))]
+fn main() {
+    println!("WARNING: MPI not enabled.");
+}
 
+#[cfg(feature = "mpi")]
 pub fn main() {
+    use mpi::traits::Communicator;
+    use rlst::distributed_tools::GhostCommunicator;
+
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
     let rank = world.rank();

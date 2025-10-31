@@ -12,12 +12,12 @@ use std::ops::{Add, AddAssign, Mul};
 use crate::dense::array::reference::{ArrayRef, ArrayRefMut};
 use crate::dense::array::slice::ArraySlice;
 use crate::sparse::tools::normalize_aij;
-use crate::{dense::array::DynArray, sparse::SparseMatType, AijIteratorByValue, BaseItem, Shape};
+use crate::{AijIteratorByValue, BaseItem, Shape, dense::array::DynArray, sparse::SparseMatType};
 use crate::{
-    empty_array, AijIteratorMut, Array, AsMatrixApply, FromAij, Nonzeros, SparseMatrixType,
-    UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut,
+    AijIteratorMut, Array, AsMatrixApply, FromAij, Nonzeros, SparseMatrixType,
+    UnsafeRandom1DAccessMut, UnsafeRandomAccessByValue, UnsafeRandomAccessMut, empty_array,
 };
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 use num::One;
 
 use super::mat_operations::SparseMatOpIterator;
@@ -306,9 +306,9 @@ where
     ArrayImplX: UnsafeRandomAccessByValue<2, Item = Item> + Shape<2>,
     ArrayImplY: UnsafeRandomAccessMut<2, Item = Item> + Shape<2>,
     for<'b> Self: AsMatrixApply<
-        Array<ArraySlice<ArrayRef<'b, ArrayImplX, 2>, 2, 1>, 1>,
-        Array<ArraySlice<ArrayRefMut<'b, ArrayImplY, 2>, 2, 1>, 1>,
-    >,
+            Array<ArraySlice<ArrayRef<'b, ArrayImplX, 2>, 2, 1>, 1>,
+            Array<ArraySlice<ArrayRefMut<'b, ArrayImplY, 2>, 2, 1>, 1>,
+        >,
 {
     fn apply(
         &self,

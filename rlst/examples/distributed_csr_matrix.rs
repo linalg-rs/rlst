@@ -1,24 +1,29 @@
 //! Working with a distributed CSR matrix.
 
-use mpi::traits::Root;
-use mpi::{self, traits::Communicator};
-use rlst::dense::array::DynArray;
-use rlst::{
-    self,
-    io::matrix_market::{read_array_mm, read_coordinate_mm},
-    Shape,
-};
-use rlst::{assert_array_relative_eq, AijIteratorByValue, AsMatrixApply, FromAijDistributed};
-use std::path::PathBuf;
-use std::rc::Rc;
-
-fn relative_file(filename: &str) -> String {
-    let file = PathBuf::from(file!());
-    let dir = file.parent().unwrap();
-    format!("{}/{filename}", dir.display())
+#[cfg(not(feature = "mpi"))]
+fn main() {
+    println!("WARNING: MPI not enabled.");
 }
 
+#[cfg(feature = "mpi")]
 fn main() {
+    use mpi::traits::Root;
+    use mpi::{self, traits::Communicator};
+    use rlst::dense::array::DynArray;
+    use rlst::{
+        self, Shape,
+        io::matrix_market::{read_array_mm, read_coordinate_mm},
+    };
+    use rlst::{AijIteratorByValue, AsMatrixApply, FromAijDistributed, assert_array_relative_eq};
+    use std::path::PathBuf;
+    use std::rc::Rc;
+
+    fn relative_file(filename: &str) -> String {
+        let file = PathBuf::from(file!());
+        let dir = file.parent().unwrap();
+        format!("{}/{filename}", dir.display())
+    }
+
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
     let rank = world.rank();

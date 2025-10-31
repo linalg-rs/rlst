@@ -5,9 +5,9 @@ use lapack::{cungqr, dorgqr, sorgqr, zungqr};
 use crate::dense::linalg::lapack::interface::lapack_return;
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// Compute the matrix Q from the QR factorization of a matrix A.
 ///

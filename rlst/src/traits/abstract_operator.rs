@@ -14,7 +14,7 @@
 
 use num::{One, Zero};
 
-use crate::{operator::element::Element, LinearSpace};
+use crate::{LinearSpace, operator::element::Element};
 
 /// This trait provides the interface between an abstract operator and its implementation.
 /// To use the abstract operator functionality implement this trait for a concrete type.
@@ -40,7 +40,7 @@ pub trait OperatorBase {
 
     /// Apply the operator `A` to `x` and return `y = Ax`.
     #[inline(always)]
-    fn dot(&self, x: &Element<Self::Domain>) -> Element<Self::Range>
+    fn dot(&self, x: &Element<Self::Domain>) -> Element<'_, Self::Range>
     where
         <Self::Range as crate::LinearSpace>::F: One + Zero,
     {

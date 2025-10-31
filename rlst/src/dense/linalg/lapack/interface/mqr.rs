@@ -7,11 +7,11 @@
 use lapack::{cunmqr, dormqr, sormqr, zunmqr};
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// Transpose modes for the `?getrs` function.
 ///

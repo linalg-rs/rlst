@@ -21,7 +21,7 @@ proc-macro = true
 [dependencies]
 syn = { version = "2", features = ["full"]}
 quote = "1.0"
-darling = "0.20"
+darling = "0.21"
 
 [lints.clippy]
 wildcard_imports = "forbid"

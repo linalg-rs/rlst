@@ -9,12 +9,12 @@ use std::{
 use mpi::traits::{Communicator, Equivalence};
 
 use crate::{
+    EvaluateObject, Inner, InnerProductSpace, LinearSpace,
     dense::{base_array::BaseArray, data_container::VectorContainer},
     dist_vec,
     distributed_tools::IndexLayout,
     operator::element::Element,
     sparse::distributed_array::DistributedArray,
-    EvaluateObject, Inner, InnerProductSpace, LinearSpace,
 };
 
 /// Array vector space
@@ -61,7 +61,7 @@ where
 
     type Impl = DistributedArray<'a, C, BaseArray<VectorContainer<Item>, 1>, 1>;
 
-    fn zero(&self) -> crate::operator::element::Element<Self> {
+    fn zero(&self) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, dist_vec!(Item, self.index_layout.clone()))
     }
 
@@ -70,7 +70,7 @@ where
         &self,
         x: &crate::operator::element::Element<Self>,
         y: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, (x.imp().r() + y.imp().r()).eval())
     }
 
@@ -79,7 +79,7 @@ where
         &self,
         x: &crate::operator::element::Element<Self>,
         y: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, (x.imp().r() - y.imp().r()).eval())
     }
 
@@ -88,7 +88,7 @@ where
         &self,
         scalar: &Self::F,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, x.imp().r().scalar_mul(*scalar).eval())
     }
 
@@ -96,7 +96,7 @@ where
     fn neg(
         &self,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, x.imp().r().neg().eval())
     }
 
@@ -127,7 +127,7 @@ where
     fn copy_from(
         &self,
         x: &crate::operator::element::Element<Self>,
-    ) -> crate::operator::element::Element<Self> {
+    ) -> crate::operator::element::Element<'_, Self> {
         Element::new(self, x.imp().eval())
     }
 }

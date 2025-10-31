@@ -15,13 +15,13 @@ use typenum::Less;
 use typenum::NonZero;
 use typenum::PInt;
 use typenum::ToUInt;
-use typenum::Unsigned;
 use typenum::U;
+use typenum::Unsigned;
 
-use crate::traits::number_relations::{IsGreaterByOne, IsGreaterZero, IsSmallerByOne};
 use crate::ContainerTypeRepr;
 use crate::ContainerTypeSelector;
 use crate::IsSmallerThan;
+use crate::traits::number_relations::{IsGreaterByOne, IsGreaterZero, IsSmallerByOne};
 
 use typenum;
 

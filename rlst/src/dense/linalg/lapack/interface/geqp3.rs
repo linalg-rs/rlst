@@ -3,11 +3,11 @@
 use lapack::{cgeqp3, dgeqp3, sgeqp3, zgeqp3};
 
 use crate::base_types::LapackResult;
-use crate::base_types::{c32, c64, LapackError};
+use crate::base_types::{LapackError, c32, c64};
 
 use crate::dense::linalg::lapack::interface::lapack_return;
 
-use num::{complex::ComplexFloat, Zero};
+use num::{Zero, complex::ComplexFloat};
 
 /// ?geqp3 - Column pivoted QR factorization.
 pub trait Geqp3: Sized {

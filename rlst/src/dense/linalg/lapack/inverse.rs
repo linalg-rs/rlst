@@ -3,11 +3,11 @@
 //!
 use super::interface::getrf::Getrf;
 use super::interface::getri::Getri;
+use crate::UnsafeRandom1DAccessByValue;
 use crate::base_types::RlstResult;
 use crate::dense::array::{Array, DynArray};
 use crate::traits::base_operations::Shape;
 use crate::traits::linalg::decompositions::Inverse;
-use crate::UnsafeRandom1DAccessByValue;
 
 impl<Item, ArrayImpl> Inverse for Array<ArrayImpl, 2>
 where
@@ -34,10 +34,10 @@ where
 mod test {
 
     use super::*;
+    use crate::MultIntoResize;
     use crate::base_types::{c32, c64};
     use crate::dense::array::DynArray;
     use crate::empty_array;
-    use crate::MultIntoResize;
     use paste::paste;
 
     macro_rules! impl_inverse_tests {

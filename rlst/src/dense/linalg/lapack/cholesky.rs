@@ -1,6 +1,7 @@
 //! Implement Cholesky decomposition and solve for positive definite matrices.
 
 use crate::{
+    UnsafeRandom1DAccessByValue,
     base_types::{RlstError, RlstResult, UpLo},
     dense::{
         array::{Array, DynArray},
@@ -13,7 +14,6 @@ use crate::{
             lapack::Lapack,
         },
     },
-    UnsafeRandom1DAccessByValue,
 };
 
 impl<Item, ArrayImpl> Cholesky for Array<ArrayImpl, 2>
