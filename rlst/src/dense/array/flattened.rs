@@ -15,7 +15,7 @@ use crate::{
 
 /// A flattened view onto an array.
 ///
-/// Use the funtion [arr.flattened()](crate::Array::view_flat) instead.
+/// Use the funtion [arr.into_flat](crate::Array::into_flat) instead.
 pub struct ArrayFlatView<ArrayImpl, const NDIM: usize>(Array<ArrayImpl, NDIM>);
 
 impl<ArrayImpl, const NDIM: usize> ArrayFlatView<ArrayImpl, NDIM> {

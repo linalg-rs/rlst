@@ -18,7 +18,7 @@
 //!
 //!
 //! On a single node the [CsrMatrix](crate::sparse::csr_mat::CsrMatrix) defines this structure. To initialize a new sparse
-//! matrix the easiest is to use the [CsrMatrix::from_aij](crate::sparse::csr_mat::CsrMatrix::from_aij) method. It creates a sparse
+//! matrix the easiest is to use the [CsrMatrix::from_aij](crate::traits::FromAij::from_aij) method. It creates a sparse
 //! matrix from a `rows`, `cols`, and `data` array. Repeated entries for the same row/col index are summed up in the sparse matrix assembly.
 //! Zero entries are filtered out. The following example creates a sparse matrix `sparse_mat` and multiplies it with a vector `x`.
 //!
@@ -46,7 +46,7 @@
 //! # Matrix-vector products
 //!
 //! The `CsrMatrix` type in RLST supports the [AsMatrixApply](crate::AsMatrixApply) trait for multiplication of sparse matrices with
-//! one and two dimensional dense arrays. Alternatively, one can use the [dot](rlst::dot) macro, which instantiates
+//! one and two dimensional dense arrays. Alternatively, one can use the [dot](crate::dot) macro, which instantiates
 //! a new array to hold the result of a sparse matrix-vector product. Alternatively, one can use the `[dot](crate::dot)` macro to evaluate
 //! a matrix-vector product. An example for the use of `dot` is given below.
 //!

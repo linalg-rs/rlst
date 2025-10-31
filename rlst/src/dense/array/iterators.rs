@@ -30,7 +30,7 @@ pub struct ArrayDefaultIteratorByRef<'a, ArrayImpl, const NDIM: usize> {
     nelements: usize,
 }
 
-/// Mutable default iterator. Like [ArrayDefaultIterator] but with mutable access.
+/// Mutable default iterator. Like [ArrayDefaultIteratorByRef] but with mutable access.
 pub struct ArrayDefaultIteratorMut<'a, ArrayImpl, const NDIM: usize> {
     arr: &'a mut Array<ArrayImpl, NDIM>,
     pos: usize,

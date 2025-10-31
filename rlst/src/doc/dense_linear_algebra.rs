@@ -263,9 +263,9 @@
 //! the arrays `a` and `b` is performed.
 //!
 //! Below is a list of further operations supported through the expression system in RLST.
-//! - [cast](crate::dense::array::Array::cast): Cast from one type to another using [num::cast].
+//! - [cast](crate::dense::array::Array::cast): Cast from one type to another using [num::cast::cast].
 //! - [coerce_dim](crate::dense::array::Array::coerce_dim): Coerce the dimension of an array from a generic parameter to a concrete integer.
-//! - [mul_add](crate::dense::array::Array::mul_add): Multiply an array with a scalar and add to another array. This uses a componentwise `mul_add` that
+//! - [mul_add](crate::traits::MulAdd): Multiply an array with a scalar and add to another array. This uses a componentwise `mul_add` that
 //!   is usually converted into a single `mul_add` cpu instruction instead of a separate multiplication and addition.
 //! - [reverse_axis](crate::dense::array::Array::reverse_axis): Reverse the elements in an array along a single axis.
 //! - [transpose](crate::dense::array::Array::transpose): Reverse the order of the axes of an array.

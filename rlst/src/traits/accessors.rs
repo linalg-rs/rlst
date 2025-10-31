@@ -11,7 +11,7 @@
 //! by value the underlying value type needs to support the `Copy` trait.
 //!
 //! The traits in this module are available as unsafe variant and as safe variant.
-//! If the unsafe variant and the [Shape](crate::Shape) trait are implemented the safe variant
+//! If the unsafe variant and the [Shape] trait are implemented the safe variant
 //! is automatically implemented by checking whether the provided multi index is within the shape bounds.
 //!
 //! The traits are also available as 1d index variants. This is mainly useful for the implementation of iterators.

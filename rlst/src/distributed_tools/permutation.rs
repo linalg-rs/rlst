@@ -193,7 +193,7 @@ impl<'a, C: Communicator> DataPermutation<'a, C> {
 /// Create a permutation map.
 ///
 /// Returns a map m such that
-/// permuted_indices[m[i]] = original_indices[i]
+/// `permuted_indices[m[i]] = original_indices[i]`
 pub fn permutation_map(original_indices: &[usize], permuted_indices: &[usize]) -> Vec<usize> {
     concatenate_permutations(
         &invert_permutation(&argsort(original_indices)),

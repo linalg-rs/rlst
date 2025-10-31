@@ -129,7 +129,7 @@ impl<'a, C: Communicator> IndexLayout<'a, C> {
 
     /// The cumulative sum of indices over the ranks.
     ///
-    /// The number of indices on rank i scan[1 + i] - scan[i].
+    /// The number of indices on rank i `scan[1 + i] - scan[i]`.
     /// The last entry is the total number of indices.
     pub fn scan(&self) -> &[usize] {
         &self.scan

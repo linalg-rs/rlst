@@ -68,7 +68,7 @@ pub struct Tracing;
 
 impl Tracing {
     /// Get the HashMap that stores the durations for all ids.
-    fn get_map() -> &'static LazyLock<Mutex<HashMap<String, Duration>>> {
+    pub fn get_map() -> &'static LazyLock<Mutex<HashMap<String, Duration>>> {
         static MAP: LazyLock<Mutex<HashMap<String, Duration>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         &MAP

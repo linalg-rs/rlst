@@ -279,7 +279,7 @@ where
     /// Return the shape of an array.
     ///
     /// # Traits:
-    /// - [Shape](crate::Shape)
+    /// - [Shape]
     #[inline(always)]
     pub fn shape(&self) -> [usize; NDIM] {
         self.0.shape()
@@ -294,7 +294,7 @@ where
     ///
     /// For more than one dimension the length is the number of elements.
     /// # Traits:
-    /// - [Shape](crate::Shape)
+    /// - [Shape]
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.0.len()
@@ -304,7 +304,7 @@ where
     ///
     /// This is equivalent to at least one dimension being zero.
     /// # Traits:
-    /// - [Shape](crate::Shape)
+    /// - [Shape]
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -321,7 +321,7 @@ where
     /// `multi_index` must be in range.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessByValue](crate::UnsafeRandomAccessByValue)
+    /// - [UnsafeRandomAccessByValue]
     #[inline(always)]
     pub unsafe fn get_value_unchecked(&self, multi_index: [usize; NDIM]) -> ArrayImpl::Item {
         unsafe { self.0.get_value_unchecked(multi_index) }
@@ -338,7 +338,7 @@ where
     /// `multi_index` must be in range.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessByRef](crate::UnsafeRandomAccessByRef)
+    /// - [UnsafeRandomAccessByRef]
     #[inline(always)]
     pub unsafe fn get_unchecked(&self, multi_index: [usize; NDIM]) -> &ArrayImpl::Item {
         unsafe { self.0.get_unchecked(multi_index) }
@@ -355,7 +355,7 @@ where
     /// `multi_index` must be in range.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessMut](crate::UnsafeRandomAccessMut)
+    /// - [UnsafeRandomAccessMut]
     #[inline(always)]
     pub unsafe fn get_unchecked_mut(&mut self, multi_index: [usize; NDIM]) -> &mut ArrayImpl::Item {
         unsafe { self.0.get_unchecked_mut(multi_index) }
@@ -369,7 +369,7 @@ where
     /// Get an element by value.
     ///
     /// # Traits
-    /// - [RandomAccessByValue](crate::RandomAccessByValue)
+    /// - [RandomAccessByValue]
     #[inline(always)]
     pub fn get_value(&self, multi_index: [usize; NDIM]) -> Option<ArrayImpl::Item> {
         self.0.get_value(multi_index)
@@ -383,7 +383,7 @@ where
     /// Get an element by reference.
     ///
     /// # Traits
-    /// - [RandomAccessByRef](crate::RandomAccessByRef)
+    /// - [RandomAccessByRef]
     #[inline(always)]
     pub fn get(&self, multi_index: [usize; NDIM]) -> Option<&ArrayImpl::Item> {
         self.0.get(multi_index)
@@ -397,7 +397,7 @@ where
     /// Get an element by mutable reference.
     ///
     /// # Traits
-    /// - [RandomAccessMut](crate::RandomAccessMut)
+    /// - [RandomAccessMut]
     #[inline(always)]
     pub fn get_mut(&mut self, multi_index: [usize; NDIM]) -> Option<&mut ArrayImpl::Item> {
         self.0.get_mut(multi_index)
@@ -433,7 +433,7 @@ where
     /// Return the raw data as slice.
     ///
     /// # Traits
-    /// - [RawAccess](crate::RawAccess)
+    /// - [RawAccess]
     #[inline(always)]
     pub fn data(&self) -> &[ArrayImpl::Item] {
         self.0.data()
@@ -447,7 +447,7 @@ where
     /// Return the raw data as slice.
     ///
     /// # Traits
-    /// - [RawAccessMut](crate::RawAccessMut)
+    /// - [RawAccessMut]
     #[inline(always)]
     pub fn data_mut(&mut self) -> &mut [ArrayImpl::Item] {
         self.0.data_mut()
@@ -461,7 +461,7 @@ where
     /// Return the stride.
     ///
     /// # Traits
-    /// - [Stride](crate::Stride)
+    /// - [Stride]
     #[inline(always)]
     pub fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
@@ -477,7 +477,7 @@ where
     /// The content of the array will be lost upon resizing.
     ///
     /// # Traits
-    /// - [ResizeInPlace](crate::ResizeInPlace)
+    /// - [ResizeInPlace]
     pub fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.0.resize_in_place(shape)
     }
@@ -757,8 +757,8 @@ where
     /// The iterator always proceeds in column-major order.
     ///
     /// # Traits
-    /// - [UnsafeRandom1DAccessByValue](UnsafeRandom1DAccessByValue)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandom1DAccessByValue]
+    /// - [Shape]
     #[inline(always)]
     pub fn iter_value(&self) -> ArrayDefaultIteratorByValue<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorByValue::new(self)
@@ -774,8 +774,8 @@ where
     /// The iterator always proceeds in column-major order.
     ///
     /// # Traits
-    /// - [UnsafeRandom1DAccessByRef](UnsafeRandom1DAccessByRef)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandom1DAccessByRef]
+    /// - [Shape]
     #[inline(always)]
     pub fn iter_ref(&self) -> ArrayDefaultIteratorByRef<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorByRef::new(self)
@@ -791,8 +791,8 @@ where
     /// The iterator always proceeds in column-major order.
     ///
     /// # Traits
-    /// - [UnsafeRandom1DAccessMut](UnsafeRandom1DAccessMut)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandom1DAccessMut]
+    /// - [Shape]
     #[inline(always)]
     pub fn iter_mut(&mut self) -> ArrayDefaultIteratorMut<'_, ArrayImpl, NDIM> {
         ArrayDefaultIteratorMut::new(self)
@@ -806,8 +806,8 @@ where
     /// Iterate through the diagonal of the array by value.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessByValue](UnsafeRandomAccessByValue)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandomAccessByValue]
+    /// - [Shape]
     #[inline(always)]
     pub fn diag_iter_value(&self) -> ArrayDiagIteratorByValue<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorByValue::new(self)
@@ -821,8 +821,8 @@ where
     /// Iterate through the diagonal of the array by reference.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessByRef](UnsafeRandomAccessByRef)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandomAccessByRef]
+    /// - [Shape]
     #[inline(always)]
     pub fn diag_iter_ref(&self) -> ArrayDiagIteratorByRef<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorByRef::new(self)
@@ -836,8 +836,8 @@ where
     /// Iterate through the diagonal of the array by mutable reference.
     ///
     /// # Traits
-    /// - [UnsafeRandomAccessByRef](UnsafeRandomAccessByRef)
-    /// - [Shape](Shape)
+    /// - [UnsafeRandomAccessByRef]
+    /// - [Shape]
     #[inline(always)]
     pub fn diag_iter_mut(&mut self) -> ArrayDiagIteratorMut<'_, ArrayImpl, NDIM> {
         ArrayDiagIteratorMut::new(self)
@@ -1210,7 +1210,7 @@ where
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Cast array to type `T`.
     ///
-    /// The cast is done through [num::cast] and source and target types need to
+    /// The cast is done through [num::cast::cast] and source and target types need to
     /// support casting through that function.
     pub fn cast<Target>(self) -> Array<ArrayCast<Target, ArrayImpl, NDIM>, NDIM> {
         Array::new(ArrayCast::new(self))

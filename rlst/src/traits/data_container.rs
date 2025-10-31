@@ -6,7 +6,7 @@
 //! The [ModifiableDataContainer] defines a setter routine that can modify elements by value.
 //! By default a data container is not resizeable. To define a resizeable data container implement
 //! the [ResizeableDataContainer] trait. For raw access to the underlying data the traits
-//! [RawAccessDataContainer] and [RawAccessDataContainerMut] are provided.
+//! [RawAccessDataContainer] and [MutableRawAccessDataContainer] are provided.
 //! The [ContainerType] trait attaches an associated type that can be used to distinguish between containers
 //! on a type level.
 

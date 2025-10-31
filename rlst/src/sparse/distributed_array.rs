@@ -61,7 +61,7 @@ where
     /// It is expected that `arr` has first dimension compatibute with `index_layout` and
     /// that the other dimensions are identical across processes. This is not checked by
     /// `new`. Generally, it is advisable not to use this method to instantiate a new
-    /// distributed array but either the [dist_vec] or the [dist_mat] macro that create
+    /// distributed array but either the [crate::dist_vec] or the [crate::dist_mat] macro that create
     /// distributed vectors or matrices.
     pub fn new(index_layout: Rc<IndexLayout<'a, C>>, arr: Array<ArrayImpl, NDIM>) -> Self {
         let number_of_local_indices = index_layout.number_of_local_indices();
@@ -1009,7 +1009,7 @@ where
 
 /// Create a new distributed vector with the given scalar type and index layout.
 ///
-/// The index layout must be provided as `RefCell`, that is as [Rc<IndexLayout>].
+/// The index layout must be provided as `RefCell`, that is as `Rc<IndexLayout>`.
 #[macro_export]
 macro_rules! dist_vec {
     ($scalar:ty, $index_layout:expr) => {
@@ -1027,7 +1027,7 @@ macro_rules! dist_vec {
 /// The number of rows is determined by the index layout, while the number of columns is
 /// determined by `ncols`.
 ///
-/// The index layout must be provided as `RefCell`, that is as [Rc<IndexLayout>].
+/// The index layout must be provided as `RefCell`, that is as `Rc<IndexLayout>`.
 #[macro_export]
 macro_rules! dist_mat {
     ($scalar:ty, $index_layout:expr, ncols:expr) => {

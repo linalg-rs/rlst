@@ -64,8 +64,8 @@ pub struct MatrixMarketInfo {
 
 /// Export a matrix in coordinate format.
 ///
-/// This function requires objects to implement the [crate::dense::traits::AijIterator] and
-/// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the [AijIteratorByValue](crate::traits::AijIteratorByValue) and
+/// [Shape](crate::traits::Shape) traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_coordinate_mm<
     T: MmIdentifier + Display,
@@ -99,8 +99,9 @@ pub fn write_coordinate_mm<
 
 /// Export a matrix in array format.
 ///
-/// This function requires objects to implement the [crate::dense::traits::DefaultIterator] and
-/// [crate::dense::traits::Shape] traits. Any object satisfying these traits can be written
+/// This function requires objects to implement the
+/// [UnsafeRandom1DAccessByValue] and
+/// [Shape](crate::traits::Shape) traits. Any object satisfying these traits can be written
 /// out with this function.
 pub fn write_array_mm<
     T: MmIdentifier + Display,
@@ -127,7 +128,7 @@ pub fn write_array_mm<
 
 /// Read an array in matrix market format.
 ///
-/// The function returns a [DynamicArray] object representing the data in the file.
+/// The function returns a [DynArray] object representing the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
 pub fn read_array_mm<T: Copy + Default + Num>(fname: &str) -> RlstResult<DynArray<T, 2>> {
     let mut reader = open_file(fname).unwrap();
@@ -179,16 +180,12 @@ pub fn read_array_mm<T: Copy + Default + Num>(fname: &str) -> RlstResult<DynArra
     let mut mat = DynArray::<T, 2>::from_shape([nrows, ncols]);
     let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
 
-    if let Err(e) = res {
-        Err(e)
-    } else {
-        Ok(mat)
-    }
+    if let Err(e) = res { Err(e) } else { Ok(mat) }
 }
 
 /// Read a coordinate matrix in Matrix Market format.
 ///
-/// Returns a [crate::sparse::sparse_mat::csr_mat::CsrMatrix] sparse matrix object representing
+/// Returns a [CsrMatrix] sparse matrix object representing
 /// the data in the file.
 /// Currently only `general` matrices are supported without special symmetry.
 pub fn read_coordinate_mm<T: Default + Copy + Num + AddAssign>(
