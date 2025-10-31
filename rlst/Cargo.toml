@@ -15,7 +15,7 @@ categories = ["mathematics", "science"]
 name = "rlst"
 
 [dependencies]
-rlst-proc-macro = { path = "proc-macro", version = "0.2" }
+rlst-proc-macro = { path = "proc-macro", version = "0.3" }
 num = { version = "0.4", features = ["serde", "rand"] }
 rand = "0.9"
 rand_chacha = "0.9"
