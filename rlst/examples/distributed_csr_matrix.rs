@@ -1,11 +1,5 @@
 //! Working with a distributed CSR matrix.
 
-#[cfg(not(feature = "mpi"))]
-fn main() {
-    println!("WARNING: MPI not enabled.");
-}
-
-#[cfg(feature = "mpi")]
 fn main() {
     use mpi::traits::Root;
     use mpi::{self, traits::Communicator};
