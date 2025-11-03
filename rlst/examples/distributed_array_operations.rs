@@ -1,11 +1,5 @@
 //! Demonstrate operations on a distributed array.
 
-#[cfg(not(feature = "mpi"))]
-fn main() {
-    println!("WARNING: MPI not enabled.");
-}
-
-#[cfg(feature = "mpi")]
 pub fn main() {
     use std::rc::Rc;
 

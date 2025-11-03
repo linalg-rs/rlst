@@ -71,3 +71,23 @@ enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 [lints.clippy]
 wildcard_imports = "forbid"
 
+[[example]]
+name = "distributed_array"
+required-features = ["mpi"]
+
+[package.metadata.example.distributed_array.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
+[[example]]
+name = "distributed_array_operations"
+required-features = ["mpi"]
+
+[package.metadata.example.distributed_array_operations.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"
+
+[[example]]
+name = "distributed_csr_matrix"
+required-features = ["mpi"]
+
+[package.metadata.example.distributed_csr_matrix.templated-examples]
+command = "mpirun -n {{NPROCESSES}}"

@@ -1,11 +1,5 @@
 //! Test distributed array functionality.
 
-#[cfg(not(feature = "mpi"))]
-fn main() {
-    println!("WARNING: MPI not enabled.");
-}
-
-#[cfg(feature = "mpi")]
 /// Test three dimensional distributed arrays.
 fn test_scatter_dim3<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
@@ -42,7 +36,6 @@ fn test_scatter_dim3<C: mpi::traits::Communicator>(comm: &C) {
     );
 }
 
-#[cfg(feature = "mpi")]
 /// Test one dimensional distributed arrays.
 fn test_scatter_dim1<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
@@ -79,7 +72,6 @@ fn test_scatter_dim1<C: mpi::traits::Communicator>(comm: &C) {
     );
 }
 
-#[cfg(feature = "mpi")]
 fn test_gather_dim3<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
     use std::rc::Rc;
@@ -116,7 +108,6 @@ fn test_gather_dim3<C: mpi::traits::Communicator>(comm: &C) {
     };
 }
 
-#[cfg(feature = "mpi")]
 /// Test one dimensional distributed arrays.
 fn test_gather_dim1<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
@@ -154,7 +145,6 @@ fn test_gather_dim1<C: mpi::traits::Communicator>(comm: &C) {
     };
 }
 
-#[cfg(feature = "mpi")]
 fn test_gather_to_all_dim3<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
     use std::rc::Rc;
@@ -187,7 +177,6 @@ fn test_gather_to_all_dim3<C: mpi::traits::Communicator>(comm: &C) {
     assert_array_relative_eq!(gathered_array, arr, 1E-10);
 }
 
-#[cfg(feature = "mpi")]
 /// Test one dimensional distributed arrays.
 fn test_gather_to_all_dim1<C: mpi::traits::Communicator>(comm: &C) {
     use rlst::{DynArray, assert_array_relative_eq, distributed_tools::IndexLayout};
@@ -221,7 +210,6 @@ fn test_gather_to_all_dim1<C: mpi::traits::Communicator>(comm: &C) {
     assert_array_relative_eq!(gathered_array, arr, 1E-10);
 }
 
-#[cfg(feature = "mpi")]
 pub fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
