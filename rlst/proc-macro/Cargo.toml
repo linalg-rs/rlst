@@ -4,7 +4,7 @@ enable_tracing = []
 
 [package]
 name = "rlst-proc-macro"
-version = "0.3.0"
+version = "0.4.0-dev"
 authors = ["The linalg-rs contributors"]
 edition = "2021"
 description = "Proc macros for a Rust native linear algebra library."
