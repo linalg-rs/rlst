@@ -98,7 +98,7 @@ pub struct GmresIteration<
     max_iter: usize,
     restart: usize,
     dim: usize,
-    tol: <Space::F as RlstScalar>::Real,
+    tol: f64, //<Space::F as RlstScalar>::Real,
     #[allow(clippy::type_complexity)]
     callable: Option<
         Box<
@@ -135,7 +135,7 @@ where
             max_iter: 10 * dim,
             restart: min(dim, 20),
             dim,
-            tol: num::cast::<f64, <Space::F as RlstScalar>::Real>(1E-6).unwrap(),
+            tol: 1E-6, //num::cast::<f64, <Space::F as RlstScalar>::Real>(1E-6).unwrap(),
             callable: None,
             print_debug: false,
         }
@@ -151,7 +151,7 @@ where
     }
 
     /// Set the tolerance
-    pub fn set_tol(mut self, tol: <Space::F as RlstScalar>::Real) -> Self {
+    pub fn set_tol(mut self, tol: f64) -> Self {
         self.tol = tol;
         self
     }
@@ -215,7 +215,7 @@ where
         let max_inner = self.restart;
 
         let rhs_norm = self.rhs.norm();
-        let atol = self.tol * rhs_norm;
+        let atol = num::cast::<f64, <Space::F as RlstScalar>::Real>(self.tol).unwrap() * rhs_norm;
 
         let eps = num::cast::<f64, <Space::F as RlstScalar>::Real>(2.220446049250313e-16).unwrap(); //TODO: find a way to extract machine precision
 
