@@ -1128,8 +1128,7 @@ macro_rules! implement_special_qr_real {
                     f = 2.0;
                 }
 
-                let (mut q, mut r, mut perm, mut rank) =
-                    Self::rrqr(arr.r_mut(), RankParam::Rank(rank));
+                let (mut q, mut r, mut perm, rank) = Self::rrqr(arr.r_mut(), RankParam::Rank(rank));
                 let [m, n] = arr.shape();
                 let r_shape = r.shape();
                 let q_shape = q.shape();

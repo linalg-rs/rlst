@@ -12,7 +12,7 @@ pub struct Eigs<Space, OpImpl>
 where
     Space: IndexableSpace,
     OpImpl: AsApply<Domain = Space, Range = Space>,
-    <Space as LinearSpace>::F: RlstScalar<Real = f64>,
+    <Space as LinearSpace>::F: RlstScalar,
 {
     operator: Operator<OpImpl>,
     howmny: String,
@@ -58,7 +58,7 @@ impl<Space, OpImpl> Eigs<Space, OpImpl>
 where
     Space: IndexableSpace,
     OpImpl: AsApply<Domain = Space, Range = Space>,
-    <Space as LinearSpace>::F: RlstScalar<Real = f64>,
+    <Space as LinearSpace>::F: RlstScalar,
     <Space as LinearSpace>::F: NonSymmetricArnoldiUpdate,
     <Space as LinearSpace>::F: NonSymmetricArnoldiExtract,
 {
@@ -145,7 +145,8 @@ where
 
         let mut workd: Vec<Space::F> = (0..3 * dim).map(|_| num::Zero::zero()).collect();
         let mut workl: Vec<Space::F> = (0..lworkl).map(|_| num::Zero::zero()).collect();
-        let mut rwork: Vec<<Space::F as RlstScalar>::Real> = (0..ncv).map(|_| 0.0).collect(); // real
+        let mut rwork: Vec<<Space::F as RlstScalar>::Real> =
+            (0..ncv).map(|_| num::Zero::zero()).collect(); // real
         let mut ipntr: [i32; 14] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         loop {
