@@ -1,7 +1,7 @@
 //! Array slicing.
 
 use crate::{
-    ContainerType, Unknown,
+    ContainerType, MemoryLayout, RawAccess, RawAccessMut, Unknown,
     base_types::NumberType,
     dense::layout::convert_1d_nd_from_shape,
     traits::{
@@ -198,6 +198,64 @@ where
     }
 }
 
+impl<
+    Item,
+    ArrayImpl: Shape<ADIM> + RawAccess<Item = Item> + Stride<ADIM>,
+    const ADIM: usize,
+    const NDIM: usize,
+> RawAccess for ArraySlice<ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    fn data(&self) -> Option<&[Self::Item]> {
+        if self.slice[0] == 0 && matches!(self.arr.memory_layout(), MemoryLayout::RowMajor) {
+            // The layout is row-major and we are slicing at the left-most dimension
+            let step = *self.arr.stride().first().unwrap();
+            Some(&self.arr.data().unwrap()[self.slice[1] * step..(1 + self.slice[1]) * step])
+        } else if self.slice[0] == ADIM - 1
+            && matches!(self.arr.memory_layout(), MemoryLayout::ColumnMajor)
+        {
+            // The layout is column-major and we are slicing at the right-most dimension
+            let step = *self.arr.stride().last().unwrap();
+            Some(&self.arr.data().unwrap()[self.slice[1] * step..(1 + self.slice[1]) * step])
+        } else {
+            None
+        }
+    }
+}
+
+impl<
+    Item,
+    ArrayImpl: Shape<ADIM> + RawAccessMut<Item = Item> + Stride<ADIM>,
+    const ADIM: usize,
+    const NDIM: usize,
+> RawAccessMut for ArraySlice<ArrayImpl, ADIM, NDIM>
+where
+    NumberType<ADIM>: IsGreaterByOne<NDIM>,
+    NumberType<NDIM>: IsGreaterZero,
+{
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
+        if self.slice[0] == 0 && matches!(self.arr.memory_layout(), MemoryLayout::RowMajor) {
+            // The layout is row-major and we are slicing at the left-most dimension
+            let step = *self.arr.stride().first().unwrap();
+            Some(
+                &mut self.arr.data_mut().unwrap()[self.slice[1] * step..(1 + self.slice[1]) * step],
+            )
+        } else if self.slice[0] == ADIM - 1
+            && matches!(self.arr.memory_layout(), MemoryLayout::ColumnMajor)
+        {
+            // The layout is column-major and we are slicing at the right-most dimension
+            let step = *self.arr.stride().last().unwrap();
+            Some(
+                &mut self.arr.data_mut().unwrap()[self.slice[1] * step..(1 + self.slice[1]) * step],
+            )
+        } else {
+            None
+        }
+    }
+}
+
 // ////////////////////
 
 fn multi_index_to_orig<const ADIM: usize, const NDIM: usize>(
@@ -213,4 +271,45 @@ where
         orig[index + mask[index]] = value;
     }
     orig
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::DynArray;
+    use crate::StridedDynArray;
+
+    #[test]
+    fn test_row_major_data() {
+        let mut mat = StridedDynArray::<f64, _>::row_major([3, 5]);
+        mat.fill_from_seed_equally_distributed(0);
+
+        let slice = mat.r().row(1);
+
+        let data = slice.data().unwrap();
+
+        assert_eq!(data.len(), 5);
+
+        for (index, &actual) in data.iter().enumerate() {
+            assert_eq!(actual, slice[[index]]);
+            assert_eq!(actual, mat[[1, index]]);
+        }
+    }
+
+    #[test]
+    fn test_col_major_data() {
+        let mut mat = DynArray::<f64, 2>::from_shape([3, 5]);
+        mat.fill_from_seed_equally_distributed(0);
+
+        let slice = mat.r().col(1);
+
+        let data = slice.data().unwrap();
+
+        assert_eq!(data.len(), 3);
+
+        for (index, &actual) in data.iter().enumerate() {
+            assert_eq!(actual, slice[[index]]);
+            assert_eq!(actual, mat[[index, 1]]);
+        }
+    }
 }
