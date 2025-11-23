@@ -208,7 +208,7 @@ impl RlstSimd for f32 {
         if_true: Self::Scalars<S>,
         if_false: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.select_f32s_m32s(mask, if_true, if_false)
+        simd.select_f32s(mask, if_true, if_false)
     }
 
     #[inline(always)]
@@ -536,7 +536,7 @@ impl RlstSimd for f64 {
         if_true: Self::Scalars<S>,
         if_false: Self::Scalars<S>,
     ) -> Self::Scalars<S> {
-        simd.select_f64s_m64s(mask, if_true, if_false)
+        simd.select_f64s(mask, if_true, if_false)
     }
 
     #[inline(always)]

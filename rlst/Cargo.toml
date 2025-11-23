@@ -30,7 +30,7 @@ typenum = { version = "1", features = ["const-generics"]}
 paste = "1"
 
 coe-rs = "0.1.2"
-pulp = { version = "0.21" }
+pulp = { version = "0.22" }
 bytemuck = "1.24.0"
 num_cpus = "1"
 
