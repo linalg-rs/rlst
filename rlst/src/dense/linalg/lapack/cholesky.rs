@@ -38,7 +38,7 @@ where
             UpLo::Lower => PotrfUplo::Lower,
         };
 
-        Item::potrf(uplo, m, a.data_mut(), m)?;
+        Item::potrf(uplo, m, a.data_mut().unwrap(), m)?;
 
         // We manually set the lower or upper part of the matrix to zero.
 
@@ -108,7 +108,15 @@ where
             UpLo::Lower => PosvUplo::Lower,
         };
 
-        Item::posv(uplo, m, nrhs, a.data_mut(), m, b.data_mut(), ldb)?;
+        Item::posv(
+            uplo,
+            m,
+            nrhs,
+            a.data_mut().unwrap(),
+            m,
+            b.data_mut().unwrap(),
+            ldb,
+        )?;
 
         Ok(b)
     }

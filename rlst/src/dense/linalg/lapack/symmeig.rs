@@ -50,7 +50,14 @@ where
             SymmEigMode::EigenvaluesAndEigenvectors => ev::JobZEv::Compute,
         };
 
-        <Item as Ev>::ev(jobz, uplo, n, a.data_mut(), n, w.data_mut())?;
+        <Item as Ev>::ev(
+            jobz,
+            uplo,
+            n,
+            a.data_mut().unwrap(),
+            n,
+            w.data_mut().unwrap(),
+        )?;
 
         match mode {
             SymmEigMode::EigenvaluesOnly => Ok((w, None)),

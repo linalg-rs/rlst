@@ -178,7 +178,7 @@ pub fn read_array_mm<T: Copy + Default + Num>(fname: &str) -> RlstResult<DynArra
     }
 
     let mut mat = DynArray::<T, 2>::from_shape([nrows, ncols]);
-    let res = parse_array(&mut reader, mat.data_mut(), nrows * ncols);
+    let res = parse_array(&mut reader, mat.data_mut().unwrap(), nrows * ncols);
 
     if let Err(e) = res { Err(e) } else { Ok(mat) }
 }

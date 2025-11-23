@@ -102,14 +102,14 @@ impl<ArrayImpl: UnsafeRandom1DAccessMut, const NDIM: usize> UnsafeRandom1DAccess
 
 impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArrayFlatView<ArrayImpl, NDIM> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
+    fn data(&self) -> Option<&[Self::Item]> {
         self.0.data()
     }
 }
 
 impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for ArrayFlatView<ArrayImpl, NDIM> {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         self.0.data_mut()
     }
 }

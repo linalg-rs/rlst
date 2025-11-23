@@ -106,13 +106,17 @@ pub trait RandomAccessMut<const NDIM: usize>: BaseItem {
 /// Get raw access to the underlying data.
 pub trait RawAccess: BaseItem {
     /// Get a slice of the data.
-    fn data(&self) -> &[Self::Item];
+    ///
+    /// Returns `None` if data is not available as contigous slice.
+    fn data(&self) -> Option<&[Self::Item]>;
 }
 
 /// Get mutable raw access to the underlying data.
 pub trait RawAccessMut: RawAccess {
     /// Get a mutable slice of the whole data.
-    fn data_mut(&mut self) -> &mut [Self::Item];
+    ///
+    /// Returns `None` if data is not available as contigous slice.
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]>;
 }
 
 /// Check if `multi_index` not out of bounds with respect to `shape`.

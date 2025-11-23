@@ -435,7 +435,7 @@ where
     /// # Traits
     /// - [RawAccess]
     #[inline(always)]
-    pub fn data(&self) -> &[ArrayImpl::Item] {
+    pub fn data(&self) -> Option<&[ArrayImpl::Item]> {
         self.0.data()
     }
 }
@@ -449,7 +449,7 @@ where
     /// # Traits
     /// - [RawAccessMut]
     #[inline(always)]
-    pub fn data_mut(&mut self) -> &mut [ArrayImpl::Item] {
+    pub fn data_mut(&mut self) -> Option<&mut [ArrayImpl::Item]> {
         self.0.data_mut()
     }
 }
@@ -1711,14 +1711,14 @@ where
             n,
             k,
             alpha,
-            self.data(),
+            self.data().unwrap(),
             stride_a[0],
             stride_a[1],
-            x.data(),
+            x.data().unwrap(),
             stride_x[0],
             stride_x[1],
             beta,
-            y.data_mut(),
+            y.data_mut().unwrap(),
             stride_y[0],
             stride_y[1],
         );

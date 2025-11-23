@@ -97,15 +97,15 @@ impl<Item: Copy + Default> ResizeableDataContainer for VectorContainer<Item> {
 
 impl<Item: Copy + Default> RawAccessDataContainer for VectorContainer<Item> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
-        self.data.as_slice()
+    fn data(&self) -> Option<&[Self::Item]> {
+        Some(self.data.as_slice())
     }
 }
 
 impl<Item: Copy + Default> MutableRawAccessDataContainer for VectorContainer<Item> {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
-        self.data.as_mut_slice()
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
+        Some(self.data.as_mut_slice())
     }
 }
 
@@ -189,8 +189,8 @@ impl<Item: Copy + Default, const N: usize> ModifiableDataContainer for ArrayCont
 
 impl<Item: Copy + Default, const N: usize> RawAccessDataContainer for ArrayContainer<Item, N> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
-        &self.data
+    fn data(&self) -> Option<&[Self::Item]> {
+        Some(&self.data)
     }
 }
 
@@ -198,8 +198,8 @@ impl<Item: Copy + Default, const N: usize> MutableRawAccessDataContainer
     for ArrayContainer<Item, N>
 {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
-        &mut self.data
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
+        Some(&mut self.data)
     }
 }
 
@@ -247,8 +247,8 @@ impl<Item: Copy + Default> RefDataContainer for SliceContainer<'_, Item> {
 
 impl<Item: Copy + Default> RawAccessDataContainer for SliceContainer<'_, Item> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
-        self.data
+    fn data(&self) -> Option<&[Self::Item]> {
+        Some(self.data)
     }
 }
 
@@ -313,14 +313,14 @@ impl<Item: Copy + Default> ModifiableDataContainer for SliceContainerMut<'_, Ite
 
 impl<Item: Copy + Default> RawAccessDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
-        self.data
+    fn data(&self) -> Option<&[Self::Item]> {
+        Some(self.data)
     }
 }
 
 impl<Item: Copy + Default> MutableRawAccessDataContainer for SliceContainerMut<'_, Item> {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
-        self.data
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
+        Some(self.data)
     }
 }

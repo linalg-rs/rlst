@@ -69,9 +69,9 @@ where
                 m,
                 n,
                 n_rhs,
-                a.data_mut(),
+                a.data_mut().unwrap(),
                 m,
-                new_rhs.data_mut(),
+                new_rhs.data_mut().unwrap(),
                 ldrhs,
             )?;
 

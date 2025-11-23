@@ -49,7 +49,7 @@ impl<Item> CsrMatrix<Item> {
 
         assert_eq!(indptr.len(), 1 + shape[0]);
         assert_eq!(data.len(), indices.len());
-        assert_eq!(*indptr.data().last().unwrap(), data.len());
+        assert_eq!(*indptr.data().unwrap().last().unwrap(), data.len());
 
         // Check that the indices in indptr are monotonically increasing and
         // are smaller or equal to the overall length of `indices`. This
@@ -62,11 +62,11 @@ impl<Item> CsrMatrix<Item> {
             );
         }
         // Check that the last element in indptr is the length of the `indices` array.
-        assert_eq!(*indptr.data().last().unwrap(), indices.len());
+        assert_eq!(*indptr.data().unwrap().last().unwrap(), indices.len());
 
         // Check that the column indices in `indices` are smaller than `shape[1]`.
 
-        if let Some(&max_col_index) = indices.data().iter().max() {
+        if let Some(&max_col_index) = indices.data().unwrap().iter().max() {
             assert!(max_col_index < shape[1]);
         }
 
@@ -182,8 +182,8 @@ where
             .enumerate()
             .flat_map(|(row, (start, end))| {
                 izip!(
-                    self.indices.data()[start..end].iter(),
-                    self.data.data()[start..end].iter()
+                    self.indices.data().unwrap()[start..end].iter(),
+                    self.data.data().unwrap()[start..end].iter()
                 )
                 .map(|(col, value)| ([row, *col], *value))
                 .collect::<Vec<_>>()
@@ -202,8 +202,8 @@ where
             .enumerate()
             .flat_map(|(row, (start, end))| {
                 izip!(
-                    self.indices.data()[start..end].iter(),
-                    self.data.data_mut()[start..end]
+                    self.indices.data().unwrap()[start..end].iter(),
+                    self.data.data_mut().unwrap()[start..end]
                         .iter_mut()
                         // Need to convert the mutable reference to the raw pointer
                         // as borrow checker does not allow the mutable reference to leak from FnMut.
