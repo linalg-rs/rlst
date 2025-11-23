@@ -23,8 +23,8 @@ where
         let mut out = DynArray::new_from(self);
         let mut ipiv = vec![0_i32; m];
 
-        Item::getrf(m, n, out.data_mut(), m, &mut ipiv)?;
-        Item::getri(n, out.data_mut(), m, &ipiv)?;
+        Item::getrf(m, n, out.data_mut().unwrap(), m, &mut ipiv)?;
+        Item::getri(n, out.data_mut().unwrap(), m, &ipiv)?;
 
         Ok(out)
     }

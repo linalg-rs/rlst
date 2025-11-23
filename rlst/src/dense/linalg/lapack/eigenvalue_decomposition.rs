@@ -42,7 +42,15 @@ where
 
         let mut w = DynArray::from_shape([n]);
 
-        Item::gees(JobVs::None, n, a.data_mut(), n, w.data_mut(), None, 1)?;
+        Item::gees(
+            JobVs::None,
+            n,
+            a.data_mut().unwrap(),
+            n,
+            w.data_mut().unwrap(),
+            None,
+            1,
+        )?;
 
         Ok(w)
     }
@@ -63,10 +71,10 @@ where
         Item::gees(
             JobVs::Compute,
             n,
-            a.data_mut(),
+            a.data_mut().unwrap(),
             n,
-            w.data_mut(),
-            Some(vs.data_mut()),
+            w.data_mut().unwrap(),
+            vs.data_mut(),
             n,
         )?;
 
@@ -117,12 +125,12 @@ where
             jobvl,
             jobvr,
             n,
-            a.data_mut(),
+            a.data_mut().unwrap(),
             n,
-            w.data_mut(),
-            vl.as_mut().map(|v| v.data_mut()),
+            w.data_mut().unwrap(),
+            vl.as_mut().map(|v| v.data_mut().unwrap()),
             n,
-            vr.as_mut().map(|v| v.data_mut()),
+            vr.as_mut().map(|v| v.data_mut().unwrap()),
             n,
         )?;
 

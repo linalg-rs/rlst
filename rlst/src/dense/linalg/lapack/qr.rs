@@ -48,11 +48,11 @@ where
                 for (i, item) in jpvt.iter_mut().enumerate() {
                     *item = 1 + i as i32;
                 }
-                <Item as Geqrf>::geqrf(m, n, a.data_mut(), lda, &mut tau)?;
+                <Item as Geqrf>::geqrf(m, n, a.data_mut().unwrap(), lda, &mut tau)?;
                 Ok(QrDecomposition { a, jpvt, tau })
             }
             EnablePivoting::Yes => {
-                <Item as Geqp3>::geqp3(m, n, a.data_mut(), lda, &mut jpvt, &mut tau)?;
+                <Item as Geqp3>::geqp3(m, n, a.data_mut().unwrap(), lda, &mut jpvt, &mut tau)?;
                 Ok(QrDecomposition { a, jpvt, tau })
             }
         }
@@ -95,7 +95,7 @@ where
             }
         }
 
-        <Item as Orgqr>::orgqr(m, n, k, q.data_mut(), m, &self.tau)?;
+        <Item as Orgqr>::orgqr(m, n, k, q.data_mut().unwrap(), m, &self.tau)?;
 
         Ok(q)
     }

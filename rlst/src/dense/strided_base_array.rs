@@ -128,7 +128,7 @@ impl<Data: RefDataContainerMut, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
 }
 
 impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for StridedBaseArray<Data, NDIM> {
-    fn data(&self) -> &[Self::Item] {
+    fn data(&self) -> Option<&[Self::Item]> {
         self.data.data()
     }
 }
@@ -136,7 +136,7 @@ impl<Data: RawAccessDataContainer, const NDIM: usize> RawAccess for StridedBaseA
 impl<Data: MutableRawAccessDataContainer, const NDIM: usize> RawAccessMut
     for StridedBaseArray<Data, NDIM>
 {
-    fn data_mut(&mut self) -> &mut [Self::Item] {
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         self.data.data_mut()
     }
 }

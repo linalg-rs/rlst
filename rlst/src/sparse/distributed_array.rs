@@ -147,8 +147,8 @@ where
             .map(|&x| (other_dims_count * x) as i32)
             .collect::<Vec<i32>>();
         let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
-        let mut partition = PartitionMut::new(recv_arr.data_mut(), counts, displacements);
-        this_process.all_gather_varcount_into(send_arr.data(), &mut partition);
+        let mut partition = PartitionMut::new(recv_arr.data_mut().unwrap(), counts, displacements);
+        this_process.all_gather_varcount_into(send_arr.data().unwrap(), &mut partition);
         // Finally, we convert the data back to a standard column-major array
         recv_arr.eval()
     }
@@ -168,7 +168,7 @@ where
         let send_arr = StridedDynArray::row_major_from(&self.local);
         let target_process = comm.process_at_rank(root as Rank);
 
-        target_process.gather_varcount_into(send_arr.data());
+        target_process.gather_varcount_into(send_arr.data().unwrap());
     }
 
     /// Gather the array to a single rank.
@@ -209,8 +209,8 @@ where
             .collect::<Vec<i32>>();
 
         let displacements: Vec<i32> = crate::distributed_tools::displacements(&counts);
-        let mut partition = PartitionMut::new(recv_arr.data_mut(), counts, displacements);
-        this_process.gather_varcount_into_root(send_arr.data(), &mut partition);
+        let mut partition = PartitionMut::new(recv_arr.data_mut().unwrap(), counts, displacements);
+        this_process.gather_varcount_into_root(send_arr.data().unwrap(), &mut partition);
         // Finally, we convert the data back to a standard column-major array
         recv_arr.eval()
     }
@@ -256,7 +256,7 @@ where
 
         // We can now scatter the data around.
 
-        let my_data = scatterv_root(comm, &counts, send_arr.data());
+        let my_data = scatterv_root(comm, &counts, send_arr.data().unwrap());
         // We wrap this data into an array view and then transpose it to get a standard column-major array.
         {
             let mut local_shape = my_shape;

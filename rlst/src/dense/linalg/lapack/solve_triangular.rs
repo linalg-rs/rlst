@@ -66,9 +66,9 @@ where
             m,
             nrhs,
             Item::one(),
-            a.data_mut(),
+            a.data_mut().unwrap(),
             m,
-            b.data_mut(),
+            b.data_mut().unwrap(),
             m,
         )?;
 

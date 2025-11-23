@@ -65,13 +65,17 @@ pub trait ResizeableDataContainer: DataContainer {
 /// A data container that provides raw access to the data slice.
 pub trait RawAccessDataContainer: DataContainer {
     /// Return the data slice for the data container.
-    fn data(&self) -> &[Self::Item];
+    ///
+    /// Returns `None` if data is not available as contigous slice.
+    fn data(&self) -> Option<&[Self::Item]>;
 }
 
 /// A data container that provides mutable raw access to the data slice.
 pub trait MutableRawAccessDataContainer: RawAccessDataContainer {
     /// Return the mutable data slice for the data container.
-    fn data_mut(&mut self) -> &mut [Self::Item];
+    ///
+    /// Returns `None` if data is not available as contigous slice.
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]>;
 }
 
 /// Stores the type of a container.

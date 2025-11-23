@@ -30,8 +30,8 @@ use subview::ArraySubView;
 use crate::{
     AsMatrixApply, AsMultiIndex, AsOwnedRefType, AsOwnedRefTypeMut, DispatchEval,
     DispatchEvalRowMajor, EvaluateObject, EvaluateRowMajorArray, Gemm, IsGreaterByOne,
-    IsGreaterZero, Max, NumberType, RandScalar, RandomAccessByValue, RlstError, RlstResult,
-    RlstScalar, Stack, TransMode, Unknown,
+    IsGreaterZero, Max, MemoryLayout, NumberType, RandScalar, RandomAccessByValue, RlstError,
+    RlstResult, RlstScalar, Stack, TransMode, Unknown,
     base_types::{c32, c64},
     dense::{
         base_array::BaseArray,
@@ -435,7 +435,7 @@ where
     /// # Traits
     /// - [RawAccess]
     #[inline(always)]
-    pub fn data(&self) -> &[ArrayImpl::Item] {
+    pub fn data(&self) -> Option<&[ArrayImpl::Item]> {
         self.0.data()
     }
 }
@@ -449,7 +449,7 @@ where
     /// # Traits
     /// - [RawAccessMut]
     #[inline(always)]
-    pub fn data_mut(&mut self) -> &mut [ArrayImpl::Item] {
+    pub fn data_mut(&mut self) -> Option<&mut [ArrayImpl::Item]> {
         self.0.data_mut()
     }
 }
@@ -465,6 +465,19 @@ where
     #[inline(always)]
     pub fn stride(&self) -> [usize; NDIM] {
         self.0.stride()
+    }
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: Stride<NDIM> + Shape<NDIM>,
+{
+    /// Return the memory layout
+    ///
+    /// The possible memory layouts are defined in [MemoryLayout].
+    #[inline(always)]
+    pub fn memory_layout(&self) -> MemoryLayout {
+        self.0.memory_layout()
     }
 }
 
@@ -1360,6 +1373,21 @@ where
     }
 }
 
+impl<ArrayImpl> Array<ArrayImpl, 2>
+where
+    ArrayImpl: Shape<2>,
+{
+    /// Return the row with index `row_index` from a two-dimensional array.
+    pub fn row(self, row_index: usize) -> Array<ArraySlice<ArrayImpl, 2, 1>, 1> {
+        self.slice::<1>(0, row_index)
+    }
+
+    /// Return the column with index `col_index` from a two-dimensional array.
+    pub fn col(self, col_index: usize) -> Array<ArraySlice<ArrayImpl, 2, 1>, 1> {
+        self.slice::<1>(1, col_index)
+    }
+}
+
 impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     /// Move the array into a subview specified by an `offset` and `shape` of the subview.
     ///
@@ -1711,14 +1739,14 @@ where
             n,
             k,
             alpha,
-            self.data(),
+            self.data().unwrap(),
             stride_a[0],
             stride_a[1],
-            x.data(),
+            x.data().unwrap(),
             stride_x[0],
             stride_x[1],
             beta,
-            y.data_mut(),
+            y.data_mut().unwrap(),
             stride_y[0],
             stride_y[1],
         );

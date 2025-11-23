@@ -56,7 +56,7 @@ impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArrayRef<'_, A
 
 impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArrayRef<'_, ArrayImpl, NDIM> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
+    fn data(&self) -> Option<&[Self::Item]> {
         self.0.data()
     }
 }
@@ -132,14 +132,14 @@ impl<ArrayImpl: Stride<NDIM>, const NDIM: usize> Stride<NDIM> for ArrayRefMut<'_
 
 impl<ArrayImpl: RawAccess, const NDIM: usize> RawAccess for ArrayRefMut<'_, ArrayImpl, NDIM> {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
+    fn data(&self) -> Option<&[Self::Item]> {
         self.0.data()
     }
 }
 
 impl<ArrayImpl: RawAccessMut, const NDIM: usize> RawAccessMut for ArrayRefMut<'_, ArrayImpl, NDIM> {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         self.0.data_mut()
     }
 }

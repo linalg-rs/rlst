@@ -20,7 +20,7 @@ where
         let (m, n, lda) = (lu_mat.shape()[0], lu_mat.shape()[1], lu_mat.shape()[0]);
         let mut ipiv = vec![0_i32; std::cmp::min(m, n)];
 
-        Item::getrf(m, n, lu_mat.data_mut(), lda, &mut ipiv)?;
+        Item::getrf(m, n, lu_mat.data_mut().unwrap(), lda, &mut ipiv)?;
 
         Ok(LuDecomposition { lu: lu_mat, ipiv })
     }
@@ -84,10 +84,10 @@ where
             trans,
             self.lu.shape()[0],
             nrhs,
-            self.lu.data(),
+            self.lu.data().unwrap(),
             self.lu.shape()[0],
             &self.ipiv,
-            sol.data_mut(),
+            sol.data_mut().unwrap(),
             ldb,
         )?;
 
@@ -100,6 +100,8 @@ where
         let k = std::cmp::min(m, n);
         let mut l_mat = DynArray::from_shape([m, k]);
 
+        let lu_data = self.lu.data().unwrap();
+
         for col in 0..k {
             for row in col..m {
                 if col == row {
@@ -107,7 +109,7 @@ where
                 } else {
                     unsafe {
                         *l_mat.get_unchecked_mut([row, col]) =
-                            *self.lu.data().get_unchecked(col * m + row);
+                            *lu_data.get_unchecked(col * m + row);
                     };
                 }
             }
@@ -122,11 +124,12 @@ where
         let k = std::cmp::min(m, n);
         let mut u_mat = DynArray::from_shape([k, n]);
 
+        let lu_data = self.lu.data().unwrap();
+
         for col in 0..n {
             for row in 0..=std::cmp::min(col, k - 1) {
                 unsafe {
-                    *u_mat.get_unchecked_mut([row, col]) =
-                        *self.lu.data().get_unchecked(col * m + row);
+                    *u_mat.get_unchecked_mut([row, col]) = *lu_data.get_unchecked(col * m + row);
                 }
             }
         }
@@ -169,12 +172,13 @@ where
     pub fn det(&self) -> Item {
         let [m, n] = self.lu.shape();
         assert_eq!(m, n, "Matrix must be square to compute determinant.");
-        let mut det = self.lu.data()[0];
+        let lu_data = self.lu.data().unwrap();
+        let mut det = lu_data[0];
         if self.ipiv[0] != 1 {
             det = -det;
         }
         for i in 1..m {
-            det *= unsafe { *self.lu.data().get_unchecked(i * m + i) };
+            det *= unsafe { *lu_data.get_unchecked(i * m + i) };
             if self.ipiv[i] != (i + 1) as i32 {
                 det = -det;
             }

@@ -71,7 +71,7 @@ where
     ArrayImpl: RawAccess,
 {
     #[inline(always)]
-    fn data(&self) -> &[Self::Item] {
+    fn data(&self) -> Option<&[Self::Item]> {
         self.arr.data()
     }
 }
@@ -82,7 +82,7 @@ where
     ArrayImpl: RawAccessMut,
 {
     #[inline(always)]
-    fn data_mut(&mut self) -> &mut [Self::Item] {
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         self.arr.data_mut()
     }
 }
