@@ -1082,6 +1082,33 @@ where
     }
 }
 
+impl<Item, ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item> + Shape<NDIM>,
+    Item: AbsSquare,
+    <Item as AbsSquare>::Output: Sqrt<Output = <Item as AbsSquare>::Output>
+        + std::ops::Add<Output = <Item as AbsSquare>::Output>
+        + Copy
+        + Default,
+{
+    /// Compute the Frobenius-Norm of a nd array.
+    ///
+    /// Note: The item type must support [AbsSquare]. The output of [AbsSquare]
+    /// must support [std::ops::Add], [Sqrt], [Copy], and [Default].
+    ///
+    /// # Traits
+    /// - [UnsafeRandom1DAccessByValue]
+    /// - [Shape]
+    #[inline(always)]
+    pub fn norm_fro(&self) -> Option<<Item as AbsSquare>::Output> {
+        self.r()
+            .abs_square()
+            .iter_value()
+            .reduce(std::ops::Add::add)
+            .map(|elem| elem.sqrt())
+    }
+}
+
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
     ArrayImpl: UnsafeRandom1DAccessByValue + Shape<NDIM>,
