@@ -1094,7 +1094,7 @@ where
     /// Compute the Frobenius-Norm of a nd array.
     ///
     /// Note: The item type must support [AbsSquare]. The output of [AbsSquare]
-    /// must support [std::ops::Add] and [Sqrt].
+    /// must support [std::ops::Add], [Sqrt], [Copy], and [Default].
     ///
     /// # Traits
     /// - [UnsafeRandom1DAccessByValue]
