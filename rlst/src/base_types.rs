@@ -217,3 +217,4 @@ impl<const N: usize> ContainerTypeSelector<Unknown, Stack<N>> for SelectContaine
 impl<const N: usize> ContainerTypeSelector<Stack<N>, Stack<N>> for SelectContainerType {
     type Type = Stack<N>;
 }
+

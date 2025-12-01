@@ -48,26 +48,47 @@ pub(crate) fn rlst_static_array_impl(items: TokenStream) -> TokenStream {
 
 pub(crate) fn rlst_dynamic_array_impl(items: TokenStream) -> TokenStream {
     let args = items.to_string();
-    let args: Vec<&str> = args.splitn(2, ',').map(|elem| elem.trim()).collect();
-    let ty = args[0];
-    let ty = if let Ok(ty) = syn::parse_str::<syn::Type>(ty) {
+    let (ty, remainder) = args
+        .split_once(',')
+        .expect("At least two arguments separated by a ',' are required.");
+
+    let ty = if let Ok(ty) = syn::parse_str::<syn::Type>(ty.trim()) {
         ty
     } else {
         panic!("Type expected as first argument.");
     };
-    let dims = if let Ok(syn::Expr::Array(expr_array)) = syn::parse_str(args[1]) {
-        expr_array
+
+    if let Some((shape, alignment)) = remainder.split_once('|') {
+        // The user provided shape and alignment
+
+        let shape = if let Ok(expr) = syn::parse_str::<syn::Expr>(shape.trim()) {
+            expr
+        } else {
+            panic!("Expression expected as second argument.");
+        };
+        let alignment = if let Ok(expr) = syn::parse_str::<syn::Expr>(alignment.trim()) {
+            expr
+        } else {
+            panic!("Expression or literal expected as last argument.");
+        };
+        quote! {
+            rlst::dense::array::AlignedDynArray::<#ty, _, { #alignment }>::from_shape(#shape)
+        }
+        .into()
     } else {
-        panic!("Array of dimensions expected as second argument.");
-    };
+        // User only provided the shape
 
-    let ndims = dims.elems.len();
+        let shape = if let Ok(expr) = syn::parse_str::<syn::Expr>(remainder.trim()) {
+            expr
+        } else {
+            panic!("Expression expected as second argument.");
+        };
 
-    let output = quote! {
-        rlst::dense::array::DynArray::<#ty, #ndims>::from_shape(#dims)
-    };
-
-    output.into()
+        quote! {
+            rlst::dense::array::DynArray::<#ty, _>::from_shape(#shape)
+        }
+        .into()
+    }
 }
 
 pub(crate) fn rlst_static_type_impl(items: TokenStream) -> TokenStream {

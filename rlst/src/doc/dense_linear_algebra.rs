@@ -26,12 +26,24 @@
 //! let shape = [3, 5, 2];
 //! let arr = rlst::DynArray::<f64, 3>::from_shape(shape);
 //! ````
-//! Note that the macro `rlst_dynamic_array` only allows array literals as a second parameter.
-//! This is because the macro infers from the number of elements in the array literal how many
-//! dimensions there are. If the shape of the array is provided in the form of a variable (e.g. `shape` as above)
-//! the function [DynArray::from_shape](crate::DynArray::from_shape) needs to be used and the number of
-//! dimensions explicitly provided as in `DynArray::<f64, 3>::from_shape`. The reason is that Rust does
-//! not yet allow to infer the value of const generic arguments in types.
+//! Note that the macro `rlst_dynamic_array` relies on the compiler to automatically infer the
+//! number of dimensions from the type of the provided shape. To provide the dimension explicitly
+//! use [DynArray::from_shape](crate::DynArray::from_shape) directly.
+//!
+//! To create a memory aligned array you can give the alignment as a third parameter.
+//! ```
+//! let shape = [3, 5, 2];
+//! // Create a cache aligned array
+//! let arr = rlst::rlst_dynamic_array!(f64, shape | rlst::CACHE_ALIGNED);
+//! assert_eq!(arr.data().unwrap().as_ptr().addr() % rlst::CACHE_ALIGNED, 0);
+//! // Create a page aligned array
+//! let arr = rlst::rlst_dynamic_array!(f64, shape | rlst::PAGE_ALIGNED);
+//! assert_eq!(arr.data().unwrap().as_ptr().addr() % rlst::PAGE_ALIGNED, 0);
+//! // Create an array with 64 bytes alignment
+//! let arr = rlst::rlst_dynamic_array!(f64, shape | 64);
+//! assert_eq!(arr.data().unwrap().as_ptr().addr() % 64, 0);
+//! ```
+//!
 //! Any type that supports the [std::marker::Copy] and [std::default::Default] traits is supported
 //! for arrays. Hence, the following is a valid construct.
 //! ```

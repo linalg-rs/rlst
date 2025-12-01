@@ -14,6 +14,7 @@
 //! To learn about the features of RLST please have a look at the following documents.
 //! - [Getting started with RLST](crate::doc::getting_started)
 //! - [An introduction to dense linear algebra with RLST](crate::doc::dense_linear_algebra)
+//! - [Matrix decompositions](crate::doc::matrix_decompositions)
 //! - [Sparse matrix operations](crate::doc::sparse_matrices)
 //! - [Abstract linear algebra and iterative solvers](crate::doc::abstract_linear_algebra)
 //! - [MPI distributed computations](crate::doc::distributed_computations)
@@ -55,6 +56,24 @@ pub use dense::array::DynArray;
 pub use dense::array::SliceArray;
 pub use dense::array::SliceArrayMut;
 pub use dense::array::StridedDynArray;
+
+// Important constants
+
+/// Align memory along cache lines
+pub const CACHE_ALIGNED: usize = aligned_vec::CACHELINE_ALIGN;
+
+/// Align memory along page lines
+///
+// On x86_64 architectures a page size of 4kb is assumed.
+// On other architectures we default to 64kb to take into account
+// large page sizes on some ARM platforms.
+pub const PAGE_ALIGNED: usize = {
+    if cfg!(target_arch = "x86_64") {
+        4096
+    } else {
+        65536
+    }
+};
 
 #[cfg(test)]
 mod tests {
