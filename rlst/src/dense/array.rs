@@ -4,6 +4,7 @@
 //! `Array<ArrayImpl, NDIM>` represents a tensor with `NDIM` axes implemented through
 //! the implementeation type `ArrayImpl`.
 
+use aligned_vec::{AVec, CACHELINE_ALIGN, ConstAlign};
 use empty_axis::AxisPosition;
 use iterators::{
     ArrayDefaultIteratorByRef, ArrayDefaultIteratorByValue, ArrayDefaultIteratorMut,
@@ -35,7 +36,9 @@ use crate::{
     base_types::{c32, c64},
     dense::{
         base_array::BaseArray,
-        data_container::{SliceContainer, SliceContainerMut, VectorContainer},
+        data_container::{
+            AlignedVectorContainer, SliceContainer, SliceContainerMut, VectorContainer,
+        },
         strided_base_array::StridedBaseArray,
     },
     traits::{
@@ -64,6 +67,10 @@ pub mod subview;
 
 /// A basic dynamically allocated array.
 pub type DynArray<Item, const NDIM: usize> = Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM>;
+
+/// A basic dynamically allocated array with given alignment.
+pub type AlignedDynArray<Item, const NDIM: usize, const ALIGNMENT: usize = CACHELINE_ALIGN> =
+    Array<BaseArray<AlignedVectorContainer<Item, ALIGNMENT>, NDIM>, NDIM>;
 
 /// A basic dynamically allocated array with a given stride.
 pub type StridedDynArray<Item, const NDIM: usize> =
@@ -157,7 +164,7 @@ impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Array<ArrayImpl, NDIM> {
     }
 }
 
-impl<Item: Copy + Default, const NDIM: usize> Array<BaseArray<VectorContainer<Item>, NDIM>, NDIM> {
+impl<Item: Copy + Default, const NDIM: usize> DynArray<Item, NDIM> {
     /// Create a new heap allocated array from a given `shape`.
     #[inline(always)]
     pub fn from_shape(shape: [usize; NDIM]) -> Self {
@@ -182,6 +189,39 @@ impl<Item: Copy + Default, const NDIM: usize> Array<BaseArray<VectorContainer<It
     }
 }
 
+impl<Item: Copy + Default, const NDIM: usize, const ALIGNMENT: usize>
+    AlignedDynArray<Item, NDIM, ALIGNMENT>
+{
+    /// Create a new heap allocated array from a given `shape`.
+    #[inline(always)]
+    pub fn from_shape(shape: [usize; NDIM]) -> Self {
+        let size = shape.iter().product();
+        Self::new(BaseArray::new(AlignedVectorContainer::new(size), shape))
+    }
+
+    /// Create a new heap allocated array by providing a `shape` and a vector of `data`.
+    ///
+    /// The number of elements in the vector must be compatible with the given shape.
+    /// Otherwise, an assertion error is triggered.
+    #[inline(always)]
+    pub fn from_shape_and_avec(
+        shape: [usize; NDIM],
+        data: AVec<Item, ConstAlign<ALIGNMENT>>,
+    ) -> Self {
+        assert_eq!(
+            data.len(),
+            shape.iter().product::<usize>(),
+            "Data length does not match the shape: {} != {}",
+            data.len(),
+            shape.iter().product::<usize>()
+        );
+        Self::new(BaseArray::new(
+            AlignedVectorContainer::from_avec(data),
+            shape,
+        ))
+    }
+}
+
 impl<Item: Copy + Default> DynArray<Item, 2> {
     /// Create a new dense matrix with shape `shape` filled with values from the iterator `iter`.
     pub fn from_iter_aij<Iter: Iterator<Item = ([usize; 2], Item)>>(
@@ -189,6 +229,22 @@ impl<Item: Copy + Default> DynArray<Item, 2> {
         iter: Iter,
     ) -> DynArray<Item, 2> {
         let mut out = DynArray::<Item, 2>::from_shape(shape);
+
+        for (index, item) in iter {
+            out[index] = item;
+        }
+
+        out
+    }
+}
+
+impl<Item: Copy + Default, const ALIGNMENT: usize> AlignedDynArray<Item, 2, ALIGNMENT> {
+    /// Create a new dense matrix with shape `shape` filled with values from the iterator `iter`.
+    pub fn from_iter_aij<Iter: Iterator<Item = ([usize; 2], Item)>>(
+        shape: [usize; 2],
+        iter: Iter,
+    ) -> AlignedDynArray<Item, 2, ALIGNMENT> {
+        let mut out = AlignedDynArray::<Item, 2, ALIGNMENT>::from_shape(shape);
 
         for (index, item) in iter {
             out[index] = item;
