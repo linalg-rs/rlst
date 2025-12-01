@@ -28,6 +28,7 @@ serde = "1"
 log = { version = "0.4", optional = true }
 typenum = { version = "1", features = ["const-generics"]}
 paste = "1"
+aligned-vec = "0.6"
 
 coe-rs = "0.1.2"
 pulp = { version = "0.22" }

@@ -17,10 +17,18 @@ use crate::traits::data_container::{
 };
 
 use crate::base_types::{Stack, Unknown};
+use aligned_vec::{AVec, CACHELINE_ALIGN, ConstAlign, avec};
 
 /// A container that uses dynamic vectors.
 pub struct VectorContainer<Item> {
     data: Vec<Item>,
+}
+
+/// A data container with compile time alignment
+///
+/// The default alignment is 128 Bytes [CACHELINE_ALIGN].
+pub struct AlignedVectorContainer<Item, const ALIGNMENT: usize = CACHELINE_ALIGN> {
+    data: AVec<Item, ConstAlign<ALIGNMENT>>,
 }
 
 impl<Item: Default + Copy> VectorContainer<Item> {
@@ -41,11 +49,46 @@ impl<Item: Default + Copy> VectorContainer<Item> {
     }
 }
 
+impl<Item: Default + Copy, const ALIGNMENT: usize> AlignedVectorContainer<Item, ALIGNMENT> {
+    /// New aligned vector container by specifying the number of elements.
+    ///
+    /// The container is initialized with zeros by default.
+    #[inline(always)]
+    pub fn new(nelems: usize) -> AlignedVectorContainer<Item, ALIGNMENT> {
+        AlignedVectorContainer::<Item, ALIGNMENT> {
+            data: avec![[ALIGNMENT]| <Item as Default>::default(); nelems],
+        }
+    }
+
+    #[inline(always)]
+    /// Create an aligned data container by taking ownership of an aligned vector.
+    pub fn from_avec(
+        data: AVec<Item, ConstAlign<ALIGNMENT>>,
+    ) -> AlignedVectorContainer<Item, ALIGNMENT> {
+        AlignedVectorContainer::<Item, ALIGNMENT> { data }
+    }
+}
+
 impl<Item> ContainerType for VectorContainer<Item> {
     type Type = Unknown;
 }
 
+impl<Item, const ALIGNMENT: usize> ContainerType for AlignedVectorContainer<Item, ALIGNMENT> {
+    type Type = Unknown;
+}
+
 impl<Item: Copy + Default> DataContainer for VectorContainer<Item> {
+    type Item = Item;
+
+    #[inline(always)]
+    fn number_of_elements(&self) -> usize {
+        self.data.len()
+    }
+}
+
+impl<Item: Copy + Default, const ALIGNMENT: usize> DataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
     type Item = Item;
 
     #[inline(always)]
@@ -62,6 +105,16 @@ impl<Item: Copy + Default> ValueDataContainer for VectorContainer<Item> {
     }
 }
 
+impl<Item: Copy + Default, const ALIGNMENT: usize> ValueDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
+    #[inline(always)]
+    unsafe fn get_unchecked_value(&self, index: usize) -> Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        unsafe { *self.data.get_unchecked(index) }
+    }
+}
+
 impl<Item: Copy + Default> RefDataContainer for VectorContainer<Item> {
     #[inline(always)]
     unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
@@ -70,7 +123,27 @@ impl<Item: Copy + Default> RefDataContainer for VectorContainer<Item> {
     }
 }
 
+impl<Item: Copy + Default, const ALIGNMENT: usize> RefDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
+    #[inline(always)]
+    unsafe fn get_unchecked(&self, index: usize) -> &Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        unsafe { self.data.get_unchecked(index) }
+    }
+}
+
 impl<Item: Copy + Default> RefDataContainerMut for VectorContainer<Item> {
+    #[inline(always)]
+    unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
+        debug_assert!(index < self.number_of_elements());
+        unsafe { self.data.get_unchecked_mut(index) }
+    }
+}
+
+impl<Item: Copy + Default, const ALIGNMENT: usize> RefDataContainerMut
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
     #[inline(always)]
     unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut Self::Item {
         debug_assert!(index < self.number_of_elements());
@@ -88,10 +161,31 @@ impl<Item: Copy + Default> ModifiableDataContainer for VectorContainer<Item> {
     }
 }
 
+impl<Item: Copy + Default, const ALIGNMENT: usize> ModifiableDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
+    #[inline(always)]
+    unsafe fn set_unchecked_value(&mut self, index: usize, value: Self::Item) {
+        debug_assert!(index < self.number_of_elements());
+        unsafe {
+            *self.data.get_unchecked_mut(index) = value;
+        }
+    }
+}
+
 impl<Item: Copy + Default> ResizeableDataContainer for VectorContainer<Item> {
     #[inline(always)]
     fn resize(&mut self, new_len: usize) {
         self.data.resize_with(new_len, Default::default);
+    }
+}
+
+impl<Item: Copy + Default, const ALIGNMENT: usize> ResizeableDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
+    #[inline(always)]
+    fn resize(&mut self, new_len: usize) {
+        self.data.resize(new_len, Default::default());
     }
 }
 
@@ -102,7 +196,25 @@ impl<Item: Copy + Default> RawAccessDataContainer for VectorContainer<Item> {
     }
 }
 
+impl<Item: Copy + Default, const ALIGNMENT: usize> RawAccessDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
+    #[inline(always)]
+    fn data(&self) -> Option<&[Self::Item]> {
+        Some(self.data.as_slice())
+    }
+}
+
 impl<Item: Copy + Default> MutableRawAccessDataContainer for VectorContainer<Item> {
+    #[inline(always)]
+    fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
+        Some(self.data.as_mut_slice())
+    }
+}
+
+impl<Item: Copy + Default, const ALIGNMENT: usize> MutableRawAccessDataContainer
+    for AlignedVectorContainer<Item, ALIGNMENT>
+{
     #[inline(always)]
     fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         Some(self.data.as_mut_slice())

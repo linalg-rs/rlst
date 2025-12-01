@@ -101,6 +101,8 @@
 //!
 //!
 //! ```
+//! # extern crate blas_src;
+//! # extern crate lapack_src;
 //! use rand_chacha::ChaCha8Rng;
 //! use rand::prelude::*;
 //! use rlst::DynArray;

@@ -22,6 +22,7 @@ proc-macro = true
 syn = { version = "2", features = ["full"]}
 quote = "1.0"
 darling = "0.21"
+aligned-vec = "0.6"
 
 [lints.clippy]
 wildcard_imports = "forbid"
