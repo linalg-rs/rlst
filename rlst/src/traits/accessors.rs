@@ -39,10 +39,10 @@ pub trait UnsafeRandomAccessByValue<const NDIM: usize>: BaseItem {
 /// # Safety
 /// `index` must not be out of bounds.
 pub trait UnsafeRandom1DAccessByValue: BaseItem {
-    /// Return the element at position determined by `multi_index`.
+    /// Return the element at position determined by `index`.
     ///
     /// # Safety
-    /// `multi_index` must not be out of bounds.
+    /// `index` must not be out of bounds.
     unsafe fn get_value_1d_unchecked(&self, index: usize) -> Self::Item;
 }
 

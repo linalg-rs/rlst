@@ -71,7 +71,7 @@ pub trait Stride<const NDIM: usize> {
     /// A column-major layout has entries continuous in memory
     /// starting with the first outer dimension. A row-major layout
     /// has entries continuous in memory starting with the last outer dimension.
-    ///
+    /// 1d contiguous layouts are always returned as column major.
     /// Possible return values are [MemoryLayout::ColumnMajor], [MemoryLayout::RowMajor],
     /// and [MemoryLayout::Unknown].
     fn memory_layout(&self) -> MemoryLayout
