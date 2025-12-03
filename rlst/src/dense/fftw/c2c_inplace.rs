@@ -6,126 +6,170 @@ use fftw_sys::{FFTW_BACKWARD, FFTW_FORWARD};
 use itertools::{Itertools, izip};
 
 use crate::{
-    Array, BaseItem, RawAccess, RawAccessMut, Shape, Stride, UnsafeRandom1DAccessByRef,
+    Array, BaseItem, RawAccess, RawAccessMut, RlstScalar, Shape, Stride, UnsafeRandom1DAccessByRef,
     UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut, c64,
-    dense::fftw::{FftPlan, FftPlanFlags, FftPlanPtr, FftPrecision},
+    UnsafeRandomAccessByValue, UnsafeRandomAccessMut, c32, c64,
+    dense::fftw::{
+        FFTW_PLAN_INTERFACE, FftPlan, FftwPlanFlags, FftwPlanPtr, FftwPlanPtrType,
+        FftwPlanPtrTypeTrait, PlanInterfaceTrait,
+    },
 };
 
+/// Trait for types and dimensions that implement the C2C FFT
+#[allow(private_bounds)]
+pub trait C2CInplaceFft<Item, const NDIM: usize>: Sealed
+where
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
+{
+    /// The implementation type of the Array
+    type ArrayImpl: Shape<NDIM> + Stride<NDIM> + RawAccessMut<Item = Item>;
+
+    /// Return a C2C FFT Instance
+    fn into_c2c_fft(
+        self,
+        flags: FftwPlanFlags,
+    ) -> Option<Array<C2CInplace<Item, Self::ArrayImpl, NDIM>, NDIM>>;
+}
+
 /// A complex 2 complex inplace plan
-pub struct C2CInplace<Item, ArrayImpl, const NDIM: usize> {
+#[allow(private_bounds)]
+pub struct C2CInplace<Item, ArrayImpl, const NDIM: usize>
+where
+    Item: RlstScalar + 'static,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
+{
     arr: Array<ArrayImpl, NDIM>,
-    plan_forward: FftPlanPtr,
-    plan_backward: FftPlanPtr,
+    plan_forward: FftwPlanPtr<Item::Real>,
+    plan_backward: FftwPlanPtr<Item::Real>,
     _marker: std::marker::PhantomData<Item>,
 }
 
-impl<ArrayImpl, const NDIM: usize> C2CInplace<c64, ArrayImpl, NDIM>
-where
-    ArrayImpl: Shape<NDIM> + Stride<NDIM> + RawAccessMut<Item = c64>,
-{
-    /// Create a new plan wrapped inside an array structure. Returns None if the Plan cannot be created.
-    pub fn from_arr(
-        mut arr: Array<ArrayImpl, NDIM>,
-        flags: FftPlanFlags,
-    ) -> Option<Array<C2CInplace<c64, ArrayImpl, NDIM>, NDIM>> {
-        // Return None if NDIM > 3 as FFTW only supports up to three dimensions
-        if NDIM > 3 {
-            return None;
-        }
-        // Return None if the array is not contiguous or is empty
-        if !arr.is_contiguous() || arr.is_empty() {
-            return None;
-        }
-
-        let mut shape = arr
-            .shape()
-            .iter()
-            .map(|&elem| elem as i32)
-            .collect_array()
-            .unwrap();
-
-        // If the array is column-major reverse the order of the shape as
-        // FFTW uses row-major order
-
-        if matches!(arr.memory_layout(), crate::MemoryLayout::ColumnMajor) {
-            shape = {
-                let mut rev_shape = [0_i32; NDIM];
-
-                for (&orig_index, rev_index) in izip!(shape.iter().rev(), rev_shape.iter_mut()) {
-                    *rev_index = orig_index;
+macro_rules! impl_c2c_inplace {
+    ($ty: ty, $precision: ident, $execute: ident) => {
+        impl<ArrayImpl, const NDIM: usize> C2CInplaceFft<$ty, NDIM> for Array<ArrayImpl, NDIM>
+        where
+            ArrayImpl: Shape<NDIM> + Stride<NDIM> + RawAccessMut<Item = $ty>,
+        {
+            type ArrayImpl = ArrayImpl;
+            /// Create a new plan wrapped inside an array structure. Returns None if the Plan cannot be created.
+            fn into_c2c_fft(
+                mut self,
+                flags: FftwPlanFlags,
+            ) -> Option<Array<C2CInplace<$ty, Self::ArrayImpl, NDIM>, NDIM>> {
+                // Return None if NDIM > 3 as FFTW only supports up to three dimensions
+                if NDIM > 3 {
+                    return None;
                 }
-                rev_shape
-            };
+                // Return None if the array is not contiguous or is empty
+                if !self.is_contiguous() || self.is_empty() {
+                    return None;
+                }
+
+                let mut shape = self
+                    .shape()
+                    .iter()
+                    .map(|&elem| elem as i32)
+                    .collect_array()
+                    .unwrap();
+
+                // If the array is column-major reverse the order of the shape as
+                // FFTW uses row-major order
+
+                if matches!(self.memory_layout(), crate::MemoryLayout::ColumnMajor) {
+                    shape = {
+                        let mut rev_shape = [0_i32; NDIM];
+
+                        for (&orig_index, rev_index) in
+                            izip!(shape.iter().rev(), rev_shape.iter_mut())
+                        {
+                            *rev_index = orig_index;
+                        }
+                        rev_shape
+                    };
+                }
+
+                let data = self.data_mut()?.as_mut_ptr();
+
+                let plan_ptr_forward = unsafe {
+                    FFTW_PLAN_INTERFACE.lock().unwrap().$precision.create_c2c(
+                        NDIM as c_int,
+                        shape.as_ptr(),
+                        data,
+                        data,
+                        FFTW_FORWARD,
+                        flags as u32,
+                    )
+                };
+
+                let plan_ptr_backward = unsafe {
+                    FFTW_PLAN_INTERFACE.lock().unwrap().$precision.create_c2c(
+                        NDIM as c_int,
+                        shape.as_ptr(),
+                        data,
+                        data,
+                        FFTW_BACKWARD as i32,
+                        flags as u32,
+                    )
+                };
+
+                if plan_ptr_forward.is_null() || plan_ptr_backward.is_null() {
+                    None
+                } else {
+                    Some(Array::new(C2CInplace {
+                        arr: self,
+                        plan_forward: FftwPlanPtr {
+                            ptr: plan_ptr_forward as *mut c_void,
+                            _marker: PhantomData,
+                        },
+                        plan_backward: FftwPlanPtr {
+                            ptr: plan_ptr_backward as *mut c_void,
+                            _marker: PhantomData,
+                        },
+                        _marker: PhantomData,
+                    }))
+                }
+            }
         }
 
-        let data = arr.data_mut()?.as_mut_ptr();
+        impl<ArrayImpl, const NDIM: usize> FftPlan for C2CInplace<$ty, ArrayImpl, NDIM>
+        where
+            ArrayImpl: BaseItem<Item = $ty>,
+        {
+            type ItemIn = $ty;
 
-        let plan_ptr_forward = unsafe {
-            fftw_sys::fftw_plan_dft(
-                NDIM as c_int,
-                shape.as_ptr(),
-                data,
-                data,
-                FFTW_FORWARD,
-                flags as u32,
-            )
-        };
+            type ItemOut = $ty;
 
-        let plan_ptr_backward = unsafe {
-            fftw_sys::fftw_plan_dft(
-                NDIM as c_int,
-                shape.as_ptr(),
-                data,
-                data,
-                FFTW_BACKWARD as i32,
-                flags as u32,
-            )
-        };
+            fn execute_forward(&mut self) {
+                unsafe {
+                    fftw_sys::$execute(
+                        <FftwPlanPtrType<<$ty as RlstScalar>::Real> as FftwPlanPtrTypeTrait>::get_fftw_ptr(
+                            self.plan_forward.ptr,
+                        ),
+                    );
+                }
+            }
 
-        if plan_ptr_forward.is_null() || plan_ptr_backward.is_null() {
-            None
-        } else {
-            Some(Array::new(C2CInplace {
-                arr,
-                plan_forward: FftPlanPtr {
-                    precision: FftPrecision::Double,
-                    ptr: plan_ptr_forward as *mut c_void,
-                },
-                plan_backward: FftPlanPtr {
-                    precision: FftPrecision::Double,
-                    ptr: plan_ptr_backward as *mut c_void,
-                },
-                _marker: PhantomData,
-            }))
+            fn execute_backwawrd(&mut self) {
+                unsafe {
+                    fftw_sys::$execute(
+                        <FftwPlanPtrType<<$ty as RlstScalar>::Real> as FftwPlanPtrTypeTrait>::get_fftw_ptr(
+                            self.plan_backward.ptr,
+                        ),
+                    );
+                }
+            }
         }
-    }
+    };
 }
 
-impl<ArrayImpl, const NDIM: usize> FftPlan<NDIM> for C2CInplace<c64, ArrayImpl, NDIM>
-where
-    ArrayImpl: BaseItem<Item = c64>,
-{
-    type ItemIn = c64;
-
-    type ItemOut = c64;
-
-    fn execute_forward(&mut self) {
-        unsafe {
-            fftw_sys::fftw_execute(self.plan_forward.ptr as fftw_sys::fftw_plan);
-        }
-    }
-
-    fn execute_backwawrd(&mut self) {
-        unsafe {
-            fftw_sys::fftw_execute(self.plan_backward.ptr as fftw_sys::fftw_plan);
-        }
-    }
-}
+impl_c2c_inplace!(c64, fftw_double, fftw_execute);
+impl_c2c_inplace!(c32, fftw_single, fftwf_execute);
 
 impl<Item, ArrayImpl, const NDIM: usize> BaseItem for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: BaseItem<Item = Item>,
 {
     type Item = Item;
@@ -134,7 +178,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandomAccessByValue<NDIM>
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandomAccessByValue<NDIM, Item = Item>,
 {
     #[inline(always)]
@@ -146,7 +191,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandomAccessByRef<NDIM>
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandomAccessByRef<NDIM, Item = Item>,
 {
     #[inline(always)]
@@ -158,7 +204,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandomAccessMut<NDIM>
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandomAccessMut<NDIM, Item = Item>,
 {
     #[inline(always)]
@@ -170,7 +217,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByValue
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandom1DAccessByValue<Item = Item>,
 {
     #[inline(always)]
@@ -182,7 +230,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessByRef
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandom1DAccessByRef<Item = Item>,
 {
     #[inline(always)]
@@ -194,7 +243,8 @@ where
 impl<Item, ArrayImpl, const NDIM: usize> UnsafeRandom1DAccessMut
     for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: UnsafeRandom1DAccessMut<Item = Item>,
 {
     #[inline(always)]
@@ -205,7 +255,8 @@ where
 
 impl<Item, ArrayImpl, const NDIM: usize> RawAccess for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: RawAccess<Item = Item>,
 {
     #[inline(always)]
@@ -216,11 +267,55 @@ where
 
 impl<Item, ArrayImpl, const NDIM: usize> RawAccessMut for C2CInplace<Item, ArrayImpl, NDIM>
 where
-    Item: Default + Copy,
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
     ArrayImpl: RawAccessMut<Item = Item>,
 {
     #[inline(always)]
     fn data_mut(&mut self) -> Option<&mut [Self::Item]> {
         self.arr.data_mut()
+    }
+}
+
+trait Sealed {}
+
+impl<ArrayImpl, const NDIM: usize> Sealed for Array<ArrayImpl, NDIM> {}
+
+#[cfg(test)]
+mod test {
+
+    use crate::{c32, c64};
+
+    use crate::DynArray;
+    use crate::dense::fftw::FftwPlanFlags;
+
+    use super::C2CInplaceFft;
+
+    #[test]
+    fn test_c2c_1d_f64() {
+        let mut arr = DynArray::<c64, _>::from_shape([10]);
+
+        let sum = arr.iter_value().sum::<c64>();
+
+        arr.r_mut()
+            .into_c2c_fft(FftwPlanFlags::Estimate)
+            .unwrap()
+            .fft();
+
+        approx::assert_relative_eq!(sum, arr[[0]], epsilon = 1E-10);
+    }
+
+    #[test]
+    fn test_c2c_1d_f32() {
+        let mut arr = DynArray::<c32, _>::from_shape([10]);
+
+        let sum = arr.iter_value().sum::<c32>();
+
+        arr.r_mut()
+            .into_c2c_fft(FftwPlanFlags::Estimate)
+            .unwrap()
+            .fft();
+
+        approx::assert_relative_eq!(sum, arr[[0]], epsilon = 1E-10);
     }
 }

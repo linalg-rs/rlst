@@ -2,13 +2,18 @@
 
 pub mod c2c_inplace;
 
-use std::ffi::c_void;
-
-use crate::{
-    Array, RawAccessMut, RlstScalar, Shape, Stride,
-    dense::array::reference::{ArrayRef, ArrayRefMut},
+use std::{
+    ffi::c_void,
+    marker::PhantomData,
+    sync::{LazyLock, Mutex},
 };
+
+use crate::{Array, RlstScalar};
 use fftw_sys;
+use num::Complex;
+
+static FFTW_PLAN_INTERFACE: LazyLock<Mutex<FftwPlanInterface>> =
+    LazyLock::new(|| Mutex::new(FftwPlanInterface::default()));
 
 /// The direction of the FFT
 #[derive(Copy, Clone, Debug)]
@@ -32,7 +37,7 @@ pub enum FftPrecision {
 /// Flags for FFT Plans
 #[derive(Copy, Clone, Debug)]
 #[repr(u32)]
-pub enum FftPlanFlags {
+pub enum FftwPlanFlags {
     /// Use a simple heuristic to select the plan. Does not overwrite data.
     Estimate = fftw_sys::FFTW_ESTIMATE,
     /// Compute several FFTs and measure execution time. Overwrites data.
@@ -50,7 +55,7 @@ pub enum FftPlanFlags {
 }
 
 /// Description of a plan with different input and output arrays.
-pub trait FftPlan<const NDIM: usize> {
+pub trait FftPlan {
     /// The input type of the plan
     type ItemIn: RlstScalar;
 
@@ -64,21 +69,174 @@ pub trait FftPlan<const NDIM: usize> {
     fn execute_backwawrd(&mut self);
 }
 
-/// Storage for a pointer to an FFT Plan
-struct FftPlanPtr {
-    precision: FftPrecision,
-    ptr: *mut c_void,
+struct FftwPlanPtrType<T> {
+    _marker: PhantomData<T>,
 }
 
-impl Drop for FftPlanPtr {
+trait FftwPlanPtrTypeTrait {
+    type PtrType;
+
+    fn get_fftw_ptr(ptr: *mut c_void) -> Self::PtrType;
+}
+
+impl FftwPlanPtrTypeTrait for FftwPlanPtrType<f64> {
+    type PtrType = fftw_sys::fftw_plan;
+
+    fn get_fftw_ptr(ptr: *mut c_void) -> Self::PtrType {
+        ptr as fftw_sys::fftw_plan
+    }
+}
+
+impl FftwPlanPtrTypeTrait for FftwPlanPtrType<f32> {
+    type PtrType = fftw_sys::fftwf_plan;
+
+    fn get_fftw_ptr(ptr: *mut c_void) -> Self::PtrType {
+        ptr as fftw_sys::fftwf_plan
+    }
+}
+
+/// Storage for a pointer to an FFT Plan
+struct FftwPlanPtr<T>
+where
+    T: 'static,
+    FftwPlanPtrType<T>: FftwPlanPtrTypeTrait,
+{
+    ptr: *mut c_void,
+    _marker: std::marker::PhantomData<T>,
+}
+
+trait PlanInterfaceTrait {
+    type PlanPtr;
+
+    type RealType;
+
+    /// Destroy a given plan
+    unsafe fn destroy_plan(&self, plan_ptr: Self::PlanPtr);
+
+    /// Create a c2c plan
+    unsafe fn create_c2c(
+        &self,
+        rank: i32,
+        shape: *const i32,
+        arr_in: *mut Complex<Self::RealType>,
+        arr_out: *mut Complex<Self::RealType>,
+        sign: i32,
+        flags: u32,
+    ) -> Self::PlanPtr;
+}
+
+impl<T> Drop for FftwPlanPtr<T>
+where
+    T: 'static,
+    FftwPlanPtrType<T>: FftwPlanPtrTypeTrait,
+{
     fn drop(&mut self) {
-        match self.precision {
-            FftPrecision::Double => unsafe {
-                fftw_sys::fftw_destroy_plan(self.ptr as fftw_sys::fftw_plan);
-            },
-            FftPrecision::Single => unsafe {
-                fftw_sys::fftwf_destroy_plan(self.ptr as fftw_sys::fftwf_plan);
-            },
+        if coe::is_same::<T, f64>() {
+            let ptr = FftwPlanPtrType::<f64>::get_fftw_ptr(self.ptr);
+            unsafe {
+                FFTW_PLAN_INTERFACE
+                    .lock()
+                    .unwrap()
+                    .fftw_double
+                    .destroy_plan(ptr);
+            };
+        } else if coe::is_same::<T, f32>() {
+            let ptr = FftwPlanPtrType::<f32>::get_fftw_ptr(self.ptr);
+            unsafe {
+                FFTW_PLAN_INTERFACE
+                    .lock()
+                    .unwrap()
+                    .fftw_single
+                    .destroy_plan(ptr)
+            };
         }
     }
 }
+
+/// An interface to plan generation routines that will be hidden behind a mutex
+struct ConcretePlanInterface<T> {
+    _marker: PhantomData<T>,
+}
+
+impl<T> Default for ConcretePlanInterface<T> {
+    fn default() -> Self {
+        Self {
+            _marker: Default::default(),
+        }
+    }
+}
+
+impl PlanInterfaceTrait for ConcretePlanInterface<f64> {
+    type PlanPtr = fftw_sys::fftw_plan;
+
+    type RealType = f64;
+
+    unsafe fn destroy_plan(&self, plan_ptr: Self::PlanPtr) {
+        unsafe {
+            fftw_sys::fftw_destroy_plan(plan_ptr);
+        }
+    }
+
+    unsafe fn create_c2c(
+        &self,
+        rank: i32,
+        shape: *const i32,
+        arr_in: *mut Complex<Self::RealType>,
+        arr_out: *mut Complex<Self::RealType>,
+        sign: i32,
+        flags: u32,
+    ) -> Self::PlanPtr {
+        unsafe { fftw_sys::fftw_plan_dft(rank, shape, arr_in, arr_out, sign, flags) }
+    }
+}
+
+impl PlanInterfaceTrait for ConcretePlanInterface<f32> {
+    type PlanPtr = fftw_sys::fftwf_plan;
+
+    type RealType = f32;
+
+    unsafe fn destroy_plan(&self, plan_ptr: Self::PlanPtr) {
+        unsafe {
+            fftw_sys::fftwf_destroy_plan(plan_ptr);
+        }
+    }
+
+    unsafe fn create_c2c(
+        &self,
+        rank: i32,
+        shape: *const i32,
+        arr_in: *mut Complex<Self::RealType>,
+        arr_out: *mut Complex<Self::RealType>,
+        sign: i32,
+        flags: u32,
+    ) -> Self::PlanPtr {
+        unsafe { fftw_sys::fftwf_plan_dft(rank, shape, arr_in, arr_out, sign, flags) }
+    }
+}
+
+/// A thread-safe interface to work with FFTW Plans
+#[derive(Default)]
+struct FftwPlanInterface {
+    pub fftw_single: ConcretePlanInterface<f32>,
+    pub fftw_double: ConcretePlanInterface<f64>,
+}
+
+impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
+where
+    ArrayImpl: FftPlan,
+{
+    /// Compute the forward fft
+    pub fn fft(&mut self) {
+        self.imp_mut().execute_forward();
+    }
+
+    /// Compute the inverse fft
+    pub fn ifft(&mut self) {
+        self.imp_mut().execute_backwawrd();
+    }
+}
+
+#[cfg_attr(feature = "fftw_system", link(name = "fftw3"))]
+unsafe extern "C" {}
+#[cfg_attr(feature = "fftw_system", link(name = "fftw3f"))]
+unsafe extern "C" {}
