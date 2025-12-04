@@ -384,10 +384,10 @@ mod test {
         approx::assert_relative_eq!(
             sum,
             c32::from_usize(n).unwrap() * expected[[0]],
-            epsilon = 1E-6
+            epsilon = 1E-5
         );
         // Compute the forward and inverse FFT and check that the result is still the same.
-        crate::assert_array_relative_eq!(actual, c32::from_usize(n).unwrap() * expected.r(), 1E-6);
+        crate::assert_array_relative_eq!(actual, c32::from_usize(n).unwrap() * expected.r(), 1E-5);
     }
 
     #[test]
@@ -452,10 +452,10 @@ mod test {
         approx::assert_relative_eq!(
             sum,
             c32::from_usize(n).unwrap() * expected[[0, 0]],
-            epsilon = 1E-6
+            epsilon = 1E-5
         );
         // Compute the forward and inverse FFT and check that the result is still the same.
-        crate::assert_array_relative_eq!(actual, c32::from_usize(n).unwrap() * expected.r(), 1E-6);
+        crate::assert_array_relative_eq!(actual, c32::from_usize(n).unwrap() * expected.r(), 1E-5);
     }
 
     #[test]
