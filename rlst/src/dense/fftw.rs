@@ -55,18 +55,21 @@ pub enum FftwPlanFlags {
 }
 
 /// Description of a plan with different input and output arrays.
-pub trait FftPlan {
+pub trait FftPlan<const NDIM: usize> {
     /// The input type of the plan
-    type ItemIn: RlstScalar;
+    type Item: RlstScalar;
 
-    /// The output type of the plan
-    type ItemOut: RlstScalar;
+    /// The input array implementation
+    type ArrayImpl;
 
     /// Execute the plan for a forward FFT
     fn execute_forward(&mut self);
 
     /// Execute the plan for an inverse FFT
     fn execute_backwawrd(&mut self);
+
+    /// Return the original array
+    fn into_imp(self) -> Array<Self::ArrayImpl, NDIM>;
 }
 
 struct FftwPlanPtrType<T> {
@@ -223,16 +226,23 @@ struct FftwPlanInterface {
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: FftPlan,
+    ArrayImpl: FftPlan<NDIM>,
 {
     /// Compute the forward fft
-    pub fn fft(&mut self) {
+    pub fn fft(mut self) -> Self {
         self.imp_mut().execute_forward();
+        self
     }
 
     /// Compute the inverse fft
-    pub fn ifft(&mut self) {
+    pub fn ifft(mut self) -> Self {
         self.imp_mut().execute_backwawrd();
+        self
+    }
+
+    /// Return the inner array of an FFT plan
+    pub fn fft_into_imp(self) -> Array<<ArrayImpl as FftPlan<NDIM>>::ArrayImpl, NDIM> {
+        self.into_imp().into_imp()
     }
 }
 
