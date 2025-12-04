@@ -19,6 +19,8 @@
 //! use num::FromPrimitive;
 //!
 //! let shape = [3, 5, 2];
+//! // We create a 16 byte aligned array. This is
+//! // the required alignment for FFTW to use SIMD features.
 //! let mut arr = rlst_dynamic_array!(c64, shape | 16);
 //! arr.fill_from_seed_equally_distributed(0);
 //!
