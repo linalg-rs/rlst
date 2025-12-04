@@ -21,7 +21,7 @@
 //! let shape = [3, 5, 2];
 //! // We create a 16 byte aligned array. This is
 //! // the required alignment for FFTW to use SIMD features.
-//! let mut arr = rlst_dynamic_array!(c64, shape | 16);
+//! let mut arr = rlst_dynamic_array!(c64, shape | rlst::FFTW_ALIGNED);
 //! arr.fill_from_seed_equally_distributed(0);
 //!
 //! // We use `eval` to copy the data into a new array before generating the plan

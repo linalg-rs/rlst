@@ -63,7 +63,7 @@ git2 = "0.20"
 
 [features]
 strict = []
-default = ["fftw", "fftw_source"]
+default = []
 mpi = ["dep:mpi", "dep:mpi-sys"]
 nightly = []
 blis_threading = []

@@ -62,6 +62,9 @@ pub use dense::array::StridedDynArray;
 /// Align memory along cache lines
 pub const CACHE_ALIGNED: usize = aligned_vec::CACHELINE_ALIGN;
 
+/// Align memory for FFTW. FFTW requires 16 bytes alignment
+pub const FFTW_ALIGNED: usize = 16;
+
 /// Align memory along page lines
 ///
 // On x86_64 architectures a page size of 4kb is assumed.
