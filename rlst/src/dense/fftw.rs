@@ -1,4 +1,56 @@
 //! Implementation of fft using fftw
+//!
+//! FFTW uses plans to execute an FFT computation. Within FFTW there are two steps
+//! to get the FFT of a given array.
+//!
+//! 1. Generate a plan for the desired FFT
+//! 2. Execute the FFT
+//!
+//! FFTW supports FFT computations on one, two, and three dimensional input arrays.
+//!
+//! ## Complex-to-Complex transform
+//!
+//! The following gives an example of computing the Complex-to-Complex transform
+//! of a given array `arr`.
+//! ```
+//! use rlst::{rlst_dynamic_array, dense::fftw::FftwPlanFlags,
+//!     dense::fftw::C2CInplaceFft, EvaluateObject, c64,
+//!     assert_array_relative_eq};
+//! use num::FromPrimitive;
+//!
+//! let shape = [3, 5, 2];
+//! let mut arr = rlst_dynamic_array!(c64, shape | 16);
+//! arr.fill_from_seed_equally_distributed(0);
+//!
+//! // We use `eval` to copy the data into a new array before generating the plan
+//! // so that `arr` is not overwritten.
+//! let mut plan = arr.eval().into_c2c_fft(FftwPlanFlags::Estimate).expect("Count not create plan.");
+//!
+//! let forward = plan.r_mut().fft().eval();
+//! let backward = plan.r_mut().ifft().eval();
+//!
+//! assert_array_relative_eq!(backward, c64::from_usize(30).unwrap() * arr.r(), 1E-10);
+//!
+//! ```
+//! The method [into_c2c_fft](Array::into_c2c_fft) generates the c2c plan.
+//! One can then execute a forward or backward fft as shown above.
+//! By default the FFT overwrites the original array. With the `eval` function
+//! the result is written into a new array. Note that the array in `backward`
+//! is scaled compared to the original array. This is the default behaviour of FFTW.
+//!
+//! The FFTW interface in RLST always generates a forward and a backward FFT plan and
+//! stores both plans.
+//!
+//! The `plan` struct satisfies all the usual traits for mutable array access. Hence,
+//! it can be used itself like any other array. The underlying data is that of the original array
+//! for who a plan was computed.
+//!
+//! ## Thread Safety
+//!
+//! Plan generation is not thread-safe in FFTW. This is solved in `rlst` by hiding the plan
+//! generation inside a mutex. However, if other libraries access FFTW at the same time as `rlst`
+//! a race condition may occur. The execution of a plan to compute the forward or backward FFT
+//! is thread-safe.
 
 pub mod c2c_inplace;
 
@@ -11,6 +63,8 @@ use std::{
 use crate::{Array, RlstScalar};
 use fftw_sys;
 use num::Complex;
+
+pub use c2c_inplace::C2CInplaceFft;
 
 static FFTW_PLAN_INTERFACE: LazyLock<Mutex<FftwPlanInterface>> =
     LazyLock::new(|| Mutex::new(FftwPlanInterface::default()));
@@ -42,9 +96,9 @@ pub enum FftwPlanFlags {
     Estimate = fftw_sys::FFTW_ESTIMATE,
     /// Compute several FFTs and measure execution time. Overwrites data.
     Measure = fftw_sys::FFTW_MEASURE,
-    /// Like [FftPlanFlags::Measure] but selects from a wider set of algorithms.
+    /// Like [FftwPlanFlags::Measure] but selects from a wider set of algorithms.
     Patient = fftw_sys::FFTW_PATIENT,
-    /// Even wider search than [FftPlanFlags::Patient]
+    /// Even wider search than [FftwPlanFlags::Patient]
     Exhaustive = fftw_sys::FFTW_EXHAUSTIVE,
     /// Allow out of place transform to overwrite the input.
     DestroyInput = fftw_sys::FFTW_DESTROY_INPUT,
@@ -55,7 +109,7 @@ pub enum FftwPlanFlags {
 }
 
 /// Description of a plan with different input and output arrays.
-pub trait FftPlan<const NDIM: usize> {
+pub trait FftPlanInplace<const NDIM: usize> {
     /// The input type of the plan
     type Item: RlstScalar;
 
@@ -66,10 +120,7 @@ pub trait FftPlan<const NDIM: usize> {
     fn execute_forward(&mut self);
 
     /// Execute the plan for an inverse FFT
-    fn execute_backwawrd(&mut self);
-
-    /// Return the original array
-    fn into_imp(self) -> Array<Self::ArrayImpl, NDIM>;
+    fn execute_backward(&mut self);
 }
 
 struct FftwPlanPtrType<T> {
@@ -226,7 +277,7 @@ struct FftwPlanInterface {
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>
 where
-    ArrayImpl: FftPlan<NDIM>,
+    ArrayImpl: FftPlanInplace<NDIM>,
 {
     /// Compute the forward fft
     pub fn fft(mut self) -> Self {
@@ -236,17 +287,7 @@ where
 
     /// Compute the inverse fft
     pub fn ifft(mut self) -> Self {
-        self.imp_mut().execute_backwawrd();
+        self.imp_mut().execute_backward();
         self
     }
-
-    /// Return the inner array of an FFT plan
-    pub fn fft_into_imp(self) -> Array<<ArrayImpl as FftPlan<NDIM>>::ArrayImpl, NDIM> {
-        self.into_imp().into_imp()
-    }
 }
-
-#[cfg_attr(feature = "fftw_system", link(name = "fftw3"))]
-unsafe extern "C" {}
-#[cfg_attr(feature = "fftw_system", link(name = "fftw3f"))]
-unsafe extern "C" {}

@@ -73,6 +73,7 @@ enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
 fftw = ["dep:fftw-sys"]
 fftw_system = ["fftw-sys/system"]
 fftw_source = ["fftw-sys/source"]
+fftw_mkl = ["fftw-sys/intel-mkl"]
 
 
 [lints.clippy]

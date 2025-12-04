@@ -27,3 +27,18 @@
 //! ```
 //! This ensures that the compiler links your code with the provided Blas/Lapack libraries.
 //!
+//!
+//! ## Using the FFT interface
+//!
+//! RLST optionally links with FFTW to provide FFT for one, two, and three dimensional arrays.
+//! Note that **FFTW is GPL licensed.**. This means that any binary linked against FFTW must be
+//! distributed under the GPL license as well. To enable the FFT use the feature flag `fftw`.
+//! The actual `fftw` linkage can be done through one of the following options:
+//! - Use the `fftw_system` feature flag to link against a system installation of FFTW.
+//!   The library must be in a standard search path of the Rust compiler.
+//! - Use the `fftw_source` flag to build FFTW and statically link it.
+//! - Use the `fftw_mkl` flag to link against Intel MKL, which provides an FFTW compatible interface.
+//!   For this option the license conditions of Intel MKL rather than FFTW apply.
+//!
+//! Instructions on how to use the FFT can be found in the documentation of `rlst::dense::fftw` when
+//! the `fftw` feature flag is activated.

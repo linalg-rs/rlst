@@ -6,11 +6,11 @@ use fftw_sys::{FFTW_BACKWARD, FFTW_FORWARD};
 use itertools::{Itertools, izip};
 
 use crate::{
-    Array, BaseItem, RawAccess, RawAccessMut, RlstScalar, Shape, Stride, UnsafeRandom1DAccessByRef,
-    UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut, UnsafeRandomAccessByRef,
-    UnsafeRandomAccessByValue, UnsafeRandomAccessMut, c32, c64,
+    Array, BaseItem, ContainerType, RawAccess, RawAccessMut, RlstScalar, Shape, Stride,
+    UnsafeRandom1DAccessByRef, UnsafeRandom1DAccessByValue, UnsafeRandom1DAccessMut,
+    UnsafeRandomAccessByRef, UnsafeRandomAccessByValue, UnsafeRandomAccessMut, c32, c64,
     dense::fftw::{
-        FFTW_PLAN_INTERFACE, FftPlan, FftwPlanFlags, FftwPlanPtr, FftwPlanPtrType,
+        FFTW_PLAN_INTERFACE, FftPlanInplace, FftwPlanFlags, FftwPlanPtr, FftwPlanPtrType,
         FftwPlanPtrTypeTrait, PlanInterfaceTrait,
     },
 };
@@ -25,7 +25,7 @@ where
     /// The implementation type of the Array
     type ArrayImpl: Shape<NDIM> + Stride<NDIM> + RawAccessMut<Item = Item>;
 
-    /// Return a C2C FFT Instance
+    /// Return a C2C FFT Instance for the given flags
     fn into_c2c_fft(
         self,
         flags: FftwPlanFlags,
@@ -132,7 +132,7 @@ macro_rules! impl_c2c_inplace {
             }
         }
 
-        impl<ArrayImpl, const NDIM: usize> FftPlan<NDIM> for C2CInplace<$ty, ArrayImpl, NDIM>
+        impl<ArrayImpl, const NDIM: usize> FftPlanInplace<NDIM> for C2CInplace<$ty, ArrayImpl, NDIM>
         where
             ArrayImpl: BaseItem<Item = $ty>,
         {
@@ -150,7 +150,7 @@ macro_rules! impl_c2c_inplace {
                 }
             }
 
-            fn execute_backwawrd(&mut self) {
+            fn execute_backward(&mut self) {
                 unsafe {
                     fftw_sys::$execute(
                         <FftwPlanPtrType<<$ty as RlstScalar>::Real> as FftwPlanPtrTypeTrait>::get_fftw_ptr(
@@ -160,9 +160,6 @@ macro_rules! impl_c2c_inplace {
                 }
             }
 
-            fn into_imp(self) -> Array<Self::ArrayImpl, NDIM> {
-                self.arr
-            }
         }
     };
 }
@@ -177,6 +174,15 @@ where
     ArrayImpl: BaseItem<Item = Item>,
 {
     type Item = Item;
+}
+
+impl<Item, ArrayImpl, const NDIM: usize> ContainerType for C2CInplace<Item, ArrayImpl, NDIM>
+where
+    Item: RlstScalar,
+    FftwPlanPtrType<Item::Real>: FftwPlanPtrTypeTrait,
+    ArrayImpl: ContainerType,
+{
+    type Type = ArrayImpl::Type;
 }
 
 impl<Item, ArrayImpl, const NDIM: usize> Shape<NDIM> for C2CInplace<Item, ArrayImpl, NDIM>
@@ -340,8 +346,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(
@@ -373,8 +378,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(
@@ -408,8 +412,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(
@@ -443,8 +446,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(
@@ -478,8 +480,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(
@@ -513,8 +514,7 @@ mod test {
             .into_c2c_fft(FftwPlanFlags::Estimate)
             .unwrap()
             .fft()
-            .ifft()
-            .fft_into_imp();
+            .ifft();
 
         // Check that the zeroth frequency is the sum of all input elements.
         approx::assert_relative_eq!(

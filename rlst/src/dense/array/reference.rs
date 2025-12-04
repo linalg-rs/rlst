@@ -116,6 +116,13 @@ impl<'a, ArrayImpl, const NDIM: usize> ArrayRefMut<'a, ArrayImpl, NDIM> {
     }
 }
 
+impl<'a, ArrayImpl, const NDIM: usize> ContainerType for ArrayRefMut<'a, ArrayImpl, NDIM>
+where
+    ArrayImpl: ContainerType,
+{
+    type Type = ArrayImpl::Type;
+}
+
 impl<ArrayImpl: Shape<NDIM>, const NDIM: usize> Shape<NDIM> for ArrayRefMut<'_, ArrayImpl, NDIM> {
     #[inline(always)]
     fn shape(&self) -> [usize; NDIM] {
@@ -204,5 +211,24 @@ impl<ArrayImpl: ResizeInPlace<NDIM>, const NDIM: usize> ResizeInPlace<NDIM>
     #[inline(always)]
     fn resize_in_place(&mut self, shape: [usize; NDIM]) {
         self.0.resize_in_place(shape)
+    }
+}
+
+#[cfg(feature = "fftw")]
+impl<'a, ArrayImpl, const NDIM: usize> crate::dense::fftw::FftPlanInplace<NDIM>
+    for ArrayRefMut<'a, ArrayImpl, NDIM>
+where
+    ArrayImpl: crate::dense::fftw::FftPlanInplace<NDIM>,
+{
+    type Item = <ArrayImpl as crate::dense::fftw::FftPlanInplace<NDIM>>::Item;
+
+    type ArrayImpl = ArrayRefMut<'a, ArrayImpl, NDIM>;
+
+    fn execute_forward(&mut self) {
+        self.0.imp_mut().execute_forward()
+    }
+
+    fn execute_backward(&mut self) {
+        self.0.imp_mut().execute_backward()
     }
 }
