@@ -37,6 +37,9 @@ jobs:
       - name: Install Clang
         run: sudo apt-get install -y libclang-dev
 
+      - name: Install FFTW
+        run: sudo apt-get install -y libfftw3-dev
+
       - name: Install Blas
         run: sudo apt-get install -y libopenblas-dev
 
@@ -54,9 +57,9 @@ jobs:
           cargo clippy --examples -- -D warnings
 
       - name: Run unit tests (debug)
-        run: RUST_MIN_STACK=8388608 cargo test --features "mpi,strict"
+        run: RUST_MIN_STACK=8388608 cargo test --features "mpi,fftw,fftw_system,strict"
       - name: Run tests (release)
-        run: RUST_MIN_STACK=8388608 cargo test --examples --release --features "mpi,strict"
+        run: RUST_MIN_STACK=8388608 cargo test --examples --release --features "mpi,fftw,fftw_system,strict"
       - name: Run examples
         run: cargo templated-examples NPROCESSES 2,4
 

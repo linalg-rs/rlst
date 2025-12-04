@@ -38,6 +38,8 @@ num_cpus = "1"
 mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 
+fftw-sys = { version = "0.8", default-features = false, optional = true }
+
 [dev-dependencies]
 approx = { version = "0.5", features = ["num-complex"] }
 rand = "0.9"
@@ -68,6 +70,11 @@ blis_threading = []
 openblas_threading = []
 mkl_threading = []
 enable_tracing = ["rlst-proc-macro/enable_tracing", "dep:log"]
+fftw = ["dep:fftw-sys"]
+fftw_system = ["fftw-sys/system"]
+fftw_source = ["fftw-sys/source"]
+fftw_mkl = ["fftw-sys/intel-mkl"]
+
 
 [lints.clippy]
 wildcard_imports = "forbid"

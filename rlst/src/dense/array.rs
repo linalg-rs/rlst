@@ -535,6 +535,13 @@ where
     pub fn memory_layout(&self) -> MemoryLayout {
         self.0.memory_layout()
     }
+
+    /// Return true of the memory layout is contiguous, otherwise false.
+    ///
+    /// A memory layout is contiguous if it is either row or column major.
+    pub fn is_contiguous(&self) -> bool {
+        self.0.is_contiguous()
+    }
 }
 
 impl<ArrayImpl, const NDIM: usize> Array<ArrayImpl, NDIM>

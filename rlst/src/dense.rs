@@ -11,3 +11,6 @@ pub mod gemm;
 pub mod layout;
 pub mod macros;
 pub mod matrix_multiply;
+
+#[cfg(feature = "fftw")]
+pub mod fftw;
