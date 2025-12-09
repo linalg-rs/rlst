@@ -35,7 +35,7 @@ pulp = { version = "0.22" }
 bytemuck = "1.24.0"
 num_cpus = "1"
 
-mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
+mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true , features = ["derive"]}
 mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
 
 fftw-sys = { version = "0.8", default-features = false, optional = true }
@@ -63,7 +63,7 @@ git2 = "0.20"
 
 [features]
 strict = []
-default = []
+default = ["mpi"]
 mpi = ["dep:mpi", "dep:mpi-sys"]
 nightly = []
 blis_threading = []

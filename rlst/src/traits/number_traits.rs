@@ -20,7 +20,7 @@ pub trait Max<Other = Self> {
 pub trait Min<Other = Self> {
     /// Output type.
     type Output;
-    /// Return the maximum of `self` and `other`.
+    /// Return the minimum of `self` and `other`.
     fn min(self, other: Other) -> Self::Output;
 }
 

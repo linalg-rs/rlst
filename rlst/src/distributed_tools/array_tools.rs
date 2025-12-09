@@ -3,7 +3,13 @@
 //! This module contains tools for working with distributed arrays.
 
 use itertools::{Itertools, izip};
-use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
+use mpi::{
+    collective::UserOperation,
+    datatype::PartitionMut,
+    traits::{Communicator, CommunicatorCollectives, Equivalence, Root},
+};
+
+use crate::{Max, Min};
 
 ///
 /// Distribute a sorted sequence into bins.
@@ -15,7 +21,7 @@ use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 /// every element has an associated bin.
 /// The function returns a p element array with the counts of how many elements go to each bin.
 /// Since the sequence is sorted this fully defines what element goes into which bin.
-pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
+pub fn sort_to_bins<T: PartialOrd>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     let nbins = bins.len();
 
     // Deal with the special case that there is only one bin.
@@ -205,4 +211,94 @@ pub fn scatterv<T: Equivalence + Copy>(comm: &impl Communicator, root: usize) ->
     // Don't forget to manually set the length of the vector to the correct value.
     unsafe { recvbuf.set_len(recv_count as usize) };
     recvbuf
+}
+
+/// Get the minimum value across all ranks
+pub fn global_min<T: Equivalence + Copy + Min<Output = T>, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> T {
+    let local_min = arr.iter().copied().reduce(|x, y| x.min(y)).expect(
+        format!(
+            "global_min: Local array on process {} is empty.",
+            comm.rank()
+        )
+        .as_str(),
+    );
+
+    // Just need to initialize global_min with something.
+    let mut global_min = local_min;
+
+    comm.all_reduce_into(
+        &local_min,
+        &mut global_min,
+        &UserOperation::commutative(|x, y| {
+            let x: &[T] = x.downcast().unwrap();
+            let y: &mut [T] = y.downcast().unwrap();
+            for (&x_i, y_i) in x.iter().zip(y) {
+                *y_i = x_i.min(*y_i);
+            }
+        }),
+    );
+
+    global_min
+}
+
+/// Get the maximum value across all ranks
+pub fn global_max<T: Equivalence + Copy + Max<Output = T>, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> T {
+    let local_max = arr.iter().copied().reduce(|x, y| x.max(y)).expect(
+        format!(
+            "global_max: Local array on process {} is empty.",
+            comm.rank()
+        )
+        .as_str(),
+    );
+
+    // Just need to initialize global_max with something.
+    let mut global_max = local_max;
+
+    comm.all_reduce_into(
+        &local_max,
+        &mut global_max,
+        &UserOperation::commutative(|x, y| {
+            let x: &[T] = x.downcast().unwrap();
+            let y: &mut [T] = y.downcast().unwrap();
+            for (&x_i, y_i) in x.iter().zip(y) {
+                *y_i = x_i.max(*y_i);
+            }
+        }),
+    );
+
+    global_max
+}
+
+/// Gather array to all processes
+pub fn gather_to_all<T: Equivalence, C: CommunicatorCollectives>(arr: &[T], comm: &C) -> Vec<T> {
+    // First we need to broadcast the individual sizes on each process.
+
+    let size = comm.size();
+
+    let local_len = arr.len() as i32;
+
+    let mut sizes = vec![0; size as usize];
+
+    comm.all_gather_into(&local_len, &mut sizes);
+
+    let recv_len = sizes.iter().sum::<i32>() as usize;
+
+    let mut recvbuffer = Vec::<T>::with_capacity(recv_len);
+    let buf: &mut [T] = unsafe { std::mem::transmute(recvbuffer.spare_capacity_mut()) };
+
+    let recv_displs: Vec<i32> = displacements(&sizes);
+
+    let mut receiv_partition = PartitionMut::new(buf, sizes, &recv_displs[..]);
+
+    comm.all_gather_varcount_into(arr, &mut receiv_partition);
+
+    unsafe { recvbuffer.set_len(recv_len) };
+
+    recvbuffer
 }
