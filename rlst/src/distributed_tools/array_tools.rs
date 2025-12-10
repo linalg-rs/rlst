@@ -9,7 +9,7 @@ use mpi::{
     traits::{Communicator, CommunicatorCollectives, Equivalence, Root},
 };
 
-use crate::{Max, Min};
+use crate::{Max, Min, TotalCmp};
 
 ///
 /// Distribute a sorted sequence into bins.
@@ -21,7 +21,7 @@ use crate::{Max, Min};
 /// every element has an associated bin.
 /// The function returns a p element array with the counts of how many elements go to each bin.
 /// Since the sequence is sorted this fully defines what element goes into which bin.
-pub fn sort_to_bins<T: PartialOrd>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
+pub fn sort_to_bins<T: TotalCmp>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     let nbins = bins.len();
 
     // Deal with the special case that there is only one bin.
@@ -49,14 +49,14 @@ pub fn sort_to_bins<T: PartialOrd>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> 
 
     let mut count = 0;
     'outer: for key in sorted_keys.iter() {
-        if bin_start <= key && key < bin_end {
+        if bin_start.le(*key) && key.lt(*bin_end) {
             *r += 1;
             count += 1;
         } else {
             // Move the bin forward until it fits. There will always be a fitting bin.
             loop {
                 if let Some((rn, (bsn, ben))) = bin_iter.next() {
-                    if bsn <= key && key < ben {
+                    if bsn.le(*key) && key.lt(*ben) {
                         // We have found the next fitting bin for our current element.
                         // Can register it and go back to the outer for loop.
                         *rn += 1;
@@ -218,13 +218,16 @@ pub fn global_min<T: Equivalence + Copy + Min<Output = T>, C: CommunicatorCollec
     arr: &[T],
     comm: &C,
 ) -> T {
-    let local_min = arr.iter().copied().reduce(|x, y| x.min(y)).expect(
-        format!(
-            "global_min: Local array on process {} is empty.",
-            comm.rank()
-        )
-        .as_str(),
-    );
+    let local_min = arr
+        .iter()
+        .copied()
+        .reduce(|x, y| x.min(y))
+        .unwrap_or_else(|| {
+            panic!(
+                "global_min: Local array on process {} is empty.",
+                comm.rank()
+            )
+        });
 
     // Just need to initialize global_min with something.
     let mut global_min = local_min;
@@ -249,13 +252,16 @@ pub fn global_max<T: Equivalence + Copy + Max<Output = T>, C: CommunicatorCollec
     arr: &[T],
     comm: &C,
 ) -> T {
-    let local_max = arr.iter().copied().reduce(|x, y| x.max(y)).expect(
-        format!(
-            "global_max: Local array on process {} is empty.",
-            comm.rank()
-        )
-        .as_str(),
-    );
+    let local_max = arr
+        .iter()
+        .copied()
+        .reduce(|x, y| x.max(y))
+        .unwrap_or_else(|| {
+            panic!(
+                "global_max: Local array on process {} is empty.",
+                comm.rank()
+            )
+        });
 
     // Just need to initialize global_max with something.
     let mut global_max = local_max;
