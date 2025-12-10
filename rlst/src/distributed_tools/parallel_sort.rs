@@ -8,7 +8,7 @@ use paste::paste;
 use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
-    TotalCmp,
+    RlstError, RlstResult, TotalCmp,
     distributed_tools::{
         all_to_allv,
         array_tools::{gather_to_all, global_max, global_min},
@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// Choose OVERSAMPLING * nprocs splitters for bucket sort
-pub const OVERSAMPLING: usize = 8;
+pub const OVERSAMPLING: usize = 4;
 
 /// A helper trait for parallel sorts to convert items into unique items
 ///
@@ -78,20 +78,29 @@ pub trait AsUnique: TotalCmp + Clone + Copy {
 /// It is only possible to sort types that implement the `AsUnique` trait which converts
 /// elements into a unique representation. This is predefined for a number of primitive types:
 /// `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `isize`, `u8`, `u16`, `u32`, `u64`, `usize`.
+///
+/// If `parsort` encounters an empty array on a process the function returns
 pub fn parsort<Item: AsUnique, C: CommunicatorCollectives, R: Rng + ?Sized>(
     arr: &[Item],
     comm: &C,
     rng: &mut R,
-) -> Vec<Item> {
+) -> RlstResult<Vec<Item>> {
     let size = comm.size() as usize;
     let rank = comm.rank() as usize;
     // If we only have a single rank simply sort the local array and return
+
+    if arr.is_empty() {
+        return Err(RlstError::GeneralError(format!(
+            "parsort: Array on process {} is empty.",
+            rank
+        )));
+    }
 
     let mut arr = arr.to_vec();
 
     if size == 1 {
         arr.sort_by(|x, y| x.total_cmp(*y));
-        return arr;
+        return Ok(arr);
     }
 
     // We first convert the array into unique elements by adding information
@@ -121,10 +130,10 @@ pub fn parsort<Item: AsUnique, C: CommunicatorCollectives, R: Rng + ?Sized>(
 
     recvbuffer.sort_by(|x, y| x.total_cmp(*y));
 
-    recvbuffer
+    Ok(recvbuffer
         .iter()
         .map(|&elem| AsUnique::from_unique(elem))
-        .collect_vec()
+        .collect_vec())
 }
 
 fn get_bins<Item, C, R>(

@@ -4,9 +4,10 @@
 
 use itertools::{Itertools, izip};
 use mpi::{
-    collective::UserOperation,
+    collective::{SystemOperation, UserOperation},
     datatype::PartitionMut,
-    traits::{Communicator, CommunicatorCollectives, Equivalence, Root},
+    point_to_point::send_receive,
+    traits::{Communicator, CommunicatorCollectives, Destination, Equivalence, Root, Source},
 };
 
 use crate::{Max, Min, TotalCmp};
@@ -307,4 +308,117 @@ pub fn gather_to_all<T: Equivalence, C: CommunicatorCollectives>(arr: &[T], comm
     unsafe { recvbuffer.set_len(recv_len) };
 
     recvbuffer
+}
+
+/// Communicate the first element of each local array back to the previous rank and
+/// return this result on each rank.
+///
+/// The last rank returns `None`. The other ranks return the first value in the array
+/// of the next process.
+pub fn communicate_back<T: Equivalence, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> Option<T> {
+    let rank = comm.rank();
+    let size = comm.size();
+
+    if size == 1 {
+        return None;
+    }
+
+    if rank == size - 1 {
+        comm.process_at_rank(rank - 1).send(arr.first().unwrap());
+        None
+    } else {
+        let (new_last, _status) = if rank > 0 {
+            send_receive(
+                arr.first().unwrap_or_else(|| {
+                    panic!("communicate_back: Array on process {} is empty", rank)
+                }),
+                &comm.process_at_rank(rank - 1),
+                &comm.process_at_rank(rank + 1),
+            )
+        } else {
+            comm.process_at_rank(1).receive::<T>()
+        };
+        Some(new_last)
+    }
+}
+
+/// Check if a distributed array is sorted.
+pub fn is_sorted_array<T: Equivalence + TotalCmp, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> bool {
+    let mut sorted = true;
+    for (elem1, elem2) in arr.iter().tuple_windows() {
+        if elem1.gt(*elem2) {
+            sorted = false;
+        }
+    }
+
+    if comm.size() == 1 {
+        return sorted;
+    }
+
+    if let Some(next_first) = communicate_back(arr, comm) {
+        sorted = sorted
+            && arr
+                .last()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "is_sorted_array: Array on process {} is empty.",
+                        comm.rank()
+                    )
+                })
+                .le(next_first);
+    }
+
+    let mut global_sorted: bool = false;
+    comm.all_reduce_into(&sorted, &mut global_sorted, SystemOperation::logical_and());
+
+    global_sorted
+}
+
+#[cfg(test)]
+mod test {
+    use itertools::Itertools;
+
+    use crate::distributed_tools::sort_to_bins;
+
+    #[test]
+    fn test_sort_to_bins() {
+        let arr = (1..98).collect_vec();
+        let bins = vec![1, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+
+        let counts = sort_to_bins(&arr, &bins);
+
+        assert_eq!(counts[0], 9);
+        assert_eq!(counts[1], 10);
+        assert_eq!(counts[2], 10);
+        assert_eq!(counts[3], 10);
+        assert_eq!(counts[4], 10);
+        assert_eq!(counts[5], 10);
+        assert_eq!(counts[6], 10);
+        assert_eq!(counts[7], 10);
+        assert_eq!(counts[8], 10);
+        assert_eq!(counts[9], 8);
+
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        let arr = vec![15];
+
+        let counts = sort_to_bins(&arr, &bins);
+
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        assert_eq!(counts[1], 1);
+
+        let arr = vec![99];
+
+        let counts = sort_to_bins(&arr, &bins);
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        assert_eq!(counts[9], 1);
+    }
 }

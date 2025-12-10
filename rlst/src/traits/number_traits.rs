@@ -27,6 +27,14 @@ pub trait Min<Other = Self> {
 }
 
 /// Return the comparison of two objects.
+///
+/// This is implemented as a separate trait since
+/// Rust does not implement the [Ord] trait for
+/// floating point types. For these it provides
+/// a separate `total_cmp` function. But this
+/// is not available for other types.
+/// This trait makes up for this by providing a unified
+/// interface for all types.
 pub trait TotalCmp: Sized + Copy {
     /// Compare two elements
     fn total_cmp(self, other: Self) -> Ordering;
