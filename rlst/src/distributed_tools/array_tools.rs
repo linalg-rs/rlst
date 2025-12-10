@@ -2,6 +2,8 @@
 //!
 //! This module contains tools for working with distributed arrays.
 
+use std::ops::Add;
+
 use itertools::{Itertools, izip};
 use mpi::{
     collective::{SystemOperation, UserOperation},
@@ -162,6 +164,8 @@ pub fn scatterv_root<T: Equivalence>(
     out_data: &[T],
 ) -> Vec<T> {
     assert_eq!(counts.len(), comm.size() as usize);
+    assert_eq!(counts.iter().sum::<usize>(), out_data.len());
+
     let rank = comm.rank() as usize;
 
     let send_counts = counts.iter().map(|&x| x as i32).collect_vec();
@@ -282,6 +286,61 @@ pub fn global_max<T: Equivalence + Copy + Max<Output = T>, C: CommunicatorCollec
     global_max
 }
 
+/// Get global size of a distributed array.
+///
+/// Computes the size and broadcoasts it to all ranks.
+pub fn global_size<T, C: CommunicatorCollectives>(arr: &[T], comm: &C) -> usize {
+    let local_size = arr.len();
+    let mut global_size = 0;
+
+    comm.all_reduce_into(&local_size, &mut global_size, SystemOperation::sum());
+
+    global_size
+}
+
+/// Gather distributed array to a specific rank
+///
+/// The result is a `Vec<T>` on rank `root` and `None` on all other ranks.
+pub fn gather_to_rank<T: Equivalence, C: CommunicatorCollectives>(
+    arr: &[T],
+    root: usize,
+    comm: &C,
+) -> Option<Vec<T>> {
+    let n = arr.len() as i32;
+    let rank = comm.rank();
+    let size = comm.size();
+    let root_process = comm.process_at_rank(root as i32);
+
+    // We first communicate the length of the array to root.
+
+    if rank as usize == root {
+        // We are at root.
+
+        let mut counts = vec![0_i32; size as usize];
+        root_process.gather_into_root(&n, &mut counts);
+
+        // We now have all ranks at root. Can now a varcount gather to get
+        // the array elements.
+
+        let nelements = counts.iter().sum::<i32>();
+        let mut new_arr = Vec::<T>::with_capacity(nelements as usize);
+        let new_arr_buf: &mut [T] = unsafe { std::mem::transmute(new_arr.spare_capacity_mut()) };
+
+        let displs = displacements(counts.as_slice());
+
+        let mut partition = PartitionMut::new(new_arr_buf, counts, &displs[..]);
+
+        root_process.gather_varcount_into_root(arr, &mut partition);
+
+        unsafe { new_arr.set_len(nelements as usize) };
+        Some(new_arr)
+    } else {
+        root_process.gather_into(&n);
+        root_process.gather_varcount_into(arr);
+        None
+    }
+}
+
 /// Gather array to all processes
 pub fn gather_to_all<T: Equivalence, C: CommunicatorCollectives>(arr: &[T], comm: &C) -> Vec<T> {
     // First we need to broadcast the individual sizes on each process.
@@ -308,6 +367,33 @@ pub fn gather_to_all<T: Equivalence, C: CommunicatorCollectives>(arr: &[T], comm
     unsafe { recvbuffer.set_len(recv_len) };
 
     recvbuffer
+}
+
+/// Perform a global inclusive cumulative sum operation.
+///
+/// For the array `[1, 3, 5, 7]` the output will be `[1, 4, 9, 16]`.
+pub fn global_inclusive_cumsum<
+    T: Equivalence + Default + Copy + Add<Output = T>,
+    C: CommunicatorCollectives,
+>(
+    arr: &[T],
+    comm: &C,
+) -> Vec<T> {
+    let mut scan: Vec<T> = arr
+        .iter()
+        .scan(<T as Default>::default(), |state, x| {
+            *state = *x + *state;
+            Some(*state)
+        })
+        .collect_vec();
+    let scan_last = *scan.last().unwrap();
+    let mut scan_result = T::default();
+    comm.exclusive_scan_into(&scan_last, &mut scan_result, SystemOperation::sum());
+    for elem in &mut scan {
+        *elem = *elem + scan_result;
+    }
+
+    scan
 }
 
 /// Communicate the first element of each local array back to the previous rank and
@@ -382,9 +468,9 @@ pub fn is_sorted_array<T: Equivalence + TotalCmp, C: CommunicatorCollectives>(
 
 #[cfg(test)]
 mod test {
-    use itertools::Itertools;
+    use itertools::{Itertools, izip};
 
-    use crate::distributed_tools::sort_to_bins;
+    use crate::distributed_tools::{displacements, sort_to_bins};
 
     #[test]
     fn test_sort_to_bins() {
@@ -420,5 +506,16 @@ mod test {
         assert_eq!(counts.iter().sum::<usize>(), arr.len());
 
         assert_eq!(counts[9], 1);
+    }
+
+    #[test]
+    pub fn test_displacements() {
+        let arr = [3, 4, 5];
+        let actual = displacements(&arr);
+        let expected = [0, 3, 7];
+
+        for (&a, &e) in izip!(actual.iter(), expected.iter()) {
+            assert_eq!(a, e);
+        }
     }
 }
