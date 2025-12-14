@@ -35,8 +35,8 @@ pulp = { version = "0.22" }
 bytemuck = "1.24.0"
 num_cpus = "1"
 
-mpi = { git = "https://github.com/rsmpi/rsmpi.git", optional = true , features = ["derive"]}
-mpi-sys = { git = "https://github.com/rsmpi/rsmpi.git", optional = true }
+mpi = { version = "0.8.1", optional = true , features = ["derive","complex"]}
+mpi-sys = { version = "0.2.3", optional = true }
 
 fftw-sys = { version = "0.8", default-features = false, optional = true }
 
