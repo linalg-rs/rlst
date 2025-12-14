@@ -1,11 +1,14 @@
-use std::ops::Mul;
+use std::{cmp::Ordering, ops::Mul};
 
-use crate::traits::{
-    number_traits::{
-        Abs, AbsSquare, Acos, Acosh, Asin, Asinh, Atan, Atanh, Conj, Cos, Cosh, Exp, Ln, Max, Min,
-        Recip, Sin, Sinh, Sqrt, Square, Tan, Tanh,
+use crate::{
+    TotalCmp,
+    traits::{
+        number_traits::{
+            Abs, AbsSquare, Acos, Acosh, Asin, Asinh, Atan, Atanh, Conj, Cos, Cosh, Exp, Ln, Max,
+            Min, Recip, Sin, Sinh, Sqrt, Square, Tan, Tanh,
+        },
+        rlst_num::RlstScalar,
     },
-    rlst_num::RlstScalar,
 };
 
 use crate::base_types::{c32, c64};
@@ -44,85 +47,144 @@ impl_conj!(u64);
 impl_conj!(u128);
 impl_conj!(usize);
 
-impl Max for f32 {
-    type Output = f32;
+// impl Max for f32 {
+//     type Output = f32;
 
-    fn max(self, other: Self) -> Self::Output {
-        f32::max(self, other)
-    }
-}
+//     fn max(self, other: Self) -> Self::Output {
+//         f32::max(self, other)
+//     }
+// }
 
-impl Max for f64 {
-    type Output = f64;
+// impl Max for f64 {
+//     type Output = f64;
 
-    fn max(self, other: Self) -> Self::Output {
-        f64::max(self, other)
-    }
-}
+//     fn max(self, other: Self) -> Self::Output {
+//         f64::max(self, other)
+//     }
+// }
 
-impl Min for f32 {
-    type Output = f32;
+// impl Min for f32 {
+//     type Output = f32;
+
+//     fn min(self, other: Self) -> Self::Output {
+//         f32::min(self, other)
+//     }
+// }
+
+// impl Min for f64 {
+//     type Output = f64;
+
+//     fn min(self, other: Self) -> Self::Output {
+//         f64::min(self, other)
+//     }
+// }
+
+// macro_rules! impl_max {
+//     ($dtype:ty) => {
+//         impl Max for $dtype {
+//             type Output = $dtype;
+//             fn max(self, other: $dtype) -> $dtype {
+//                 std::cmp::max(self, other)
+//             }
+//         }
+//     };
+// }
+
+// impl_max!(i8);
+// impl_max!(i16);
+// impl_max!(i32);
+// impl_max!(i64);
+// impl_max!(i128);
+// impl_max!(isize);
+// impl_max!(u8);
+// impl_max!(u16);
+// impl_max!(u32);
+// impl_max!(u64);
+// impl_max!(u128);
+// impl_max!(usize);
+
+// macro_rules! impl_min {
+//     ($dtype:ty) => {
+//         impl Min for $dtype {
+//             type Output = $dtype;
+//             fn min(self, other: $dtype) -> $dtype {
+//                 std::cmp::min(self, other)
+//             }
+//         }
+//     };
+// }
+
+// impl_min!(i8);
+// impl_min!(i16);
+// impl_min!(i32);
+// impl_min!(i64);
+// impl_min!(i128);
+// impl_min!(isize);
+// impl_min!(u8);
+// impl_min!(u16);
+// impl_min!(u32);
+// impl_min!(u64);
+// impl_min!(u128);
+// impl_min!(usize);
+
+impl<T: TotalCmp + Copy> Min for T {
+    type Output = T;
 
     fn min(self, other: Self) -> Self::Output {
-        f32::min(self, other)
+        match self.total_cmp(other) {
+            Ordering::Less => self,
+            Ordering::Equal => self,
+            Ordering::Greater => other,
+        }
     }
 }
 
-impl Min for f64 {
-    type Output = f64;
+impl<T: TotalCmp + Copy> Max for T {
+    type Output = T;
 
-    fn min(self, other: Self) -> Self::Output {
-        f64::min(self, other)
+    fn max(self, other: Self) -> Self::Output {
+        match self.total_cmp(other) {
+            Ordering::Less => other,
+            Ordering::Equal => self,
+            Ordering::Greater => self,
+        }
     }
 }
 
-macro_rules! impl_max {
+macro_rules! impl_total_cmp {
     ($dtype:ty) => {
-        impl Max for $dtype {
-            type Output = $dtype;
-            fn max(self, other: $dtype) -> $dtype {
-                std::cmp::max(self, other)
+        impl TotalCmp for $dtype {
+            fn total_cmp(self, other: Self) -> std::cmp::Ordering {
+                self.cmp(&other)
             }
         }
     };
 }
 
-impl_max!(i8);
-impl_max!(i16);
-impl_max!(i32);
-impl_max!(i64);
-impl_max!(i128);
-impl_max!(isize);
-impl_max!(u8);
-impl_max!(u16);
-impl_max!(u32);
-impl_max!(u64);
-impl_max!(u128);
-impl_max!(usize);
-
-macro_rules! impl_min {
-    ($dtype:ty) => {
-        impl Min for $dtype {
-            type Output = $dtype;
-            fn min(self, other: $dtype) -> $dtype {
-                std::cmp::min(self, other)
-            }
-        }
-    };
+impl TotalCmp for f32 {
+    fn total_cmp(self, other: Self) -> std::cmp::Ordering {
+        f32::total_cmp(&self, &other)
+    }
 }
 
-impl_min!(i8);
-impl_min!(i16);
-impl_min!(i32);
-impl_min!(i64);
-impl_min!(i128);
-impl_min!(isize);
-impl_min!(u8);
-impl_min!(u16);
-impl_min!(u32);
-impl_min!(u64);
-impl_min!(u128);
-impl_min!(usize);
+impl TotalCmp for f64 {
+    fn total_cmp(self, other: Self) -> std::cmp::Ordering {
+        f64::total_cmp(&self, &other)
+    }
+}
+
+impl_total_cmp!(i8);
+impl_total_cmp!(i16);
+impl_total_cmp!(i32);
+impl_total_cmp!(i64);
+impl_total_cmp!(i128);
+impl_total_cmp!(isize);
+impl_total_cmp!(u8);
+impl_total_cmp!(u16);
+impl_total_cmp!(u32);
+impl_total_cmp!(u64);
+impl_total_cmp!(u128);
+impl_total_cmp!(usize);
 
 impl Abs for c32 {
     type Output = f32;

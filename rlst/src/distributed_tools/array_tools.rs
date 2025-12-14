@@ -2,8 +2,17 @@
 //!
 //! This module contains tools for working with distributed arrays.
 
+use std::ops::Add;
+
 use itertools::{Itertools, izip};
-use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
+use mpi::{
+    collective::{SystemOperation, UserOperation},
+    datatype::PartitionMut,
+    point_to_point::send_receive,
+    traits::{Communicator, CommunicatorCollectives, Destination, Equivalence, Root, Source},
+};
+
+use crate::{Max, Min, TotalCmp};
 
 ///
 /// Distribute a sorted sequence into bins.
@@ -15,7 +24,7 @@ use mpi::traits::{Communicator, CommunicatorCollectives, Equivalence, Root};
 /// every element has an associated bin.
 /// The function returns a p element array with the counts of how many elements go to each bin.
 /// Since the sequence is sorted this fully defines what element goes into which bin.
-pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
+pub fn sort_to_bins<T: TotalCmp>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
     let nbins = bins.len();
 
     // Deal with the special case that there is only one bin.
@@ -43,14 +52,14 @@ pub fn sort_to_bins<T: Ord>(sorted_keys: &[T], bins: &[T]) -> Vec<usize> {
 
     let mut count = 0;
     'outer: for key in sorted_keys.iter() {
-        if bin_start <= key && key < bin_end {
+        if bin_start.le(*key) && key.lt(*bin_end) {
             *r += 1;
             count += 1;
         } else {
             // Move the bin forward until it fits. There will always be a fitting bin.
             loop {
                 if let Some((rn, (bsn, ben))) = bin_iter.next() {
-                    if bsn <= key && key < ben {
+                    if bsn.le(*key) && key.lt(*ben) {
                         // We have found the next fitting bin for our current element.
                         // Can register it and go back to the outer for loop.
                         *rn += 1;
@@ -155,6 +164,8 @@ pub fn scatterv_root<T: Equivalence>(
     out_data: &[T],
 ) -> Vec<T> {
     assert_eq!(counts.len(), comm.size() as usize);
+    assert_eq!(counts.iter().sum::<usize>(), out_data.len());
+
     let rank = comm.rank() as usize;
 
     let send_counts = counts.iter().map(|&x| x as i32).collect_vec();
@@ -205,4 +216,306 @@ pub fn scatterv<T: Equivalence + Copy>(comm: &impl Communicator, root: usize) ->
     // Don't forget to manually set the length of the vector to the correct value.
     unsafe { recvbuf.set_len(recv_count as usize) };
     recvbuf
+}
+
+/// Get the minimum value across all ranks
+pub fn global_min<T: Equivalence + Copy + Min<Output = T>, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> T {
+    let local_min = arr
+        .iter()
+        .copied()
+        .reduce(|x, y| x.min(y))
+        .unwrap_or_else(|| {
+            panic!(
+                "global_min: Local array on process {} is empty.",
+                comm.rank()
+            )
+        });
+
+    // Just need to initialize global_min with something.
+    let mut global_min = local_min;
+
+    comm.all_reduce_into(
+        &local_min,
+        &mut global_min,
+        &UserOperation::commutative(|x, y| {
+            let x: &[T] = x.downcast().unwrap();
+            let y: &mut [T] = y.downcast().unwrap();
+            for (&x_i, y_i) in x.iter().zip(y) {
+                *y_i = x_i.min(*y_i);
+            }
+        }),
+    );
+
+    global_min
+}
+
+/// Get the maximum value across all ranks
+pub fn global_max<T: Equivalence + Copy + Max<Output = T>, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> T {
+    let local_max = arr
+        .iter()
+        .copied()
+        .reduce(|x, y| x.max(y))
+        .unwrap_or_else(|| {
+            panic!(
+                "global_max: Local array on process {} is empty.",
+                comm.rank()
+            )
+        });
+
+    // Just need to initialize global_max with something.
+    let mut global_max = local_max;
+
+    comm.all_reduce_into(
+        &local_max,
+        &mut global_max,
+        &UserOperation::commutative(|x, y| {
+            let x: &[T] = x.downcast().unwrap();
+            let y: &mut [T] = y.downcast().unwrap();
+            for (&x_i, y_i) in x.iter().zip(y) {
+                *y_i = x_i.max(*y_i);
+            }
+        }),
+    );
+
+    global_max
+}
+
+/// Get global size of a distributed array.
+///
+/// Computes the size and broadcoasts it to all ranks.
+pub fn global_size<T, C: CommunicatorCollectives>(arr: &[T], comm: &C) -> usize {
+    let local_size = arr.len();
+    let mut global_size = 0;
+
+    comm.all_reduce_into(&local_size, &mut global_size, SystemOperation::sum());
+
+    global_size
+}
+
+/// Gather distributed array to a specific rank
+///
+/// The result is a `Vec<T>` on rank `root` and `None` on all other ranks.
+pub fn gather_to_rank<T: Equivalence, C: CommunicatorCollectives>(
+    arr: &[T],
+    root: usize,
+    comm: &C,
+) -> Option<Vec<T>> {
+    let n = arr.len() as i32;
+    let rank = comm.rank();
+    let size = comm.size();
+    let root_process = comm.process_at_rank(root as i32);
+
+    // We first communicate the length of the array to root.
+
+    if rank as usize == root {
+        // We are at root.
+
+        let mut counts = vec![0_i32; size as usize];
+        root_process.gather_into_root(&n, &mut counts);
+
+        // We now have all ranks at root. Can now a varcount gather to get
+        // the array elements.
+
+        let nelements = counts.iter().sum::<i32>();
+        let mut new_arr = Vec::<T>::with_capacity(nelements as usize);
+        let new_arr_buf: &mut [T] = unsafe { std::mem::transmute(new_arr.spare_capacity_mut()) };
+
+        let displs = displacements(counts.as_slice());
+
+        let mut partition = PartitionMut::new(new_arr_buf, counts, &displs[..]);
+
+        root_process.gather_varcount_into_root(arr, &mut partition);
+
+        unsafe { new_arr.set_len(nelements as usize) };
+        Some(new_arr)
+    } else {
+        root_process.gather_into(&n);
+        root_process.gather_varcount_into(arr);
+        None
+    }
+}
+
+/// Gather array to all processes
+pub fn gather_to_all<T: Equivalence, C: CommunicatorCollectives>(arr: &[T], comm: &C) -> Vec<T> {
+    // First we need to broadcast the individual sizes on each process.
+
+    let size = comm.size();
+
+    let local_len = arr.len() as i32;
+
+    let mut sizes = vec![0; size as usize];
+
+    comm.all_gather_into(&local_len, &mut sizes);
+
+    let recv_len = sizes.iter().sum::<i32>() as usize;
+
+    let mut recvbuffer = Vec::<T>::with_capacity(recv_len);
+    let buf: &mut [T] = unsafe { std::mem::transmute(recvbuffer.spare_capacity_mut()) };
+
+    let recv_displs: Vec<i32> = displacements(&sizes);
+
+    let mut receiv_partition = PartitionMut::new(buf, sizes, &recv_displs[..]);
+
+    comm.all_gather_varcount_into(arr, &mut receiv_partition);
+
+    unsafe { recvbuffer.set_len(recv_len) };
+
+    recvbuffer
+}
+
+/// Perform a global inclusive cumulative sum operation.
+///
+/// For the array `[1, 3, 5, 7]` the output will be `[1, 4, 9, 16]`.
+pub fn global_inclusive_cumsum<
+    T: Equivalence + Default + Copy + Add<Output = T>,
+    C: CommunicatorCollectives,
+>(
+    arr: &[T],
+    comm: &C,
+) -> Vec<T> {
+    let mut scan: Vec<T> = arr
+        .iter()
+        .scan(<T as Default>::default(), |state, x| {
+            *state = *x + *state;
+            Some(*state)
+        })
+        .collect_vec();
+    let scan_last = *scan.last().unwrap();
+    let mut scan_result = T::default();
+    comm.exclusive_scan_into(&scan_last, &mut scan_result, SystemOperation::sum());
+    for elem in &mut scan {
+        *elem = *elem + scan_result;
+    }
+
+    scan
+}
+
+/// Communicate the first element of each local array back to the previous rank and
+/// return this result on each rank.
+///
+/// The last rank returns `None`. The other ranks return the first value in the array
+/// of the next process.
+pub fn communicate_back<T: Equivalence, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> Option<T> {
+    let rank = comm.rank();
+    let size = comm.size();
+
+    if size == 1 {
+        return None;
+    }
+
+    if rank == size - 1 {
+        comm.process_at_rank(rank - 1).send(arr.first().unwrap());
+        None
+    } else {
+        let (new_last, _status) = if rank > 0 {
+            send_receive(
+                arr.first().unwrap_or_else(|| {
+                    panic!("communicate_back: Array on process {} is empty", rank)
+                }),
+                &comm.process_at_rank(rank - 1),
+                &comm.process_at_rank(rank + 1),
+            )
+        } else {
+            comm.process_at_rank(1).receive::<T>()
+        };
+        Some(new_last)
+    }
+}
+
+/// Check if a distributed array is sorted.
+pub fn is_sorted_array<T: Equivalence + TotalCmp, C: CommunicatorCollectives>(
+    arr: &[T],
+    comm: &C,
+) -> bool {
+    let mut sorted = true;
+    for (elem1, elem2) in arr.iter().tuple_windows() {
+        if elem1.gt(*elem2) {
+            sorted = false;
+        }
+    }
+
+    if comm.size() == 1 {
+        return sorted;
+    }
+
+    if let Some(next_first) = communicate_back(arr, comm) {
+        sorted = sorted
+            && arr
+                .last()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "is_sorted_array: Array on process {} is empty.",
+                        comm.rank()
+                    )
+                })
+                .le(next_first);
+    }
+
+    let mut global_sorted: bool = false;
+    comm.all_reduce_into(&sorted, &mut global_sorted, SystemOperation::logical_and());
+
+    global_sorted
+}
+
+#[cfg(test)]
+mod test {
+    use itertools::{Itertools, izip};
+
+    use crate::distributed_tools::{displacements, sort_to_bins};
+
+    #[test]
+    fn test_sort_to_bins() {
+        let arr = (1..98).collect_vec();
+        let bins = vec![1, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+
+        let counts = sort_to_bins(&arr, &bins);
+
+        assert_eq!(counts[0], 9);
+        assert_eq!(counts[1], 10);
+        assert_eq!(counts[2], 10);
+        assert_eq!(counts[3], 10);
+        assert_eq!(counts[4], 10);
+        assert_eq!(counts[5], 10);
+        assert_eq!(counts[6], 10);
+        assert_eq!(counts[7], 10);
+        assert_eq!(counts[8], 10);
+        assert_eq!(counts[9], 8);
+
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        let arr = vec![15];
+
+        let counts = sort_to_bins(&arr, &bins);
+
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        assert_eq!(counts[1], 1);
+
+        let arr = vec![99];
+
+        let counts = sort_to_bins(&arr, &bins);
+        assert_eq!(counts.iter().sum::<usize>(), arr.len());
+
+        assert_eq!(counts[9], 1);
+    }
+
+    #[test]
+    pub fn test_displacements() {
+        let arr = [3, 4, 5];
+        let actual = displacements(&arr);
+        let expected = [0, 3, 7];
+
+        for (&a, &e) in izip!(actual.iter(), expected.iter()) {
+            assert_eq!(a, e);
+        }
+    }
 }

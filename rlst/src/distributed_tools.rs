@@ -5,6 +5,7 @@ pub mod data_mapper;
 pub mod ghost_communicator;
 pub mod index_embedding;
 pub mod index_layout;
+pub mod parallel_sort;
 pub mod permutation;
 
 pub use array_tools::{all_to_allv, displacements, scatterv, scatterv_root, sort_to_bins};

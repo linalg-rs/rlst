@@ -1,5 +1,7 @@
 //! Traits for properties of numbers.
 
+use std::cmp::Ordering;
+
 /// Return the conjugate of an object.
 pub trait Conj {
     /// Output type.
@@ -20,8 +22,52 @@ pub trait Max<Other = Self> {
 pub trait Min<Other = Self> {
     /// Output type.
     type Output;
-    /// Return the maximum of `self` and `other`.
+    /// Return the minimum of `self` and `other`.
     fn min(self, other: Other) -> Self::Output;
+}
+
+/// Return the comparison of two objects.
+///
+/// This is implemented as a separate trait since
+/// Rust does not implement the [Ord] trait for
+/// floating point types. For these it provides
+/// a separate `total_cmp` function. But this
+/// is not available for other types.
+/// This trait makes up for this by providing a unified
+/// interface for all types.
+pub trait TotalCmp: Sized + Copy {
+    /// Compare two elements
+    fn total_cmp(self, other: Self) -> Ordering;
+
+    /// self < other
+    #[inline(always)]
+    fn lt(self, other: Self) -> bool {
+        matches!(self.total_cmp(other), Ordering::Less)
+    }
+
+    /// self <= other
+    #[inline(always)]
+    fn le(self, other: Self) -> bool {
+        self.lt(other) || self.eq(other)
+    }
+
+    /// self >= other
+    #[inline(always)]
+    fn ge(self, other: Self) -> bool {
+        self.gt(other) || self.eq(other)
+    }
+
+    /// self > other
+    #[inline(always)]
+    fn gt(self, other: Self) -> bool {
+        matches!(self.total_cmp(other), Ordering::Greater)
+    }
+
+    /// self == other
+    #[inline(always)]
+    fn eq(self, other: Self) -> bool {
+        matches!(self.total_cmp(other), Ordering::Equal)
+    }
 }
 
 /// Return the absolute value of an object.
